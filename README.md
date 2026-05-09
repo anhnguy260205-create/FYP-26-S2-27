@@ -1,1 +1,2 @@
 - Download MySQL workbench: https://dev.mysql.com/downloads/workbench/ 
+- SQL Root Password: stock123
