@@ -1,5 +1,5 @@
 import { useState } from "react";
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 import RegistrationPage from "./RegistrationPage.jsx";
 import Footer from "../../components/Footer.jsx";
 
