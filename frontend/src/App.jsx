@@ -1,5 +1,6 @@
-import RegistrationPage from "src/pages/user/RegistrationPage.jsx";
+import {RouterProvider} from "react-router-dom";
+import {router} from "./routes.jsx";
 
 export default function App() {
-  return <RegistrationPage />;
+    return <RouterProvider router={router} />;
 }
