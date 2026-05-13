@@ -1,13 +1,13 @@
 
 function Footer() {
   return (
-    <footer className="min-h-[300px] border-t border-blue-900/30 bg-slate-950/50 backdrop-blur-md mt-20">
-          <div className="max-w-[1200px] mx-auto px-8 py-16">
+    <footer className=" border-t border-blue-900/30 bg-slate-950/50 backdrop-blur-md mt-10">
+          <div className="max-w-300 mx-auto px-8 py-5">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
               <div>
                 <div className="flex items-center gap-2 mb-4">
                  
-                  <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <span className="text-xl font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                     Deskstock
                   </span>
                 </div>
@@ -22,8 +22,7 @@ function Footer() {
                 <ul className="space-y-2">
                   <li><a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">Features</a></li>
                   <li><a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">Pricing</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">API</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">Documentation</a></li>
+
                 </ul>
               </div>
 
@@ -49,10 +48,6 @@ function Footer() {
                   <li><a href="#" className="text-gray-400 hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
                 </ul>
               </div>
-            </div>
-
-            <div className="pt-8 border-t border-blue-900/30 text-center text-gray-400">
-              <p>&copy; 2026 Deskstock. All rights reserved.</p>
             </div>
           </div>
         </footer>

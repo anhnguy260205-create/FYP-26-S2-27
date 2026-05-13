@@ -1,8 +1,8 @@
 function Header(){
     return(
         <div
-      className="w-full bg-white flex items-center justify-between shrink-0"
-      style={{ height: "72px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
+      className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
+      style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
     >
  
       <div className="flex items-center gap-2 cursor-pointer" >
@@ -23,7 +23,7 @@ function Header(){
           <a
             key={link.label}
             href="#"
-            className="font-bold text-[16px] bg-clip-text text-transparent leading-[24px] whitespace-nowrap hover:opacity-70 transition-opacity"
+            className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap hover:opacity-70 transition-opacity"
             style={{ backgroundImage: link.gradient }}
           >
             {link.label}
