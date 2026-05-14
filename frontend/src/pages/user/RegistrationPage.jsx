@@ -55,13 +55,13 @@ function RegistrationPage(){
             <div className="text-center">
               <h1
               className="font-bold text-black leading-[1.1]"
-              style={{ fontSize: "50px" }}
+              style={{ fontSize: "40px" }}
             >
               Open an account
              </h1>
              <p
               className="text-black mt-2 mb-8"
-              style={{ fontSize: "24px", marginTop: "8px", marginBottom: "36px" }}
+              style={{ fontSize: "20px", marginTop: "8px", marginBottom: "36px" }}
             >
               Let's Trade with RocketTrading
              </p>
