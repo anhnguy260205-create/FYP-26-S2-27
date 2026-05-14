@@ -2,7 +2,7 @@ function Header(){
     return(
         <div
       className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
-      style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
+      style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
     >
  
       <div className="flex items-center gap-2 cursor-pointer" >
