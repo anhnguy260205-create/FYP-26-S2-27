@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
@@ -16,8 +16,8 @@ class CreateAccountRequest(BaseModel):
     password: str
     phone_number: str
     address: str
-    stock_level: Optional[int] = None
-    experience_year: Optional[int] = None
+    stock_level: Optional[str] = "beginner"
+    experience_year: Optional[Union[int, str]] = None
     linked_in_url: Optional[str] = None
 
 
@@ -34,7 +34,7 @@ class CreateAccountPage:
 def create_account(data: CreateAccountRequest):
 
     boundary = CreateAccountPage()
-
+    
     result = boundary.clickCreateAccount(
         data.role,
         data.username,
@@ -48,4 +48,14 @@ def create_account(data: CreateAccountRequest):
         data.linked_in_url
     )
 
-    return result
+    if result == False:
+        return {
+            "success": False,
+            "message": "Account already exists"
+        }
+
+    return {
+        "success": True,
+        "message": "Account created successfully",
+        "user_id": result
+    }

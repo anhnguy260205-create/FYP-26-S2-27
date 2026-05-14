@@ -6,3 +6,4 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine
 )
+session = SessionLocal()

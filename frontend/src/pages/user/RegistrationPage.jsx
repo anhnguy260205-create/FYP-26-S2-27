@@ -39,7 +39,7 @@ function RegistrationPage(){
 
       try {
 
-      const result = await createAccount({
+      const payload = {
          role: formData.accountType,
          username: formData.username,
          full_name: formData.fullName,
@@ -47,20 +47,29 @@ function RegistrationPage(){
          password: formData.password,
          phone_number: formData.phoneNumber,
          address: formData.location,
-         stock_level: null,
-         experience_year: null,
-         linked_in_url: null,
-       });
+       };
+
+      if (formData.accountType === "investor") {
+         payload.stock_level = formData.stock_level || "beginner";
+      }
+
+      if (formData.accountType === "expert") {
+         payload.experience_year = formData.experience_year;
+         payload.linked_in_url = formData.linked_in_url;
+      }
+
+      const result = await createAccount(payload);
 
       console.log(result);
-      alert("Account created successfully");
+      if (!result.success) {
+         alert(result.message || "Account already exists");
+         return;
+      }
 
+      alert(result.message || "Account created successfully");
       setSubmitted(true);
-
       } catch (error) {
-
       console.error(error);
-
       alert("Failed to create account");
      }};
     return(
@@ -311,7 +320,7 @@ function RegistrationPage(){
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { value: "investor", label: "Investor", desc: "Grow my portfolio" },
-                      { value: "consultant", label: "Consultant / Expert", desc: "Provide trading insights" },
+                      { value: "expert", label: "Expert", desc: "Provide trading insights" },
                     ].map((type) => (
                       <button
                         key={type.value}
@@ -334,6 +343,79 @@ function RegistrationPage(){
                     ))}
                   </div>
                 </div>
+                {/* Investor Fields */}
+{formData.accountType === "investor" && (
+  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-blue-50 border border-blue-100">
+    
+    <h3 className="text-[16px] font-semibold text-blue-700">
+      Investor Information
+    </h3>
+
+    <div className="flex flex-col gap-1">
+      <label className="font-semibold text-[14px] text-gray-700 pl-1">
+        Stock Level
+      </label>
+
+      <select
+        value={formData.stock_level}
+        onChange={(e) => handleChange("stock_level", e.target.value)}
+        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
+        style={{ height: "40px" }}
+      >
+        <option value="">Select Stock Level</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </div>
+
+  </div>
+)}
+
+{/* Expert Fields */}
+{formData.accountType === "expert" && (
+  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-purple-50 border border-purple-100">
+
+    <h3 className="text-[16px] font-semibold text-purple-700">
+      Expert Information
+    </h3>
+
+    <div className="flex flex-col gap-1">
+      <label className="font-semibold text-[14px] text-gray-700 pl-1">
+        Years of Experience
+      </label>
+
+      <input
+        type="number"
+        placeholder="Enter years of experience"
+        value={formData.experience_year}
+        onChange={(e) =>
+          handleChange("experience_year", e.target.value)
+        }
+        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+        style={{ height: "40px" }}
+      />
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <label className="font-semibold text-[14px] text-gray-700 pl-1">
+        LinkedIn URL
+      </label>
+
+      <input
+        type="text"
+        placeholder="Enter LinkedIn profile URL"
+        value={formData.linked_in_url}
+        onChange={(e) =>
+          handleChange("linked_in_url", e.target.value)
+        }
+        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+        style={{ height: "40px" }}
+      />
+    </div>
+
+  </div>
+)}
                   {/* Risk Tolerance */}  
                 <div className="flex items-start gap-2">
                 <input
