@@ -2,17 +2,22 @@ import Footer from "../../components/Footer.jsx";
 import Header from "../../components/Header.jsx";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { createAccount } from "../../api/userApi";
 function RegistrationPage(){
     // Store form data in React state 
     const [formData, setFormData] = useState({
+       role: "",
        username: "",
        fullName: "",
        email: "",
-       phoneNumber: "",
-       location: "",
        password: "",
        confirmPassword: "",
+       phoneNumber: "",
+       location: "",
        accountType: "",
+       stock_level: "",
+       experience_year: "",
+       linked_in_url: "",
      });
 
     const [submitted, setSubmitted] = useState(false);
@@ -23,13 +28,41 @@ function RegistrationPage(){
       [field]: value,}));
      };
     // validate form data and handle submission
-    const handleSubmit = (e) => {
-     e.preventDefault();
-     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-     setSubmitted(true);};
+    const handleSubmit = async (e) => {
+
+      e.preventDefault();
+
+      if (formData.password !== formData.confirmPassword) {
+         alert("Passwords do not match!");
+         return;
+      }
+
+      try {
+
+      const result = await createAccount({
+         role: formData.accountType,
+         username: formData.username,
+         full_name: formData.fullName,
+         email_address: formData.email,
+         password: formData.password,
+         phone_number: formData.phoneNumber,
+         address: formData.location,
+         stock_level: null,
+         experience_year: null,
+         linked_in_url: null,
+       });
+
+      console.log(result);
+      alert("Account created successfully");
+
+      setSubmitted(true);
+
+      } catch (error) {
+
+      console.error(error);
+
+      alert("Failed to create account");
+     }};
     return(
       <motion.div 
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "

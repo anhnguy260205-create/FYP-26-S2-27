@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.boundary.adminb import router as admin_router
+from app.boundary.userb import router as user_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
-from app.entity.models.user import User
-from app.entity.models.userprofile import UserProfile
+
+
 
 
 app = FastAPI()
@@ -21,7 +21,7 @@ app.add_middleware(
 # Create database tables based on the defined models
 Base.metadata.create_all(bind=engine)
 
-app.include_router(admin_router)
+app.include_router(user_router)
 
 @app.get("/")
 def home():
