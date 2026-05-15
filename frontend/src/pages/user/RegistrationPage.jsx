@@ -3,6 +3,75 @@ import Header from "../../components/Header.jsx";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
+import image1 from "../../images/image1.png";
+function ImageStockMarketTradingCharts() {
+  return (
+    <div className="flex flex-col gap-6">
+
+      {/* Image Container */}
+      <div
+        className="relative w-125 h-100 overflow-hidden"
+        data-name="Image (Stock market trading charts)"
+      >
+        {/* Background Image */}
+        <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]"/>
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
+
+        {/* Text Content */}
+        <div className="absolute bottom-10 left-10 right-10 text-white z-10">
+          <h1 className="text-4 font-bold leading-tight mb-4">
+            Smart Trading Starts Here
+          </h1>
+
+          <p className="text-2 text-gray-200 leading-relaxed">
+            Join thousands of investors leveraging data-driven insights to
+            grow their portfolios.
+          </p>
+        </div>
+      </div>
+
+      {/* Statistics Cards OUTSIDE image */}
+      <div className="flex gap-5 w-125">
+
+        {/* Card 1 */}
+        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-3xl p-6 text-center transition-all duration-300 hover:bg-cyan-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.35)] hover:-translate-y-1 cursor-pointer">
+          <h2 className="text-cyan-400 text-4xl font-bold mb-2">
+            50K+
+          </h2>
+
+          <p className="text-gray-300 text-lg">
+            Active Users
+          </p>
+        </div>
+
+        {/* Card 2 */}
+        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-3xl p-6 text-center transition-all duration-300 hover:bg-cyan-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.35)] hover:-translate-y-1 cursor-pointer">
+          <h2 className="text-cyan-400 text-4xl font-bold mb-2">
+            2M+
+          </h2>
+
+          <p className="text-gray-300 text-lg">
+            Daily Trades
+          </p>
+        </div>
+
+        {/* Card 3 */}
+        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-3xl p-6 text-center transition-all duration-300 hover:bg-cyan-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.35)] hover:-translate-y-1 cursor-pointer">
+          <h2 className="text-cyan-400 text-4xl font-bold mb-2">
+            18.4%
+          </h2>
+
+          <p className="text-gray-300 text-lg">
+            Avg. Return
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
 function RegistrationPage(){
     // Store form data in React state 
     const [formData, setFormData] = useState({
@@ -77,23 +146,21 @@ function RegistrationPage(){
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-            >
+      transition={{ duration: 0.8 }}>
 
         <Header/>
         <div>
-            <div className="flex items-center justify-center min-h-screen overflow-y-auto"
-          style={{ paddingTop: "60px" }}>
-          {/* Form Card */}
-          <div
-            className="bg-[rgba(255,255,255,0.82)] w-173 shrink-0 flex flex-col justify-center"
+          <div className="flex items-center justify-center min-h-screen px-10 pt-24">
+            <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
+            {/* Form Card */}
+            <div
+            className="bg-[rgba(255,255,255,0.82)] w-175 shrink-0 flex flex-col justify-center"
             style={{
               borderRadius: "30px",
               minHeight: "500px",
               padding: "30px 20px",
               backdropFilter: "blur(16px)",
-            }}
-          >
+            }}>
             <div className="text-center">
               <h1
               className="font-bold text-black leading-[1.1]"
@@ -426,8 +493,12 @@ function RegistrationPage(){
               </p>
             </div>
             </div>
+            <div className="flex-1 flex justify-end">
+             <ImageStockMarketTradingCharts />
+            </div>
           </div>
-
+          </div>
+        
         </div>
         <Footer/>
        </motion.div>
