@@ -344,79 +344,46 @@ function RegistrationPage(){
                   </div>
                 </div>
                 {/* Investor Fields */}
-{formData.accountType === "investor" && (
-  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-blue-50 border border-blue-100">
-    
-    <h3 className="text-[16px] font-semibold text-blue-700">
-      Investor Information
-    </h3>
+                {formData.accountType === "investor" && (
+                   <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-blue-50 border border-blue-100">
+                   <h3 className="text-[16px] font-semibold text-blue-700"> Investor Information</h3>
+                   <div className="flex flex-col gap-1">
+                   <label className="font-semibold text-[14px] text-gray-700 pl-1"> Stock Level </label>
+                   <select value={formData.stock_level}
+                           onChange={(e) => handleChange("stock_level", e.target.value)}
+                           className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
+                           style={{ height: "40px" }}>
+                      <option value="">Select Stock Level</option>
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                   </select>
+                   </div>
+                   </div>)}
 
-    <div className="flex flex-col gap-1">
-      <label className="font-semibold text-[14px] text-gray-700 pl-1">
-        Stock Level
-      </label>
+                {/* Expert Fields */}
+                {formData.accountType === "expert" && (
+                   <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-purple-50 border border-purple-100">
 
-      <select
-        value={formData.stock_level}
-        onChange={(e) => handleChange("stock_level", e.target.value)}
-        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
-        style={{ height: "40px" }}
-      >
-        <option value="">Select Stock Level</option>
-        <option value="beginner">Beginner</option>
-        <option value="intermediate">Intermediate</option>
-        <option value="advanced">Advanced</option>
-      </select>
-    </div>
+                   <h3 className="text-[16px] font-semibold text-purple-700"> Expert Information </h3>
 
-  </div>
-)}
+                   <div className="flex flex-col gap-1">
+                     <label className="font-semibold text-[14px] text-gray-700 pl-1"> Years of Experience </label>
 
-{/* Expert Fields */}
-{formData.accountType === "expert" && (
-  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-purple-50 border border-purple-100">
+                      <input type="number" placeholder="Enter years of experience" value={formData.experience_year} onChange={(e) => handleChange("experience_year", e.target.value)}
+                             className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+                             style={{ height: "40px" }}/>
+                   </div>
 
-    <h3 className="text-[16px] font-semibold text-purple-700">
-      Expert Information
-    </h3>
-
-    <div className="flex flex-col gap-1">
-      <label className="font-semibold text-[14px] text-gray-700 pl-1">
-        Years of Experience
-      </label>
-
-      <input
-        type="number"
-        placeholder="Enter years of experience"
-        value={formData.experience_year}
-        onChange={(e) =>
-          handleChange("experience_year", e.target.value)
-        }
-        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
-        style={{ height: "40px" }}
-      />
-    </div>
-
-    <div className="flex flex-col gap-1">
-      <label className="font-semibold text-[14px] text-gray-700 pl-1">
-        LinkedIn URL
-      </label>
-
-      <input
-        type="text"
-        placeholder="Enter LinkedIn profile URL"
-        value={formData.linked_in_url}
-        onChange={(e) =>
-          handleChange("linked_in_url", e.target.value)
-        }
-        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
-        style={{ height: "40px" }}
-      />
-    </div>
-
-  </div>
-)}
-                  {/* Risk Tolerance */}  
+                   <div className="flex flex-col gap-1">
+                     <label className="font-semibold text-[14px] text-gray-700 pl-1"> LinkedIn URL </label>
+                     <input type="text" placeholder="Enter LinkedIn profile URL" value={formData.linked_in_url}
+                            onChange={(e) => handleChange("linked_in_url", e.target.value)}
+                            className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+                            style={{ height: "40px" }}/>
+                     </div>
+                   </div>)}
+                {/* Risk Tolerance */}  
                 <div className="flex items-start gap-2">
                 <input
                   type="checkbox"
@@ -436,8 +403,8 @@ function RegistrationPage(){
                 </label>
               </div>
                 
-                {/* Submit */}
-                <button
+              {/* Submit */}
+              <button
                   type="submit"
                   className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all"
                   style={{
@@ -447,9 +414,8 @@ function RegistrationPage(){
                   }}
                 >
                   Create Account
-                </button>
-              </form>
-            )}
+              </button>
+            </form>)}
               {/* Sign In Link */}
             <div className="mt-6 text-center">
               <p className="text-gray-400">
