@@ -15,5 +15,5 @@ export const router = createBrowserRouter([
     {path: "/forum",              Component: ForumPage},
 
 
-    {path:"/adminpanel",               Component: AdminPanelPage}
+    {path:"/adminpanel",             Component: AdminPanelPage}
 ]);
