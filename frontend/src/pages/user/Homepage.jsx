@@ -5,7 +5,7 @@ import Footer from "../../components/Footer.jsx";
 import { motion } from "framer-motion";
 
 
-function Homepage() {
+function HomePage(){
 
   return (
     <motion.div 
@@ -27,4 +27,4 @@ function Homepage() {
     
   );
 }
-export default Homepage;
+export default HomePage; 
