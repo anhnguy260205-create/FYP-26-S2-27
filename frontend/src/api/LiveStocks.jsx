@@ -42,7 +42,9 @@ function LiveStocks() {
 
             updated[stock.s] = {
               price: stock.p,
-              volume: stock.v
+              close: stock.close ?? stock.p,
+              previousClose: stock.previousClose,
+              volume: stock.v ?? stock.volume
             };
 
           });
@@ -84,8 +86,20 @@ function LiveStocks() {
           <h2>{symbol}</h2>
 
           <p>
-            ${stock.price?.toFixed(2)}
+            Price: ${stock.price?.toFixed(2)}
           </p>
+
+          {stock.close !== undefined && (
+          <p>
+            Closing price: ${stock.close?.toFixed(2)}
+          </p>
+          )}
+
+          {stock.previousClose !== undefined && (
+          <p>
+            Previous close: ${stock.previousClose?.toFixed(2)}
+          </p>
+          )}
 
         </div>
 

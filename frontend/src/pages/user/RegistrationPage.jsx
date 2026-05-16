@@ -149,7 +149,7 @@ function RegistrationPage(){
       transition={{ duration: 0.8 }}>
 
         <Header/>
-        <div>
+        <main className="flex-1 p-7.5">
           <div className="flex items-center justify-center min-h-screen px-10 pt-24">
             <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
@@ -194,10 +194,9 @@ function RegistrationPage(){
                   Registered as a <span className="capitalize font-medium">{formData.accountType}</span>{" "}
                   · <span className="font-medium">{formData.riskLevel}</span> risk
                 </p>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-6 px-8 py-3 rounded-[14px] text-white font-medium text-[16px]"
-                  style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
+                <button onClick={() => setSubmitted(false)}
+                        className="mt-6 px-8 py-3 rounded-[14px] text-white font-medium text-[16px]"
+                        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
                 >
                   Back to Form
                 </button>
@@ -232,22 +231,15 @@ function RegistrationPage(){
                 {/* Full Name */}
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-[14px] text-gray-700 pl-1">Full Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.fullName}
-                    onChange={(e) => handleChange("fullName", e.target.value)}
-                    required
-                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                    style={{
-                      height: "40px",
-                      borderColor: "rgba(0,0,0,0.15)",
-                    }}
-                    onFocus={(e) => {
+                  <input type="text"  placeholder="Enter your full name"
+                         value={formData.fullName} onChange={(e) => handleChange("fullName", e.target.value)} required
+                         className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                         style={{height: "40px", borderColor: "rgba(0,0,0,0.15)",}}
+                         onFocus={(e) => {
                       e.target.style.borderColor = "#0092b8";
                       e.target.style.boxShadow = "0 0 0 3px rgba(0,146,184,0.15)";
                     }}
-                    onBlur={(e) => {
+                          onBlur={(e) => {
                       e.target.style.borderColor = "rgba(0,0,0,0.15)";
                       e.target.style.boxShadow = "none";
                     }}
@@ -474,12 +466,8 @@ function RegistrationPage(){
               <button
                   type="submit"
                   className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all"
-                  style={{
-                    height: "54px",
-                    background: "linear-gradient(90deg, #0092b8, #155dfc)",
-                    boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
-                  }}
-                >
+                  style={{height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
+                  }}>
                   Create Account
               </button>
             </form>)}
@@ -498,8 +486,7 @@ function RegistrationPage(){
             </div>
           </div>
           </div>
-        
-        </div>
+        </main>
         <Footer/>
        </motion.div>
     );
