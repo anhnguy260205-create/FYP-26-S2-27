@@ -14,6 +14,5 @@ export const router = createBrowserRouter([
     {path: "/investor/aiprediction", Component: AIPredictionPage},
     {path: "/forum",              Component: ForumPage},
 
-
     {path:"/adminpanel",             Component: AdminPanelPage}
 ]);
