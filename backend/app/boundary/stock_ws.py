@@ -70,32 +70,7 @@ def get_market_status():
 
     return "CLOSED"
 
-# Get historical data 
-def get_candles(symbol: str, resolution="5", days=1):
-    import time
-    now = int(time.time())
-    from_ts = now - (60 * 60 * 8)  # last 8 hours
-    
-    query = urlencode({
-        "symbol": symbol,
-        "resolution": resolution,  # 5min candles
-        "from": from_ts,
-        "to": now,
-        "token": FINNHUB_API_KEY
-    })
-    url = f"https://finnhub.io/api/v1/stock/candle?{query}"
-    with urlopen(url, timeout=10) as r:
-        data = json.loads(r.read().decode())
-    
-    if data.get("s") != "ok":
-        return []
-    
-    return [
-        {"time": t, "open": o, "high": h, "low": l, "close": c, "volume": v}
-        for t, o, h, l, c, v in zip(
-            data["t"], data["o"], data["h"], data["l"], data["c"], data["v"]
-        )
-    ]
+
 
 async def send_closing_prices(websocket: WebSocket):
     quotes = await asyncio.gather(
@@ -104,15 +79,10 @@ async def send_closing_prices(websocket: WebSocket):
             for symbol in stock_pool
         ]
     )
-    
-    candles = await asyncio.gather(*[
-        asyncio.to_thread(get_candles, s) for s in stock_pool
-    ])
 
     await send_json_to_client(websocket, {
         "type": "snapshot",
-        "data": quotes,
-        "candles": { stock_pool[i]: candles[i] for i in range(len(stock_pool)) }
+        "data": quotes
     })
 
 async def register_client(websocket: WebSocket):
