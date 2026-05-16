@@ -4,6 +4,8 @@ import json
 import asyncio
 import os
 from pathlib import Path
+from urllib.parse import urlencode
+from urllib.request import urlopen
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -26,6 +28,40 @@ stock_pool = [
     "INTC"
 ]
 
+def get_stock_quote(symbol: str):
+    query = urlencode({
+        "symbol": symbol,
+        "token": FINNHUB_API_KEY
+    })
+    url = f"https://finnhub.io/api/v1/quote?{query}"
+
+    with urlopen(url, timeout=10) as response:
+        quote = json.loads(response.read().decode("utf-8"))
+
+    return {
+        "s": symbol,
+        "p": quote.get("c"),
+        "close": quote.get("c"),
+        "previousClose": quote.get("pc"),
+        "open": quote.get("o"),
+        "high": quote.get("h"),
+        "low": quote.get("l"),
+        "volume": None
+    }
+
+async def send_closing_prices(websocket: WebSocket):
+    quotes = await asyncio.gather(
+        *[
+            asyncio.to_thread(get_stock_quote, symbol)
+            for symbol in stock_pool
+        ]
+    )
+
+    await websocket.send_json({
+        "type": "snapshot",
+        "data": quotes
+    })
+
 @router.websocket("/ws/stocks")
 async def websocket_endpoint(websocket: WebSocket):
 
@@ -42,6 +78,8 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
 
         try:
+
+            await send_closing_prices(websocket)
 
             finnhub_url = (
                 f"wss://ws.finnhub.io?token={FINNHUB_API_KEY}"

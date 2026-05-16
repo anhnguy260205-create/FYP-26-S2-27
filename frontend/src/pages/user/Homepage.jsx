@@ -14,11 +14,13 @@ function HomePage(){
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.8 }}
     >
-      <Link
+      <main className="flex-1 p-7.5">
+        <Link
         className="px-4 py-2 bg-blue-500 text-white rounded mt-4 self-center"
         to="/register">
         Show Registration Page
-      </Link>
+       </Link>
+      </main>
 
       <Footer/>
     </motion.div>
