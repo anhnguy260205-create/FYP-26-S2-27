@@ -1,5 +1,5 @@
-import GeneralHeader from "../../components/GeneralHeader.jsx";
-import Footer from "../../components/Footer.jsx";
+import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { useState } from "react";
@@ -154,8 +154,8 @@ function RealTimeDashBoardPage() {
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 
-        <SearchBar onSearch={setSearchQuery} />          {/* ← just passes query up */}
-        <StockTable stocks={filtered} />                 {/* ← receives filtered list */}
+        <SearchBar onSearch={setSearchQuery} />          
+        <StockTable stocks={filtered} />                 
       </main>
       <Footer />
     </motion.div>

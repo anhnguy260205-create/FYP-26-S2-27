@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import RegistrationPage from "./RegistrationPage.jsx";
-import Footer from "../../components/Footer.jsx";
+import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 
 
