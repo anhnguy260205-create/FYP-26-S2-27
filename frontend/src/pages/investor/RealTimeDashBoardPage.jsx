@@ -69,8 +69,9 @@ function companyName(symbol) {
   return names[symbol] ?? "";
 }
 
+// FIX 1: StockTable now accepts an array directly — no Object.values() needed
 function StockTable({ stocks }) {
-  const stockList = Object.values(stocks ?? {});
+  const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
 
   return (
     <div className="w-full mt-6 rounded-xl overflow-hidden border border-white/10">
@@ -137,9 +138,10 @@ function StockTable({ stocks }) {
     </div>
   );
 }
+
 function RealTimeDashBoardPage() {
   const { stocks, candles, marketStatus, lastUpdated, error } = useLiveStocks();
-  const [searchQuery, setSearchQuery] = useState("");  // ← lifted up
+  const [searchQuery, setSearchQuery] = useState("");
 
   const stockList = Object.values(stocks ?? {});
   const filtered = stockList.filter((s) =>
@@ -147,15 +149,17 @@ function RealTimeDashBoardPage() {
   );
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
+    // FIX 2: bg-linear-to-br → bg-gradient-to-br (valid Tailwind class)
+    <motion.div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
       <GeneralHeader />
       <main className="flex-1 p-7">
         <h1 className="text-2xl font-semibold mb-2">Real-Time Dashboard</h1>
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 
-        <SearchBar onSearch={setSearchQuery} />          
-        <StockTable stocks={filtered} />                 
+        <SearchBar onSearch={setSearchQuery} />
+        {/* FIX 1: pass filtered array directly — StockTable handles both array and object */}
+        <StockTable stocks={filtered} />
       </main>
       <Footer />
     </motion.div>
