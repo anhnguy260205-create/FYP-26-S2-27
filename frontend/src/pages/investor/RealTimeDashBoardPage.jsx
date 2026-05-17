@@ -3,10 +3,11 @@ import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { useState } from "react";
-
+import MiniChart from "../../components/MiniChart.jsx";
+import AStockDashBoardPage from "./AStockDashBoardPage.jsx";
+import { useNavigate } from "react-router-dom";
 function SearchBar({ onSearch }) {
   const [inputValue, setInputValue] = useState("");
-
   const handleSearch = () => onSearch(inputValue);
 
   return (
@@ -55,36 +56,28 @@ function MarketStatus({ marketStatus, lastUpdated }) {
 
 function companyName(symbol) {
   const names = {
-    AAPL: "Apple",
-    TSLA: "Tesla",
-    NVDA: "NVIDIA",
-    MSFT: "Microsoft",
-    GOOGL: "Alphabet",
-    AMZN: "Amazon",
-    META: "Meta",
-    AMD: "AMD",
-    NFLX: "Netflix",
-    INTC: "Intel",
+    AAPL: "Apple",     TSLA: "Tesla",     NVDA: "NVIDIA",
+    MSFT: "Microsoft", GOOGL: "Alphabet", AMZN: "Amazon",
+    META: "Meta",      AMD: "AMD",        NFLX: "Netflix",  INTC: "Intel",
   };
   return names[symbol] ?? "";
 }
 
-// FIX 1: StockTable now accepts an array directly — no Object.values() needed
-function StockTable({ stocks }) {
+// ── StockTable now accepts candles too ──────────────────────────────────────
+function StockTable({ stocks, candles }) {
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
-
+  const navigate = useNavigate();
   return (
-    <div className="w-full mt-6 rounded-xl overflow-hidden border border-white/10">
+    <div className="w-full mt-6 rounded-xl overflow-hidden border border-white/20">
 
-      {/* Header */}
-      <div
-        className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
-        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr" }}
-      >
+      {/* Header — 5 columns, added Trend */}
+      <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
+           style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr"}}>
         <span>Symbol</span>
         <span className="text-right">Price</span>
-        <span className="text-right">Chg</span>
-        <span className="text-right">% Chg</span>
+        <span className="text-right">Change</span>
+        <span className="text-right">% Change</span>
+        <span className="text-center">Trend (1D)</span>
       </div>
 
       {/* Rows */}
@@ -94,23 +87,20 @@ function StockTable({ stocks }) {
         </div>
       ) : (
         stockList.map((stock) => {
-          const chg =
-            stock.price && stock.previousClose
+          const chg = stock.price && stock.previousClose
               ? (stock.price - stock.previousClose).toFixed(3)
               : null;
           const pctChg =
             stock.price && stock.previousClose
               ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
               : null;
-          const isUp = chg === null ? true : Number(chg) >= 0;
+          const isUp  = chg === null ? true : Number(chg) >= 0;
           const color = isUp ? "text-green-400" : "text-red-400";
 
           return (
-            <div
-              key={stock.symbol}
-              className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
-              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr" }}
-            >
+
+            <div key={stock.symbol} onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${stock.symbol}`)} className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
+              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }} >
               {/* Symbol */}
               <div className="flex flex-col">
                 <span className="text-white font-semibold text-sm">{stock.symbol}</span>
@@ -131,6 +121,11 @@ function StockTable({ stocks }) {
               <span className={`text-right font-medium text-sm ${color}`}>
                 {pctChg !== null ? (isUp ? "+" : "") + pctChg + "%" : "—"}
               </span>
+
+              {/* Trend sparkline */}
+              <span className="flex justify-center items-center">
+                <MiniChart candles={candles?.[stock.symbol]} width={100} height={40}/>
+              </span>
             </div>
           );
         })
@@ -144,13 +139,12 @@ function RealTimeDashBoardPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const stockList = Object.values(stocks ?? {});
-  const filtered = stockList.filter((s) =>
+  const filtered  = stockList.filter((s) =>
     s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    // FIX 2: bg-linear-to-br → bg-gradient-to-br (valid Tailwind class)
-    <motion.div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
+    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
       <GeneralHeader />
       <main className="flex-1 p-7">
         <h1 className="text-2xl font-semibold mb-2">Real-Time Dashboard</h1>
@@ -158,10 +152,10 @@ function RealTimeDashBoardPage() {
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 
         <SearchBar onSearch={setSearchQuery} />
-        {/* FIX 1: pass filtered array directly — StockTable handles both array and object */}
-        <StockTable stocks={filtered} />
+        {/* Pass candles so each row can render its sparkline */}
+        <StockTable stocks={filtered} candles={candles} />
       </main>
-      <Footer />
+      <Footer/>
     </motion.div>
   );
 }
