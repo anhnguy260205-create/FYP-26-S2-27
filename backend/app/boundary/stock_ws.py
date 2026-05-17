@@ -5,11 +5,12 @@ import asyncio
 import os
 from pathlib import Path
 from urllib.request import urlopen, Request
+from urllib.parse import urlencode
 from dotenv import load_dotenv
 from typing import Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-
+import yfinance as yf
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env")
 
@@ -18,9 +19,8 @@ router = APIRouter()
 ALPACA_API_KEY    = os.getenv("ALPACA_API_KEY")
 ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
 
-# Alpaca endpoints
 ALPACA_DATA_REST_URL = "https://data.alpaca.markets/v2/stocks"
-ALPACA_DATA_WS_URL   = "wss://stream.data.alpaca.markets/v2/iex"  # free tier (IEX feed)
+ALPACA_DATA_WS_URL   = "wss://stream.data.alpaca.markets/v2/iex"
 # Paid SIP feed: wss://stream.data.alpaca.markets/v2/sip
 
 connected_clients: Dict[WebSocket, asyncio.Lock] = {}
@@ -28,48 +28,19 @@ clients_lock = asyncio.Lock()
 alpaca_task: Optional[asyncio.Task] = None
 
 stock_pool = [
-    "AAPL",
-    "TSLA",
-    "NVDA",
-    "MSFT",
-    "GOOGL",
-    "AMZN",
-    "META",
-    "AMD",
-    "NFLX",
-    "INTC"
+    "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
+    "AMZN", "META", "AMD",  "NFLX", "INTC"
 ]
 
 
-def get_stock_snapshot(symbol: str) -> dict:
-    """
-    Fetch latest snapshot for a symbol via Alpaca REST API.
-    Returns OHLCV + previous close — same shape as the old Finnhub quote.
-    """
-    url = f"{ALPACA_DATA_REST_URL}/{symbol}/snapshot?feed=iex"
-    req = Request(url, headers={
+def alpaca_headers() -> dict:
+    return {
         "APCA-API-KEY-ID":     ALPACA_API_KEY,
         "APCA-API-SECRET-KEY": ALPACA_API_SECRET,
-    })
-    with urlopen(req, timeout=10) as response:
-        data = json.loads(response.read().decode("utf-8"))
-
-    # Alpaca snapshot structure
-    daily_bar  = data.get("dailyBar")  or {}
-    prev_bar   = data.get("prevDailyBar") or {}
-    latest_trade = data.get("latestTrade") or {}
-
-    return {
-        "s":             symbol,
-        "p":             latest_trade.get("p"),        # latest trade price
-        "close":         daily_bar.get("c"),            # today's close / latest close
-        "previousClose": prev_bar.get("c"),             # previous day close
-        "open":          daily_bar.get("o"),
-        "high":          daily_bar.get("h"),
-        "low":           daily_bar.get("l"),
-        "volume":        daily_bar.get("v"),
     }
 
+
+# ── Market status ─────────────────────────────────────────────────────────────
 
 def get_market_status() -> str:
     eastern = ZoneInfo("America/New_York")
@@ -83,7 +54,181 @@ def get_market_status() -> str:
     return "CLOSED"
 
 
-# ── Client management ────────────────────────────────────────────────────────
+# ── yfinance helpers (market CLOSED) ─────────────────────────────────────────
+
+def get_snapshot_yfinance(symbol: str) -> dict:
+    """
+    Use yfinance to get latest price info when market is closed.
+    Returns the same shape as the Alpaca snapshot so the frontend
+    doesn't need to know which source was used.
+    """
+    ticker = yf.Ticker(symbol)
+    info   = ticker.fast_info   # lightweight, no heavy fundamentals
+
+    return {
+        "s":             symbol,
+        "p":             getattr(info, "last_price",         None),
+        "close":         getattr(info, "last_price",         None),
+        "previousClose": getattr(info, "previous_close",     None),
+        "open":          getattr(info, "open",                None),
+        "high":          getattr(info, "day_high",            None),
+        "low":           getattr(info, "day_low",             None),
+        "volume":        getattr(info, "last_volume",         None),
+    }
+
+
+def get_historical_bars_yfinance(symbol: str, limit: int = 30) -> list:
+    """
+    Fetch the last `limit` 1-hour bars via yfinance.
+    Used to seed sparklines when the market is closed.
+    Returns list of { time (ms), open, high, low, close, volume }.
+    """
+
+
+    ticker = yf.Ticker(symbol)
+    # period="7d" + interval="1h" gives ~42 trading hours (plenty for 30 bars)
+    df = ticker.history(period="7d", interval="1h")
+
+    if df.empty:
+        return []
+
+    # Take the last `limit` rows
+    df = df.tail(limit).reset_index()
+
+    bars = []
+    for _, row in df.iterrows():
+        # The index column is named "Datetime" for intraday data
+        dt = row.get("Datetime") or row.get("Date")
+        if dt is None:
+            continue
+
+        # Convert to UTC ms timestamp
+        if hasattr(dt, "timestamp"):
+            ts_ms = int(dt.timestamp() * 1000)
+        else:
+            ts_ms = int(datetime.fromisoformat(str(dt)).timestamp() * 1000)
+
+        bars.append({
+            "time":   ts_ms,
+            "open":   round(float(row["Open"]),   4),
+            "high":   round(float(row["High"]),   4),
+            "low":    round(float(row["Low"]),    4),
+            "close":  round(float(row["Close"]),  4),
+            "volume": int(row["Volume"]),
+        })
+
+    return bars
+
+
+# ── Alpaca REST helpers (market OPEN) ─────────────────────────────────────────
+
+def get_snapshot_alpaca(symbol: str) -> dict:
+    """Alpaca snapshot — latest price, OHLCV, previous close."""
+    url = f"{ALPACA_DATA_REST_URL}/{symbol}/snapshot?feed=iex"
+    req = Request(url, headers=alpaca_headers())
+    with urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode())
+
+    daily_bar    = data.get("dailyBar")    or {}
+    prev_bar     = data.get("prevDailyBar") or {}
+    latest_trade = data.get("latestTrade") or {}
+
+    return {
+        "s":             symbol,
+        "p":             latest_trade.get("p"),
+        "close":         daily_bar.get("c"),
+        "previousClose": prev_bar.get("c"),
+        "open":          daily_bar.get("o"),
+        "high":          daily_bar.get("h"),
+        "low":           daily_bar.get("l"),
+        "volume":        daily_bar.get("v"),
+    }
+
+
+def get_historical_bars_alpaca(symbol: str, limit: int = 30) -> list:
+    """Fetch last `limit` 1-hour bars from Alpaca REST."""
+    start = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    params = urlencode({
+        "timeframe": "1Hour",
+        "start":     start,
+        "limit":     limit,
+        "feed":      "iex",
+        "sort":      "asc",
+    })
+    url = f"{ALPACA_DATA_REST_URL}/{symbol}/bars?{params}"
+    req = Request(url, headers=alpaca_headers())
+
+    try:
+        with urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"Alpaca historical bars error for {symbol}: {e}")
+        return []
+
+    bars = data.get("bars") or []
+    return [
+        {
+            "time":   int(datetime.fromisoformat(
+                          b["t"].replace("Z", "+00:00")
+                      ).timestamp() * 1000),
+            "open":   b.get("o"),
+            "high":   b.get("h"),
+            "low":    b.get("l"),
+            "close":  b.get("c"),
+            "volume": b.get("v"),
+        }
+        for b in bars
+    ]
+
+
+# ── Unified data fetchers (auto-switch by market status) ──────────────────────
+
+def get_snapshot(symbol: str) -> dict:
+    """
+    Returns snapshot from Alpaca when market is OPEN,
+    falls back to yfinance when CLOSED.
+    """
+    if get_market_status() == "OPEN":
+        try:
+            return get_snapshot_alpaca(symbol)
+        except Exception as e:
+            print(f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
+            return get_snapshot_yfinance(symbol)
+    else:
+        try:
+            return get_snapshot_yfinance(symbol)
+        except Exception as e:
+            print(f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
+            return get_snapshot_alpaca(symbol)
+
+
+def get_historical_bars(symbol: str, limit: int = 30) -> list:
+    """
+    Returns historical bars from Alpaca when market is OPEN,
+    falls back to yfinance when CLOSED.
+    yfinance is more reliable for historical data outside trading hours.
+    """
+    if get_market_status() == "OPEN":
+        try:
+            bars = get_historical_bars_alpaca(symbol, limit)
+            if bars:
+                return bars
+        except Exception as e:
+            print(f"Alpaca bars failed for {symbol}: {e}")
+        # Fallback
+        return get_historical_bars_yfinance(symbol, limit)
+    else:
+        try:
+            bars = get_historical_bars_yfinance(symbol, limit)
+            if bars:
+                return bars
+        except Exception as e:
+            print(f"yfinance bars failed for {symbol}: {e}")
+        # Fallback
+        return get_historical_bars_alpaca(symbol, limit)
+
+
+# ── Client management ─────────────────────────────────────────────────────────
 
 async def register_client(websocket: WebSocket):
     async with clients_lock:
@@ -128,32 +273,36 @@ async def broadcast_to_clients(message: str):
         await unregister_client(websocket)
 
 
-# ── Snapshot on connect ───────────────────────────────────────────────────────
+# ── On-connect data burst ─────────────────────────────────────────────────────
 
 async def send_snapshot_prices(websocket: WebSocket):
-    """Fetch REST snapshots for all symbols and send as initial payload."""
+    """Send latest price snapshot — Alpaca if open, yfinance if closed."""
     quotes = await asyncio.gather(
-        *[asyncio.to_thread(get_stock_snapshot, symbol) for symbol in stock_pool]
+        *[asyncio.to_thread(get_snapshot, s) for s in stock_pool]
     )
     await send_json_to_client(websocket, {
-        "type": "snapshot",
-        "data": quotes
+        "type":   "snapshot",
+        "data":   list(quotes),
+        "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
     })
 
 
-# ── Alpaca WebSocket streaming ────────────────────────────────────────────────
+async def send_historical_candles(websocket: WebSocket):
+    """Send 30 historical 1-hour bars — Alpaca if open, yfinance if closed."""
+    history = await asyncio.gather(
+        *[asyncio.to_thread(get_historical_bars, s, 30) for s in stock_pool]
+    )
+    payload = {symbol: bars for symbol, bars in zip(stock_pool, history)}
+    await send_json_to_client(websocket, {
+        "type":   "history",
+        "data":   payload,
+        "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+    })
+
+
+# ── Alpaca WebSocket streaming (only meaningful when market OPEN) ─────────────
 
 async def run_alpaca_connection():
-    """
-    Maintain a persistent connection to Alpaca's data stream.
-    Authenticates, subscribes to trades + bars for every symbol in stock_pool,
-    then relays incoming messages to all connected frontend clients.
-
-    Alpaca message types:
-      T="t"  → trade tick  { S, p, s, t, ... }
-      T="b"  → minute bar  { S, o, h, l, c, v, t }
-      T="q"  → quote       { S, bp, ap, bs, as, t }
-    """
     while True:
         try:
             async with websockets.connect(
@@ -163,25 +312,20 @@ async def run_alpaca_connection():
             ) as alpaca_ws:
                 print("Connected to Alpaca data stream")
 
-                # 1. Authenticate
                 await alpaca_ws.send(json.dumps({
                     "action": "auth",
                     "key":    ALPACA_API_KEY,
                     "secret": ALPACA_API_SECRET,
                 }))
-                auth_resp = await alpaca_ws.recv()
-                print("Alpaca auth response:", auth_resp)
+                await alpaca_ws.recv()
 
-                # 2. Subscribe to trades + minute bars for all symbols
                 await alpaca_ws.send(json.dumps({
                     "action": "subscribe",
                     "trades": stock_pool,
-                    "bars":   stock_pool,   # real-time minute bars (OHLCV)
+                    "bars":   stock_pool,
                 }))
-                sub_resp = await alpaca_ws.recv()
-                print("Alpaca subscription response:", sub_resp)
+                await alpaca_ws.recv()
 
-                # 3. Stream messages to frontend clients
                 while True:
                     async with clients_lock:
                         has_clients = bool(connected_clients)
@@ -189,27 +333,24 @@ async def run_alpaca_connection():
                         return
 
                     raw = await alpaca_ws.recv()
-                    messages = json.loads(raw)   # Alpaca sends a JSON array
+                    messages = json.loads(raw)
 
                     for msg in messages:
                         msg_type = msg.get("T")
 
                         if msg_type == "t":
-                            # Real-time trade tick — map to frontend-friendly shape
-                            outbound = {
+                            await broadcast_to_clients(json.dumps({
                                 "type": "trade",
                                 "data": {
                                     "s": msg.get("S"),
-                                    "p": msg.get("p"),   # price
-                                    "v": msg.get("s"),   # size/volume
-                                    "t": msg.get("t"),   # timestamp
+                                    "p": msg.get("p"),
+                                    "v": msg.get("s"),
+                                    "t": msg.get("t"),
                                 }
-                            }
-                            await broadcast_to_clients(json.dumps(outbound))
+                            }))
 
                         elif msg_type == "b":
-                            # Minute bar — full OHLCV candle for charting
-                            outbound = {
+                            await broadcast_to_clients(json.dumps({
                                 "type": "bar",
                                 "data": {
                                     "s":      msg.get("S"),
@@ -220,15 +361,10 @@ async def run_alpaca_connection():
                                     "volume": msg.get("v"),
                                     "t":      msg.get("t"),
                                 }
-                            }
-                            await broadcast_to_clients(json.dumps(outbound))
+                            }))
 
                         elif msg_type == "error":
                             print("Alpaca stream error:", msg)
-                            await broadcast_to_clients(json.dumps({
-                                "type":    "error",
-                                "message": msg.get("msg", "Unknown Alpaca error"),
-                            }))
 
         except asyncio.CancelledError:
             print("Alpaca WebSocket task cancelled")
@@ -236,11 +372,7 @@ async def run_alpaca_connection():
 
         except Exception as e:
             print("Alpaca connection error:", e)
-            await broadcast_to_clients(json.dumps({
-                "type":    "error",
-                "message": str(e),
-            }))
-            await asyncio.sleep(5)   # back-off before reconnect
+            await asyncio.sleep(5)
 
 
 async def ensure_alpaca_connection():
@@ -267,19 +399,26 @@ async def websocket_endpoint(websocket: WebSocket):
     await register_client(websocket)
 
     try:
-        # Send REST snapshot immediately so the chart loads without waiting
+        market = get_market_status()
+
+        # 1. Latest prices (Alpaca if open, yfinance if closed)
         await send_snapshot_prices(websocket)
 
-        # Inform frontend of current market status
+        # 2. Historical bars to seed sparklines (always works regardless of market)
+        await send_historical_candles(websocket)
+
+        # 3. Market status banner
         await send_json_to_client(websocket, {
             "type":   "market_status",
-            "status": get_market_status(),
+            "status": market,
         })
 
-        # Start (or reuse) the shared Alpaca stream
-        await ensure_alpaca_connection()
+        # 4. Only start live WebSocket stream when market is open
+        if market == "OPEN":
+            await ensure_alpaca_connection()
+        else:
+            print("Market closed — skipping Alpaca WebSocket, using yfinance data only")
 
-        # Keep connection alive — frontend can send pings or control messages here
         while True:
             await websocket.receive_text()
 

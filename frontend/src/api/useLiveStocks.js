@@ -78,6 +78,33 @@ function useLiveStocks() {
 
             // ── live trade tick ───────────────────────────────────
             // FIX: response.data is a SINGLE object from Alpaca, not an array
+            if (response.type === "history") {
+                setLastUpdated(new Date().toLocaleTimeString());
+
+                setCandles((prev) => {
+                    const updated = { ...prev };
+
+                    Object.entries(response.data ?? {}).forEach(([symbol, bars]) => {
+                        if (!Array.isArray(bars) || bars.length === 0) return;
+
+                        updated[symbol] = bars
+                            .filter((bar) => Number.isFinite(Number(bar.close)))
+                            .map((bar) => ({
+                                time: Number(bar.time),
+                                open: Number(bar.open),
+                                high: Number(bar.high),
+                                low: Number(bar.low),
+                                close: Number(bar.close),
+                                volume: Number(bar.volume ?? 0),
+                            }));
+                    });
+
+                    return updated;
+                });
+
+                return;
+            }
+
             if (response.type === "trade") {
                 setLastUpdated(new Date().toLocaleTimeString());
 
