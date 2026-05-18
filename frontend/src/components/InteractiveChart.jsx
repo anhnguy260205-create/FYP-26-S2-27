@@ -251,8 +251,7 @@ return date.toLocaleDateString(
   }
 }, [symbol, requestRangeData]);
   return (
-    <div
-      style={{
+    <div style={{
         background: "#ffffff",
         borderRadius: "20px",
         padding: "20px",

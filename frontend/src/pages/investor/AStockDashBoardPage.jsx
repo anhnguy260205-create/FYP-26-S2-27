@@ -6,6 +6,7 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import MiniBoard from "../../components/MiniBoard.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -29,7 +30,7 @@ function companyName(symbol) {
 /* ─── Trade Buttons ────────────────────────────────────────── */
 function Button({ marketStatus }) {
   const navigate = useNavigate();
-  const isOpen = marketStatus === "open";
+  const isOpen = marketStatus === "OPEN";
   const handleTrade = (type) => {
     if (!isOpen) { alert("Market is closed. Cannot make any transactions."); return; }
     navigate(`/${type}`);
@@ -101,7 +102,7 @@ function WatchlistButton(){
 }
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
-function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
+function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) {
   //            Price data lives in `stock` (passed from stocks[selectedStock] in the page).
   const chg = stock?.price != null && stock?.previousClose != null
     ? (stock.price - stock.previousClose).toFixed(3)
@@ -111,6 +112,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
     : null;
   const isUp = chg === null ? true : Number(chg) >= 0;
   const changeColor = isUp ? "#34d399" : "#f87171";
+  const isMarketOpen = marketStatus === "OPEN";
 
   return (
     <motion.div
@@ -141,23 +143,28 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
           <span style={{
             width: "6px", height: "6px", borderRadius: "50%",
-            background: marketStatus === "open" ? "#34d399" : "#ef4444",
-            boxShadow: marketStatus === "open" ? "0 0 8px #34d399" : "0 0 8px #ef4444",
+            background: isMarketOpen ? "#34d399" : "#ef4444",
+            boxShadow: isMarketOpen ? "0 0 8px #34d399" : "0 0 8px #ef4444",
             display: "inline-block",
           }} />
           <span style={{
             fontFamily: "'DM Mono', monospace", fontSize: "11px",
-            color: marketStatus === "open" ? "#34d399" : "#ef4444",
+            color: isMarketOpen ? "#34d399" : "#ef4444",
             letterSpacing: "0.1em", textTransform: "uppercase",
           }}>
-            Market {marketStatus}
+            Market {marketStatus || "Loading"}
+          </span>
+          <p className="text-gray-400">|</p>
+          <span style={{
+            fontFamily: "'DM Mono', monospace", fontSize: "11px"}}>
+            Lasted update: {lastUpdated || "Loading..."}
           </span>
         </div>
       </div>
 
       {/* Centre: live price + change */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-        {/* BUG FIX 3: was toFix(3) — method is toFixed */}
+
         <span style={{
           fontFamily: "'DM Mono', monospace", fontSize: "28px", fontWeight: 700,
           color: changeColor, letterSpacing: "0.02em",
@@ -230,8 +237,7 @@ function AlertBoard({ symbol }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      style={{
-        width: "300px", flexShrink: 0,
+      style={{ width: "300px", flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
         padding: "20px", backdropFilter: "blur(12px)",
@@ -408,9 +414,11 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
 function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();     // string, e.g. "NVDA"
-  const { marketStatus, stocks, candles, requestRangeData } = useLiveStocks();
+  const { marketStatus, stocks, candles, requestRangeData, lastUpdated } = useLiveStocks();
   const stock = stocks[selectedStock];             // the live data object for this symbol
   const stockCandles = candles?.[selectedStock] ?? [];
+  const stockList = Object.values(stocks ?? {});
+
 
   return (
     <>
@@ -432,6 +440,7 @@ function AStockDashBoardPage() {
             selectedStock={selectedStock}
             stock={stock}
             marketStatus={marketStatus}
+            lastUpdated={lastUpdated}
           />
           <SecondAndThirdLevel
             symbol={symbol}
@@ -439,6 +448,7 @@ function AStockDashBoardPage() {
             stockCandles={stockCandles}
             requestRangeData={requestRangeData}
           />
+          <MiniBoard stocks ={stockList}/>
         </main>
 
         <Footer />

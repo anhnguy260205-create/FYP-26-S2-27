@@ -184,13 +184,20 @@ def get_snapshot_alpaca(symbol: str) -> dict:
     latest_trade = data.get("latestTrade")  or {}
 
     # avgVolume: pull from yfinance fast_info (fast — no heavy fundamentals fetch)
+    today_volume = None
     avg_volume = None
     try:
-        avg_volume = getattr(yf.Ticker(symbol).fast_info, "three_month_average_volume", None)
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="1d", interval="1d")
+
+        if not hist.empty:
+            today_volume = int(hist.iloc[-1]["Volume"])
+
+        avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
         if avg_volume is not None:
             avg_volume = int(avg_volume)
     except Exception as e:
-        print(f"yfinance avgVolume failed for {symbol}: {e}")
+        print(f"yfinance volume fields failed for {symbol}: {e}")
 
     return {
         "s":             symbol,
@@ -201,7 +208,7 @@ def get_snapshot_alpaca(symbol: str) -> dict:
         "high":          daily_bar.get("h"),
         "low":           daily_bar.get("l"),
         # IEX-only volume — will be ~10x lower than Google Finance
-        "volume":        daily_bar.get("v"),
+        "volume":        today_volume,
         "avgVolume":     avg_volume,
     }
 
