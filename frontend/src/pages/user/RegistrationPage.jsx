@@ -150,7 +150,7 @@ function RegistrationPage(){
 
         <Header/>
         <main className="flex-1 p-7.5">
-          <div className="flex items-center justify-center min-h-screen px-10 pt-24">
+          <div className="flex items-center justify-center min-h-screen px-24">
             <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
             <div

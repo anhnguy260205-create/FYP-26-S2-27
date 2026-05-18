@@ -1,243 +1,529 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+/* NORMALIZE + REMOVE DUPLICATES */
+function normalizeCandles(candles) {
+  const byTime = new Map();
+
+  candles.forEach((candle) => {
+    const time = Number(candle.time);
+
+    const close = Number(candle.close);
+
+    if (
+      !Number.isFinite(time) ||
+      !Number.isFinite(close)
+    ) {
+      return;
+    }
+
+    byTime.set(time, {
+      ...candle,
+
+      time,
+
+      open: Number(
+        candle.open ?? close
+      ),
+
+      high: Number(
+        candle.high ?? close
+      ),
+
+      low: Number(
+        candle.low ?? close
+      ),
+
+      close,
+
+      volume: Number(
+        candle.volume ?? 0
+      ),
+    });
+  });
+
+  return Array.from(byTime.values()).sort(
+    (a, b) => a.time - b.time
+  );
+}
 
 function useLiveStocks() {
-    const [stocks, setStocks] = useState({});
-    const [candles, setCandles] = useState({});
-    const [marketStatus, setMarketStatus] = useState("");
-    const [connectionStatus, setConnectionStatus] = useState("Connecting...");
-    const [error, setError] = useState("");
-    const [lastUpdated, setLastUpdated] = useState("");
+  const [stocks, setStocks] = useState(
+    {}
+  );
 
-    useEffect(() => {
-        const socket = new WebSocket("ws://127.0.0.1:8000/ws/stocks");
+  const [candles, setCandles] =
+    useState({});
 
-        socket.onopen = () => {
-            console.log("Connected");
-            setConnectionStatus("Connected");
-            setError("");
-        };
+  const [marketStatus, setMarketStatus] =
+    useState("");
 
-        socket.onmessage = (event) => {
-            const response = JSON.parse(event.data);
-            console.log(response);
+  const [
+    connectionStatus,
+    setConnectionStatus,
+  ] = useState("Connecting...");
 
-            // ── market status ─────────────────────────────────────
-            if (response.type === "market_status") {
-                setMarketStatus(response.status);
-                return;
-            }
+  const [error, setError] =
+    useState("");
 
-            // ── backend errors ────────────────────────────────────
-            if (response.type === "error") {
-                setError(response.message);
-                return;
-            }
+  const [lastUpdated, setLastUpdated] =
+    useState("");
 
-            // ── snapshot (on connect) ─────────────────────────────
-            // response.data is an ARRAY of stock objects
-            if (response.type === "snapshot") {
-                setLastUpdated(new Date().toLocaleTimeString());
+  const socketRef = useRef(null);
 
-                setStocks((prev) => {
-                    const updated = { ...prev };
-                    response.data.forEach((stock) => {
-                        updated[stock.s] = {
-                            symbol:        stock.s,
-                            price:         stock.p,
-                            open:          stock.open,
-                            high:          stock.high,
-                            low:           stock.low,
-                            close:         stock.close ?? stock.p,
-                            previousClose: stock.previousClose,
-                            volume:        stock.volume,
-                            avgVolume:     stock.avgVolume,
-                        };
-                    });
-                    return updated;
-                });
+  /* SEND RANGE REQUEST */
+  const requestRangeData = (
+    symbol,
+    range
+  ) => {
+    if (
+      socketRef.current &&
+      socketRef.current.readyState ===
+        WebSocket.OPEN
+    ) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "range",
+          symbol,
+          range,
+        })
+      );
+    }
+  };
 
-                setCandles((prev) => {
-                    const updated = { ...prev };
-                    response.data.forEach((stock) => {
-                        if (!updated[stock.s]) {
-                            // Seed an initial candle from the snapshot data
-                            const bucket = Math.floor(Date.now() / 300000) * 300000;
-                            updated[stock.s] = [{
-                                time:  bucket,
-                                open:  stock.open,
-                                high:  stock.high,
-                                low:   stock.low,
-                                close: stock.close ?? stock.p,
-                            }];
-                        }
-                    });
-                    return updated;
-                });
+  useEffect(() => {
+    const socket = new WebSocket(
+      "ws://127.0.0.1:8000/ws/stocks"
+    );
 
-                return;
-            }
+    socketRef.current = socket;
 
-            // ── live trade tick ───────────────────────────────────
-            // FIX: response.data is a SINGLE object from Alpaca, not an array
-            if (response.type === "history") {
-                setLastUpdated(new Date().toLocaleTimeString());
+    /* CONNECT */
+    socket.onopen = () => {
+      console.log("Connected");
 
-                setCandles((prev) => {
-                    const updated = { ...prev };
+      setConnectionStatus(
+        "Connected"
+      );
 
-                    Object.entries(response.data ?? {}).forEach(([symbol, bars]) => {
-                        if (!Array.isArray(bars) || bars.length === 0) return;
-
-                        updated[symbol] = bars
-                            .filter((bar) => Number.isFinite(Number(bar.close)))
-                            .map((bar) => ({
-                                time: Number(bar.time),
-                                open: Number(bar.open),
-                                high: Number(bar.high),
-                                low: Number(bar.low),
-                                close: Number(bar.close),
-                                volume: Number(bar.volume ?? 0),
-                            }));
-                    });
-
-                    return updated;
-                });
-
-                return;
-            }
-
-            if (response.type === "trade") {
-                setLastUpdated(new Date().toLocaleTimeString());
-
-                const trade = response.data; // { s, p, v, t }
-
-                // FIX: Alpaca sends t as ISO string → convert to ms first
-                const tradeMs = new Date(trade.t).getTime();
-                const bucket  = Math.floor(tradeMs / 300000) * 300000;
-
-                setStocks((prev) => {
-                    if (!prev[trade.s]) return prev;
-                    return {
-                        ...prev,
-                        [trade.s]: {
-                            ...prev[trade.s],
-                            price:  trade.p,
-                        },
-                    };
-                });
-
-                setCandles((prev) => {
-                    const list = prev[trade.s] ? [...prev[trade.s]] : [];
-                    const last = list.at(-1);
-
-                    if (last && last.time === bucket) {
-                        // Update the current candle
-                        list[list.length - 1] = {
-                            ...last,
-                            high:  Math.max(last.high, trade.p),
-                            low:   Math.min(last.low,  trade.p),
-                            close: trade.p,
-                            volume: Number(last.volume ?? 0) + Number(trade.v ?? 0),
-                        };
-                    } else {
-                        // Open a new candle
-                        list.push({
-                            time:  bucket,
-                            open:  trade.p,
-                            high:  trade.p,
-                            low:   trade.p,
-                            close: trade.p,
-                            volume: Number(trade.v ?? 0),
-                        });
-                    }
-
-                    return { ...prev, [trade.s]: list };
-                });
-
-                return;
-            }
-
-            // ── minute bar (OHLCV) ────────────────────────────────
-            // FIX: this message type was completely missing — it's the
-            // most reliable source for candlestick data from Alpaca
-            if (response.type === "bar") {
-                setLastUpdated(new Date().toLocaleTimeString());
-
-                const bar = response.data; // { s, open, high, low, close, volume, t }
-
-                // FIX: t is ISO string → convert to ms for candle time key
-                const barMs  = new Date(bar.t).getTime();
-                const bucket = Math.floor(barMs / 60000) * 60000; // 1-min buckets for bars
-
-                setStocks((prev) => {
-                    if (!prev[bar.s]) return prev;
-                    return {
-                        ...prev,
-                        [bar.s]: {
-                            ...prev[bar.s],
-                            price:  bar.close,
-                            open:   bar.open,
-                            high:   bar.high,
-                            low:    bar.low,
-                            close:  bar.close,
-                        },
-                    };
-                });
-
-                setCandles((prev) => {
-                    const list = prev[bar.s] ? [...prev[bar.s]] : [];
-                    const last = list.at(-1);
-
-                    if (last && last.time === bucket) {
-                        // Replace with authoritative OHLCV from Alpaca
-                        list[list.length - 1] = {
-                            time:  bucket,
-                            open:  bar.open,
-                            high:  bar.high,
-                            low:   bar.low,
-                            close: bar.close,
-                            volume: Number(bar.volume ?? 0),
-                        };
-                    } else {
-                        list.push({
-                            time:  bucket,
-                            open:  bar.open,
-                            high:  bar.high,
-                            low:   bar.low,
-                            close: bar.close,
-                            volume: Number(bar.volume ?? 0),
-                        });
-                    }
-
-                    return { ...prev, [bar.s]: list };
-                });
-
-                return;
-            }
-        };
-
-        socket.onerror = () => {
-            setError("Could not connect to stock websocket");
-            setConnectionStatus("Error");
-        };
-
-        socket.onclose = () => {
-            setConnectionStatus("Disconnected");
-        };
-
-        return () => {
-            socket.close();
-        };
-    }, []);
-
-    return {
-        stocks,
-        candles,
-        marketStatus,
-        connectionStatus,
-        error,
-        lastUpdated,
+      setError("");
     };
+
+    /* RECEIVE DATA */
+    socket.onmessage = (event) => {
+      const response = JSON.parse(
+        event.data
+      );
+
+      console.log(response);
+
+      /* MARKET STATUS */
+      if (
+        response.type ===
+        "market_status"
+      ) {
+        setMarketStatus(
+          response.status
+        );
+
+        return;
+      }
+
+      /* BACKEND ERROR */
+      if (
+        response.type === "error"
+      ) {
+        setError(response.message);
+
+        return;
+      }
+
+      /* SNAPSHOT */
+      if (
+        response.type ===
+        "snapshot"
+      ) {
+        setLastUpdated(
+          new Date().toLocaleTimeString()
+        );
+
+        setStocks((prev) => {
+          const updated = {
+            ...prev,
+          };
+
+          response.data.forEach(
+            (stock) => {
+              updated[stock.s] = {
+                symbol: stock.s,
+
+                price: stock.p,
+
+                open: stock.open,
+
+                high: stock.high,
+
+                low: stock.low,
+
+                close:
+                  stock.close ??
+                  stock.p,
+
+                previousClose:
+                  stock.previousClose,
+
+                volume:
+                  stock.volume,
+
+                avgVolume:
+                  stock.avgVolume,
+              };
+            }
+          );
+
+          return updated;
+        });
+
+        return;
+      }
+
+      /* HISTORICAL DATA */
+      if (
+        response.type ===
+        "history"
+      ) {
+        setLastUpdated(
+          new Date().toLocaleTimeString()
+        );
+
+        setCandles((prev) => {
+          const updated = {
+            ...prev,
+          };
+
+          Object.entries(
+            response.data ?? {}
+          ).forEach(
+            ([symbol, bars]) => {
+              if (
+                !Array.isArray(
+                  bars
+                )
+              )
+                return;
+
+              updated[symbol] =
+                normalizeCandles(
+                  bars.map((bar) => ({
+                    time: Number(
+                      bar.time
+                    ),
+
+                    open: Number(
+                      bar.open
+                    ),
+
+                    high: Number(
+                      bar.high
+                    ),
+
+                    low: Number(
+                      bar.low
+                    ),
+
+                    close: Number(
+                      bar.close
+                    ),
+
+                    volume: Number(
+                      bar.volume ??
+                        0
+                    ),
+                  }))
+                );
+            }
+          );
+
+          return updated;
+        });
+
+        return;
+      }
+
+      /* LIVE TRADE */
+      if (
+        response.type === "trade"
+      ) {
+        setLastUpdated(
+          new Date().toLocaleTimeString()
+        );
+
+        const trade =
+          response.data;
+
+        const tradeMs =
+          new Date(
+            trade.t
+          ).getTime();
+
+        /* 1 MINUTE BUCKET */
+        const bucket =
+          Math.floor(
+            tradeMs / 60000
+          ) * 60000;
+
+        /* UPDATE PRICE */
+        setStocks((prev) => {
+          if (!prev[trade.s])
+            return prev;
+
+          return {
+            ...prev,
+
+            [trade.s]: {
+              ...prev[
+                trade.s
+              ],
+
+              price: trade.p,
+            },
+          };
+        });
+
+        /* UPDATE CANDLE */
+        setCandles((prev) => {
+          const list = prev[
+            trade.s
+          ]
+            ? [
+                ...prev[
+                  trade.s
+                ],
+              ]
+            : [];
+
+          const last =
+            list.at(-1);
+
+          if (
+            last &&
+            last.time ===
+              bucket
+          ) {
+            list[
+              list.length - 1
+            ] = {
+              ...last,
+
+              high:
+                Math.max(
+                  last.high,
+                  trade.p
+                ),
+
+              low:
+                Math.min(
+                  last.low,
+                  trade.p
+                ),
+
+              close:
+                trade.p,
+
+              volume:
+                Number(
+                  last.volume ??
+                    0
+                ) +
+                Number(
+                  trade.size ??
+                    0
+                ),
+            };
+          } else {
+            list.push({
+              time: bucket,
+
+              open:
+                trade.p,
+
+              high:
+                trade.p,
+
+              low:
+                trade.p,
+
+              close:
+                trade.p,
+
+              volume:
+                Number(
+                  trade.size ??
+                    0
+                ),
+            });
+          }
+
+          return {
+            ...prev,
+
+            [trade.s]:
+              normalizeCandles(
+                list
+              ),
+          };
+        });
+
+        return;
+      }
+
+      /* ALPACA BAR */
+      if (
+        response.type === "bar"
+      ) {
+        setLastUpdated(
+          new Date().toLocaleTimeString()
+        );
+
+        const bar =
+          response.data;
+
+        const barMs =
+          new Date(
+            bar.t
+          ).getTime();
+
+        const bucket =
+          Math.floor(
+            barMs / 60000
+          ) * 60000;
+
+        setCandles((prev) => {
+          const list = prev[
+            bar.s
+          ]
+            ? [
+                ...prev[
+                  bar.s
+                ],
+              ]
+            : [];
+
+          const last =
+            list.at(-1);
+
+          if (
+            last &&
+            last.time ===
+              bucket
+          ) {
+            list[
+              list.length - 1
+            ] = {
+              time: bucket,
+
+              open:
+                Number(
+                  bar.open
+                ),
+
+              high:
+                Number(
+                  bar.high
+                ),
+
+              low: Number(
+                bar.low
+              ),
+
+              close:
+                Number(
+                  bar.close
+                ),
+
+              volume:
+                Number(
+                  bar.volume ??
+                    0
+                ),
+            };
+          } else {
+            list.push({
+              time: bucket,
+
+              open:Number(bar.open),
+
+              high:
+                Number(
+                  bar.high
+                ),
+
+              low: Number(
+                bar.low
+              ),
+
+              close:
+                Number(
+                  bar.close
+                ),
+
+              volume:
+                Number(
+                  bar.volume ??
+                    0
+                ),
+            });
+          }
+
+          return {
+            ...prev,
+
+            [bar.s]:
+              normalizeCandles(
+                list
+              ),
+          };
+        });
+
+        return;
+      }
+    };
+
+    /* SOCKET ERROR */
+    socket.onerror = () => {
+      setError(
+        "Could not connect to stock websocket"
+      );
+
+      setConnectionStatus(
+        "Error"
+      );
+    };
+
+    /* SOCKET CLOSE */
+    socket.onclose = () => {
+      setConnectionStatus(
+        "Disconnected"
+      );
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  return {
+    stocks,
+    candles,
+    marketStatus,
+    connectionStatus,
+    error,
+    lastUpdated,
+    requestRangeData,
+  };
 }
 
 export default useLiveStocks;
