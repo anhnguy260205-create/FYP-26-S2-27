@@ -81,7 +81,24 @@ function Button({ marketStatus }) {
     </div>
   );
 }
-
+/* Watchlist Feature */
+function WatchlistButton(){
+  const handleSubmit = async(e)=> {
+    e.preventDefault();
+    alert("The Feature is coming soon!!")
+  }
+  return (
+    <button onClick={handleSubmit}
+            style={{
+          width: "200px", marginTop: "16px", padding: "11px", borderRadius: "8px",
+          background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
+          fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
+          cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
+        }}>
+      + Add to Watchlist 
+    </button>
+  );
+}
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
 function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
@@ -145,8 +162,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
           fontFamily: "'DM Mono', monospace", fontSize: "28px", fontWeight: 700,
           color: changeColor, letterSpacing: "0.02em",
         }}>
-          {stock?.price != null ? `$${stock.price.toFixed(3)}` : "—"}
-        </span>
+          {stock?.price != null ? `$${stock.price.toFixed(3)}` : "—"} USD
+        </span> 
         <span className="inline"style={{
           color: changeColor, letterSpacing: "0.04em",
         }}>
@@ -155,8 +172,9 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus }) {
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-
+      <WatchlistButton/>
       <Button marketStatus={marketStatus} />
+      
     </motion.div>
   );
 }
@@ -319,7 +337,7 @@ function AlertBoard({ symbol }) {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -328,7 +346,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}
+      style={{ display: "flex", gap: "16px", alignItems: "flex-start",  flexShrink: 0}}
     >
       {/* LEFT COLUMN: stats strip + chart stacked */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
@@ -372,7 +390,11 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles }) {
           }}>
             Price Chart
           </p>
-          <InteractiveChart data={stockCandles} />
+          <InteractiveChart
+            data={stockCandles}
+            symbol={symbol}
+            requestRangeData={requestRangeData}
+          />
         </motion.div>
       </div>
 
@@ -386,7 +408,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles }) {
 function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();     // string, e.g. "NVDA"
-  const { marketStatus, stocks, candles } = useLiveStocks();
+  const { marketStatus, stocks, candles, requestRangeData } = useLiveStocks();
   const stock = stocks[selectedStock];             // the live data object for this symbol
   const stockCandles = candles?.[selectedStock] ?? [];
 
@@ -415,6 +437,7 @@ function AStockDashBoardPage() {
             symbol={symbol}
             stock={stock}
             stockCandles={stockCandles}
+            requestRangeData={requestRangeData}
           />
         </main>
 
