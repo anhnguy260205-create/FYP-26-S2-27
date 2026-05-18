@@ -50,6 +50,7 @@ function useLiveStocks() {
                             close:         stock.close ?? stock.p,
                             previousClose: stock.previousClose,
                             volume:        stock.volume,
+                            avgVolume:     stock.avgVolume,
                         };
                     });
                     return updated;
@@ -121,7 +122,6 @@ function useLiveStocks() {
                         [trade.s]: {
                             ...prev[trade.s],
                             price:  trade.p,
-                            volume: trade.v,
                         },
                     };
                 });
@@ -137,6 +137,7 @@ function useLiveStocks() {
                             high:  Math.max(last.high, trade.p),
                             low:   Math.min(last.low,  trade.p),
                             close: trade.p,
+                            volume: Number(last.volume ?? 0) + Number(trade.v ?? 0),
                         };
                     } else {
                         // Open a new candle
@@ -146,6 +147,7 @@ function useLiveStocks() {
                             high:  trade.p,
                             low:   trade.p,
                             close: trade.p,
+                            volume: Number(trade.v ?? 0),
                         });
                     }
 
@@ -178,7 +180,6 @@ function useLiveStocks() {
                             high:   bar.high,
                             low:    bar.low,
                             close:  bar.close,
-                            volume: bar.volume,
                         },
                     };
                 });
@@ -195,6 +196,7 @@ function useLiveStocks() {
                             high:  bar.high,
                             low:   bar.low,
                             close: bar.close,
+                            volume: Number(bar.volume ?? 0),
                         };
                     } else {
                         list.push({
@@ -203,6 +205,7 @@ function useLiveStocks() {
                             high:  bar.high,
                             low:   bar.low,
                             close: bar.close,
+                            volume: Number(bar.volume ?? 0),
                         });
                     }
 
