@@ -99,7 +99,8 @@ function StockTable({ stocks, candles }) {
 
           return (
 
-            <div key={stock.symbol} onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${stock.symbol}`)} className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
+            <div key={stock.symbol} onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${stock.symbol}`)} 
+                 className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
               style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }} >
               {/* Symbol */}
               <div className="flex flex-col">
