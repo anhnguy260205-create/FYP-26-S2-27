@@ -64,6 +64,11 @@ def get_snapshot_yfinance(symbol: str) -> dict:
     """
     ticker = yf.Ticker(symbol)
     info   = ticker.fast_info   # lightweight, no heavy fundamentals
+    ticker_info = {}
+    try:
+        ticker_info = ticker.info or {}
+    except Exception as e:
+        print(f"yfinance info failed for {symbol}: {e}")
 
     return {
         "s":             symbol,
@@ -74,15 +79,12 @@ def get_snapshot_yfinance(symbol: str) -> dict:
         "high":          getattr(info, "day_high",            None),
         "low":           getattr(info, "day_low",             None),
         "volume":        getattr(info, "last_volume",         None),
+        "avgVolume":     ticker_info.get("averageVolume"),
     }
 
 
 def get_historical_bars_yfinance(symbol: str, limit: int = 30) -> list:
-    """
-    Fetch the last `limit` 1-hour bars via yfinance.
-    Used to seed sparklines when the market is closed.
-    Returns list of { time (ms), open, high, low, close, volume }.
-    """
+
 
 
     ticker = yf.Ticker(symbol)
@@ -132,6 +134,11 @@ def get_snapshot_alpaca(symbol: str) -> dict:
     daily_bar    = data.get("dailyBar")    or {}
     prev_bar     = data.get("prevDailyBar") or {}
     latest_trade = data.get("latestTrade") or {}
+    avg_volume = None
+    try:
+        avg_volume = (yf.Ticker(symbol).info or {}).get("averageVolume")
+    except Exception as e:
+        print(f"yfinance average volume failed for {symbol}: {e}")
 
     return {
         "s":             symbol,
@@ -142,6 +149,7 @@ def get_snapshot_alpaca(symbol: str) -> dict:
         "high":          daily_bar.get("h"),
         "low":           daily_bar.get("l"),
         "volume":        daily_bar.get("v"),
+        "avgVolume":     avg_volume,
     }
 
 
