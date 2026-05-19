@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
 import image1 from "../../images/image1.png";
+
 function ImageStockMarketTradingCharts() {
   return (
     <div className="flex flex-col gap-6">
