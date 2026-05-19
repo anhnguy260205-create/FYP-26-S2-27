@@ -42,7 +42,6 @@ def alpaca_headers() -> dict:
 
 
 # ── Market status ──────────────────────────────────────────────────────────────
-
 def get_market_status() -> str:
     eastern = ZoneInfo("America/New_York")
     now = datetime.now(eastern)

@@ -2,14 +2,12 @@ import { createChart } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const RANGES = ["1D", "1W", "1M", "3M", "6M", "1Y"];
-const RANGE_LIMITS = {
-  "1D": 390,     // 1m candles
-  "1W": 390,
-  "1M": 30,      // 30 daily candles
-  "3M": 90,
-  "6M": 180,
-  "1Y": 52,      // weekly candles
-};
+const RANGE_LIMITS = { "1D": 390,     
+                       "1W": 390,
+                       "1M": 30,      
+                       "3M": 90,
+                       "6M": 180,
+                       "1Y": 52,};
 
 const ET_TIME_ZONE = "America/New_York";
 
@@ -17,7 +15,6 @@ function toUnixSeconds(time) {
   if (typeof time === "number") {
     return Math.floor(time > 10_000_000_000 ? time / 1000 : time);
   }
-
   const parsed = new Date(time).getTime();
   return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : NaN;
 }
@@ -40,7 +37,6 @@ function getEtDateParts(unixSeconds) {
 function formatChartTime(time, range = "1D", includeDateForIntraday = false) {
   const unixSeconds = toUnixSeconds(time);
   if (!Number.isFinite(unixSeconds)) return "";
-
   const get = getEtDateParts(unixSeconds);
   const clock = `${get("hour")}:${get("minute")}`;
 
@@ -57,6 +53,15 @@ function formatChartTime(time, range = "1D", includeDateForIntraday = false) {
   return `${get("day")} ${get("month")}`;
 }
 
+function getTimeScaleOptions(range) {
+  return {
+    borderVisible: false,
+    timeVisible: range === "1D" || range === "1W",
+    secondsVisible: false,
+    tickMarkFormatter: (time) => formatChartTime(time, range),
+  };
+}
+
 function filterByRange(data, range) {
   if (!data || data.length === 0) return [];
 
@@ -68,7 +73,6 @@ function filterByRange(data, range) {
 
 function normalizeChartData(data) {
   const byTime = new Map();
-
   data.forEach((bar) => {
     const time = toUnixSeconds(bar.time);
     const value = Number(bar.close);
@@ -85,7 +89,6 @@ function normalizeChartData(data) {
 
 export default function InteractiveChart({data = [], symbol = "STOCK", requestRangeData,}) {
   const [selectedRange, setSelectedRange] = useState("1D");
-
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
@@ -126,13 +129,7 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
         borderVisible: false,
       },
 
-      timeScale: {
-        borderVisible: false,
-        timeVisible: true,
-        secondsVisible: false,
-        tickMarkFormatter: (time) =>
-          formatChartTime(time, selectedRangeRef.current),
-      },
+      timeScale: getTimeScaleOptions(selectedRangeRef.current),
 
       crosshair: {
         vertLine: {
@@ -234,6 +231,12 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
     if (!seriesRef.current || data.length === 0) return;
     const filtered = filterByRange(data, selectedRange);
     const formatted = normalizeChartData(filtered);
+    chartRef.current.applyOptions({
+      localization: {
+        timeFormatter: (time) => formatChartTime(time, selectedRange, true),
+      },
+      timeScale: getTimeScaleOptions(selectedRange),
+    });
     seriesRef.current.setData(formatted);
     chartRef.current.timeScale().fitContent();
   }, [data, selectedRange]);
@@ -245,8 +248,7 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
     lastBar && firstBar
       ? (
           ((lastBar.close - firstBar.close) /
-            firstBar.close) *
-          100
+            firstBar.close) * 100
         ).toFixed(2)
       : null;
 
