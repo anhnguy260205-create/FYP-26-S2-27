@@ -11,6 +11,52 @@ const RANGE_LIMITS = {
   "1Y": 52,      // weekly candles
 };
 
+const ET_TIME_ZONE = "America/New_York";
+
+function toUnixSeconds(time) {
+  if (typeof time === "number") {
+    return Math.floor(time > 10_000_000_000 ? time / 1000 : time);
+  }
+
+  const parsed = new Date(time).getTime();
+  return Number.isFinite(parsed) ? Math.floor(parsed / 1000) : NaN;
+}
+
+function getEtDateParts(unixSeconds) {
+  const date = new Date(unixSeconds * 1000);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: ET_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+  }).formatToParts(date);
+
+  return (type) => parts.find((part) => part.type === type)?.value ?? "";
+}
+
+function formatChartTime(time, range = "1D", includeDateForIntraday = false) {
+  const unixSeconds = toUnixSeconds(time);
+  if (!Number.isFinite(unixSeconds)) return "";
+
+  const get = getEtDateParts(unixSeconds);
+  const clock = `${get("hour")}:${get("minute")}`;
+
+  if (range === "1D" || range === "1W") {
+    return includeDateForIntraday
+      ? `${get("day")} ${get("month")} ${clock}`
+      : clock;
+  }
+
+  if (range === "1Y") {
+    return `${get("month")} '${get("year")}`;
+  }
+
+  return `${get("day")} ${get("month")}`;
+}
+
 function filterByRange(data, range) {
   if (!data || data.length === 0) return [];
 
@@ -24,10 +70,7 @@ function normalizeChartData(data) {
   const byTime = new Map();
 
   data.forEach((bar) => {
-    const time =
-      typeof bar.time === "number"
-        ? Math.floor(bar.time / 1000)
-        : Math.floor(new Date(bar.time).getTime() / 1000);
+    const time = toUnixSeconds(bar.time);
     const value = Number(bar.close);
 
     if (!Number.isFinite(time) || !Number.isFinite(value)) return;
@@ -65,6 +108,11 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
         fontFamily: "Inter, sans-serif",
       },
 
+      localization: {
+        timeFormatter: (time) =>
+          formatChartTime(time, selectedRangeRef.current, true),
+      },
+
       grid: {
         vertLines: {
           color: "#f1f5f9",
@@ -79,40 +127,12 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
       },
 
       timeScale: {
-  borderVisible: false,
-  timeVisible: true,
-  secondsVisible: false,
-
-  tickMarkFormatter: (time) => {
-    const date = new Date(time * 1000);
-
-    // 1D and 1W -> show hours
-    if (selectedRangeRef.current === "1D" || selectedRangeRef.current === "1W") {
-      return `${date.getHours()}:${String(
-        date.getMinutes()
-      ).padStart(2, "0")}`;
-    }
-
-    if (
-  selectedRangeRef.current === "1Y"
-) {
-  return date.toLocaleDateString(
-    "en-US",
-    {
-      month: "short",
-    }
-  );
-}
-
-return date.toLocaleDateString(
-  "en-US",
-  {
-    day: "numeric",
-    month: "short",
-  }
-);
-  },
-},
+        borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+        tickMarkFormatter: (time) =>
+          formatChartTime(time, selectedRangeRef.current),
+      },
 
       crosshair: {
         vertLine: {
@@ -134,17 +154,11 @@ return date.toLocaleDateString(
     // GREEN AREA SERIES
     const series = chart.addAreaSeries({
       lineColor: "#16a34a",
-
       topColor: "rgba(22,163,74,0.25)",
-
       bottomColor: "rgba(22,163,74,0.01)",
-
       lineWidth: 2,
-
       crosshairMarkerVisible: true,
-
       crosshairMarkerRadius: 4,
-
       priceLineVisible: false,
     });
 
@@ -195,7 +209,7 @@ return date.toLocaleDateString(
         </div>
 
         <div style="color:#9ca3af;">
-          ${new Date(param.time * 1000).toLocaleString()}
+          ${formatChartTime(param.time, selectedRangeRef.current, true)}
         </div>
       `;
     });
@@ -218,16 +232,11 @@ return date.toLocaleDateString(
   // UPDATE DATA
   useEffect(() => {
     if (!seriesRef.current || data.length === 0) return;
-
     const filtered = filterByRange(data, selectedRange);
-
     const formatted = normalizeChartData(filtered);
-
     seriesRef.current.setData(formatted);
-
     chartRef.current.timeScale().fitContent();
   }, [data, selectedRange]);
-
   const visibleData = filterByRange(data, selectedRange);
   const lastBar = visibleData.at(-1);
   const firstBar = visibleData[0];
