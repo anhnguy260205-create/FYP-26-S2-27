@@ -86,7 +86,7 @@ function Button({ marketStatus }) {
 function WatchlistButton(){
   const handleSubmit = async(e)=> {
     e.preventDefault();
-    alert("The Feature is coming soon!!")
+    alert("The feature is coming soon!!")
   }
   return (
     <button onClick={handleSubmit}
@@ -103,7 +103,7 @@ function WatchlistButton(){
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
 function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) {
-  //            Price data lives in `stock` (passed from stocks[selectedStock] in the page).
+  //Price data lives in `stock` (passed from stocks[selectedStock] in the page).
   const chg = stock?.price != null && stock?.previousClose != null
     ? (stock.price - stock.previousClose).toFixed(3)
     : null;
@@ -255,7 +255,7 @@ function AlertBoard({ symbol }) {
       <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#475569", margin: "0 0 4px", lineHeight: 1.5 }}>
         Get notified when <span style={{ color: "#60a5fa" }}>{symbol}</span> hits your target.
       </p>
-
+      {/* Alert feature */}
       {submitted ? (
         <div style={{ textAlign: "center", padding: "24px 0" }}>
           <div style={{
