@@ -22,8 +22,9 @@ ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
 
 ALPACA_DATA_REST_URL = "https://data.alpaca.markets/v2/stocks"
 ALPACA_DATA_WS_URL   = "wss://stream.data.alpaca.markets/v2/iex"
-# Paid SIP feed: wss://stream.data.alpaca.markets/v2/sip
 
+
+# Store connected clients
 connected_clients: Dict[WebSocket, asyncio.Lock] = {}
 clients_lock = asyncio.Lock()
 alpaca_task: Optional[asyncio.Task] = None
@@ -41,7 +42,7 @@ def alpaca_headers() -> dict:
     }
 
 
-# ── Market status ──────────────────────────────────────────────────────────────
+# getting market status 
 def get_market_status() -> str:
     eastern = ZoneInfo("America/New_York")
     now = datetime.now(eastern)
@@ -57,19 +58,6 @@ def get_market_status() -> str:
 # ── yfinance helpers ───────────────────────────────────────────────────────────
 
 def get_snapshot_yfinance(symbol: str) -> dict:
-    """
-    Single yfinance call using .history() for all OHLCV fields.
-
-    Why history() and not fast_info?
-    - fast_info.last_volume is the last TRADE size, not the day's total volume.
-    - fast_info fields are inconsistent across symbols and market hours.
-    - history(period="2d") gives us today's bar AND the previous close,
-      all from the same source, so numbers are consistent with Google Finance.
-
-    Why period="2d"?
-    - We need previousClose, which is yesterday's close.
-    - period="1d" only returns today's bar — no yesterday.
-    """
     ticker = yf.Ticker(symbol)
 
     # One call: last 2 daily bars → today + yesterday
@@ -305,7 +293,7 @@ def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> li
 async def register_client(websocket: WebSocket):
     async with clients_lock:
         connected_clients[websocket] = asyncio.Lock()
-
+# Stop streaming data when no one uses
 async def unregister_client(websocket: WebSocket):
     global alpaca_task
     async with clients_lock:

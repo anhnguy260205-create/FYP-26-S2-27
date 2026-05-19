@@ -6,6 +6,7 @@ import AIPredictionPage from "./pages/investor/AIPredictionPage.jsx";
 import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
+import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 
 export const router = createBrowserRouter([
     {path: "/",                                                   Component: HomePage},
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
     {path: "/investor/realtimedashboard/astockdashboard/:symbol", Component: AStockDashBoardPage},
     {path: "/investor/aiprediction",                              Component: AIPredictionPage},
     {path: "/forum",                                              Component: ForumPage},
+    {path: "/investor/subscription",                              Component: SubscriptionPage},
 
     {path:"/adminpanel",                                          Component: AdminPanelPage}
 ]);
