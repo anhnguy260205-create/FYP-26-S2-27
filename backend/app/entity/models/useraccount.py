@@ -45,7 +45,10 @@ class UserAccount(Base):
             account_status="active",
             is_active=True
         )
-        session.add(new_user)
-        session.commit()
+        try:  
+          session.add(new_user)
+          session.commit()
+        except: 
+            session.rollback()
         return new_user.user_id
 
