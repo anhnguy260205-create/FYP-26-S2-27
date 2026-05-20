@@ -187,7 +187,7 @@ function SubscriptionPage() {
       <main className="flex-1 p-7.5">
         <div
           className="flex gap-50"
-          style={{ justifyContent: "center", alignItems: "center" }}
+          style={{ justifyContent: "center", alignItems: "center", paddingTop:"40px"}}
         >
           <FreeTier />
           <PremiumTier />
