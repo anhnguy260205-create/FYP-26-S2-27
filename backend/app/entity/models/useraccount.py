@@ -24,7 +24,7 @@ class UserAccount(Base):
     last_login = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
-
+    #Create user account 
     @staticmethod 
     def createAccount(username, full_name, email_address, password, phone_number, address)-> bool:
         # Check duplication 
@@ -51,4 +51,33 @@ class UserAccount(Base):
         except: 
             session.rollback()
         return new_user.user_id
+    
+    @staticmethod
+    def login(username, password)->dict:
+        # Validate user account 
+        matching_account = session.query(UserAccount).filter(
+           (UserAccount.username == username)&
+           (UserAccount.password == password)
+        ).first()
+        if not matching_account:
+           return {"success":False} 
+        # Update latest login 
+        matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+        try: 
+           session.commit()
+        except: 
+           session.rollback()
+        return {
+           "success": True,
+           "user": {
+              "user_id": matching_account.user_id,
+              "username": matching_account.username,
+              "full_name": matching_account.full_name,
+              "email": matching_account.email_address
+           }
+        }
+    def getUserType(username):
+       
+          
+    
 

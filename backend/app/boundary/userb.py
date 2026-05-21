@@ -2,7 +2,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController
+from app.control.controller.userc import CreateAccountController, LoginController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -20,7 +20,7 @@ class CreateAccountRequest(BaseModel):
     experience_year: Optional[Union[int, str]] = None
     linked_in_url: Optional[str] = None
 
-
+# Create user account 
 class CreateAccountPage:
     def __init__(self):
         self.controller = CreateAccountController()
@@ -58,4 +58,35 @@ def create_account(data: CreateAccountRequest):
         "success": True,
         "message": "Account created successfully",
         "user_id": result
+    }
+
+# Login 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+class LoginPage: 
+    def _init_(self):
+        self.controller = LoginController()
+    def login(self,username, password): 
+        return self.controller.login(username, password)
+@router.post("/login")
+def login(data: LoginRequest):
+
+    boundary = LoginPage()
+
+    result = boundary.login(
+        data.username,
+        data.password
+    )
+
+    if not result.get("success"):
+        return {
+            "success": False,
+            "message": "Invalid username or password"
+        }
+
+    return {
+        "success": True,
+        "message": "Login successful",
+        "user": result.get("user")
     }
