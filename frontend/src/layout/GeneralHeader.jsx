@@ -41,9 +41,11 @@ function DropDownMenu() {
 
 function Profile() {
   const navigate = useNavigate();
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser")
+  );
   return (
     <button
-      onClick={() => navigate("/edit-profile")}
       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       style={{ height: "41px", padding: "0 16px", color: "#00D3F2", fontSize: "14px", fontWeight: 600, gap: "8px" }}
     >
@@ -53,7 +55,9 @@ function Profile() {
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       </div>
-      Kim Anh
+            
+      {/* Dynamic username */}
+      {currentUser?.username || "Guest"}
     </button>
   );
 }

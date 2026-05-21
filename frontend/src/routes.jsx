@@ -8,16 +8,34 @@ import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 export const router = createBrowserRouter([
     {path: "/",                                                   Component: HomePage},
     {path: "/register",                                           Component: RegistrationPage},
     {path: "/login",                                              Component: LoginPage},
-    {path: "/investor/realtimedashboard",                         Component: RealTimeDashBoardPage},
-    {path: "/investor/realtimedashboard/astockdashboard/:symbol", Component: AStockDashBoardPage},
-    {path: "/investor/aiprediction",                              Component: AIPredictionPage},
-    {path: "/forum",                                              Component: ForumPage},
-    {path: "/investor/subscription",                              Component: SubscriptionPage},
-
-    {path:"/adminpanel",                                          Component: AdminPanelPage}
+    {
+        path: "/investor/realtimedashboard",
+        element: <ProtectedRoute allowedRoles={["investor"]}><RealTimeDashBoardPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/realtimedashboard/astockdashboard/:symbol",
+        element: <ProtectedRoute allowedRoles={["investor"]}><AStockDashBoardPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/aiprediction",
+        element: <ProtectedRoute allowedRoles={["investor"]}><AIPredictionPage /></ProtectedRoute>
+    },
+    {
+        path: "/forum",
+        element: <ProtectedRoute allowedRoles={["investor", "expert"]}><ForumPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/subscription",
+        element: <ProtectedRoute allowedRoles={["investor"]}><SubscriptionPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel",
+        element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
+    },
 ]);

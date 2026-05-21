@@ -65,7 +65,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 class LoginPage: 
-    def _init_(self):
+    def __init__(self):
         self.controller = LoginController()
     def login(self,username, password): 
         return self.controller.login(username, password)

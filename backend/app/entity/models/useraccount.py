@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 datetime.now(ZoneInfo("Asia/Singapore"))
 
+
 from app.entity.database.session import session
 
 
@@ -53,31 +54,44 @@ class UserAccount(Base):
         return new_user.user_id
     
     @staticmethod
-    def login(username, password)->dict:
-        # Validate user account 
-        matching_account = session.query(UserAccount).filter(
-           (UserAccount.username == username)&
-           (UserAccount.password == password)
-        ).first()
-        if not matching_account:
-           return {"success":False} 
-        # Update latest login 
-        matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
-        try: 
-           session.commit()
-        except: 
-           session.rollback()
-        return {
-           "success": True,
-           "user": {
-              "user_id": matching_account.user_id,
-              "username": matching_account.username,
-              "full_name": matching_account.full_name,
-              "email": matching_account.email_address
-           }
+    def login(username, password) -> dict:
+     # Local import to avoid circular import
+     from app.entity.models.expert import Expert
+     from app.entity.models.investor import Investor
+     matching_account = session.query(UserAccount).filter(
+        (UserAccount.username == username) &
+        (UserAccount.password == password)
+    ).first()
+ 
+     if not matching_account:
+        return {"success": False}
+
+    # Update last login
+     matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+     try:
+        session.commit()
+     except:
+        session.rollback()
+
+    # Determine role by checking sub-tables
+     role = "admin"  # default if not found in investor or expert
+     investor = session.query(Investor).filter(Investor.user_id == matching_account.user_id).first()
+     expert = session.query(Expert).filter(Expert.user_id == matching_account.user_id).first()
+     if investor:
+        role = "investor"
+     elif expert:
+        role = "expert"
+ 
+     return {
+        "success": True,
+        "user": {
+            "user_id": matching_account.user_id,
+            "username": matching_account.username,
+            "full_name": matching_account.full_name,
+            "email": matching_account.email_address,
+            "role": role  # ← investor / expert / admin
         }
-    def getUserType(username):
-       
+    }
           
     
 

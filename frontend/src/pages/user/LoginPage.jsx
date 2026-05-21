@@ -82,43 +82,40 @@ function LoginPage(){
        password: "",
      });
 
-    const [submitted, setSubmitted] = useState(false);
-    // Update data into React frontend
     const handleChange = (field, value) => {
-      setFormData((prev) => ({
-      ...prev,
-      [field]: value,}));
-     };
-    // validate form data and handle submission
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+     
     const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const payload = {
+      username: formData.username,
+      password: formData.password,
+    };
 
-      e.preventDefault();
+    const result = await loginAccount(payload);
 
-      try {
+    if (!result.success) {
+      alert(result.message || "Invalid username or password");
+      return;
+    }
 
-      const payload = {
-         username: formData.username,
-         password: formData.password,
+    localStorage.setItem("currentUser", JSON.stringify(result.user));
 
-       };
+    //  Redirect based on role
+    const role = result.user.role;
+    if (role === "investor") navigate("/investor/realtimedashboard");
+    else if (role === "expert") navigate("/forum");
+    else if (role === "admin") navigate("/adminpanel");
+    else alert("Unknown role: " + role);
 
-
-      const result = await loginAccount(payload);
-
-      console.log(result);
-      if (!result.success) {
-         alert(result.message || "Invalid username or password");
-         return;
-      }
-
-      localStorage.setItem("currentUser", JSON.stringify(result.user));
-      alert(result.message || "Login successful");
-      setSubmitted(true);
-      navigate("/investor/realtimedashboard");
-      } catch (error) {
-      console.error(error);
-      alert("Failed to login");
-     }};
+  } catch (error) {
+    console.error(error);
+    alert("Failed to login");
+  }
+};
+    
     return(
       <motion.div 
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
@@ -149,28 +146,7 @@ function LoginPage(){
              </p>
             </div>
 
-            {submitted ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-                  style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
-                >
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h2 className="font-bold text-[28px] text-black mb-2">Login Successful!</h2>
-                <p className="text-gray-600 text-[17px] mb-1">
-                  Welcome, <span className="font-semibold" style={{ color: "#0092b8" }}>{formData.username}</span>
-                </p>
-                <button onClick={() => setSubmitted(false)}
-                        className="mt-6 px-8 py-3 rounded-[14px] text-white font-medium text-[16px]"
-                        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
-                >
-                  Back to Login
-                </button>
-              </div>
-            ) : (
+            
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 {/* Username */}
                 <div className="flex flex-col gap-1">
@@ -200,7 +176,10 @@ function LoginPage(){
 
                 {/* Password */}
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
+                  <div className="flex justify-between">
+                    <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
+                    <label className="text-blue-700 text-[14px]" onClick={()=>navigate("#")}> Forget password?</label>
+                  </div>
                   <input
                     type="password"
                     placeholder="Enter your password"
@@ -232,7 +211,7 @@ function LoginPage(){
                   }}>
                   Sign In 
               </button>
-            </form>)}
+            </form>
               {/* Create Account button — cyan gradient */}
                 <button
                   type="button"
@@ -243,7 +222,7 @@ function LoginPage(){
                     borderRadius: "12px",
                     backgroundImage: "linear-gradient(174.015deg, rgb(2,6,24) 0%, rgb(22,36,86) 50%, rgb(15,23,43) 100%)",
                     boxShadow: "0px 10px 10px rgba(0,184,219,0.3)",
-                    marginTop: "4px",
+                    marginTop: "12px"
                   }}
                 >
                   Create Account
@@ -258,5 +237,5 @@ function LoginPage(){
         <Footer/>
        </motion.div>
     );
-}
+  }
 export default LoginPage;
