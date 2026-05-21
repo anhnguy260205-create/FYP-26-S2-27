@@ -1,5 +1,6 @@
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
+from app.entity.models.useraccount import UserAccount
 
 class CreateAccountController:
     def createAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url) -> bool:
@@ -15,3 +16,7 @@ class CreateAccountController:
             experience_year = int(experience_year)
             return Expert.createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url)
         return False
+
+class LoginController: 
+    def login(self, username, password):
+        return UserAccount.login(username, password)
