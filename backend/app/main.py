@@ -5,6 +5,7 @@ from app.boundary.userb import router as user_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.boundary.stock_ws import router as stock_ws_router
+from app.boundary.predictionb import router as prediction_router
 
 
 
@@ -23,6 +24,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(user_router)
 app.include_router(stock_ws_router)
+app.include_router(prediction_router)
 
 @app.get("/")
 def home():
