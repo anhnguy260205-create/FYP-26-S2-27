@@ -1,4 +1,7 @@
+import logo from "../images/logo.png";
+import { useNavigate } from "react-router-dom";
 function Header(){
+    const navigate = useNavigate();
     return(
         <div
       className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
@@ -6,13 +9,8 @@ function Header(){
     >
  
       <div className="flex items-center gap-2 cursor-pointer" >
+      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
     
-        <span
-          className="font-bold text-[20px] bg-clip-text text-transparent whitespace-nowrap"
-          style={{ backgroundImage: "linear-gradient(90deg, rgb(0,211,243) 0%, rgb(81,162,255) 100%)" }}
-        >
-          Deskstock
-        </span>
       </div>
 
       <div className="flex items-center gap-8">

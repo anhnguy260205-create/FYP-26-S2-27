@@ -483,7 +483,7 @@ function RegistrationPage(){
           </div>
           </div>
         </main>
-        <Footer/>
+
        </motion.div>
     );
 }

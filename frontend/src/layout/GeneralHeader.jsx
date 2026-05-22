@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import logo from "../images/logo.png";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -72,6 +73,7 @@ function ProfileButton() {
 }
 
 function GeneralHeader() {
+  const navigate = useNavigate();
   const navLinks = [
     {
       label: "DashBoard",
@@ -112,14 +114,7 @@ function GeneralHeader() {
     <div className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
          style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
 
-      <div className="flex items-center gap-2 cursor-pointer">
-        <span
-          className="font-bold text-[20px] bg-clip-text text-transparent whitespace-nowrap"
-          style={{ backgroundImage: "linear-gradient(90deg, rgb(0,211,243) 0%, rgb(81,162,255) 100%)" }}
-        >
-          Deskstock
-        </span>
-      </div>
+      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
 
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (
