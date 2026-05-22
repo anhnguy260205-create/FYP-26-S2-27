@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import RegistrationPage from "./RegistrationPage.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import Header from "../../layout/Header.jsx";
 
 function DynamicFeatureBubbleHero() {
+  const navigate = useNavigate();
   const features = [
     {
       title: "AI Assistant",
@@ -24,10 +25,10 @@ function DynamicFeatureBubbleHero() {
       floatDelay: "1.75s",
     },
     {
-      title: "Portfolio",
-      desc: "Track investments",
+      title: "AI Predictions",
+      desc: "Future market insights",
       size: 150,
-      target: { bottom: "9%", left: "10%" },
+      target: { bottom: "20%", left: "20%" },
       fadeDelay: "0.3s",
       floatDelay: "1.9s",
     },
@@ -40,8 +41,8 @@ function DynamicFeatureBubbleHero() {
       floatDelay: "2.05s",
     },
     {
-      title: "Analytics",
-      desc: "Deep data insights",
+      title: "Professional Experts",
+      desc: "Insights from industry leaders",
       size: 155,
       target: { top: "40%", left: "4%" },
       fadeDelay: "0.6s",
@@ -62,10 +63,10 @@ function DynamicFeatureBubbleHero() {
     // Each bubble's final resting place is its `target` styles (top/left/bottom/right)
     // We animate using translate so absolute position stays at 50%/50% then moves
     const moves = [
-      { tx: "-38vw", ty: "-38vh" }, // top-left
-      { tx: "38vw",  ty: "-38vh" }, // top-right
-      { tx: "-38vw", ty: "38vh"  }, // bottom-left
-      { tx: "38vw",  ty: "38vh"  }, // bottom-right
+      { tx: "-20vw", ty: "-32vh" }, // top-left
+      { tx: "38vw",  ty: "-20vh" }, // top-right
+      { tx: "-10vw", ty: "40vh"  }, // bottom-left
+      { tx: "36vw",  ty: "30vh"  }, // bottom-right
       { tx: "-40vw", ty: "0vh"   }, // mid-left
     ];
 
@@ -88,13 +89,15 @@ function DynamicFeatureBubbleHero() {
     <div
       style={{
         position: "relative",
-        height: "100vh",
+        height: "130vh",
         width: "100%",
         overflow: "hidden",
         color: "white",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        marginTop: "-25vh",
+        marginBottom: "-20vh",
       }}
     >
       {/* Background glow */}
@@ -126,7 +129,7 @@ function DynamicFeatureBubbleHero() {
           zIndex: 20,
           textAlign: "center",
           padding: "0 1.5rem",
-          maxWidth: 520,
+          maxWidth: "700px",
         }}
       >
         <h1
@@ -156,8 +159,11 @@ function DynamicFeatureBubbleHero() {
           Explore powerful tools floating around your financial universe.
         </p>
 
-        <button
+        <div className="flex gap-4 justify-center">
+          <button
+          onClick={() => navigate("/register")}
           style={{
+            width: "150px",
             padding: "0.75rem 2rem",
             borderRadius: 14,
             background: "#06b6d4",
@@ -173,6 +179,26 @@ function DynamicFeatureBubbleHero() {
         >
           Get Started
         </button>
+        <button
+          onClick={() => navigate("/login")}
+          style={{
+            padding: "0.75rem 2rem",
+            width: "150px",
+            borderRadius: 14,
+            background: "#eab308",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "1rem",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 20px rgba(250,204,21,0.4)",
+          }}
+          onMouseEnter={(e) => (e.target.style.background = "#f59e0b")}
+          onMouseLeave={(e) => (e.target.style.background = "#facc15")}
+        >
+          Login
+        </button>
+        </div>
       </div>
 
       {/* Feature bubbles — all anchored at 50%/50%, moved via translate */}
@@ -185,7 +211,7 @@ function DynamicFeatureBubbleHero() {
             left: "50%",
             width: feature.size,
             height: feature.size,
-            animation: `spreadOut${index} 1.4s cubic-bezier(0.22, 1, 0.36, 1) ${feature.fadeDelay} forwards, floatY${index} 5s ease-in-out ${feature.floatDelay} infinite`,
+            animation: `spreadOut${index} 1.4s cubic-bezier(0.22, 1, 0.36, 1) ${feature.fadeDelay} forwards, floatY${index} 4s ease-in-out ${feature.floatDelay} infinite`,
           }}
         >
           <div
@@ -193,8 +219,8 @@ function DynamicFeatureBubbleHero() {
               position: "absolute",
               inset: 0,
               borderRadius: "50%",
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
+              background:  "rgba(59,130,246,0.22)",
+              border:  "1px solid rgba(59,130,246,0.22)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               overflow: "hidden",
@@ -214,15 +240,7 @@ function DynamicFeatureBubbleHero() {
                 background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(59,130,246,0.08))",
               }}
             />
-            <div
-              style={{
-                position: "absolute",
-                inset: 8,
-                borderRadius: "50%",
-                border: "1px solid rgba(34,211,238,0.25)",
-                animation: "spin 10s linear infinite",
-              }}
-            />
+            
             <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0.5rem" }}>
               <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "white" }}>
                 {feature.title}
@@ -245,6 +263,9 @@ function DynamicFeatureBubbleHero() {
     </div>
   );
 }
+function MarketDemo(){
+
+}
 
 function HomePage(){
 
@@ -255,8 +276,9 @@ function HomePage(){
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6 }}
     >
+      <Header/>
       <main className="flex-1 p-7.5">
-       <Header/>
+
        <DynamicFeatureBubbleHero/>
       </main>
 

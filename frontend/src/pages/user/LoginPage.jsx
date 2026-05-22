@@ -125,7 +125,7 @@ function LoginPage(){
 
         <Header/>
         <main className="flex-1 p-7.5">
-          <div className="flex items-center justify-center min-h-screen px-24">
+          <div className="flex items-center justify-center min-h-screen px-24" style={{marginTop:"-80px", paddingBottom:"-80px"}}>
             <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
             <div
@@ -234,7 +234,6 @@ function LoginPage(){
           </div>
           </div>
         </main>
-        <Footer/>
        </motion.div>
     );
   }
