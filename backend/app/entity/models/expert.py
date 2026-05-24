@@ -19,7 +19,15 @@ class Expert(Base):
 
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url)->bool:
-        user_id = UserAccount.createAccount(username=username, full_name= full_name, email_address= email_address, password= password, phone_number=phone_number, address=address)
+        user_id = UserAccount.createAccount(
+            username=username,
+            full_name=full_name,
+            email_address=email_address,
+            password=password,
+            phone_number=phone_number,
+            address=address,
+            profile_name="expert"
+        )
         if user_id == False:
             return False 
         try:
@@ -31,7 +39,7 @@ class Expert(Base):
             session.add(expert)
             session.commit()
             print("EXPERT CREATED")
-            return True
+            return user_id
         except Exception as e:
             session.rollback()
             print("EXPERT ERROR:", e)

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.boundary.userb import router as user_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
+from app.entity.models.userprofile import seed_profiles
 from app.boundary.stock_ws import router as stock_ws_router
 
 
@@ -20,6 +21,7 @@ app.add_middleware(
 
 # Create database tables based on the defined models
 Base.metadata.create_all(bind=engine)
+seed_profiles()
 
 app.include_router(user_router)
 app.include_router(stock_ws_router)

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
 import image1 from "../../images/image1.png";
-
+import { useNavigate } from "react-router-dom";
 function ImageStockMarketTradingCharts() {
   return (
     <div className="flex flex-col gap-6">
@@ -73,7 +73,9 @@ function ImageStockMarketTradingCharts() {
     </div>
   );
 }
+
 function RegistrationPage(){
+    const navigate = useNavigate();
     // Store form data in React state 
     const [formData, setFormData] = useState({
        role: "",
@@ -135,8 +137,7 @@ function RegistrationPage(){
          alert(result.message || "Account already exists");
          return;
       }
-
-      alert(result.message || "Account created successfully");
+      navigate("/login");
       setSubmitted(true);
       } catch (error) {
       console.error(error);
@@ -172,32 +173,7 @@ function RegistrationPage(){
              </p>
             </div>
 
-            {submitted ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-                  style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
-                >
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h2 className="font-bold text-[28px] text-black mb-2">Account Created!</h2>
-                <p className="text-gray-600 text-[17px] mb-1">
-                  Welcome, <span className="font-semibold" style={{ color: "#0092b8" }}>{formData.username}</span>
-                </p>
-                <p className="text-gray-500 text-[15px]">
-                  Registered as a <span className="capitalize font-medium">{formData.accountType}</span>{" "}
-                  · <span className="font-medium">{formData.riskLevel}</span> risk
-                </p>
-                <button onClick={() => setSubmitted(false)}
-                        className="mt-6 px-8 py-3 rounded-[14px] text-white font-medium text-[16px]"
-                        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
-                >
-                  Back to Form
-                </button>
-              </div>
-            ) : (
+            
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 {/* Username */}
                 <div className="flex flex-col gap-1">
@@ -466,12 +442,12 @@ function RegistrationPage(){
                   }}>
                   Create Account
               </button>
-            </form>)}
+            </form>
               {/* Sign In Link */}
             <div className="mt-6 text-center">
               <p className="text-gray-400">
                 Already have an account?{' '}
-                <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors font-semibold">
+                <a href="/login" className="text-blue-500 hover:text-blue-600 transition-colors font-semibold">
                   Sign In
                 </a>
               </p>

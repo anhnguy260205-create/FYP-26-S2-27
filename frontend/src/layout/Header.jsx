@@ -9,7 +9,7 @@ function Header(){
     >
  
       <div className="flex items-center gap-2 cursor-pointer" >
-      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
+      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "110px", height: "110px" }} className="cursor-pointer" />
     
       </div>
 

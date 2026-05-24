@@ -135,7 +135,7 @@ function GeneralHeader() {
     <div className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
          style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
 
-      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
+      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "110px", height: "110px" }} className="cursor-pointer" />
 
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (
