@@ -1,14 +1,13 @@
-from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime, Boolean, text
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
 from app.entity.database.base import Base
 from datetime import datetime
 from uuid import uuid4
-from app.entity.models.userprofile import UserProfile
+
 from zoneinfo import ZoneInfo
-
-datetime.now(ZoneInfo("Asia/Singapore"))
-
+from sqlalchemy.orm import relationship
 
 from app.entity.database.session import session
+from app.entity.models.userprofile import UserProfile
 
 
 class UserAccount(Base):
@@ -25,33 +24,40 @@ class UserAccount(Base):
     last_login = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
+    profile = relationship("UserProfile", back_populates="users")
     #Create user account 
     @staticmethod 
-    def createAccount(username, full_name, email_address, password, phone_number, address)-> bool:
+    def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
         # Check duplication 
-        existing_user = session.query(UserAccount).filter(
+        existing_user = session.query(UserAccount).filter( 
+           # Check if username, email or phone number already exists
             (UserAccount.username == username) | 
             (UserAccount.email_address == email_address) | 
             (UserAccount.phone_number == phone_number)
         ).first()
         if existing_user: 
             return False 
-        new_user = UserAccount(
-            username=username,
-            full_name=full_name,
-            email_address=email_address,
-            password=password,
-            phone_number=phone_number,
-            address=address,
-            account_status="active",
-            is_active=False
-        )
+
         try:  
-          session.add(new_user)
-          session.commit()
-        except: 
+            profile = UserProfile.get_or_create(profile_name)
+            new_user = UserAccount(
+                username=username,
+                full_name=full_name,
+                email_address=email_address,
+                password=password,
+                phone_number=phone_number,
+                address=address,
+                profile_id=profile.profile_id,
+                account_status="active",
+                is_active=False
+            )
+            session.add(new_user)
+            session.commit()
+            return new_user.user_id
+        except Exception as e:
             session.rollback()
-        return new_user.user_id
+            print("USER ACCOUNT ERROR:", e)
+            return False
     
     @staticmethod
     def login(username, password) -> dict:
@@ -75,8 +81,8 @@ class UserAccount(Base):
      except:
         session.rollback()
 
-    # Determine role by checking sub-tables
-     role = "admin"  # default if not found in investor or expert
+    # Determine role from the connected user profile, then fall back to sub-tables.
+     role = matching_account.profile.profile_name if matching_account.profile else "admin"
      investor = session.query(Investor).filter(Investor.user_id == matching_account.user_id).first()
      expert = session.query(Expert).filter(Expert.user_id == matching_account.user_id).first()
      if investor:

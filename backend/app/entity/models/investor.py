@@ -16,7 +16,15 @@ class Investor(Base):
 
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, stock_level)-> bool:
-        user_id = UserAccount.createAccount(username=username, full_name= full_name, email_address= email_address, password= password, phone_number=phone_number, address=address)
+        user_id = UserAccount.createAccount(
+            username=username,
+            full_name=full_name,
+            email_address=email_address,
+            password=password,
+            phone_number=phone_number,
+            address=address,
+            profile_name="investor"
+        )
         if user_id == False:
             return False 
         try:
@@ -27,7 +35,7 @@ class Investor(Base):
             session.add(investor)
             session.commit()
             print("INVESTOR CREATED")
-            return True
+            return user_id
         except Exception as e:
             session.rollback()
             print("INVESTOR ERROR:", e)
