@@ -8,12 +8,17 @@ import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
+import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 export const router = createBrowserRouter([
     {path: "/",                                                   Component: HomePage},
     {path: "/register",                                           Component: RegistrationPage},
     {path: "/login",                                              Component: LoginPage},
+    {
+        path: "/investor/loggedhome",
+        element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
+    },
     {
         path: "/investor/realtimedashboard",
         element: <ProtectedRoute allowedRoles={["investor"]}><RealTimeDashBoardPage /></ProtectedRoute>

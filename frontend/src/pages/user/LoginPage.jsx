@@ -105,7 +105,7 @@ function LoginPage(){
 
     //  Redirect based on role
     const role = result.user.role;
-    if (role === "investor") navigate("/investor/realtimedashboard");
+    if (role === "investor") navigate("/investor/loggedhome");
     else if (role === "expert") navigate("/forum");
     else if (role === "admin") navigate("/adminpanel");
     else alert("Unknown role: " + role);
@@ -114,8 +114,7 @@ function LoginPage(){
     console.error(error);
     alert("Failed to login");
   }
-};
-    
+}; 
     return(
       <motion.div 
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "

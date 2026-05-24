@@ -24,7 +24,7 @@ class UserAccount(Base):
     join_date = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
     last_login = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
     password = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
     #Create user account 
     @staticmethod 
     def createAccount(username, full_name, email_address, password, phone_number, address)-> bool:
@@ -44,7 +44,7 @@ class UserAccount(Base):
             phone_number=phone_number,
             address=address,
             account_status="active",
-            is_active=True
+            is_active=False
         )
         try:  
           session.add(new_user)
@@ -66,8 +66,10 @@ class UserAccount(Base):
      if not matching_account:
         return {"success": False}
 
-    # Update last login
-     matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+    # Update last login and active status 
+     matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore")) 
+     
+     matching_account.is_active = True
      try:
         session.commit()
      except:
@@ -92,6 +94,21 @@ class UserAccount(Base):
             "role": role  # ← investor / expert / admin
         }
     }
+
+    @staticmethod
+    def logout(user_id) -> bool:
+        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+        if not user:
+            return False
+        # Update user status to inactive 
+        user.is_active = False
+        try: 
+           session.commit()
+        except: 
+            session.rollback()
+            return False
+        # For simplicity, we won't track active sessions in this example
+        return True
           
     
 

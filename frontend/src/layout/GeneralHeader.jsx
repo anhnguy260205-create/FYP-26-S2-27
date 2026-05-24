@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../images/logo.png";
-
+import { logoutAccount } from "../api/userApi";
 function NavDropdown({ items }) {
   const navigate = useNavigate();
   return (
@@ -21,6 +21,27 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  const handleLogout = async () => {
+    if (!currentUser?.user_id) {
+      localStorage.removeItem("currentUser");
+      navigate("/");
+      return;
+    }
+
+    try {
+      const data = await logoutAccount(currentUser.user_id);
+      if (data.success) {
+        localStorage.removeItem("currentUser");
+        navigate("/");
+      } else {
+        console.error("Logout failed:", data.message || data);
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   return (
     <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
                      group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
@@ -33,15 +54,15 @@ function DropDownMenu() {
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Subscription
       </button>
-      <button onClick={() => navigate("/logout")} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
+      <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
       </button>
     </div>
   );
 }
 
+
 function Profile() {
-  const navigate = useNavigate();
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser")
   );
@@ -114,7 +135,7 @@ function GeneralHeader() {
     <div className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
          style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
 
-      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
+      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "100px", height: "100px" }} className="cursor-pointer" />
 
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (
