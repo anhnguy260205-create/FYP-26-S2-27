@@ -2,7 +2,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, LoginController
+from app.control.controller.userc import CreateAccountController, LoginController, LogoutController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -89,4 +89,31 @@ def login(data: LoginRequest):
         "success": True,
         "message": "Login successful",
         "user": result.get("user")
+    }
+
+# Logout
+class LogoutRequest(BaseModel):
+    user_id: str
+class LogoutPage:
+    def __init__(self):
+        self.controller = LogoutController()
+
+    def logout(self, user_id):
+        return self.controller.logout(user_id)
+
+
+@router.post("/logout")
+def logout(data: LogoutRequest):
+
+    boundary = LogoutPage()
+
+    result =boundary.logout(data.user_id)
+    if not result: 
+        return {
+            "success": False,
+            "message": "Logout failed"
+        }
+    return {
+        "success": True,
+        "message": "Logout successful"
     }

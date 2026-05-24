@@ -20,3 +20,7 @@ class CreateAccountController:
 class LoginController: 
     def login(self, username, password):
         return UserAccount.login(username, password)
+    
+class LogoutController:
+    def logout(self, user_id):
+        return UserAccount.logout(user_id)

@@ -19,3 +19,13 @@ export const loginAccount = async (formData) => {
   });
   return await response.json();
 };
+
+export const logoutAccount = async (userId) => {
+  const response = await fetch(`${BASE_URL}/logout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  return await response.json();
+
+}
