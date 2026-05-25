@@ -71,13 +71,15 @@ function Profile() {
       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       style={{ height: "41px", padding: "0 16px", color: "#00D3F2", fontSize: "14px", fontWeight: 600, gap: "8px" }}
     >
-      <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{
+        width: "26px", height: "26px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+      }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
         </svg>
       </div>
-            
+
       {/* Dynamic username */}
       {currentUser?.username || "Guest"}
     </button>
@@ -133,9 +135,9 @@ function GeneralHeader() {
 
   return (
     <div className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
-         style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
+      style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
 
-      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "110px", height: "110px" }} className="cursor-pointer" />
+      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "120px", height: "130px" }} className="cursor-pointer" />
 
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (
