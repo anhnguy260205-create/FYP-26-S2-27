@@ -82,7 +82,7 @@ function useLiveStocks() {
     if (
       socketRef.current &&
       socketRef.current.readyState ===
-        WebSocket.OPEN
+      WebSocket.OPEN
     ) {
       socketRef.current.send(
         JSON.stringify({
@@ -240,7 +240,7 @@ function useLiveStocks() {
 
                     volume: Number(
                       bar.volume ??
-                        0
+                      0
                     ),
                   }))
                 );
@@ -285,7 +285,7 @@ function useLiveStocks() {
 
             [trade.s]: {
               ...prev[
-                trade.s
+              trade.s
               ],
 
               price: trade.p,
@@ -299,10 +299,10 @@ function useLiveStocks() {
             trade.s
           ]
             ? [
-                ...prev[
-                  trade.s
-                ],
-              ]
+              ...prev[
+              trade.s
+              ],
+            ]
             : [];
 
           const last =
@@ -311,7 +311,7 @@ function useLiveStocks() {
           if (
             last &&
             last.time ===
-              bucket
+            bucket
           ) {
             list[
               list.length - 1
@@ -336,11 +336,11 @@ function useLiveStocks() {
               volume:
                 Number(
                   last.volume ??
-                    0
+                  0
                 ) +
                 Number(
                   trade.size ??
-                    0
+                  0
                 ),
             };
           } else {
@@ -362,7 +362,7 @@ function useLiveStocks() {
               volume:
                 Number(
                   trade.size ??
-                    0
+                  0
                 ),
             });
           }
@@ -406,10 +406,10 @@ function useLiveStocks() {
             bar.s
           ]
             ? [
-                ...prev[
-                  bar.s
-                ],
-              ]
+              ...prev[
+              bar.s
+              ],
+            ]
             : [];
 
           const last =
@@ -418,7 +418,7 @@ function useLiveStocks() {
           if (
             last &&
             last.time ===
-              bucket
+            bucket
           ) {
             list[
               list.length - 1
@@ -447,14 +447,14 @@ function useLiveStocks() {
               volume:
                 Number(
                   bar.volume ??
-                    0
+                  0
                 ),
             };
           } else {
             list.push({
               time: bucket,
 
-              open:Number(bar.open),
+              open: Number(bar.open),
 
               high:
                 Number(
@@ -473,7 +473,7 @@ function useLiveStocks() {
               volume:
                 Number(
                   bar.volume ??
-                    0
+                  0
                 ),
             });
           }

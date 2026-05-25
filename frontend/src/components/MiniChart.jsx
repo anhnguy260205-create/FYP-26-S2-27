@@ -16,21 +16,21 @@ function MiniChart({ candles, width = 120, height = 40 }) {
 
   // ── Use close prices as the data series ────────────────────────────────────
   const prices = candles.map((c) => c.close);
-  const first  = prices[0];
-  const last   = prices[prices.length - 1];
-  const isUp   = last >= first;
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  const isUp = last >= first;
 
-  const color      = isUp ? "#4ade80" : "#f87171";   // green-400 / red-400
-  const dotColor   = isUp ? "#86efac" : "#fca5a5";   // green-300 / red-300
-  const glowColor  = isUp
+  const color = isUp ? "#4ade80" : "#f87171";   // green-400 / red-400
+  const dotColor = isUp ? "#86efac" : "#fca5a5";   // green-300 / red-300
+  const glowColor = isUp
     ? "rgba(74,222,128,0.25)"
     : "rgba(248,113,113,0.25)";
 
   // ── Scale prices → SVG coordinates ────────────────────────────────────────
-  const pad    = 6;   // padding so dots aren't clipped at edges
-  const minP   = Math.min(...prices);
-  const maxP   = Math.max(...prices);
-  const range  = maxP - minP || 1;   // avoid division by zero on flat lines
+  const pad = 6;   // padding so dots aren't clipped at edges
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const range = maxP - minP || 1;   // avoid division by zero on flat lines
 
   const toX = (i) =>
     pad + (i / (prices.length - 1)) * (width - pad * 2);
@@ -61,8 +61,8 @@ function MiniChart({ candles, width = 120, height = 40 }) {
       <defs>
         {/* Vertical gradient for the area fill */}
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.18" />
-          <stop offset="100%" stopColor={color} stopOpacity="0"    />
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
 

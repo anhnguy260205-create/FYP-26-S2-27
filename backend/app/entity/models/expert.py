@@ -1,13 +1,17 @@
 from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime
-from app.entity.models.useraccount import UserAccount 
+from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from uuid import uuid4
 from app.entity.database.session import session
+
+
 class Expert(Base):
     __tablename__ = 'expert'
     # Additional fields specific to Expert can be added here
-    expert_id = Column(String(50), primary_key=True, default= lambda: f"expert_{uuid4()}")
-    user_id = Column(String(50), ForeignKey("user_account.user_id"), nullable=False)
+    expert_id = Column(String(50), primary_key=True,
+                       default=lambda: f"expert_{uuid4()}")
+    user_id = Column(String(50), ForeignKey(
+        "user_account.user_id"), nullable=False)
     expert_status = Column(String(20), default="active")
     rating = Column(Float, default=0)
     experience_years = Column(Integer, nullable=False)
@@ -18,7 +22,7 @@ class Expert(Base):
     approved_date = Column(DateTime, nullable=True)
 
     @staticmethod
-    def createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url)->bool:
+    def createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url) -> bool:
         user_id = UserAccount.createAccount(
             username=username,
             full_name=full_name,
@@ -29,7 +33,7 @@ class Expert(Base):
             profile_name="expert"
         )
         if user_id == False:
-            return False 
+            return False
         try:
             expert = Expert(
                 user_id=user_id,
