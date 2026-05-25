@@ -12,33 +12,38 @@ from app.entity.models.userprofile import UserProfile
 
 class UserAccount(Base):
     __tablename__ = "user_account"
-    user_id = Column(String(50), primary_key=True, default= lambda: f"user_{uuid4()}")
-    profile_id = Column(String(50), ForeignKey("user_profiles.profile_id"), nullable=True)
+    user_id = Column(String(50), primary_key=True,
+                     default=lambda: f"user_{uuid4()}")
+    profile_id = Column(String(50), ForeignKey(
+        "user_profiles.profile_id"), nullable=True)
     username = Column(String(50), unique=True, nullable=False)
     full_name = Column(String(100), nullable=False)
     phone_number = Column(Integer, unique=True, nullable=False)
     address = Column(String(255), nullable=False)
     email_address = Column(String(255), unique=True, nullable=False)
     account_status = Column(String(20), default="active")
-    join_date = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
-    last_login = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
+    join_date = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")))
+    last_login = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")))
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
-    #Create user account 
-    @staticmethod 
+    # Create user account
+
+    @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
-        # Check duplication 
-        existing_user = session.query(UserAccount).filter( 
-           # Check if username, email or phone number already exists
-            (UserAccount.username == username) | 
-            (UserAccount.email_address == email_address) | 
+        # Check duplication
+        existing_user = session.query(UserAccount).filter(
+            # Check if username, email or phone number already exists
+            (UserAccount.username == username) |
+            (UserAccount.email_address == email_address) |
             (UserAccount.phone_number == phone_number)
         ).first()
-        if existing_user: 
-            return False 
+        if existing_user:
+            return False
 
-        try:  
+        try:
             profile = UserProfile.get_or_create(profile_name)
             new_user = UserAccount(
                 username=username,
@@ -58,63 +63,63 @@ class UserAccount(Base):
             session.rollback()
             print("USER ACCOUNT ERROR:", e)
             return False
-    
+
     @staticmethod
     def login(username, password) -> dict:
-     # Local import to avoid circular import
-     from app.entity.models.expert import Expert
-     from app.entity.models.investor import Investor
-     matching_account = session.query(UserAccount).filter(
-        (UserAccount.username == username) &
-        (UserAccount.password == password)
-    ).first()
- 
-     if not matching_account:
-        return {"success": False}
+        # Local import to avoid circular import
+        from app.entity.models.expert import Expert
+        from app.entity.models.investor import Investor
+        matching_account = session.query(UserAccount).filter(
+            (UserAccount.username == username) &
+            (UserAccount.password == password)
+        ).first()
 
-    # Update last login and active status 
-     matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore")) 
-     
-     matching_account.is_active = True
-     try:
-        session.commit()
-     except:
-        session.rollback()
+        if not matching_account:
+            return {"success": False}
+
+    # Update last login and active status
+        matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+
+        matching_account.is_active = True
+        try:
+            session.commit()
+        except:
+            session.rollback()
 
     # Determine role from the connected user profile, then fall back to sub-tables.
-     role = matching_account.profile.profile_name if matching_account.profile else "admin"
-     investor = session.query(Investor).filter(Investor.user_id == matching_account.user_id).first()
-     expert = session.query(Expert).filter(Expert.user_id == matching_account.user_id).first()
-     if investor:
-        role = "investor"
-     elif expert:
-        role = "expert"
- 
-     return {
-        "success": True,
-        "user": {
-            "user_id": matching_account.user_id,
-            "username": matching_account.username,
-            "full_name": matching_account.full_name,
-            "email": matching_account.email_address,
-            "role": role  # ← investor / expert / admin
+        role = matching_account.profile.profile_name if matching_account.profile else "admin"
+        investor = session.query(Investor).filter(
+            Investor.user_id == matching_account.user_id).first()
+        expert = session.query(Expert).filter(
+            Expert.user_id == matching_account.user_id).first()
+        if investor:
+            role = "investor"
+        elif expert:
+            role = "expert"
+
+        return {
+            "success": True,
+            "user": {
+                "user_id": matching_account.user_id,
+                "username": matching_account.username,
+                "full_name": matching_account.full_name,
+                "email": matching_account.email_address,
+                "role": role  # ← investor / expert / admin
+            }
         }
-    }
 
     @staticmethod
     def logout(user_id) -> bool:
-        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+        user = session.query(UserAccount).filter(
+            UserAccount.user_id == user_id).first()
         if not user:
             return False
-        # Update user status to inactive 
+        # Update user status to inactive
         user.is_active = False
-        try: 
-           session.commit()
-        except: 
+        try:
+            session.commit()
+        except:
             session.rollback()
             return False
         # For simplicity, we won't track active sessions in this example
         return True
-          
-    
-

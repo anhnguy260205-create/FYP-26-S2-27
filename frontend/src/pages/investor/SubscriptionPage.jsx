@@ -57,7 +57,7 @@ function Feature({ children, type }) {
 
 function FreeTier() {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e)=>{
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     alert("The feature is coming soon!")
@@ -117,7 +117,7 @@ function FreeTier() {
 
 function PremiumTier() {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e)=>{
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     alert("The feature is coming soon!")
@@ -167,7 +167,7 @@ function PremiumTier() {
         }}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-        onClick = {handleSubmit}
+        onClick={handleSubmit}
       >
         Upgrade now
       </button>
@@ -187,7 +187,7 @@ function SubscriptionPage() {
       <main className="flex-1 p-7.5">
         <div
           className="flex gap-50"
-          style={{ justifyContent: "center", alignItems: "center", paddingTop:"40px"}}
+          style={{ justifyContent: "center", alignItems: "center", paddingTop: "40px" }}
         >
           <FreeTier />
           <PremiumTier />

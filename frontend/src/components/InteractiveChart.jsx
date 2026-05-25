@@ -2,12 +2,14 @@ import { createChart } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const RANGES = ["1D", "1W", "1M", "3M", "6M", "1Y"];
-const RANGE_LIMITS = { "1D": 390,     
-                       "1W": 390,
-                       "1M": 30,      
-                       "3M": 90,
-                       "6M": 180,
-                       "1Y": 52,};
+const RANGE_LIMITS = {
+  "1D": 390,
+  "1W": 390,
+  "1M": 30,
+  "3M": 90,
+  "6M": 180,
+  "1Y": 52,
+};
 
 const ET_TIME_ZONE = "America/New_York";
 
@@ -87,7 +89,7 @@ function normalizeChartData(data) {
   return [...byTime.values()].sort((a, b) => a.time - b.time);
 }
 
-export default function InteractiveChart({data = [], symbol = "STOCK", requestRangeData,}) {
+export default function InteractiveChart({ data = [], symbol = "STOCK", requestRangeData, }) {
   const [selectedRange, setSelectedRange] = useState("1D");
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
@@ -247,28 +249,28 @@ export default function InteractiveChart({data = [], symbol = "STOCK", requestRa
   const pctChange =
     lastBar && firstBar
       ? (
-          ((lastBar.close - firstBar.close) /
-            firstBar.close) * 100
-        ).toFixed(2)
+        ((lastBar.close - firstBar.close) /
+          firstBar.close) * 100
+      ).toFixed(2)
       : null;
 
   const isUp = pctChange >= 0;
 
   const handleRange = useCallback((range) => {
-  setSelectedRange(range);
+    setSelectedRange(range);
 
-  if (requestRangeData) {
-    requestRangeData(symbol, range);
-  }
-}, [symbol, requestRangeData]);
+    if (requestRangeData) {
+      requestRangeData(symbol, range);
+    }
+  }, [symbol, requestRangeData]);
   return (
     <div style={{
-        background: "#ffffff",
-        borderRadius: "20px",
-        padding: "20px",
-        boxShadow:
-          "0 4px 20px rgba(0,0,0,0.06)",
-      }}
+      background: "#ffffff",
+      borderRadius: "20px",
+      padding: "20px",
+      boxShadow:
+        "0 4px 20px rgba(0,0,0,0.06)",
+    }}
     >
       {/* HEADER */}
       <div

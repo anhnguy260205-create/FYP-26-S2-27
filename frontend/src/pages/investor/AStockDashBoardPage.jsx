@@ -14,15 +14,15 @@ function formatNumber(num) {
   num = Number(num);
   const fmt = (v, s) => parseFloat(v.toFixed(1)) + s;
   if (num >= 1_000_000_000) return fmt(num / 1_000_000_000, "B");
-  if (num >= 1_000_000)     return fmt(num / 1_000_000, "M");
-  if (num >= 1_000)         return fmt(num / 1_000, "K");
+  if (num >= 1_000_000) return fmt(num / 1_000_000, "M");
+  if (num >= 1_000) return fmt(num / 1_000, "K");
   return num.toString();
 }
 function companyName(symbol) {
   const names = {
-    AAPL: "Apple",     TSLA: "Tesla",     NVDA: "NVIDIA",
+    AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA",
     MSFT: "Microsoft", GOOGL: "Alphabet", AMZN: "Amazon",
-    META: "Meta",      AMD: "AMD",        NFLX: "Netflix", INTC: "Intel",
+    META: "Meta", AMD: "AMD", NFLX: "Netflix", INTC: "Intel",
   };
   return names[symbol] ?? "";
 }
@@ -83,26 +83,26 @@ function Button({ marketStatus }) {
   );
 }
 /* Watchlist Feature */
-function WatchlistButton(){
-  const handleSubmit = async(e)=> {
+function WatchlistButton() {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     alert("The feature is coming soon!!")
   }
   return (
     <button onClick={handleSubmit}
-            style={{
-          width: "200px", marginTop: "16px", padding: "11px", borderRadius: "8px",
-          background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
-          fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
-          cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
-        }}>
-      + Add to Watchlist 
+      style={{
+        width: "200px", marginTop: "16px", padding: "11px", borderRadius: "8px",
+        background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
+        fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
+        cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
+      }}>
+      + Add to Watchlist
     </button>
   );
 }
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
-function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) {
+function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated }) {
   //Price data lives in `stock` (passed from stocks[selectedStock] in the page).
   const chg = stock?.price != null && stock?.previousClose != null
     ? (stock.price - stock.previousClose).toFixed(3)
@@ -156,7 +156,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           </span>
           <p className="text-gray-400">|</p>
           <span style={{
-            fontFamily: "'DM Mono', monospace", fontSize: "11px"}}>
+            fontFamily: "'DM Mono', monospace", fontSize: "11px"
+          }}>
             Lasted update: {lastUpdated || "Loading..."}
           </span>
         </div>
@@ -170,8 +171,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           color: changeColor, letterSpacing: "0.02em",
         }}>
           {stock?.price != null ? `$${stock.price.toFixed(3)}` : "—"} USD
-        </span> 
-        <span className="inline"style={{
+        </span>
+        <span className="inline" style={{
           color: changeColor, letterSpacing: "0.04em",
         }}>
           {chg !== null ? `${isUp ? "+" : ""}${chg}` : "—"}
@@ -179,9 +180,9 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-      <WatchlistButton/>
+      <WatchlistButton />
       <Button marketStatus={marketStatus} />
-      
+
     </motion.div>
   );
 }
@@ -237,7 +238,8 @@ function AlertBoard({ symbol }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      style={{ width: "300px", flexShrink: 0,
+      style={{
+        width: "300px", flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
         padding: "20px", backdropFilter: "blur(12px)",
@@ -352,7 +354,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      style={{ display: "flex", gap: "16px", alignItems: "flex-start",  flexShrink: 0}}
+      style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexShrink: 0 }}
     >
       {/* LEFT COLUMN: stats strip + chart stacked */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
@@ -364,10 +366,10 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
           backdropFilter: "blur(12px)", overflow: "hidden",
         }}>
           {[
-            { label: "Open",       value: `$${open.toFixed(2)}` },
-            { label: "High",       value: `$${high.toFixed(2)}` },
-            { label: "Low",        value: `$${low.toFixed(2)}` },
-            { label: "Volume",     value: formatNumber(volume) },
+            { label: "Open", value: `$${open.toFixed(2)}` },
+            { label: "High", value: `$${high.toFixed(2)}` },
+            { label: "Low", value: `$${low.toFixed(2)}` },
+            { label: "Volume", value: formatNumber(volume) },
             { label: "Avg Volume", value: formatNumber(avgVolume) },
           ].map((s, i, arr) => (
             <div key={s.label} style={{
@@ -428,10 +430,10 @@ function AStockDashBoardPage() {
 
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }}animate={{ opacity: 1, y:0 }} transition={{ duration: 0.6 }}>
-    
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
 
-        <GeneralHeader/>
+
+        <GeneralHeader />
 
         <main style={{ flex: 1, padding: "28px 32px", position: "relative", zIndex: 1 }}>
 
@@ -448,7 +450,7 @@ function AStockDashBoardPage() {
             stockCandles={stockCandles}
             requestRangeData={requestRangeData}
           />
-          <MiniBoard stocks ={stockList}/>
+          <MiniBoard stocks={stockList} />
         </main>
 
         <Footer />
