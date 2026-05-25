@@ -1,16 +1,16 @@
 import logo from "../images/logo.png";
 import { useNavigate } from "react-router-dom";
-function Header(){
-    const navigate = useNavigate();
-    return(
-        <div
+function Header() {
+  const navigate = useNavigate();
+  return (
+    <div
       className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
-      style={{ height: "50px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
+      style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}
     >
- 
+
       <div className="flex items-center gap-2 cursor-pointer" >
-      <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "110px", height: "110px" }} className="cursor-pointer" />
-    
+        <img alt="logo" src={logo} onClick={() => navigate("/")} style={{ width: "120px", height: "130px" }} className="cursor-pointer" />
+
       </div>
 
       <div className="flex items-center gap-8">
@@ -29,8 +29,8 @@ function Header(){
         ))}
       </div>
 
-   
+
     </div>
-    );
+  );
 }
 export default Header;
