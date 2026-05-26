@@ -6,7 +6,6 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import MiniBoard from "../../components/MiniBoard.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -345,7 +344,7 @@ function AlertBoard({ symbol }) {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -402,6 +401,9 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
             data={stockCandles}
             symbol={symbol}
             requestRangeData={requestRangeData}
+            stockList={stockList}
+            compareDataBySymbol={candles}
+            candleRanges={candleRanges}
           />
         </motion.div>
       </div>
@@ -416,7 +418,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
 function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();     // string, e.g. "NVDA"
-  const { marketStatus, stocks, candles, requestRangeData, lastUpdated } = useLiveStocks();
+  const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const stock = stocks[selectedStock];             // the live data object for this symbol
   const stockCandles = candles?.[selectedStock] ?? [];
   const stockList = Object.values(stocks ?? {});
@@ -449,8 +451,11 @@ function AStockDashBoardPage() {
             stock={stock}
             stockCandles={stockCandles}
             requestRangeData={requestRangeData}
+            stockList={stockList}
+            candles={candles}
+            candleRanges={candleRanges}
           />
-          <MiniBoard stocks={stockList} />
+
         </main>
 
         <Footer />
