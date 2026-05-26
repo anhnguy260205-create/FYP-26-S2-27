@@ -1,6 +1,6 @@
 import { createChart } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback } from "react";
-import MiniBoard from "./MiniBoard.jsx";
+import ComparisonChart from "./ComparisonChart.jsx";
 
 const RANGES = ["1D", "1W", "1M", "3M", "6M", "1Y"];
 const RANGE_LIMITS = { "1D": 390, "1W": 390, "1M": 30, "3M": 90, "6M": 180, "1Y": 52 };
@@ -61,6 +61,24 @@ function normalizeChartData(data) {
     byTime.set(time, { time, value });
   });
   return [...byTime.values()].sort((a, b) => a.time - b.time);
+}
+//Transfer absolute price data to % change from first point for better visual comparison
+function normalizeToPercent(data) {
+  if (!data.length) return [];
+
+  const base = data[0].value;
+  if (!base) return [];
+
+  return data.map((point) => ({
+    time: point.time,
+    value: ((point.value - base) / base) * 100,
+  }));
+}
+
+function findValueAtTime(data, time) {
+  const normalizedTime = toUnixSeconds(time);
+  const point = data.find((item) => item.time === normalizedTime);
+  return point?.value ?? null;
 }
 
 function getSeriesValue(point) {
@@ -187,6 +205,7 @@ export default function InteractiveChart({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const mainSeriesRef = useRef(null);
+  const mainPriceDataRef = useRef([]);
   const selectedRangeRef = useRef(selectedRange);
   const comparePlotsRef = useRef(comparePlots);
   const mainBasePriceRef = useRef(null);
@@ -242,18 +261,20 @@ export default function InteractiveChart({
       });
 
       const d = param.seriesData.get(series);
-      const mainPrice = getSeriesValue(d);
+      const mainDisplayValue = getSeriesValue(d);
+      const mainPrice = findValueAtTime(mainPriceDataRef.current, param.time) ?? mainDisplayValue;
       const rows = {};
 
       comparePlotsRef.current.forEach((plot) => {
         if (!plot.visible) return;
         const point = param.seriesData.get(plot.seriesRef);
-        const price = getSeriesValue(point);
-        if (price === null) return;
+        const pct = getSeriesValue(point);
+        const price = findValueAtTime(plot.priceData ?? [], param.time);
+        if (price === null && pct === null) return;
 
         rows[plot.symbol] = {
           price,
-          pct: calcPercentChange(price, plot.basePrice),
+          pct,
         };
       });
 
@@ -277,11 +298,20 @@ export default function InteractiveChart({
     if (!mainSeriesRef.current || data.length === 0) return;
     const filtered = filterByRange(data, selectedRange);
     const formatted = normalizeChartData(filtered);
+    const hasComparePlots = comparePlots.length > 0;
+    const displayData = hasComparePlots ? normalizeToPercent(formatted) : formatted;
+
     chartRef.current.applyOptions({
       localization: { timeFormatter: (time) => formatChartTime(time, selectedRange, true) },
       timeScale: getTimeScaleOptions(selectedRange),
     });
-    mainSeriesRef.current.setData(formatted);
+    mainSeriesRef.current.applyOptions({
+      priceFormat: hasComparePlots
+        ? { type: "percent", precision: 2, minMove: 0.01 }
+        : { type: "price", precision: 2, minMove: 0.01 },
+    });
+    mainSeriesRef.current.setData(displayData);
+    mainPriceDataRef.current = formatted;
     mainBasePriceRef.current = formatted[0]?.value ?? null;
     const latestMainPrice = formatted.at(-1)?.value ?? null;
     setPlotHoverData((prev) => ({
@@ -290,7 +320,7 @@ export default function InteractiveChart({
       mainPct: calcPercentChange(latestMainPrice, mainBasePriceRef.current),
     }));
     chartRef.current.timeScale().fitContent();
-  }, [data, selectedRange]);
+  }, [comparePlots.length, data, selectedRange]);
 
   /* ── add a comparison series ── */
   const addCompareSeries = useCallback((sym, compData, name) => {
@@ -302,6 +332,7 @@ export default function InteractiveChart({
 
     const filtered = filterByRange(compData, selectedRangeRef.current);
     const normalized = normalizeChartData(filtered);
+    const percentData = normalizeToPercent(normalized);
 
     const series = chartRef.current.addLineSeries({
       color,
@@ -310,17 +341,17 @@ export default function InteractiveChart({
       crosshairMarkerVisible: true,
       crosshairMarkerRadius: 4,
       lastValueVisible: true,
-      priceFormat: { type: "price", precision: 2, minMove: 0.01 },
+      priceFormat: { type: "percent", precision: 2, minMove: 0.01 },
     });
 
-    series.setData(normalized);
+    series.setData(percentData);
     chartRef.current.timeScale().fitContent();
 
     const basePrice = normalized[0]?.value ?? null;
     const latestPrice = normalized.length > 0 ? normalized[normalized.length - 1].value : null;
-    const latestPct = calcPercentChange(latestPrice, basePrice);
+    const latestPct = percentData.length > 0 ? percentData[percentData.length - 1].value : null;
 
-    setComparePlots((prev) => [...prev, { symbol: sym, name: name || sym, color, visible: true, seriesRef: series, rawData: compData, latestPrice, latestPct, basePrice }]);
+    setComparePlots((prev) => [...prev, { symbol: sym, name: name || sym, color, visible: true, seriesRef: series, rawData: compData, priceData: normalized, latestPrice, latestPct, basePrice }]);
     setShowPlots(true);
   }, []);
 
@@ -345,15 +376,18 @@ export default function InteractiveChart({
           if (!Array.isArray(compData) || compData.length === 0) return plot;
 
           const priceData = normalizeChartData(filterByRange(compData, selectedRange));
-          plot.seriesRef.setData(priceData);
+          const percentData = normalizeToPercent(priceData);
+          plot.seriesRef.setData(percentData);
           const basePrice = priceData[0]?.value ?? null;
           const latestPrice = priceData.length > 0 ? priceData[priceData.length - 1].value : null;
+          const latestPct = percentData.length > 0 ? percentData[percentData.length - 1].value : null;
 
           return {
             ...plot,
             rawData: compData,
+            priceData,
             latestPrice,
-            latestPct: calcPercentChange(latestPrice, basePrice),
+            latestPct,
             basePrice,
           };
         })
@@ -481,7 +515,7 @@ export default function InteractiveChart({
             </button>
           )}
         </div>
-        <MiniBoard stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} />
+        <ComparisonChart stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} />
       </div>
 
       {/* RANGE BUTTONS */}

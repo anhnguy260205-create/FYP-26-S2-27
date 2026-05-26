@@ -105,8 +105,7 @@ function StockCard({ stock, index, onClick }) {
   );
 }
 
-/* ─── MiniBoard ─────────────────────────────────────────────── */
-export default function MiniBoard({ stocks, onCompare }) {
+export default function ComparisonChart({ stocks, onCompare }) {
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
 
