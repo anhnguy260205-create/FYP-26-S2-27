@@ -83,6 +83,7 @@ class UserAccount(Base):
         matching_account.is_active = True
         try:
             session.commit()
+            session.refresh(matching_account)
         except:
             session.rollback()
 

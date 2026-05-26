@@ -58,6 +58,9 @@ function useLiveStocks() {
   const [candles, setCandles] =
     useState({});
 
+  const [candleRanges, setCandleRanges] =
+    useState({});
+
   const [marketStatus, setMarketStatus] =
     useState("");
 
@@ -246,6 +249,18 @@ function useLiveStocks() {
                 );
             }
           );
+
+          return updated;
+        });
+
+        setCandleRanges((prev) => {
+          const updated = {
+            ...prev,
+          };
+
+          Object.keys(response.data ?? {}).forEach((symbol) => {
+            updated[symbol] = response.range ?? "1D";
+          });
 
           return updated;
         });
@@ -518,6 +533,7 @@ function useLiveStocks() {
   return {
     stocks,
     candles,
+    candleRanges,
     marketStatus,
     connectionStatus,
     error,
