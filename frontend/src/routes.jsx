@@ -7,6 +7,7 @@ import AIPredictionPage from "./pages/investor/AIPredictionPage.jsx";
 import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
+import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
     },
     {
         path: "/adminpanel",
-        element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
+        element: <AdminPanelPage />
     },
+    {
+        path: "/adminpanel/useraccounts",
+        element: <UserAccountsPage />
+    }
 ]);
