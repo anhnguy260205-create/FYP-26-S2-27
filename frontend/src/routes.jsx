@@ -1,4 +1,4 @@
-import {createBrowserRouter} from "react-router-dom"; 
+import { createBrowserRouter } from "react-router-dom";
 import RegistrationPage from "./pages/user/RegistrationPage.jsx";
 import LoginPage from "./pages/user/LoginPage.jsx";
 import HomePage from "./pages/user/HomePage.jsx";
@@ -13,9 +13,9 @@ import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 export const router = createBrowserRouter([
-    {path: "/",                                                   Component: HomePage},
-    {path: "/register",                                           Component: RegistrationPage},
-    {path: "/login",                                              Component: LoginPage},
+    { path: "/", Component: HomePage },
+    { path: "/register", Component: RegistrationPage },
+    { path: "/login", Component: LoginPage },
     {
         path: "/investor/loggedhome",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
@@ -42,10 +42,10 @@ export const router = createBrowserRouter([
     },
     {
         path: "/adminpanel",
-        element: <AdminPanelPage />
+        element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
     {
         path: "/adminpanel/useraccounts",
-        element: <UserAccountsPage />
+        element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     }
 ]);
