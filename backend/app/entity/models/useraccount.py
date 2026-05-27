@@ -87,7 +87,7 @@ class UserAccount(Base):
         except:
             session.rollback()
 
-    # Determine role from the connected user profile, then fall back to sub-tables.
+        # Determine role from the connected user profile, then fall back to sub-tables.
         role = matching_account.profile.profile_name if matching_account.profile else "admin"
         investor = session.query(Investor).filter(
             Investor.user_id == matching_account.user_id).first()
@@ -95,6 +95,9 @@ class UserAccount(Base):
             Expert.user_id == matching_account.user_id).first()
         if investor:
             role = "investor"
+        elif matching_account.profile:
+            if matching_account.profile.profile_name == "admin":
+                role = "admin"
         elif expert:
             role = "expert"
 
@@ -124,3 +127,31 @@ class UserAccount(Base):
             return False
         # For simplicity, we won't track active sessions in this example
         return True
+
+
+def seed_admin_account():
+    admin_username = "admin"
+    admin_email = "admin@gmail.com"
+    admin_password = "admin123"
+    admin_full_name = "Admin User"
+    admin_phone_number = 1234567890
+    admin_address = "123 Admin Street"
+
+    # Create admin account
+    user_id = UserAccount.createAccount(
+        username=admin_username,
+        full_name=admin_full_name,
+        email_address=admin_email,
+        password=admin_password,
+        phone_number=admin_phone_number,
+        address=admin_address,
+        profile_name="admin"
+    )
+    if user_id:
+        print("Admin account created successfully.")
+    else:
+        print("Failed to create admin account.")
+
+
+if __name__ == "__main__":
+    seed_admin_account()

@@ -37,8 +37,9 @@ class AdminUserAccountController:
                     user_role = "Premium"
                 else:
                     user_role = "Investor"
+
             else:
-                user_role = "User"
+                user_role = "Admin"
 
             if role and user_role.lower() != role.lower():
                 continue
