@@ -6,6 +6,7 @@ from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
 from app.boundary.stock_ws import router as stock_ws_router
+from app.boundary.predictionb import router as prediction_router
 
 
 
@@ -25,6 +26,7 @@ seed_profiles()
 
 app.include_router(user_router)
 app.include_router(stock_ws_router)
+app.include_router(prediction_router)
 
 @app.get("/")
 def home():
