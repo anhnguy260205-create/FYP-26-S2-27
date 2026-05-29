@@ -125,25 +125,28 @@ class UserAccount(Base):
         # For simplicity, we won't track active sessions in this example
         return True
 
+# auto generate the admin account
 
-def seed_admin():
+
+def seed_admin_account():
     admin_username = "admin"
-    existing_admin = session.query(UserAccount).filter(
-        UserAccount.username == admin_username
-    ).first()
-    if existing_admin:
-        print("Admin account already exists.")
-        return
+    admin_email = "admin@gmail.com"
+    admin_password = "admin123"
+    admin_full_name = "Admin User"
+    admin_phone_number = 1234567890
+    admin_address = "123 Admin Street"
 
-    try:
-        admin_id = UserAccount.createAccount(
-            username=admin_username,
-            full_name="System Administrator",
-            email_address="admin@example.com",
-            password="admin123",
-            phone_number="1234567890",
-            address="123 Admin Street"
-        )
-        print("Admin account created successfully.")
-    except Exception as e:
-        print("Error creating admin account:", e)
+    # Create admin account
+    user_id = UserAccount.createAccount(
+        username=admin_username,
+        full_name=admin_full_name,
+        email_address=admin_email,
+        password=admin_password,
+        phone_number=admin_phone_number,
+        address=admin_address,
+        profile_name="admin"
+    )
+
+
+if __name__ == "__main__":
+    seed_admin_account()
