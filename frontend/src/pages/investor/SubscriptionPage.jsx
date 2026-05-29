@@ -88,9 +88,14 @@ function FreeTier() {
       <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>forever, no card needed</p>
       <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
-      <Feature type="free">Up to 3 projects</Feature>
-      <Feature type="free">5 GB storage</Feature>
-      <Feature type="free">Community support</Feature>
+      <Feature type="free">Limited Real-Time Market Dashboard</Feature>
+      <Feature type="free">Limited AI-Powered Stock Recommendations</Feature>
+      <Feature type="free">Limited Personal Watchlist Management</Feature>
+      <Feature type="free">Limited Expert Portfolio Access</Feature>
+      <Feature type="free">Knowledge Hub Access</Feature>
+      <Feature type="free">AI Investment Chatbot</Feature>
+      <Feature type="free">Paper Trading</Feature>
+
       <button
         style={{
           width: "100%",
@@ -129,6 +134,7 @@ function PremiumTier() {
       transition={{ duration: 0.5, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
+        height: "575px",
         border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
         borderRadius: "24px",
         padding: "28px 32px",
@@ -148,13 +154,13 @@ function PremiumTier() {
       <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$12</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>per month, billed annually</p>
       <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
-      <Feature type="premium">Unlimited projects</Feature>
-      <Feature type="premium">100 GB storage</Feature>
-      <Feature type="premium">Priority support</Feature>
+      <Feature type="premium">Everything in Basic without limitations</Feature>
+      <Feature type="premium">Expert Consultation Services</Feature>
+      <Feature type="premium">Advanced Charting & Technical Analysis Tools</Feature>
       <button
         style={{
           width: "100%",
-          marginTop: "22px",
+          marginTop: "165px",
           padding: "11px 0",
           borderRadius: "12px",
           fontSize: "14px",

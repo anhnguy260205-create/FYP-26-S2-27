@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, ForeignKey,  String
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from app.entity.database.session import session
