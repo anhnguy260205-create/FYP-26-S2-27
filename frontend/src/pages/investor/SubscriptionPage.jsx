@@ -72,7 +72,7 @@ function FreeTier({ userId }) {
         border: hovered ? "1.5px solid #60A5FA" : "1.5px solid #2563EB",
         borderRadius: "24px",
         padding: "28px 32px",
-        width: "320px",
+        width: "400px",
         cursor: "pointer",
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
@@ -134,11 +134,11 @@ function PremiumTier({ userId }) {
       transition={{ duration: 0.5, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
-        height: "575px",
+        height: "515px",
         border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
         borderRadius: "24px",
         padding: "28px 32px",
-        width: "320px",
+        width: "400px",
         cursor: "pointer",
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
@@ -154,13 +154,13 @@ function PremiumTier({ userId }) {
       <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$20.99</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>per month, billed annually</p>
       <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
-      <Feature type="premium">Everything in Basic without limitations</Feature>
+      <Feature type="premium">Everything in Basic without Limitations</Feature>
       <Feature type="premium">Expert Consultation Services</Feature>
       <Feature type="premium">Advanced Charting & Technical Analysis Tools</Feature>
       <button
         style={{
           width: "100%",
-          marginTop: "165px",
+          marginTop: "145px",
           padding: "11px 0",
           borderRadius: "12px",
           fontSize: "14px",
@@ -195,7 +195,7 @@ function SubscriptionPage() {
       <main className="flex-1 p-7.5">
         <div
           className="flex gap-50"
-          style={{ justifyContent: "center", alignItems: "center", paddingTop: "40px" }}
+          style={{ justifyContent: "center", alignItems: "center", paddingTop: "90px", paddingBottom: "90px" }}
         >
           <FreeTier userId={userId} />
           <PremiumTier userId={userId} />
