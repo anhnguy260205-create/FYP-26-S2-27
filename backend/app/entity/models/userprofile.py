@@ -7,11 +7,12 @@ from uuid import uuid4
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
-    profile_id = Column(String(50), primary_key=True, default=lambda: f"profile_{uuid4().hex}")
+    profile_id = Column(String(50), primary_key=True,
+                        default=lambda: f"profile_{uuid4().hex}")
     profile_name = Column(String(100), unique=True, nullable=False)
     status = Column(String(20), default="active")
     description = Column(String(255), nullable=True)
-    
+
     users = relationship("UserAccount", back_populates="profile")
 
     @staticmethod
@@ -32,6 +33,7 @@ class UserProfile(Base):
         session.flush()
         return profile
 
+
 def seed_profiles():
 
     profiles = [
@@ -44,11 +46,11 @@ def seed_profiles():
         for profile_name, description in profiles:
             UserProfile.get_or_create(profile_name, description)
         session.commit()
-        print("Profiles generated successfully")
 
     except Exception as e:
         session.rollback()
         print("Error generating profiles:", e)
+
 
 if __name__ == "__main__":
     seed_profiles()

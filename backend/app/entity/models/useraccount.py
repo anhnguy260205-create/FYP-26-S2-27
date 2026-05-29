@@ -29,8 +29,8 @@ class UserAccount(Base):
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
-    # Create user account
 
+    # Create user account
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
         # Check duplication
@@ -124,3 +124,26 @@ class UserAccount(Base):
             return False
         # For simplicity, we won't track active sessions in this example
         return True
+
+
+def seed_admin():
+    admin_username = "admin"
+    existing_admin = session.query(UserAccount).filter(
+        UserAccount.username == admin_username
+    ).first()
+    if existing_admin:
+        print("Admin account already exists.")
+        return
+
+    try:
+        admin_id = UserAccount.createAccount(
+            username=admin_username,
+            full_name="System Administrator",
+            email_address="admin@example.com",
+            password="admin123",
+            phone_number="1234567890",
+            address="123 Admin Street"
+        )
+        print("Admin account created successfully.")
+    except Exception as e:
+        print("Error creating admin account:", e)
