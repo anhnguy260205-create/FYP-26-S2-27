@@ -2,6 +2,7 @@ import { useState } from "react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
+import { updateSubscriptionStatus } from "../../api/userApi.js";
 
 function Badge({ children, type }) {
   const s =
@@ -55,11 +56,10 @@ function Feature({ children, type }) {
   );
 }
 
-function FreeTier() {
+function FreeTier({ userId }) {
   const [hovered, setHovered] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     alert("The feature is coming soon!")
   }
   return (
@@ -85,7 +85,7 @@ function FreeTier() {
     >
       <Badge type="free">Free</Badge>
       <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#E0EEFF" }}>Starter</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0.00</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>forever, no card needed</p>
       <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
       <Feature type="free">Limited Real-Time Market Dashboard</Feature>
@@ -112,7 +112,7 @@ function FreeTier() {
         }}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-        onClick={handleSubmit}
+        onClick={() => updateSubscriptionStatus(userId, "basic")}
       >
         Get started
       </button>
@@ -120,7 +120,7 @@ function FreeTier() {
   );
 }
 
-function PremiumTier() {
+function PremiumTier({ userId }) {
   const [hovered, setHovered] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -151,7 +151,7 @@ function PremiumTier() {
     >
       <Badge type="premium">⭐ Premium</Badge>
       <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#FFFBEB" }}>Pro</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$12</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$20.99</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>per month, billed annually</p>
       <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
       <Feature type="premium">Everything in Basic without limitations</Feature>
@@ -173,7 +173,7 @@ function PremiumTier() {
         }}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-        onClick={handleSubmit}
+        onClick={() => updateSubscriptionStatus(userId, "premium")}
       >
         Upgrade now
       </button>
@@ -182,6 +182,8 @@ function PremiumTier() {
 }
 
 function SubscriptionPage() {
+  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const userId = user?.user_id;  // ✅ optional chaining avoids crash if null
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -195,8 +197,8 @@ function SubscriptionPage() {
           className="flex gap-50"
           style={{ justifyContent: "center", alignItems: "center", paddingTop: "40px" }}
         >
-          <FreeTier />
-          <PremiumTier />
+          <FreeTier userId={userId} />
+          <PremiumTier userId={userId} />
         </div>
       </main>
       <Footer />

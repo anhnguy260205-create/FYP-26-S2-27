@@ -20,7 +20,9 @@ class CreateAccountRequest(BaseModel):
     experience_year: Optional[Union[int, str]] = None
     linked_in_url: Optional[str] = None
 
-# Create user account 
+# Create user account
+
+
 class CreateAccountPage:
     def __init__(self):
         self.controller = CreateAccountController()
@@ -34,7 +36,7 @@ class CreateAccountPage:
 def create_account(data: CreateAccountRequest):
 
     boundary = CreateAccountPage()
-    
+
     result = boundary.clickCreateAccount(
         data.role,
         data.username,
@@ -60,15 +62,22 @@ def create_account(data: CreateAccountRequest):
         "user_id": result
     }
 
-# Login 
+# Login
+
+
 class LoginRequest(BaseModel):
     username: str
     password: str
-class LoginPage: 
+
+
+class LoginPage:
     def __init__(self):
         self.controller = LoginController()
-    def login(self,username, password): 
+
+    def login(self, username, password):
         return self.controller.login(username, password)
+
+
 @router.post("/login")
 def login(data: LoginRequest):
 
@@ -92,8 +101,12 @@ def login(data: LoginRequest):
     }
 
 # Logout
+
+
 class LogoutRequest(BaseModel):
     user_id: str
+
+
 class LogoutPage:
     def __init__(self):
         self.controller = LogoutController()
@@ -107,8 +120,8 @@ def logout(data: LogoutRequest):
 
     boundary = LogoutPage()
 
-    result =boundary.logout(data.user_id)
-    if not result: 
+    result = boundary.logout(data.user_id)
+    if not result:
         return {
             "success": False,
             "message": "Logout failed"

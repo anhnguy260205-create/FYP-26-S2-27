@@ -44,3 +44,9 @@ class Investor(Base):
             session.rollback()
             print("INVESTOR ERROR:", e)
             return False
+
+    @staticmethod
+    def getInvestorByUserId(user_id):
+        return session.query(Investor).filter(
+            Investor.user_id == user_id
+        ).first()
