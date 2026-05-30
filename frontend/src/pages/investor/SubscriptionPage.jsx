@@ -58,10 +58,7 @@ function Feature({ children, type }) {
 
 function FreeTier({ userId }) {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    alert("The feature is coming soon!")
-  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -88,10 +85,11 @@ function FreeTier({ userId }) {
       <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0.00</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>forever, no card needed</p>
       <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
-      <Feature type="free">Limited Real-Time Market Dashboard</Feature>
+
       <Feature type="free">Limited AI-Powered Stock Recommendations</Feature>
       <Feature type="free">Limited Personal Watchlist Management</Feature>
       <Feature type="free">Limited Expert Portfolio Access</Feature>
+      <Feature type="free">Real-Time Market Dashboard</Feature>
       <Feature type="free">Knowledge Hub Access</Feature>
       <Feature type="free">AI Investment Chatbot</Feature>
       <Feature type="free">Paper Trading</Feature>
@@ -122,11 +120,7 @@ function FreeTier({ userId }) {
 
 function PremiumTier({ userId }) {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    alert("The feature is coming soon!")
-  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}

@@ -32,9 +32,10 @@ class CreateSubscription:
         investor = self.get_investor_controller.getInvestorByUserId(user_id)
         if not investor:
             return False
-        return self.create_investor_controller.createSubscription(
-            transaction_id, plan_type, investor.investor_id
-        )
+        subscription = self.create_investor_controller.createSubscription(
+            transaction_id, plan_type, investor.investor_id)
+
+        return subscription
 
 
 create_subscription_service = CreateSubscription()
@@ -49,6 +50,8 @@ def create_checkout_session(request: SubscriptionRequest):
         result = create_subscription_service.createSubscription(
             request.user_id, request.plan_type, request.user_id
         )
+        if result is False:
+            return {"success": False, "message": "The account already has an active basic subscription. Do you want to upgrade to premium?"}
         if not result:
             raise HTTPException(
                 status_code=400, detail="Failed to activate basic subscription")

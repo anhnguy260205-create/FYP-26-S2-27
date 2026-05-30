@@ -50,6 +50,11 @@ export const updateSubscriptionStatus = async (
 
   const result = await response.json();
 
+  if (!result.success) {
+    alert(result.message);
+    return result;
+  }
+
   if (result.checkout_url) {
     window.location.href = result.checkout_url;
   }
