@@ -24,6 +24,13 @@ class Subscription(Base):
     @staticmethod
     def createSubscription(transaction_id, plan_type, investor_id):
         try:
+            if plan_type == "basic":
+                if subscription := session.query(Subscription).filter(
+                    Subscription.investor_id == investor_id,
+                    Subscription.sub_status == "active"
+                ).first():
+                    print("ACTIVE SUBSCRIPTION EXISTS")
+                    return False
             renewal_date = (
                 datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=30)
                 if plan_type == "premium"
