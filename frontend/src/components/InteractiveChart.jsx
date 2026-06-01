@@ -1,6 +1,7 @@
 import { createChart } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback } from "react";
 import ComparisonChart from "./ComparisonChart.jsx";
+import { getSubscriptionStatus } from "../api/userApi.js";
 
 const RANGES = ["1D", "1W", "1M", "3M", "6M", "1Y"];
 const RANGE_LIMITS = { "1D": 390, "1W": 390, "1M": 30, "3M": 90, "6M": 180, "1Y": 52 };
@@ -180,6 +181,35 @@ export default function InteractiveChart({
   candleRanges = {},
   fetchCompareData,
 }) {
+  // Take user subscription status from localStorage 
+  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const userId = user?.user_id;
+  const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
+    user?.subscription_status || "inactive"
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadSubscriptionStatus = async () => {
+      try {
+        const result = await getSubscriptionStatus(userId);
+        if (!result.success) return;
+
+        const nextStatus = result.subscription_status || "inactive";
+        setCurrentSubscriptionStatus(nextStatus);
+        localStorage.setItem(
+          "currentUser",
+          JSON.stringify({ ...user, subscription_status: nextStatus })
+        );
+      } catch (error) {
+        console.error("Failed to load subscription status", error);
+      }
+    };
+
+    loadSubscriptionStatus();
+  }, [userId]);
+
   const [selectedRange, setSelectedRange] = useState("1D");
   const [comparePlots, setComparePlots] = useState([]);
   const [showPlots, setShowPlots] = useState(false);
@@ -508,7 +538,7 @@ export default function InteractiveChart({
             </button>
           )}
         </div>
-        <ComparisonChart stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} />
+        <ComparisonChart stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} subscriptionStatus={currentSubscriptionStatus} />
       </div>
 
       {/* RANGE BUTTONS */}

@@ -99,6 +99,24 @@ def create_checkout_session(request: SubscriptionRequest):
             }
 
 
+@router.get("/subscription-status/{user_id}")
+def get_subscription_status(user_id: str):
+    investor = create_subscription_service.get_investor_controller.getInvestorByUserId(
+        user_id
+    )
+    if not investor:
+        return {
+            "success": False,
+            "message": "Investor not found",
+            "subscription_status": "inactive"
+        }
+
+    return {
+        "success": True,
+        "subscription_status": investor.investor_subscription_status or "inactive"
+    }
+
+
 @router.post("/webhook")
 async def stripe_webhook(request: Request):
     """

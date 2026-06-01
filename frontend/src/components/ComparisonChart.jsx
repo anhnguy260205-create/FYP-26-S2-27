@@ -105,7 +105,8 @@ function StockCard({ stock, index, onClick }) {
   );
 }
 
-export default function ComparisonChart({ stocks, onCompare }) {
+export default function ComparisonChart({ stocks, onCompare, subscriptionStatus }) {
+  const isPremium = subscriptionStatus === "premium";
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
 
@@ -214,70 +215,88 @@ export default function ComparisonChart({ stocks, onCompare }) {
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        position: "relative",
+    <>
+      {/* If the user is not premium, the function cannot be used */}
+      {
+        !isPremium && (
+          <div style={{ padding: "20px 24px", color: "#64748b", fontSize: 13, fontFamily: "system-ui, sans-serif" }}>
+            Please upgrade to premium to use this feature.
 
-        borderRadius: 14,
-        padding: "14px 0",
-        WebkitMaskImage: "linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent)",
-        maskImage: "linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent)",
-      }}
-    >
-      {/* Top glow line */}
+            <button
+              onClick={() => navigate("/investor/subscription")}
+            >
+              Upgrade to Premium
+            </button>
+          </div>
+        )
+      }
       <div
         style={{
-          position: "absolute",
-          top: 0, left: 0, right: 0,
-          height: 1,
-          background: "linear-gradient(to right, transparent, rgba(99,179,237,0.35), transparent)",
-          pointerEvents: "none",
-        }}
-      />
+          width: "100%",
+          position: "relative",
 
-      {/* Scrollable track */}
-      <div
-        ref={scrollRef}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          display: "flex",
-          gap: 10,
-          padding: "0 16px",
-          overflowX: "scroll",
-          scrollbarWidth: "none",       // Firefox
-          msOverflowStyle: "none",      // IE
-          cursor: "grab",
-          WebkitOverflowScrolling: "touch",
+          borderRadius: 14,
+          padding: "14px 0",
+          WebkitMaskImage: "linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent)",
+          maskImage: "linear-gradient(to right, transparent, black 60px, black calc(100% - 60px), transparent)",
         }}
       >
-        {/* Hide webkit scrollbar via inline style tag trick */}
-        <style>{`
+        {/* Top glow line */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            height: 1,
+            background: "linear-gradient(to right, transparent, rgba(99,179,237,0.35), transparent)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Scrollable track */}
+        <div
+          ref={scrollRef}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{
+            display: "flex",
+            gap: 10,
+            padding: "0 16px",
+            overflowX: "scroll",
+            scrollbarWidth: "none",       // Firefox
+            msOverflowStyle: "none",      // IE
+            cursor: "grab",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {/* Hide webkit scrollbar via inline style tag trick */}
+          <style>{`
           div::-webkit-scrollbar { display: none; }
         `}</style>
 
-        {stockList.map((stock, i) => (
-          <StockCard
-            key={`${stock.symbol}-${i}`}
-            stock={stock}
-            index={i}
-            onClick={() => {
-              if (onCompare) {
-                onCompare(stock.symbol);
-                return;
-              }
+          {stockList.map((stock, i) => (
+            <StockCard
 
-
-            }}
-          />
-        ))}
+              key={`${stock.symbol}-${i}`}
+              stock={stock}
+              index={i}
+              onClick={() => {
+                if (!isPremium) {
+                  return;
+                }
+                if (onCompare) {
+                  onCompare(stock.symbol);
+                  return;
+                }
+              }}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
