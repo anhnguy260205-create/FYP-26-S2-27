@@ -88,7 +88,7 @@ function MiniChart({ candles, width = 120, height = 40 }) {
         d={linePath}
         fill="none"
         stroke={color}
-        strokeWidth="1.75"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -99,7 +99,7 @@ function MiniChart({ candles, width = 120, height = 40 }) {
           key={i}
           cx={toX(i)}
           cy={toY(p)}
-          r={i === prices.length - 1 ? 3 : 2}          // last dot slightly bigger
+          r={i === prices.length - 1 ? 2 : 1.5}          // last dot slightly bigger
           fill={i === prices.length - 1 ? color : dotColor}
           stroke={i === prices.length - 1 ? "rgba(0,0,0,0.4)" : "none"}
           strokeWidth="1"
