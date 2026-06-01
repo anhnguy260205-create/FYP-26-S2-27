@@ -30,6 +30,11 @@ export const logoutAccount = async (userId) => {
 
 }
 
+export const getSubscriptionStatus = async (userId) => {
+  const response = await fetch(`${BASE_URL}/subscription-status/${userId}`);
+  return await response.json();
+};
+
 export const updateSubscriptionStatus = async (
   userId,
   planType

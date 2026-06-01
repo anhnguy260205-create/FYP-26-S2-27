@@ -43,6 +43,11 @@ class Subscription(Base):
                 sub_status="active",
                 sub_renewal_date=renewal_date
             )
+            investor = session.query(Investor).filter(
+                Investor.investor_id == investor_id
+            ).first()
+            if investor:
+                investor.investor_subscription_status = plan_type
             session.add(subscription)
             session.commit()
             print("SUBSCRIPTION CREATED")

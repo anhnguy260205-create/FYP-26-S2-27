@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
-import { updateSubscriptionStatus } from "../../api/userApi.js";
+import { getSubscriptionStatus, updateSubscriptionStatus } from "../../api/userApi.js";
 
 function Badge({ children, type }) {
   const s =
@@ -56,8 +56,9 @@ function Feature({ children, type }) {
   );
 }
 
-function FreeTier({ userId }) {
+function FreeTier({ userId, currentSubscriptionStatus }) {
   const [hovered, setHovered] = useState(false);
+  const isSubscribed = currentSubscriptionStatus === "basic" || currentSubscriptionStatus === "premium";
 
   return (
     <motion.div
@@ -95,6 +96,7 @@ function FreeTier({ userId }) {
       <Feature type="free">Paper Trading</Feature>
 
       <button
+        disabled={isSubscribed}
         style={{
           width: "100%",
           marginTop: "22px",
@@ -102,24 +104,33 @@ function FreeTier({ userId }) {
           borderRadius: "12px",
           fontSize: "14px",
           fontWeight: 500,
-          cursor: "pointer",
+          cursor: isSubscribed ? "not-allowed" : "pointer",
           border: "none",
-          background: "#2563EB",
-          color: "#fff",
+          background: isSubscribed ? "#475569" : "#2563EB",
+          color: isSubscribed ? "#CBD5E1" : "#fff",
+          opacity: isSubscribed ? 0.75 : 1,
           transition: "opacity 0.2s, transform 0.15s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
+        onMouseEnter={(e) => {
+          if (isSubscribed) return;
+          e.currentTarget.style.opacity = "0.88";
+          e.currentTarget.style.transform = "scale(0.98)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = isSubscribed ? "0.75" : "1";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
         onClick={() => updateSubscriptionStatus(userId, "basic")}
       >
-        Get started
+        {isSubscribed ? "Current plan active" : "Get started"}
       </button>
     </motion.div>
   );
 }
 
-function PremiumTier({ userId }) {
+function PremiumTier({ userId, currentSubscriptionStatus }) {
   const [hovered, setHovered] = useState(false);
+  const isPremium = currentSubscriptionStatus === "premium";
 
   return (
     <motion.div
@@ -152,6 +163,7 @@ function PremiumTier({ userId }) {
       <Feature type="premium">Expert Consultation Services</Feature>
       <Feature type="premium">Advanced Charting & Technical Analysis Tools</Feature>
       <button
+        disabled={isPremium}
         style={{
           width: "100%",
           marginTop: "145px",
@@ -159,17 +171,25 @@ function PremiumTier({ userId }) {
           borderRadius: "12px",
           fontSize: "14px",
           fontWeight: 500,
-          cursor: "pointer",
+          cursor: isPremium ? "not-allowed" : "pointer",
           border: "none",
-          background: "#D97706",
-          color: "#fff",
+          background: isPremium ? "#78716C" : "#D97706",
+          color: isPremium ? "#E7E5E4" : "#fff",
+          opacity: isPremium ? 0.75 : 1,
           transition: "opacity 0.2s, transform 0.15s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
+        onMouseEnter={(e) => {
+          if (isPremium) return;
+          e.currentTarget.style.opacity = "0.88";
+          e.currentTarget.style.transform = "scale(0.98)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = isPremium ? "0.75" : "1";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
         onClick={() => updateSubscriptionStatus(userId, "premium")}
       >
-        Upgrade now
+        {isPremium ? "Premium active" : "Upgrade now"}
       </button>
     </motion.div>
   );
@@ -177,7 +197,29 @@ function PremiumTier({ userId }) {
 
 function SubscriptionPage() {
   const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-  const userId = user?.user_id;  // ✅ optional chaining avoids crash if null
+  const userId = user?.user_id;
+  const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
+    user?.subscription_status || "inactive"
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadSubscriptionStatus = async () => {
+      const result = await getSubscriptionStatus(userId);
+      if (!result.success) return;
+
+      const nextStatus = result.subscription_status || "inactive";
+      setCurrentSubscriptionStatus(nextStatus);
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({ ...user, subscription_status: nextStatus })
+      );
+    };
+
+    loadSubscriptionStatus();
+  }, [userId]);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -191,8 +233,8 @@ function SubscriptionPage() {
           className="flex gap-50"
           style={{ justifyContent: "center", alignItems: "center", paddingTop: "90px", paddingBottom: "90px" }}
         >
-          <FreeTier userId={userId} />
-          <PremiumTier userId={userId} />
+          <FreeTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
+          <PremiumTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
         </div>
       </main>
       <Footer />

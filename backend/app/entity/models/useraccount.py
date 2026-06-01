@@ -105,7 +105,8 @@ class UserAccount(Base):
                 "username": matching_account.username,
                 "full_name": matching_account.full_name,
                 "email": matching_account.email_address,
-                "role": role  # ← investor / expert / admin
+                "role": role,  # ← investor / expert / admin
+                "subscription_status": investor.investor_subscription_status if investor else "inactive"
             }
         }
 
