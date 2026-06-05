@@ -3,6 +3,7 @@ import websockets
 import json
 import asyncio
 import os
+import math
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -33,6 +34,16 @@ stock_pool = [
     "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
     "AMZN", "META", "AMD",  "NFLX", "INTC"
 ]
+
+
+def clean_json_value(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: clean_json_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [clean_json_value(item) for item in value]
+    return value
 
 
 def alpaca_headers() -> dict:
@@ -325,7 +336,7 @@ async def send_json_to_client(websocket: WebSocket, message: dict):
     if not send_lock:
         return
     async with send_lock:
-        await websocket.send_json(message)
+        await websocket.send_json(clean_json_value(message))
 
 
 async def broadcast_to_clients(message: str):
