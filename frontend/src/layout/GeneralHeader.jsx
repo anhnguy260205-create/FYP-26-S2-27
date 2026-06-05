@@ -69,10 +69,10 @@ function Profile() {
   return (
     <button
       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-      style={{ height: "41px", padding: "0 16px", color: "#00D3F2", fontSize: "14px", fontWeight: 600, gap: "8px" }}
+      style={{ height: "41px", padding: "0 16px", color: "black", fontSize: "14px", fontWeight: 600, gap: "8px" }}
     >
       <div style={{
-        width: "26px", height: "26px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
+        width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
       }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

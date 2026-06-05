@@ -17,11 +17,11 @@ load_dotenv(BASE_DIR / ".env")
 
 router = APIRouter()
 
-ALPACA_API_KEY    = os.getenv("ALPACA_API_KEY")
+ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
 ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
 
 ALPACA_DATA_REST_URL = "https://data.alpaca.markets/v2/stocks"
-ALPACA_DATA_WS_URL   = "wss://stream.data.alpaca.markets/v2/iex"
+ALPACA_DATA_WS_URL = "wss://stream.data.alpaca.markets/v2/iex"
 
 
 # Store connected clients
@@ -42,12 +42,12 @@ def alpaca_headers() -> dict:
     }
 
 
-# getting market status 
+# getting market status
 def get_market_status() -> str:
     eastern = ZoneInfo("America/New_York")
     now = datetime.now(eastern)
     current_time = now.time()
-    market_open  = current_time >= datetime.strptime("09:30", "%H:%M").time()
+    market_open = current_time >= datetime.strptime("09:30", "%H:%M").time()
     market_close = current_time <= datetime.strptime("16:00", "%H:%M").time()
     weekday = now.weekday() < 5
     if weekday and market_open and market_close:
@@ -63,12 +63,12 @@ def get_snapshot_yfinance(symbol: str) -> dict:
     # One call: last 2 daily bars → today + yesterday
     hist = ticker.history(period="2d", interval="1d")
 
-    today     = None
+    today = None
     yesterday = None
 
     if not hist.empty:
         # hist is sorted oldest→newest
-        today     = hist.iloc[-1]
+        today = hist.iloc[-1]
         yesterday = hist.iloc[-2] if len(hist) >= 2 else None
 
     # avg volume: three_month_average_volume from fast_info is reliable
@@ -78,49 +78,49 @@ def get_snapshot_yfinance(symbol: str) -> dict:
     return {
         "s":             symbol,
         # Use today's close as the current price (market closed → last close)
-        "p":             float(today["Close"])          if today is not None else None,
-        "close":         float(today["Close"])          if today is not None else None,
-        "previousClose": float(yesterday["Close"])      if yesterday is not None else None,
-        "open":          float(today["Open"])           if today is not None else None,
-        "high":          float(today["High"])           if today is not None else None,
-        "low":           float(today["Low"])            if today is not None else None,
+        "p":             float(today["Close"]) if today is not None else None,
+        "close":         float(today["Close"]) if today is not None else None,
+        "previousClose": float(yesterday["Close"]) if yesterday is not None else None,
+        "open":          float(today["Open"]) if today is not None else None,
+        "high":          float(today["High"]) if today is not None else None,
+        "low":           float(today["Low"]) if today is not None else None,
         # today's total volume — matches Google Finance
-        "volume":        int(today["Volume"])           if today is not None else None,
+        "volume":        int(today["Volume"]) if today is not None else None,
         # 3-month average daily volume — matches Google Finance
-        "avgVolume":     int(avg_volume)                if avg_volume is not None else None,
+        "avgVolume":     int(avg_volume) if avg_volume is not None else None,
     }
 
 
-def get_historical_bars_yfinance(symbol: str, range: str= "1D",  limit: int = 1800) -> list:
-   
+def get_historical_bars_yfinance(symbol: str, range: str = "1D",  limit: int = 1800) -> list:
+
     ticker = yf.Ticker(symbol)
     if range == "1D":
-     period = "1d"
-     interval = "1m"
+        period = "1d"
+        interval = "1m"
 
     elif range == "1W":
-     period = "7d"
-     interval = "5m"
+        period = "7d"
+        interval = "5m"
 
     elif range == "1M":
-      period = "1mo"
-      interval = "1d"
+        period = "1mo"
+        interval = "1d"
 
     elif range == "3M":
-      period = "3mo"
-      interval = "1d"
+        period = "3mo"
+        interval = "1d"
 
     elif range == "6M":
-      period = "6mo"
-      interval = "1d"
+        period = "6mo"
+        interval = "1d"
 
     elif range == "1Y":
-     period = "1y"
-     interval = "1wk"
+        period = "1y"
+        interval = "1wk"
 
     else:
-      period = "1d"
-      interval = "1m"
+        period = "1d"
+        interval = "1m"
     df = ticker.history(period=period, interval=interval)
     if df.empty:
         return []
@@ -166,9 +166,9 @@ def get_snapshot_alpaca(symbol: str) -> dict:
     with urlopen(req, timeout=10) as resp:
         data = json.loads(resp.read().decode())
 
-    daily_bar    = data.get("dailyBar")     or {}
-    prev_bar     = data.get("prevDailyBar") or {}
-    latest_trade = data.get("latestTrade")  or {}
+    daily_bar = data.get("dailyBar") or {}
+    prev_bar = data.get("prevDailyBar") or {}
+    latest_trade = data.get("latestTrade") or {}
 
     # avgVolume: pull from yfinance fast_info (fast — no heavy fundamentals fetch)
     today_volume = None
@@ -180,7 +180,8 @@ def get_snapshot_alpaca(symbol: str) -> dict:
         if not hist.empty:
             today_volume = int(hist.iloc[-1]["Volume"])
 
-        avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
+        avg_volume = getattr(
+            ticker.fast_info, "three_month_average_volume", None)
         if avg_volume is not None:
             avg_volume = int(avg_volume)
     except Exception as e:
@@ -218,7 +219,8 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
         timeframe = "1Min"
         start_days = 2
 
-    start = (datetime.utcnow() - timedelta(days=start_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    start = (datetime.utcnow() - timedelta(days=start_days)
+             ).strftime("%Y-%m-%dT%H:%M:%SZ")
     params = urlencode({
         "timeframe": timeframe,
         "start":     start,
@@ -241,7 +243,7 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
         {
             "time":   int(datetime.fromisoformat(
                           b["t"].replace("Z", "+00:00")
-                      ).timestamp() * 1000),
+                          ).timestamp() * 1000),
             "open":   b.get("o"),
             "high":   b.get("h"),
             "low":    b.get("l"),
@@ -259,13 +261,15 @@ def get_snapshot(symbol: str) -> dict:
         try:
             return get_snapshot_alpaca(symbol)
         except Exception as e:
-            print(f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
+            print(
+                f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
             return get_snapshot_yfinance(symbol)
     else:
         try:
             return get_snapshot_yfinance(symbol)
         except Exception as e:
-            print(f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
+            print(
+                f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
             return get_snapshot_alpaca(symbol)
 
 
@@ -280,7 +284,8 @@ def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> li
         return get_historical_bars_yfinance(symbol, range=range, limit=limit)
     else:
         try:
-            bars = get_historical_bars_yfinance(symbol, range=range, limit=limit)
+            bars = get_historical_bars_yfinance(
+                symbol, range=range, limit=limit)
             if bars:
                 return bars
         except Exception as e:
@@ -294,6 +299,8 @@ async def register_client(websocket: WebSocket):
     async with clients_lock:
         connected_clients[websocket] = asyncio.Lock()
 # Stop streaming data when no one uses
+
+
 async def unregister_client(websocket: WebSocket):
     global alpaca_task
     async with clients_lock:
@@ -301,6 +308,7 @@ async def unregister_client(websocket: WebSocket):
         if not connected_clients and alpaca_task:
             alpaca_task.cancel()
             alpaca_task = None
+
 
 async def send_to_client(websocket: WebSocket, message: str):
     async with clients_lock:
@@ -310,6 +318,7 @@ async def send_to_client(websocket: WebSocket, message: str):
     async with send_lock:
         await websocket.send_text(message)
 
+
 async def send_json_to_client(websocket: WebSocket, message: dict):
     async with clients_lock:
         send_lock = connected_clients.get(websocket)
@@ -317,6 +326,7 @@ async def send_json_to_client(websocket: WebSocket, message: dict):
         return
     async with send_lock:
         await websocket.send_json(message)
+
 
 async def broadcast_to_clients(message: str):
     async with clients_lock:
@@ -337,29 +347,63 @@ async def broadcast_to_clients(message: str):
 
 async def send_snapshot_prices(websocket: WebSocket):
     """Send latest price snapshot — Alpaca if open, yfinance if closed."""
-    quotes = await asyncio.gather(
-        *[asyncio.to_thread(get_snapshot, s) for s in stock_pool]
+    results = await asyncio.gather(
+        *[asyncio.to_thread(get_snapshot, s) for s in stock_pool],
+        return_exceptions=True,
     )
+    quotes = []
+    failed_symbols = []
+
+    for symbol, result in zip(stock_pool, results):
+        if isinstance(result, Exception):
+            print(f"Snapshot fetch failed for {symbol}: {result}")
+            failed_symbols.append(symbol)
+            continue
+        quotes.append(result)
+
     await send_json_to_client(websocket, {
         "type":   "snapshot",
-        "data":   list(quotes),
+        "data":   quotes,
         "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
     })
+
+    if failed_symbols:
+        await send_json_to_client(websocket, {
+            "type": "error",
+            "message": f"Could not fetch stock snapshot for: {', '.join(failed_symbols)}",
+        })
 
 
 async def send_historical_candles(websocket: WebSocket, symbols: Optional[list[str]] = None, range: str = "1D"):
     """Send historical bars for the requested range."""
     symbols = symbols or stock_pool
-    history = await asyncio.gather(
-        *[asyncio.to_thread(get_historical_bars, s, range, 1800) for s in symbols]
+    results = await asyncio.gather(
+        *[asyncio.to_thread(get_historical_bars, s, range, 1800)
+          for s in symbols],
+        return_exceptions=True,
     )
-    payload = {symbol: bars for symbol, bars in zip(symbols, history)}
+    payload = {}
+    failed_symbols = []
+
+    for symbol, result in zip(symbols, results):
+        if isinstance(result, Exception):
+            print(f"Historical bars fetch failed for {symbol}: {result}")
+            failed_symbols.append(symbol)
+            continue
+        payload[symbol] = result
+
     await send_json_to_client(websocket, {
         "type":   "history",
         "data":   payload,
         "range":  range,
         "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
     })
+
+    if failed_symbols:
+        await send_json_to_client(websocket, {
+            "type": "error",
+            "message": f"Could not fetch chart data for: {', '.join(failed_symbols)}",
+        })
 
 
 # ── Alpaca WebSocket streaming (only when market OPEN) ────────────────────────
@@ -407,7 +451,8 @@ async def run_alpaca_connection():
                                 "data": {
                                     "s":    msg.get("S"),   # symbol
                                     "p":    msg.get("p"),   # price
-                                    "size": msg.get("s"),   # shares traded in this tick
+                                    # shares traded in this tick
+                                    "size": msg.get("s"),
                                     "t":    msg.get("t"),   # ISO timestamp
                                 }
                             }))
