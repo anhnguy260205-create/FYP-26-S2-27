@@ -2,7 +2,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, LoginController, LogoutController
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -129,4 +129,57 @@ def logout(data: LogoutRequest):
     return {
         "success": True,
         "message": "Logout successful"
+    }
+
+
+# Display user information (for both investor and expert)
+
+
+class InvestorInformationPage:
+    def __init__(self):
+        self.controller = InvestorInformationController()
+
+    def get_investor_information(self, user_id):
+        return self.controller.get_investor_information(user_id)
+
+
+@router.get("/investor-information/{user_id}")
+def get_investor_information(user_id: str):
+    boundary = InvestorInformationPage()
+
+    result = boundary.get_investor_information(user_id)
+    if not result:
+        return {
+            "success": False,
+            "message": "Investor information not found"
+        }
+    return {
+        "success": True,
+        "message": "Investor information retrieved successfully",
+        "investor_information": result
+    }
+
+
+class ExpertInformationPage:
+    def __init__(self):
+        self.controller = ExpertInformationController()
+
+    def get_expert_information(self, user_id):
+        return self.controller.get_expert_information(user_id)
+
+
+@router.get("/expert-information/{user_id}")
+def get_expert_information(user_id: str):
+    boundary = ExpertInformationPage()
+
+    result = boundary.get_expert_information(user_id)
+    if not result:
+        return {
+            "success": False,
+            "message": "Expert information not found"
+        }
+    return {
+        "success": True,
+        "message": "Expert information retrieved successfully",
+        "expert_information": result
     }

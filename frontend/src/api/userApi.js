@@ -66,3 +66,13 @@ export const updateSubscriptionStatus = async (
 
   return result;
 };
+
+export const getInvestorInformation = async (userId) => {
+  const response = await fetch(`${BASE_URL}/investor-information/${userId}`);
+  return await response.json();
+};
+
+export const getExpertInformation = async (userId) => {
+  const response = await fetch(`${BASE_URL}/expert-information/${userId}`);
+  return await response.json();
+};

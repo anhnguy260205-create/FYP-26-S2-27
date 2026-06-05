@@ -126,6 +126,24 @@ class UserAccount(Base):
         # For simplicity, we won't track active sessions in this example
         return True
 
+    @staticmethod
+    def get_user_information(user_id) -> dict:
+        from app.entity.models.expert import Expert
+        from app.entity.models.investor import Investor
+        user = session.query(UserAccount).filter(
+            UserAccount.user_id == user_id).first()
+        if not user:
+            return None
+
+        return {
+            "user_id": user.user_id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email_address,
+            "phone_number": user.phone_number,
+            "address": user.address,
+            "account_status": user.account_status,
+        }
 # auto generate the admin account
 
 
