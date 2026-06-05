@@ -178,7 +178,6 @@ export default function InteractiveChart({
   requestRangeData,
   stockList,
   compareDataBySymbol = {},
-  candleRanges = {},
   fetchCompareData,
 }) {
   // Take user subscription status from localStorage 
@@ -198,9 +197,10 @@ export default function InteractiveChart({
 
         const nextStatus = result.subscription_status || "inactive";
         setCurrentSubscriptionStatus(nextStatus);
+        const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
         localStorage.setItem(
           "currentUser",
-          JSON.stringify({ ...user, subscription_status: nextStatus })
+          JSON.stringify({ ...currentUser, subscription_status: nextStatus })
         );
       } catch (error) {
         console.error("Failed to load subscription status", error);
@@ -223,6 +223,8 @@ export default function InteractiveChart({
   const selectedRangeRef = useRef(selectedRange);
   const comparePlotsRef = useRef(comparePlots);
   const colorIndexRef = useRef(0);
+  const lastMainFitKeyRef = useRef("");
+  const lastCompareFitRangeRef = useRef("");
 
   useEffect(() => { selectedRangeRef.current = selectedRange; }, [selectedRange]);
   useEffect(() => { comparePlotsRef.current = comparePlots; }, [comparePlots]);
@@ -319,7 +321,11 @@ export default function InteractiveChart({
       mainPct: calcPercentChange(latestMainPrice, mainBasePriceRef.current),
     }));
 
-    chartRef.current.timeScale().fitContent();
+    const fitKey = `${selectedRange}:${comparePlots.length}`;
+    if (lastMainFitKeyRef.current !== fitKey) {
+      chartRef.current.timeScale().fitContent();
+      lastMainFitKeyRef.current = fitKey;
+    }
   }, [data, selectedRange, comparePlots.length]);
 
   /* ── update comparison series when new data arrives ──
@@ -328,34 +334,46 @@ export default function InteractiveChart({
      when the user switches to 1W/1M etc. ── */
   useEffect(() => {
     if (comparePlots.length === 0) return;
+    let cancelled = false;
 
-    setComparePlots((prev) =>
-      prev.map((plot) => {
-        const compData = compareDataBySymbol[plot.symbol];
-        if (!Array.isArray(compData) || compData.length === 0) return plot;
+    queueMicrotask(() => {
+      if (cancelled) return;
 
-        const priceData = normalizeChartData(filterByRange(compData, selectedRange));
-        if (priceData.length === 0) return plot;
+      setComparePlots((prev) =>
+        prev.map((plot) => {
+          const compData = compareDataBySymbol[plot.symbol];
+          if (!Array.isArray(compData) || compData.length === 0) return plot;
 
-        const percentData = normalizeToPercent(priceData);
+          const priceData = normalizeChartData(filterByRange(compData, selectedRange));
+          if (priceData.length === 0) return plot;
 
-        try {
-          plot.seriesRef.setData(percentData);
-        } catch {
-          // series may have been removed
-        }
+          const percentData = normalizeToPercent(priceData);
 
-        return {
-          ...plot,
-          priceData,
-          latestPrice: priceData.at(-1)?.value ?? null,
-          latestPct: percentData.at(-1)?.value ?? null,
-          basePrice: priceData[0]?.value ?? null,
-        };
-      })
-    );
+          try {
+            plot.seriesRef.setData(percentData);
+          } catch (error) {
+            console.error("Failed to update comparison series", error);
+          }
 
-    chartRef.current?.timeScale().fitContent();
+          return {
+            ...plot,
+            priceData,
+            latestPrice: priceData.at(-1)?.value ?? null,
+            latestPct: percentData.at(-1)?.value ?? null,
+            basePrice: priceData[0]?.value ?? null,
+          };
+        })
+      );
+    });
+
+    if (lastCompareFitRangeRef.current !== selectedRange) {
+      chartRef.current?.timeScale().fitContent();
+      lastCompareFitRangeRef.current = selectedRange;
+    }
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareDataBySymbol, selectedRange]);
 
@@ -434,7 +452,7 @@ export default function InteractiveChart({
     // Clear comparison series data right away so stale range data doesn't persist
     setComparePlots((prev) =>
       prev.map((plot) => {
-        try { plot.seriesRef.setData([]); } catch { }
+        try { plot.seriesRef.setData([]); } catch (error) { console.error("Failed to clear comparison series", error); }
         return plot;
       })
     );
@@ -448,7 +466,7 @@ export default function InteractiveChart({
           if (!result?.data) return;
           const priceData = normalizeChartData(filterByRange(result.data, range));
           const percentData = normalizeToPercent(priceData);
-          try { plot.seriesRef.setData(percentData); } catch { }
+          try { plot.seriesRef.setData(percentData); } catch (error) { console.error("Failed to set comparison range data", error); }
           setComparePlots((prev) =>
             prev.map((p) =>
               p.symbol !== plot.symbol ? p : {
@@ -473,7 +491,7 @@ export default function InteractiveChart({
     setComparePlots((prev) => {
       const plot = prev.find((p) => p.symbol === sym);
       if (plot?.seriesRef && chartRef.current) {
-        try { chartRef.current.removeSeries(plot.seriesRef); } catch { }
+        try { chartRef.current.removeSeries(plot.seriesRef); } catch (error) { console.error("Failed to remove comparison series", error); }
       }
       const next = prev.filter((p) => p.symbol !== sym);
       if (next.length === 0) setShowPlots(false);
@@ -487,7 +505,7 @@ export default function InteractiveChart({
       prev.map((p) => {
         if (p.symbol !== sym) return p;
         const nowVisible = !p.visible;
-        try { p.seriesRef.applyOptions({ visible: nowVisible }); } catch { }
+        try { p.seriesRef.applyOptions({ visible: nowVisible }); } catch (error) { console.error("Failed to toggle comparison series", error); }
         return { ...p, visible: nowVisible };
       })
     );

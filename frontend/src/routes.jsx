@@ -12,11 +12,13 @@ import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
+import EditProfilePage from "./pages/investor/EditProfilePage.jsx";
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
     { path: "/register", Component: RegistrationPage },
     { path: "/login", Component: LoginPage },
+
     {
         path: "/investor/loggedhome",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
@@ -50,7 +52,12 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><PaymentFail /></ProtectedRoute>
     },
     {
+        path: "/investor/edit-profile",
+        element: <ProtectedRoute allowedRoles={["investor"]}><EditProfilePage /></ProtectedRoute>
+    },
+    {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
 ]);
+
