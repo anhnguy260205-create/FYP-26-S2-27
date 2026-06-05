@@ -50,6 +50,19 @@ function normalizeCandles(candles) {
   );
 }
 
+function parseStockMessage(rawMessage) {
+  try {
+    return JSON.parse(rawMessage);
+  } catch (parseError) {
+    const sanitizedMessage = rawMessage.replace(
+      /:\s*(NaN|Infinity|-Infinity)(\s*[,}])/g,
+      ": null$2"
+    );
+
+    return JSON.parse(sanitizedMessage);
+  }
+}
+
 function useLiveStocks() {
   const [stocks, setStocks] = useState(
     {}
@@ -117,9 +130,25 @@ function useLiveStocks() {
 
     /* RECEIVE DATA */
     socket.onmessage = (event) => {
-      const response = JSON.parse(
-        event.data
-      );
+      let response;
+
+      try {
+        response = parseStockMessage(
+          event.data
+        );
+      } catch (parseError) {
+        console.error(
+          "Invalid stock websocket message",
+          parseError,
+          event.data
+        );
+
+        setError(
+          "Received invalid stock data from backend"
+        );
+
+        return;
+      }
 
       console.log(response);
 
