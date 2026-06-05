@@ -45,12 +45,10 @@ function DropDownMenu() {
   return (
     <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
                      group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-      <button onClick={() => navigate("/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+      <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Edit Profile
       </button>
-      <button onClick={() => navigate("/settings")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
-        Settings
-      </button>
+
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Subscription
       </button>
