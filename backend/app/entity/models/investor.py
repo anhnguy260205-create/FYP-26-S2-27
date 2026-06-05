@@ -50,3 +50,18 @@ class Investor(Base):
         return session.query(Investor).filter(
             Investor.user_id == user_id
         ).first()
+
+    @staticmethod
+    def get_investor_information(user_id):
+        user = UserAccount.get_user_information(user_id)
+        investor_id = Investor.getInvestorByUserId(user_id)
+        if not investor_id:
+            return None
+        investor = session.query(Investor).filter(
+            Investor.investor_id == investor_id.investor_id).first()
+        return {
+            **user,
+            "investor_id": investor.investor_id,
+            "stock_level": investor.stock_level,
+            "investor_subscription_status": investor.investor_subscription_status
+        }

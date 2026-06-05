@@ -12,7 +12,8 @@ import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
-import EditProfilePage from "./pages/investor/EditProfilePage.jsx";
+import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
+import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
@@ -53,11 +54,15 @@ export const router = createBrowserRouter([
     },
     {
         path: "/investor/edit-profile",
-        element: <ProtectedRoute allowedRoles={["investor"]}><EditProfilePage /></ProtectedRoute>
+        element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
     },
     {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
+    {
+        path: "/expert/edit-profile",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
+    }
 ]);
 
