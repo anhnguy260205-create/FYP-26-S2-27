@@ -46,7 +46,7 @@ function DropDownMenu() {
     <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
                      group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
       <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
-        Edit Profile
+        Profile
       </button>
 
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
@@ -64,6 +64,13 @@ function Profile() {
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser")
   );
+  const initials = currentUser?.full_name
+    ?.split(" ")
+    .map(n => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "??";
+
   return (
     <button
       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -73,9 +80,7 @@ function Profile() {
         width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
       }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-        </svg>
+        <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
       </div>
 
       {/* Dynamic username */}

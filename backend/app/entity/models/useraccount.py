@@ -142,6 +142,7 @@ class UserAccount(Base):
             "email": user.email_address,
             "phone_number": user.phone_number,
             "address": user.address,
+            "join_date": user.join_date,
             "account_status": user.account_status,
         }
 # auto generate the admin account
