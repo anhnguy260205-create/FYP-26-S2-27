@@ -81,6 +81,7 @@ class UserAccount(Base):
         matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
 
         matching_account.is_active = True
+        matching_account.account_status = "active"
         try:
             session.commit()
             session.refresh(matching_account)
@@ -121,6 +122,7 @@ class UserAccount(Base):
             return False
         # Update user status to inactive
         user.is_active = False
+        user.account_status = "inactive"
         try:
             session.commit()
         except:

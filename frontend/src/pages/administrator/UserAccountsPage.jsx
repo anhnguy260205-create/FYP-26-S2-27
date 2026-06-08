@@ -3,37 +3,37 @@ import { Search, Filter, Eye, Ban, Trash2, Mail, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function UserAccountsPage() {
-    const [users, setUsers] = useState([]);
-    const [keyword, setKeyword] = useState("");
-    const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const fetchUsers = async (searchKeyword = "") => {
-        try {
-            setLoading(true);
+  const fetchUsers = async (searchKeyword = "") => {
+    try {
+      setLoading(true);
 
-            const url = searchKeyword
-                ? `http://127.0.0.1:8000/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
-                : "http://127.0.0.1:8000/admin/useraccounts";
+      const url = searchKeyword
+        ? `http://127.0.0.1:8000/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
+        : "http://127.0.0.1:8000/admin/useraccounts";
 
-            const response = await fetch(url);
-            const data = await response.json();
+      const response = await fetch(url);
+      const data = await response.json();
 
-            if (data.success) {
-                setUsers(data.users);
-            } else {
-                setUsers([]);
-            }
-        } catch (error) {
-            console.error("Failed to fetch user accounts:", error);
-            setUsers([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (data.success) {
+        setUsers(data.users);
+      } else {
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user accounts:", error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  fetchUsers();
-}, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const menuItems = [
     { name: "Dashboard", path: "/adminpanel" },
@@ -57,10 +57,10 @@ useEffect(() => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-900">
+    <div className="min-h-screen bg-slate-950 text-slate-900 ">
       <div className="flex min-h-screen">
         {/* Sidebar */}
-        <aside className="w-[250px] bg-white border-r border-gray-200">
+        <aside className="w-[250px] bg-white border-r border-gray-200 sticky top-0 shrink-0 z-50">
           <div className="h-[84px] flex items-center px-9 border-b border-gray-100">
             <h1 className="text-2xl font-bold">Admin Panel</h1>
           </div>
@@ -70,11 +70,10 @@ useEffect(() => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`block px-4 py-3 rounded-lg text-sm font-medium ${
-                  item.name === "User Accounts"
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-slate-700 hover:bg-gray-100"
-                }`}
+                className={`block px-4 py-3 rounded-lg text-sm font-medium ${item.name === "User Accounts"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-slate-700 hover:bg-gray-100"
+                  }`}
               >
                 {item.name}
               </Link>
@@ -85,9 +84,9 @@ useEffect(() => {
         {/* Main */}
         <main className="flex-1 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
           {/* Header */}
-          <header className="h-[84px] bg-white flex items-center justify-between px-8">
+          <header className="h-[84px] bg-white flex items-center justify-between px-8 shrink-0 sticky top-0 z-50">
             <div>
-              <h2 className="text-4xl font-bold">User Accounts</h2>
+              <h2 className="text-2xl font-bold">User Accounts</h2>
               <p className="text-base text-black mt-1">
                 Search and manage all user accounts
               </p>
@@ -118,20 +117,20 @@ useEffect(() => {
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            fetchUsers(keyword);
-                        }
+                      if (e.key === "Enter") {
+                        fetchUsers(keyword);
+                      }
                     }}
                     placeholder="Search by name, email, ID, or phone..."
                     className="w-full h-12 border border-gray-300 rounded-lg pl-12 pr-4 outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  />
                 </div>
 
                 <button
-                    onClick={() => fetchUsers(keyword)}
-                    className="h-12 px-8 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                  onClick={() => fetchUsers(keyword)}
+                  className="h-12 px-8 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
                 >
-                    Search
+                  Search
                 </button>
 
                 <Filter size={22} className="text-slate-500" />
@@ -162,51 +161,51 @@ useEffect(() => {
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.user_id} className="border-b border-gray-100">
-                        <td className="px-5 py-5">
-                            <div className="flex items-center gap-4">
-                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
-                                    {user.initials}
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">{user.full_name}</p>
-                                    <p className="text-slate-500">{user.user_id}</p>
-                                </div>
-                            </div>
-                        </td>
+                      <td className="px-5 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
+                            {user.initials}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{user.full_name}</p>
+                            <p className="text-slate-500">{user.user_id}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                        <td className="px-5 py-5 text-slate-600">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Mail size={15} className="text-gray-400" />
-                                <span>{user.email_address}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Phone size={15} className="text-gray-400" />
-                                <span>{user.phone_number}</span>
-                            </div>
-                        </td>
+                      <td className="px-5 py-5 text-slate-600">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Mail size={15} className="text-gray-400" />
+                          <span>{user.email_address}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone size={15} className="text-gray-400" />
+                          <span>{user.phone_number}</span>
+                        </div>
+                      </td>
 
-                        <td className="px-5 py-5">
-                            <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
-                                {user.role}
-                            </span>
-                        </td>
+                      <td className="px-5 py-5">
+                        <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
+                          {user.role}
+                        </span>
+                      </td>
 
-                        <td className="px-5 py-5">
-                            <span className={`px-4 py-2 rounded-full text-xs font-bold ${statusStyle(user.account_status)}`}>
-                                {user.account_status}
-                            </span>
-                        </td>
+                      <td className="px-5 py-5">
+                        <span className={`px-4 py-2 rounded-full text-xs font-bold ${statusStyle(user.account_status)}`}>
+                          {user.account_status}
+                        </span>
+                      </td>
 
-                        <td className="px-5 py-5 text-slate-600">{user.join_date}</td>
-                        <td className="px-5 py-5 text-slate-600">{user.last_login}</td>
+                      <td className="px-5 py-5 text-slate-600">{user.join_date}</td>
+                      <td className="px-5 py-5 text-slate-600">{user.last_login}</td>
 
-                        <td className="px-5 py-5">
-                            <div className="flex items-center gap-5">
-                                <Eye size={18} className="text-blue-600 cursor-pointer" />
-                                <Ban size={18} className="text-orange-600 cursor-pointer" />
-                                <Trash2 size={18} className="text-red-600 cursor-pointer" />
-                            </div>
-                        </td>
+                      <td className="px-5 py-5">
+                        <div className="flex items-center gap-5">
+                          <Eye size={18} className="text-blue-600 cursor-pointer" />
+                          <Ban size={18} className="text-orange-600 cursor-pointer" />
+                          <Trash2 size={18} className="text-red-600 cursor-pointer" />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
