@@ -142,6 +142,19 @@ class UserAccount(Base):
                 "account_status": user.account_status,
             }
 
+    @staticmethod
+    def updateInformation(user_id, full_name, email_address, phone_number, address):
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return False
+            user.full_name = full_name
+            user.email_address = email_address
+            user.phone_number = phone_number
+            user.address = address
+            return True
+
 
 def seed_admin_account():
     UserAccount.createAccount(
