@@ -1,18 +1,18 @@
 import { createChart } from "lightweight-charts";
 import { useEffect, useRef, useState, useCallback } from "react";
 import ComparisonChart from "./ComparisonChart.jsx";
+import { getSubscriptionStatus } from "../api/userApi.js";
 
 const RANGES = ["1D", "1W", "1M", "3M", "6M", "1Y"];
 const RANGE_LIMITS = { "1D": 390, "1W": 390, "1M": 30, "3M": 90, "6M": 180, "1Y": 52 };
 const ET_TIME_ZONE = "America/New_York";
 
-// Distinct colors for comparison lines
 const COMPARE_COLORS = [
   "#e91e8c", "#2196f3", "#ff9800", "#9c27b0",
   "#00bcd4", "#ff5722", "#4caf50", "#795548",
 ];
 
-/* ─── time helpers ──────────────────────────────────────────── */
+/* ─── time helpers ─────────────────────────────────────────── */
 function toUnixSeconds(time) {
   if (typeof time === "number") return Math.floor(time > 10_000_000_000 ? time / 1000 : time);
   const parsed = new Date(time).getTime();
@@ -56,19 +56,17 @@ function normalizeChartData(data) {
   const byTime = new Map();
   data.forEach((bar) => {
     const time = toUnixSeconds(bar.time);
-    const value = Number(bar.close);
+    const value = Number(bar.close ?? bar.value);
     if (!Number.isFinite(time) || !Number.isFinite(value)) return;
     byTime.set(time, { time, value });
   });
   return [...byTime.values()].sort((a, b) => a.time - b.time);
 }
-//Transfer absolute price data to % change from first point for better visual comparison
+
 function normalizeToPercent(data) {
   if (!data.length) return [];
-
   const base = data[0].value;
   if (!base) return [];
-
   return data.map((point) => ({
     time: point.time,
     value: ((point.value - base) / base) * 100,
@@ -92,9 +90,8 @@ function calcPercentChange(value, base) {
   return ((Number(value) - Number(base)) / Number(base)) * 100;
 }
 
-/** Normalize a series to % change from its first point */
-/* ─── Plots legend panel ─────────────────────────────────────── */
-function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice, mainPct, position, hoverRows }) {
+/* ─── PlotsPanel ────────────────────────────────────────────── */
+function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice, mainPct, hoverRows }) {
   if (plots.length === 0) return null;
   return (
     <div style={{
@@ -103,7 +100,6 @@ function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice,
       boxShadow: "0 4px 16px rgba(0,0,0,0.10)", padding: "10px 14px", minWidth: 280,
       pointerEvents: "auto",
     }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13, color: "#111827" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -120,12 +116,12 @@ function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice,
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9" }}>
         <span style={{ width: 12, height: 12, borderRadius: 3, background: "#16a34a", flexShrink: 0 }} />
         <span style={{ fontSize: 13, color: "#111827", flex: 1 }}>{mainSymbol}</span>
-        {mainPrice !== null && mainPrice !== undefined && (
+        {mainPrice != null && (
           <span style={{ fontSize: 12, fontWeight: 600, color: "#111827", minWidth: 64, textAlign: "right" }}>
             ${mainPrice.toFixed(2)}
           </span>
         )}
-        {mainPct !== null && mainPct !== undefined && (
+        {mainPct != null && (
           <span style={{ fontSize: 12, fontWeight: 600, color: mainPct >= 0 ? "#16a34a" : "#dc2626", minWidth: 58, textAlign: "right" }}>
             {mainPct >= 0 ? "+" : ""}{mainPct.toFixed(2)}%
           </span>
@@ -137,15 +133,12 @@ function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice,
         const hoverRow = hoverRows[plot.symbol];
         const price = hoverRow?.price ?? plot.latestPrice;
         const pct = hoverRow?.pct ?? plot.latestPct;
-
         return (
           <div key={plot.symbol} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
-            {/* Remove */}
             <button onClick={() => onRemove(plot.symbol)}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 14, lineHeight: 1, padding: 0, flexShrink: 0 }}>
               ×
             </button>
-            {/* Toggle */}
             <div onClick={() => onToggle(plot.symbol)} style={{ cursor: "pointer", flexShrink: 0 }}>
               <div style={{
                 width: 28, height: 16, borderRadius: 999,
@@ -159,17 +152,14 @@ function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice,
                 }} />
               </div>
             </div>
-            {/* Color dot */}
             <span style={{ width: 12, height: 12, borderRadius: 3, background: plot.color, flexShrink: 0 }} />
-            {/* Symbol */}
             <span style={{ fontSize: 13, color: "#111827", flex: 1 }}>{plot.name || plot.symbol}</span>
-            {/* Latest price */}
-            {price !== null && price !== undefined && (
+            {price != null && (
               <span style={{ fontSize: 12, fontWeight: 600, color: "#111827", minWidth: 64, textAlign: "right" }}>
                 ${price.toFixed(2)}
               </span>
             )}
-            {pct !== null && pct !== undefined && (
+            {pct != null && (
               <span style={{ fontSize: 12, fontWeight: 600, color: pct >= 0 ? "#16a34a" : "#dc2626", minWidth: 58, textAlign: "right" }}>
                 {pct >= 0 ? "+" : ""}{pct.toFixed(2)}%
               </span>
@@ -181,35 +171,60 @@ function PlotsPanel({ plots, onRemove, onToggle, onClose, mainSymbol, mainPrice,
   );
 }
 
-/* ─── InteractiveChart ───────────────────────────────────────── */
+/* ─── InteractiveChart ──────────────────────────────────────── */
 export default function InteractiveChart({
   data = [],
   symbol = "STOCK",
   requestRangeData,
   stockList,
   compareDataBySymbol = {},
-  candleRanges = {},
   fetchCompareData,
 }) {
+  // Take user subscription status from localStorage 
+  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const userId = user?.user_id;
+  const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
+    user?.subscription_status || "inactive"
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadSubscriptionStatus = async () => {
+      try {
+        const result = await getSubscriptionStatus(userId);
+        if (!result.success) return;
+
+        const nextStatus = result.subscription_status || "inactive";
+        setCurrentSubscriptionStatus(nextStatus);
+        const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+        localStorage.setItem(
+          "currentUser",
+          JSON.stringify({ ...currentUser, subscription_status: nextStatus })
+        );
+      } catch (error) {
+        console.error("Failed to load subscription status", error);
+      }
+    };
+
+    loadSubscriptionStatus();
+  }, [userId]);
+
   const [selectedRange, setSelectedRange] = useState("1D");
-  const [comparePlots, setComparePlots] = useState([]); // { symbol, color, visible, seriesRef, data, name, latestPrice, latestPct, basePrice }
+  const [comparePlots, setComparePlots] = useState([]);
   const [showPlots, setShowPlots] = useState(false);
-  const [pendingCompare, setPendingCompare] = useState(null);
-  const [plotPanelPosition, setPlotPanelPosition] = useState({ left: 16, top: 16 });
-  const [plotHoverData, setPlotHoverData] = useState({
-    mainPrice: null,
-    mainPct: null,
-    rows: {},
-  });
+  const [plotHoverData, setPlotHoverData] = useState({ mainPrice: null, mainPct: null, rows: {} });
 
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const mainSeriesRef = useRef(null);
   const mainPriceDataRef = useRef([]);
+  const mainBasePriceRef = useRef(null);
   const selectedRangeRef = useRef(selectedRange);
   const comparePlotsRef = useRef(comparePlots);
-  const mainBasePriceRef = useRef(null);
   const colorIndexRef = useRef(0);
+  const lastMainFitKeyRef = useRef("");
+  const lastCompareFitRangeRef = useRef("");
 
   useEffect(() => { selectedRangeRef.current = selectedRange; }, [selectedRange]);
   useEffect(() => { comparePlotsRef.current = comparePlots; }, [comparePlots]);
@@ -224,7 +239,7 @@ export default function InteractiveChart({
       layout: { background: { color: "#ffffff" }, textColor: "#6b7280", fontFamily: "Inter, sans-serif" },
       localization: { timeFormatter: (time) => formatChartTime(time, selectedRangeRef.current, true) },
       grid: { vertLines: { color: "#f1f5f9" }, horzLines: { color: "#f1f5f9" } },
-      rightPriceScale: { borderVisible: false },
+      rightPriceScale: { borderVisible: false, autoScale: true },
       timeScale: getTimeScaleOptions(selectedRangeRef.current),
       crosshair: {
         vertLine: { color: "#9ca3af", width: 1, style: 2, labelBackgroundColor: "#111827" },
@@ -246,19 +261,7 @@ export default function InteractiveChart({
     mainSeriesRef.current = series;
 
     chart.subscribeCrosshairMove((param) => {
-      if (!param.point || !param.time || param.point.x < 0 || param.point.y < 0) {
-        return;
-      }
-
-      const panelWidth = 300;
-      const panelHeight = 72 + comparePlotsRef.current.length * 32;
-      const maxLeft = Math.max(8, chartContainerRef.current.clientWidth - panelWidth - 8);
-      const maxTop = Math.max(8, chartContainerRef.current.clientHeight - panelHeight - 8);
-
-      setPlotPanelPosition({
-        left: Math.min(Math.max(param.point.x + 16, 8), maxLeft),
-        top: Math.min(Math.max(param.point.y + 16, 8), maxTop),
-      });
+      if (!param.point || !param.time || param.point.x < 0 || param.point.y < 0) return;
 
       const d = param.seriesData.get(series);
       const mainDisplayValue = getSeriesValue(d);
@@ -271,11 +274,7 @@ export default function InteractiveChart({
         const pct = getSeriesValue(point);
         const price = findValueAtTime(plot.priceData ?? [], param.time);
         if (price === null && pct === null) return;
-
-        rows[plot.symbol] = {
-          price,
-          pct,
-        };
+        rows[plot.symbol] = { price, pct };
       });
 
       setPlotHoverData({
@@ -293,34 +292,90 @@ export default function InteractiveChart({
     return () => { ro.disconnect(); chart.remove(); };
   }, []);
 
-  /* ── update main series on data/range change ── */
+  /* ── update main series when data or range changes ── */
   useEffect(() => {
     if (!mainSeriesRef.current || data.length === 0) return;
+
     const filtered = filterByRange(data, selectedRange);
     const formatted = normalizeChartData(filtered);
-    const hasComparePlots = comparePlots.length > 0;
-    const displayData = hasComparePlots ? normalizeToPercent(formatted) : formatted;
+    const hasComparisons = comparePlots.length > 0;
+    const displayData = hasComparisons ? normalizeToPercent(formatted) : formatted;
 
     chartRef.current.applyOptions({
       localization: { timeFormatter: (time) => formatChartTime(time, selectedRange, true) },
       timeScale: getTimeScaleOptions(selectedRange),
     });
     mainSeriesRef.current.applyOptions({
-      priceFormat: hasComparePlots
+      priceFormat: hasComparisons
         ? { type: "percent", precision: 2, minMove: 0.01 }
         : { type: "price", precision: 2, minMove: 0.01 },
     });
     mainSeriesRef.current.setData(displayData);
     mainPriceDataRef.current = formatted;
     mainBasePriceRef.current = formatted[0]?.value ?? null;
+
     const latestMainPrice = formatted.at(-1)?.value ?? null;
     setPlotHoverData((prev) => ({
       ...prev,
       mainPrice: latestMainPrice,
       mainPct: calcPercentChange(latestMainPrice, mainBasePriceRef.current),
     }));
-    chartRef.current.timeScale().fitContent();
-  }, [comparePlots.length, data, selectedRange]);
+
+    const fitKey = `${selectedRange}:${comparePlots.length}`;
+    if (lastMainFitKeyRef.current !== fitKey) {
+      chartRef.current.timeScale().fitContent();
+      lastMainFitKeyRef.current = fitKey;
+    }
+  }, [data, selectedRange, comparePlots.length]);
+
+  /* ── update comparison series when new data arrives ──
+     KEY FIX: no candleRanges guard — update as soon as compareDataBySymbol has data,
+     filtered to the current selectedRange. This prevents stale 1D data persisting
+     when the user switches to 1W/1M etc. ── */
+  useEffect(() => {
+    if (comparePlots.length === 0) return;
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      setComparePlots((prev) =>
+        prev.map((plot) => {
+          const compData = compareDataBySymbol[plot.symbol];
+          if (!Array.isArray(compData) || compData.length === 0) return plot;
+
+          const priceData = normalizeChartData(filterByRange(compData, selectedRange));
+          if (priceData.length === 0) return plot;
+
+          const percentData = normalizeToPercent(priceData);
+
+          try {
+            plot.seriesRef.setData(percentData);
+          } catch (error) {
+            console.error("Failed to update comparison series", error);
+          }
+
+          return {
+            ...plot,
+            priceData,
+            latestPrice: priceData.at(-1)?.value ?? null,
+            latestPct: percentData.at(-1)?.value ?? null,
+            basePrice: priceData[0]?.value ?? null,
+          };
+        })
+      );
+    });
+
+    if (lastCompareFitRangeRef.current !== selectedRange) {
+      chartRef.current?.timeScale().fitContent();
+      lastCompareFitRangeRef.current = selectedRange;
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compareDataBySymbol, selectedRange]);
 
   /* ── add a comparison series ── */
   const addCompareSeries = useCallback((sym, compData, name) => {
@@ -330,9 +385,8 @@ export default function InteractiveChart({
     const color = COMPARE_COLORS[colorIndexRef.current % COMPARE_COLORS.length];
     colorIndexRef.current += 1;
 
-    const filtered = filterByRange(compData, selectedRangeRef.current);
-    const normalized = normalizeChartData(filtered);
-    const percentData = normalizeToPercent(normalized);
+    const priceData = normalizeChartData(filterByRange(compData, selectedRangeRef.current));
+    const percentData = normalizeToPercent(priceData);
 
     const series = chartRef.current.addLineSeries({
       color,
@@ -347,102 +401,97 @@ export default function InteractiveChart({
     series.setData(percentData);
     chartRef.current.timeScale().fitContent();
 
-    const basePrice = normalized[0]?.value ?? null;
-    const latestPrice = normalized.length > 0 ? normalized[normalized.length - 1].value : null;
-    const latestPct = percentData.length > 0 ? percentData[percentData.length - 1].value : null;
-
-    setComparePlots((prev) => [...prev, { symbol: sym, name: name || sym, color, visible: true, seriesRef: series, rawData: compData, priceData: normalized, latestPrice, latestPct, basePrice }]);
+    setComparePlots((prev) => [...prev, {
+      symbol: sym,
+      name: name || sym,
+      color,
+      visible: true,
+      seriesRef: series,
+      priceData,
+      latestPrice: priceData.at(-1)?.value ?? null,
+      latestPct: percentData.at(-1)?.value ?? null,
+      basePrice: priceData[0]?.value ?? null,
+    }]);
     setShowPlots(true);
   }, []);
 
-  useEffect(() => {
-    if (!pendingCompare) return;
-    if (candleRanges[pendingCompare.symbol] !== selectedRange) return;
-
-    const compData = compareDataBySymbol[pendingCompare.symbol];
-    if (!Array.isArray(compData) || compData.length === 0) return;
-
-    addCompareSeries(pendingCompare.symbol, compData, pendingCompare.name);
-    queueMicrotask(() => setPendingCompare(null));
-  }, [addCompareSeries, candleRanges, compareDataBySymbol, pendingCompare, selectedRange]);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setComparePlots((prev) =>
-        prev.map((plot) => {
-          if (candleRanges[plot.symbol] !== selectedRange) return plot;
-
-          const compData = compareDataBySymbol[plot.symbol];
-          if (!Array.isArray(compData) || compData.length === 0) return plot;
-
-          const priceData = normalizeChartData(filterByRange(compData, selectedRange));
-          const percentData = normalizeToPercent(priceData);
-          plot.seriesRef.setData(percentData);
-          const basePrice = priceData[0]?.value ?? null;
-          const latestPrice = priceData.length > 0 ? priceData[priceData.length - 1].value : null;
-          const latestPct = percentData.length > 0 ? percentData[percentData.length - 1].value : null;
-
-          return {
-            ...plot,
-            rawData: compData,
-            priceData,
-            latestPrice,
-            latestPct,
-            basePrice,
-          };
-        })
-      );
-    });
-  }, [candleRanges, compareDataBySymbol, selectedRange]);
-
-  /* ── handle MiniBoard card click ── */
+  /* ── handle compare card click ── */
   const handleCompare = useCallback(async (sym) => {
     if (!sym || sym === symbol) return;
 
-    // Toggle off if already active
-    const existing = comparePlotsRef.current.find((p) => p.symbol === sym);
-    if (existing) {
+    // toggle off if already active
+    if (comparePlotsRef.current.find((p) => p.symbol === sym)) {
       removePlot(sym);
       return;
     }
 
-    const range = selectedRangeRef.current;
+    // use cached data if available
     const compData = compareDataBySymbol[sym];
-
-    if (candleRanges[sym] === range && Array.isArray(compData) && compData.length > 0) {
+    if (Array.isArray(compData) && compData.length > 0) {
       addCompareSeries(sym, compData, sym);
       return;
     }
 
-    setPendingCompare({ symbol: sym, name: sym });
-    requestRangeData?.(sym, range);
-
-    // Fetch data for the symbol
+    // fetch fresh data
     if (fetchCompareData) {
       try {
         const result = await fetchCompareData(sym, selectedRangeRef.current);
-        if (result && result.data) {
-          addCompareSeries(sym, result.data, result.name || sym);
-        }
+        if (result?.data) addCompareSeries(sym, result.data, result.name || sym);
       } catch (e) {
         console.error("Failed to fetch compare data for", sym, e);
       }
-    } else if (!requestRangeData) {
-      // No fetcher provided — show placeholder with empty data or stub
-      console.warn("fetchCompareData prop not provided. Pass it to enable comparisons.");
+    } else {
+      requestRangeData?.(sym, selectedRangeRef.current);
     }
-  }, [addCompareSeries, candleRanges, compareDataBySymbol, fetchCompareData, requestRangeData, symbol]);
+  }, [addCompareSeries, compareDataBySymbol, fetchCompareData, requestRangeData, symbol]);
+
+  /* ── range change: clear stale comparison data immediately ── */
+  const handleRange = useCallback((range) => {
+    setSelectedRange(range);
+
+    // Clear comparison series data right away so stale range data doesn't persist
+    setComparePlots((prev) =>
+      prev.map((plot) => {
+        try { plot.seriesRef.setData([]); } catch (error) { console.error("Failed to clear comparison series", error); }
+        return plot;
+      })
+    );
+
+    requestRangeData?.(symbol, range);
+
+    // Request new range data for all active comparisons
+    comparePlotsRef.current.forEach((plot) => {
+      if (fetchCompareData) {
+        fetchCompareData(plot.symbol, range).then((result) => {
+          if (!result?.data) return;
+          const priceData = normalizeChartData(filterByRange(result.data, range));
+          const percentData = normalizeToPercent(priceData);
+          try { plot.seriesRef.setData(percentData); } catch (error) { console.error("Failed to set comparison range data", error); }
+          setComparePlots((prev) =>
+            prev.map((p) =>
+              p.symbol !== plot.symbol ? p : {
+                ...p,
+                priceData,
+                latestPrice: priceData.at(-1)?.value ?? null,
+                latestPct: percentData.at(-1)?.value ?? null,
+                basePrice: priceData[0]?.value ?? null,
+              }
+            )
+          );
+          chartRef.current?.timeScale().fitContent();
+        }).catch(console.error);
+      } else {
+        requestRangeData?.(plot.symbol, range);
+      }
+    });
+  }, [symbol, requestRangeData, fetchCompareData]);
 
   /* ── remove a plot ── */
   function removePlot(sym) {
     setComparePlots((prev) => {
       const plot = prev.find((p) => p.symbol === sym);
       if (plot?.seriesRef && chartRef.current) {
-        try {
-          chartRef.current.removeSeries(plot.seriesRef);
-        } catch {
-          console.debug("Comparison series was already removed.");
-        }
+        try { chartRef.current.removeSeries(plot.seriesRef); } catch (error) { console.error("Failed to remove comparison series", error); }
       }
       const next = prev.filter((p) => p.symbol !== sym);
       if (next.length === 0) setShowPlots(false);
@@ -450,49 +499,38 @@ export default function InteractiveChart({
     });
   }
 
-  /* ── toggle a plot visibility ── */
+  /* ── toggle plot visibility ── */
   function togglePlot(sym) {
     setComparePlots((prev) =>
       prev.map((p) => {
         if (p.symbol !== sym) return p;
         const nowVisible = !p.visible;
-        try {
-          p.seriesRef.applyOptions({ visible: nowVisible });
-        } catch {
-          console.debug("Comparison series visibility could not be changed.");
-        }
+        try { p.seriesRef.applyOptions({ visible: nowVisible }); } catch (error) { console.error("Failed to toggle comparison series", error); }
         return { ...p, visible: nowVisible };
       })
     );
   }
 
-  /* ── close plots panel (hide, keep series) ── */
-  function closePlotsPanel() { setShowPlots(false); }
-
   const visibleData = filterByRange(data, selectedRange);
   const lastBar = visibleData.at(-1);
   const firstBar = visibleData[0];
-  const pctChange = lastBar && firstBar ? (((lastBar.close - firstBar.close) / firstBar.close) * 100).toFixed(2) : null;
-  const isUp = pctChange >= 0;
+  const pctChange = lastBar && firstBar
+    ? (((lastBar.close - firstBar.close) / firstBar.close) * 100).toFixed(2)
+    : null;
+  const isUp = Number(pctChange) >= 0;
   const activeSymbols = comparePlots.map((p) => p.symbol);
-
-  const handleRange = useCallback((range) => {
-    setSelectedRange(range);
-    if (requestRangeData) requestRangeData(symbol, range);
-    comparePlotsRef.current.forEach((plot) => {
-      requestRangeData?.(plot.symbol, range);
-    });
-  }, [symbol, requestRangeData]);
 
   return (
     <div style={{ background: "#ffffff", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
 
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#111827" }}>{symbol}</h2>
+        <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#111827", margin: 0 }}>{symbol}</h2>
         {lastBar && (
           <>
-            <span style={{ fontSize: "22px", fontWeight: "600", color: "#111827" }}>{lastBar.close.toFixed(2)}</span>
+            <span style={{ fontSize: "22px", fontWeight: "600", color: "#111827" }}>
+              {lastBar.close.toFixed(2)}
+            </span>
             <span style={{ color: isUp ? "#16a34a" : "#dc2626", fontWeight: "600" }}>
               {isUp ? "+" : ""}{pctChange}%
             </span>
@@ -510,12 +548,15 @@ export default function InteractiveChart({
           </svg>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#6b7280" }}>Compare to</span>
           {comparePlots.length > 0 && !showPlots && (
-            <button onClick={() => setShowPlots(true)} style={{ marginLeft: "auto", fontSize: 12, color: "#6366f1", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+            <button
+              onClick={() => setShowPlots(true)}
+              style={{ marginLeft: "auto", fontSize: 12, color: "#6366f1", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
+            >
               Show plots ({comparePlots.length})
             </button>
           )}
         </div>
-        <ComparisonChart stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} />
+        <ComparisonChart stocks={stockList} onCompare={handleCompare} activeSymbols={activeSymbols} subscriptionStatus={currentSubscriptionStatus} />
       </div>
 
       {/* RANGE BUTTONS */}
@@ -523,12 +564,16 @@ export default function InteractiveChart({
         {RANGES.map((range) => {
           const active = selectedRange === range;
           return (
-            <button key={range} onClick={() => handleRange(range)} style={{
-              padding: "6px 14px", borderRadius: "999px", border: "none",
-              background: active ? "#111827" : "#f3f4f6",
-              color: active ? "#ffffff" : "#6b7280",
-              cursor: "pointer", fontWeight: "600", transition: "0.2s",
-            }}>
+            <button
+              key={range}
+              onClick={() => handleRange(range)}
+              style={{
+                padding: "6px 14px", borderRadius: "999px", border: "none",
+                background: active ? "#111827" : "#f3f4f6",
+                color: active ? "#ffffff" : "#6b7280",
+                cursor: "pointer", fontWeight: "600", transition: "background 0.2s, color 0.2s",
+              }}
+            >
               {range}
             </button>
           );
@@ -543,11 +588,10 @@ export default function InteractiveChart({
             mainSymbol={symbol}
             mainPrice={plotHoverData.mainPrice}
             mainPct={plotHoverData.mainPct}
-            position={plotPanelPosition}
             hoverRows={plotHoverData.rows}
             onRemove={removePlot}
             onToggle={togglePlot}
-            onClose={closePlotsPanel}
+            onClose={() => setShowPlots(false)}
           />
         )}
       </div>
