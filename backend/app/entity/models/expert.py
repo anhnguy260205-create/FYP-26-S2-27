@@ -48,3 +48,22 @@ class Expert(Base):
             session.rollback()
             print("EXPERT ERROR:", e)
             return False
+
+    @staticmethod
+    def get_expert_information(user_id):
+        user = UserAccount.get_user_information(user_id)
+        expert_id = session.query(Expert).filter(
+            Expert.user_id == user_id
+        ).first()
+        if not expert_id:
+            return None
+        expert = session.query(Expert).filter(
+            Expert.user_id == user_id
+        ).first()
+        return {
+            **user,
+            "expert_status": expert.expert_status,
+            "rating": expert.rating,
+            "experience_years": expert.experience_years,
+            "linked_in_url": expert.linked_in_url,
+        }

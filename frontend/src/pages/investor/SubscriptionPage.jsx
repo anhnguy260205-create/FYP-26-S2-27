@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
+import { getSubscriptionStatus, updateSubscriptionStatus } from "../../api/userApi.js";
 
 function Badge({ children, type }) {
   const s =
@@ -55,13 +56,10 @@ function Feature({ children, type }) {
   );
 }
 
-function FreeTier() {
+function FreeTier({ userId, currentSubscriptionStatus }) {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const isSubscribed = currentSubscriptionStatus === "basic" || currentSubscriptionStatus === "premium";
 
-    alert("The feature is coming soon!")
-  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -72,7 +70,7 @@ function FreeTier() {
         border: hovered ? "1.5px solid #60A5FA" : "1.5px solid #2563EB",
         borderRadius: "24px",
         padding: "28px 32px",
-        width: "320px",
+        width: "400px",
         cursor: "pointer",
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
@@ -85,13 +83,20 @@ function FreeTier() {
     >
       <Badge type="free">Free</Badge>
       <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#E0EEFF" }}>Starter</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0.00</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>forever, no card needed</p>
       <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
-      <Feature type="free">Up to 3 projects</Feature>
-      <Feature type="free">5 GB storage</Feature>
-      <Feature type="free">Community support</Feature>
+
+      <Feature type="free">Limited AI-Powered Stock Recommendations</Feature>
+      <Feature type="free">Limited Personal Watchlist Management</Feature>
+      <Feature type="free">Limited Expert Portfolio Access</Feature>
+      <Feature type="free">Real-Time Market Dashboard</Feature>
+      <Feature type="free">Knowledge Hub Access</Feature>
+      <Feature type="free">AI Investment Chatbot</Feature>
+      <Feature type="free">Paper Trading</Feature>
+
       <button
+        disabled={isSubscribed}
         style={{
           width: "100%",
           marginTop: "22px",
@@ -99,29 +104,34 @@ function FreeTier() {
           borderRadius: "12px",
           fontSize: "14px",
           fontWeight: 500,
-          cursor: "pointer",
+          cursor: isSubscribed ? "not-allowed" : "pointer",
           border: "none",
-          background: "#2563EB",
-          color: "#fff",
+          background: isSubscribed ? "#475569" : "#2563EB",
+          color: isSubscribed ? "#CBD5E1" : "#fff",
+          opacity: isSubscribed ? 0.75 : 1,
           transition: "opacity 0.2s, transform 0.15s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-        onClick={handleSubmit}
+        onMouseEnter={(e) => {
+          if (isSubscribed) return;
+          e.currentTarget.style.opacity = "0.88";
+          e.currentTarget.style.transform = "scale(0.98)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = isSubscribed ? "0.75" : "1";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        onClick={() => updateSubscriptionStatus(userId, "basic")}
       >
-        Get started
+        {isSubscribed ? "Current plan active" : "Get started"}
       </button>
     </motion.div>
   );
 }
 
-function PremiumTier() {
+function PremiumTier({ userId, currentSubscriptionStatus }) {
   const [hovered, setHovered] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const isPremium = currentSubscriptionStatus === "premium";
 
-    alert("The feature is coming soon!")
-  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -129,10 +139,11 @@ function PremiumTier() {
       transition={{ duration: 0.5, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
+        height: "515px",
         border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
         borderRadius: "24px",
         padding: "28px 32px",
-        width: "320px",
+        width: "400px",
         cursor: "pointer",
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
@@ -145,37 +156,70 @@ function PremiumTier() {
     >
       <Badge type="premium">⭐ Premium</Badge>
       <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#FFFBEB" }}>Pro</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$12</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$20.99</p>
       <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>per month, billed annually</p>
       <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
-      <Feature type="premium">Unlimited projects</Feature>
-      <Feature type="premium">100 GB storage</Feature>
-      <Feature type="premium">Priority support</Feature>
+      <Feature type="premium">Everything in Basic without Limitations</Feature>
+      <Feature type="premium">Expert Consultation Services</Feature>
+      <Feature type="premium">Advanced Charting & Technical Analysis Tools</Feature>
       <button
+        disabled={isPremium}
         style={{
           width: "100%",
-          marginTop: "22px",
+          marginTop: "145px",
           padding: "11px 0",
           borderRadius: "12px",
           fontSize: "14px",
           fontWeight: 500,
-          cursor: "pointer",
+          cursor: isPremium ? "not-allowed" : "pointer",
           border: "none",
-          background: "#D97706",
-          color: "#fff",
+          background: isPremium ? "#78716C" : "#D97706",
+          color: isPremium ? "#E7E5E4" : "#fff",
+          opacity: isPremium ? 0.75 : 1,
           transition: "opacity 0.2s, transform 0.15s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "scale(0.98)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-        onClick={handleSubmit}
+        onMouseEnter={(e) => {
+          if (isPremium) return;
+          e.currentTarget.style.opacity = "0.88";
+          e.currentTarget.style.transform = "scale(0.98)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = isPremium ? "0.75" : "1";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        onClick={() => updateSubscriptionStatus(userId, "premium")}
       >
-        Upgrade now
+        {isPremium ? "Premium active" : "Upgrade now"}
       </button>
     </motion.div>
   );
 }
 
 function SubscriptionPage() {
+  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const userId = user?.user_id;
+  const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
+    user?.subscription_status || "inactive"
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadSubscriptionStatus = async () => {
+      const result = await getSubscriptionStatus(userId);
+      if (!result.success) return;
+
+      const nextStatus = result.subscription_status || "inactive";
+      setCurrentSubscriptionStatus(nextStatus);
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({ ...user, subscription_status: nextStatus })
+      );
+    };
+
+    loadSubscriptionStatus();
+  }, [userId]);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -187,10 +231,10 @@ function SubscriptionPage() {
       <main className="flex-1 p-7.5">
         <div
           className="flex gap-50"
-          style={{ justifyContent: "center", alignItems: "center", paddingTop: "40px" }}
+          style={{ justifyContent: "center", alignItems: "center", paddingTop: "90px", paddingBottom: "90px" }}
         >
-          <FreeTier />
-          <PremiumTier />
+          <FreeTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
+          <PremiumTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
         </div>
       </main>
       <Footer />

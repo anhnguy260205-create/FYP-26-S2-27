@@ -11,11 +11,16 @@ import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
+import PaymentFail from "./pages/investor/PaymentFail.jsx";
+import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
+import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
     { path: "/register", Component: RegistrationPage },
     { path: "/login", Component: LoginPage },
+
     {
         path: "/investor/loggedhome",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
@@ -41,11 +46,28 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><SubscriptionPage /></ProtectedRoute>
     },
     {
+        path: "/investor/payment-success",
+        element: <ProtectedRoute allowedRoles={["investor"]}><PaymentSuccess /></ProtectedRoute>
+    },
+    {
+        path: "/investor/payment-fail",
+        element: <ProtectedRoute allowedRoles={["investor"]}><PaymentFail /></ProtectedRoute>
+    },
+    {
+        path: "/investor/edit-profile",
+        element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
+    },
+    {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
     {
         path: "/adminpanel/useraccounts",
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/edit-profile",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
     }
 ]);
+

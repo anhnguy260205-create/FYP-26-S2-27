@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -50,6 +51,83 @@ function normalizeCandles(candles) {
   );
 }
 
+function parseStockMessage(rawMessage) {
+  try {
+    return JSON.parse(rawMessage);
+  } catch {
+    const sanitizedMessage = rawMessage.replace(
+      /:\s*(NaN|Infinity|-Infinity)(\s*[,}])/g,
+      ": null$2"
+    );
+
+    return JSON.parse(sanitizedMessage);
+  }
+}
+
+const LIVE_UPDATE_FLUSH_MS = 300;
+
+function applyTradeCandleUpdate(list, trade) {
+  const tradeMs = new Date(trade.t).getTime();
+  const bucket = Math.floor(tradeMs / 60000) * 60000;
+  const price = Number(trade.p);
+  const size = Number(trade.size ?? 0);
+  const next = list ? [...list] : [];
+  const last = next.at(-1);
+
+  if (!Number.isFinite(bucket) || !Number.isFinite(price)) return next;
+
+  if (last && last.time === bucket) {
+    next[next.length - 1] = {
+      ...last,
+      high: Math.max(last.high, price),
+      low: Math.min(last.low, price),
+      close: price,
+      volume: Number(last.volume ?? 0) + size,
+    };
+  } else {
+    next.push({
+      time: bucket,
+      open: price,
+      high: price,
+      low: price,
+      close: price,
+      volume: size,
+    });
+  }
+
+  return next;
+}
+
+function applyBarCandleUpdate(list, bar) {
+  const barMs = new Date(bar.t).getTime();
+  const bucket = Math.floor(barMs / 60000) * 60000;
+  const next = list ? [...list] : [];
+  const nextBar = {
+    time: bucket,
+    open: Number(bar.open),
+    high: Number(bar.high),
+    low: Number(bar.low),
+    close: Number(bar.close),
+    volume: Number(bar.volume ?? 0),
+  };
+
+  if (
+    !Number.isFinite(nextBar.time) ||
+    !Number.isFinite(nextBar.close)
+  ) {
+    return next;
+  }
+
+  const last = next.at(-1);
+  if (last && last.time === bucket) {
+    next[next.length - 1] = nextBar;
+  } else {
+    next.push(nextBar);
+  }
+
+  return next;
+}
+
 function useLiveStocks() {
   const [stocks, setStocks] = useState(
     {}
@@ -76,6 +154,10 @@ function useLiveStocks() {
     useState("");
 
   const socketRef = useRef(null);
+  const pendingPricesRef = useRef({});
+  const pendingTradesRef = useRef([]);
+  const pendingBarsRef = useRef([]);
+  const flushTimerRef = useRef(null);
 
   /* SEND RANGE REQUEST */
   const requestRangeData = (
@@ -97,6 +179,79 @@ function useLiveStocks() {
     }
   };
 
+  const flushLiveUpdates = useCallback(() => {
+    flushTimerRef.current = null;
+
+    const pendingPrices = pendingPricesRef.current;
+    const pendingTrades = pendingTradesRef.current;
+    const pendingBars = pendingBarsRef.current;
+
+    pendingPricesRef.current = {};
+    pendingTradesRef.current = [];
+    pendingBarsRef.current = [];
+
+    if (
+      Object.keys(pendingPrices).length === 0 &&
+      pendingTrades.length === 0 &&
+      pendingBars.length === 0
+    ) {
+      return;
+    }
+
+    setLastUpdated(new Date().toLocaleTimeString());
+
+    if (Object.keys(pendingPrices).length > 0) {
+      setStocks((prev) => {
+        let changed = false;
+        const updated = { ...prev };
+
+        Object.entries(pendingPrices).forEach(([symbol, price]) => {
+          if (!updated[symbol] || updated[symbol].price === price) return;
+          changed = true;
+          updated[symbol] = {
+            ...updated[symbol],
+            price,
+          };
+        });
+
+        return changed ? updated : prev;
+      });
+    }
+
+    if (pendingTrades.length > 0 || pendingBars.length > 0) {
+      setCandles((prev) => {
+        const updated = { ...prev };
+        const changedSymbols = new Set();
+
+        pendingTrades.forEach((trade) => {
+          if (!trade.s) return;
+          updated[trade.s] = applyTradeCandleUpdate(updated[trade.s], trade);
+          changedSymbols.add(trade.s);
+        });
+
+        pendingBars.forEach((bar) => {
+          if (!bar.s) return;
+          updated[bar.s] = applyBarCandleUpdate(updated[bar.s], bar);
+          changedSymbols.add(bar.s);
+        });
+
+        changedSymbols.forEach((symbol) => {
+          updated[symbol] = normalizeCandles(updated[symbol]);
+        });
+
+        return changedSymbols.size > 0 ? updated : prev;
+      });
+    }
+  }, []);
+
+  const scheduleLiveFlush = useCallback(() => {
+    if (flushTimerRef.current) return;
+    flushTimerRef.current = window.setTimeout(
+      flushLiveUpdates,
+      LIVE_UPDATE_FLUSH_MS
+    );
+  }, [flushLiveUpdates]);
+
   useEffect(() => {
     const socket = new WebSocket(
       "ws://127.0.0.1:8000/ws/stocks"
@@ -117,11 +272,25 @@ function useLiveStocks() {
 
     /* RECEIVE DATA */
     socket.onmessage = (event) => {
-      const response = JSON.parse(
-        event.data
-      );
+      let response;
 
-      console.log(response);
+      try {
+        response = parseStockMessage(
+          event.data
+        );
+      } catch (parseError) {
+        console.error(
+          "Invalid stock websocket message",
+          parseError,
+          event.data
+        );
+
+        setError(
+          "Received invalid stock data from backend"
+        );
+
+        return;
+      }
 
       /* MARKET STATUS */
       if (
@@ -272,125 +441,13 @@ function useLiveStocks() {
       if (
         response.type === "trade"
       ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
-
         const trade =
           response.data;
-
-        const tradeMs =
-          new Date(
-            trade.t
-          ).getTime();
-
-        /* 1 MINUTE BUCKET */
-        const bucket =
-          Math.floor(
-            tradeMs / 60000
-          ) * 60000;
-
-        /* UPDATE PRICE */
-        setStocks((prev) => {
-          if (!prev[trade.s])
-            return prev;
-
-          return {
-            ...prev,
-
-            [trade.s]: {
-              ...prev[
-              trade.s
-              ],
-
-              price: trade.p,
-            },
-          };
-        });
-
-        /* UPDATE CANDLE */
-        setCandles((prev) => {
-          const list = prev[
-            trade.s
-          ]
-            ? [
-              ...prev[
-              trade.s
-              ],
-            ]
-            : [];
-
-          const last =
-            list.at(-1);
-
-          if (
-            last &&
-            last.time ===
-            bucket
-          ) {
-            list[
-              list.length - 1
-            ] = {
-              ...last,
-
-              high:
-                Math.max(
-                  last.high,
-                  trade.p
-                ),
-
-              low:
-                Math.min(
-                  last.low,
-                  trade.p
-                ),
-
-              close:
-                trade.p,
-
-              volume:
-                Number(
-                  last.volume ??
-                  0
-                ) +
-                Number(
-                  trade.size ??
-                  0
-                ),
-            };
-          } else {
-            list.push({
-              time: bucket,
-
-              open:
-                trade.p,
-
-              high:
-                trade.p,
-
-              low:
-                trade.p,
-
-              close:
-                trade.p,
-
-              volume:
-                Number(
-                  trade.size ??
-                  0
-                ),
-            });
-          }
-
-          return {
-            ...prev,
-
-            [trade.s]:
-              normalizeCandles(
-                list
-              ),
-          };
-        });
+        if (trade?.s) {
+          pendingPricesRef.current[trade.s] = trade.p;
+          pendingTradesRef.current.push(trade);
+          scheduleLiveFlush();
+        }
 
         return;
       }
@@ -399,109 +456,12 @@ function useLiveStocks() {
       if (
         response.type === "bar"
       ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
-
         const bar =
           response.data;
-
-        const barMs =
-          new Date(
-            bar.t
-          ).getTime();
-
-        const bucket =
-          Math.floor(
-            barMs / 60000
-          ) * 60000;
-
-        setCandles((prev) => {
-          const list = prev[
-            bar.s
-          ]
-            ? [
-              ...prev[
-              bar.s
-              ],
-            ]
-            : [];
-
-          const last =
-            list.at(-1);
-
-          if (
-            last &&
-            last.time ===
-            bucket
-          ) {
-            list[
-              list.length - 1
-            ] = {
-              time: bucket,
-
-              open:
-                Number(
-                  bar.open
-                ),
-
-              high:
-                Number(
-                  bar.high
-                ),
-
-              low: Number(
-                bar.low
-              ),
-
-              close:
-                Number(
-                  bar.close
-                ),
-
-              volume:
-                Number(
-                  bar.volume ??
-                  0
-                ),
-            };
-          } else {
-            list.push({
-              time: bucket,
-
-              open: Number(bar.open),
-
-              high:
-                Number(
-                  bar.high
-                ),
-
-              low: Number(
-                bar.low
-              ),
-
-              close:
-                Number(
-                  bar.close
-                ),
-
-              volume:
-                Number(
-                  bar.volume ??
-                  0
-                ),
-            });
-          }
-
-          return {
-            ...prev,
-
-            [bar.s]:
-              normalizeCandles(
-                list
-              ),
-          };
-        });
+        if (bar?.s) {
+          pendingBarsRef.current.push(bar);
+          scheduleLiveFlush();
+        }
 
         return;
       }
@@ -526,9 +486,12 @@ function useLiveStocks() {
     };
 
     return () => {
+      if (flushTimerRef.current) {
+        window.clearTimeout(flushTimerRef.current);
+      }
       socket.close();
     };
-  }, []);
+  }, [scheduleLiveFlush]);
 
   return {
     stocks,

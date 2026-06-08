@@ -365,9 +365,10 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
           backdropFilter: "blur(12px)", overflow: "hidden",
         }}>
           {[
-            { label: "Open", value: `$${open.toFixed(2)}` },
-            { label: "High", value: `$${high.toFixed(2)}` },
-            { label: "Low", value: `$${low.toFixed(2)}` },
+            // Ensure the system work smoothly even if some data points are missing by showing "N/A"
+            { label: "Open", value: open != null ? `$${open.toFixed(2)}` : "N/A" },
+            { label: "High", value: high != null ? `$${high.toFixed(2)}` : "N/A" },
+            { label: "Low", value: low != null ? `$${low.toFixed(2)}` : "N/A" },
             { label: "Volume", value: formatNumber(volume) },
             { label: "Avg Volume", value: formatNumber(avgVolume) },
           ].map((s, i, arr) => (

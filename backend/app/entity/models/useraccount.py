@@ -29,8 +29,8 @@ class UserAccount(Base):
     password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
-    # Create user account
 
+    # Create user account
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
         # Check duplication
@@ -108,7 +108,8 @@ class UserAccount(Base):
                 "username": matching_account.username,
                 "full_name": matching_account.full_name,
                 "email": matching_account.email_address,
-                "role": role  # ← investor / expert / admin
+                "role": role,  # ← investor / expert / admin
+                "subscription_status": investor.investor_subscription_status if investor else "inactive"
             }
         }
 
@@ -127,6 +128,27 @@ class UserAccount(Base):
             return False
         # For simplicity, we won't track active sessions in this example
         return True
+
+    @staticmethod
+    def get_user_information(user_id) -> dict:
+        from app.entity.models.expert import Expert
+        from app.entity.models.investor import Investor
+        user = session.query(UserAccount).filter(
+            UserAccount.user_id == user_id).first()
+        if not user:
+            return None
+
+        return {
+            "user_id": user.user_id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email": user.email_address,
+            "phone_number": user.phone_number,
+            "address": user.address,
+            "join_date": user.join_date,
+            "account_status": user.account_status,
+        }
+# auto generate the admin account
 
 
 def seed_admin_account():
@@ -147,10 +169,6 @@ def seed_admin_account():
         address=admin_address,
         profile_name="admin"
     )
-    if user_id:
-        print("Admin account created successfully.")
-    else:
-        print("Failed to create admin account.")
 
 
 if __name__ == "__main__":
