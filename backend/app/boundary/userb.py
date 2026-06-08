@@ -2,7 +2,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -182,4 +182,45 @@ def get_expert_information(user_id: str):
         "success": True,
         "message": "Expert information retrieved successfully",
         "expert_information": result
+    }
+
+# Update user information
+
+
+class UpdateInformationRequest(BaseModel):
+    user_id: str
+    full_name: Optional[str] = None
+    email_address: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+
+
+class UpdateInformationPage:
+    def __init__(self):
+        self.controller = UpdateInformationController()
+
+    def update_information(self, user_id, full_name, email_address, phone_number, address):
+        return self.controller.update_information(user_id, full_name, email_address, phone_number, address)
+
+
+@router.put("/update-information/{user_id}")
+def update_information(user_id: str, data: UpdateInformationRequest):
+    boundary = UpdateInformationPage()
+
+    result = boundary.update_information(
+        user_id,
+        data.full_name,
+        data.email_address,
+        data.phone_number,
+        data.address
+    )
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Failed to update information"
+        }
+    return {
+        "success": True,
+        "message": "Information updated successfully"
     }

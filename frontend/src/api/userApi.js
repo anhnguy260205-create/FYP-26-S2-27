@@ -76,3 +76,17 @@ export const getExpertInformation = async (userId) => {
   return await response.json();
 };
 
+export const updateUserInformation = async (userId, fullName, emailAddress, phoneNumber, address) => {
+  const response = await fetch(`${BASE_URL}/update-information`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: userId,
+      full_name: fullName,
+      email_address: emailAddress,
+      phone_number: phoneNumber,
+      address: address
+    })
+  });
+  return await response.json();
+};
