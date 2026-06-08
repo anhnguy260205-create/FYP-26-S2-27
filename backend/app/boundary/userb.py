@@ -203,7 +203,7 @@ class UpdateInformationPage:
         return self.controller.update_information(user_id, full_name, email_address, phone_number, address)
 
 
-@router.put("/update-information/{user_id}")
+@router.post("/update-information/{user_id}")
 def update_information(user_id: str, data: UpdateInformationRequest):
     boundary = UpdateInformationPage()
 
