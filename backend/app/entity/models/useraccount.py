@@ -87,7 +87,7 @@ class UserAccount(Base):
         except:
             session.rollback()
 
-    # Determine role from the connected user profile, then fall back to sub-tables.
+        # Determine role from the connected user profile, then fall back to sub-tables.
         role = matching_account.profile.profile_name if matching_account.profile else "admin"
         investor = session.query(Investor).filter(
             Investor.user_id == matching_account.user_id).first()
@@ -95,6 +95,9 @@ class UserAccount(Base):
             Expert.user_id == matching_account.user_id).first()
         if investor:
             role = "investor"
+        elif matching_account.profile:
+            if matching_account.profile.profile_name == "admin":
+                role = "admin"
         elif expert:
             role = "expert"
 

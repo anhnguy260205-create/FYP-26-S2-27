@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.boundary.userb import router as user_router
+from app.boundary.adminb import router as admin_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
@@ -30,6 +31,7 @@ Base.metadata.create_all(bind=engine)
 seed_profiles()
 seed_admin_account()
 app.include_router(user_router)
+app.include_router(admin_router)
 app.include_router(stock_ws_router)
 app.include_router(prediction_router)
 app.include_router(payment_router)
