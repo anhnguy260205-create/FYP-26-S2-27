@@ -6,7 +6,7 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import relationship
 
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 from app.entity.models.userprofile import UserProfile
 
 
@@ -33,142 +33,124 @@ class UserAccount(Base):
     # Create user account
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
-        # Check duplication
-        existing_user = session.query(UserAccount).filter(
-            # Check if username, email or phone number already exists
-            (UserAccount.username == username) |
-            (UserAccount.email_address == email_address) |
-            (UserAccount.phone_number == phone_number)
-        ).first()
-        if existing_user:
-            return False
+        with get_session() as session:
+            # Check duplication
+            existing_user = session.query(UserAccount).filter(
+                (UserAccount.username == username) |
+                (UserAccount.email_address == email_address) |
+                (UserAccount.phone_number == phone_number)
+            ).first()
+            if existing_user:
+                return False
 
-        try:
-            profile = UserProfile.get_or_create(profile_name)
-            new_user = UserAccount(
-                username=username,
-                full_name=full_name,
-                email_address=email_address,
-                password=password,
-                phone_number=phone_number,
-                address=address,
-                profile_id=profile.profile_id,
-                account_status="active",
-                is_active=False
-            )
-            session.add(new_user)
-            session.commit()
-            return new_user.user_id
-        except Exception as e:
-            session.rollback()
-            print("USER ACCOUNT ERROR:", e)
-            return False
+            try:
+                profile = UserProfile.get_or_create(profile_name)
+                new_user = UserAccount(
+                    username=username,
+                    full_name=full_name,
+                    email_address=email_address,
+                    password=password,
+                    phone_number=phone_number,
+                    address=address,
+                    profile_id=profile.profile_id,
+                    account_status="active",
+                    is_active=False
+                )
+                session.add(new_user)
+                session.flush()  # flush to get the user_id before commit
+                return new_user.user_id
+            except Exception as e:
+                print("USER ACCOUNT ERROR:", e)
+                raise  # let get_session() handle the rollback
 
     @staticmethod
     def login(username, password) -> dict:
-        # Local import to avoid circular import
         from app.entity.models.expert import Expert
         from app.entity.models.investor import Investor
-        matching_account = session.query(UserAccount).filter(
-            (UserAccount.username == username) &
-            (UserAccount.password == password)
-        ).first()
 
-        if not matching_account:
-            return {"success": False}
+        with get_session() as session:
+            matching_account = session.query(UserAccount).filter(
+                (UserAccount.username == username) &
+                (UserAccount.password == password)
+            ).first()
 
-    # Update last login and active status
-        matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+            if not matching_account:
+                return {"success": False}
 
-        matching_account.is_active = True
-        matching_account.account_status = "active"
-        try:
-            session.commit()
-            session.refresh(matching_account)
-        except:
-            session.rollback()
+            # Update last login and active status
+            matching_account.last_login = datetime.now(
+                ZoneInfo("Asia/Singapore"))
+            matching_account.is_active = True
+            matching_account.account_status = "active"
 
-        # Determine role from the connected user profile, then fall back to sub-tables.
-        role = matching_account.profile.profile_name if matching_account.profile else "admin"
-        investor = session.query(Investor).filter(
-            Investor.user_id == matching_account.user_id).first()
-        expert = session.query(Expert).filter(
-            Expert.user_id == matching_account.user_id).first()
-        if investor:
-            role = "investor"
-        elif matching_account.profile:
-            if matching_account.profile.profile_name == "admin":
-                role = "admin"
-        elif expert:
-            role = "expert"
+            # Determine role
+            role = matching_account.profile.profile_name if matching_account.profile else "admin"
+            investor = session.query(Investor).filter(
+                Investor.user_id == matching_account.user_id).first()
+            expert = session.query(Expert).filter(
+                Expert.user_id == matching_account.user_id).first()
 
-        return {
-            "success": True,
-            "user": {
-                "user_id": matching_account.user_id,
-                "username": matching_account.username,
-                "full_name": matching_account.full_name,
-                "email": matching_account.email_address,
-                "role": role,  # ← investor / expert / admin
-                "subscription_status": investor.investor_subscription_status if investor else "inactive"
+            if investor:
+                role = "investor"
+            elif matching_account.profile:
+                if matching_account.profile.profile_name == "admin":
+                    role = "admin"
+            elif expert:
+                role = "expert"
+
+            return {
+                "success": True,
+                "user": {
+                    "user_id": matching_account.user_id,
+                    "username": matching_account.username,
+                    "full_name": matching_account.full_name,
+                    "email": matching_account.email_address,
+                    "role": role,
+                    "subscription_status": investor.investor_subscription_status if investor else "inactive"
+                }
             }
-        }
 
     @staticmethod
     def logout(user_id) -> bool:
-        user = session.query(UserAccount).filter(
-            UserAccount.user_id == user_id).first()
-        if not user:
-            return False
-        # Update user status to inactive
-        user.is_active = False
-        user.account_status = "inactive"
-        try:
-            session.commit()
-        except:
-            session.rollback()
-            return False
-        # For simplicity, we won't track active sessions in this example
-        return True
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return False
+
+            user.is_active = False
+            user.account_status = "inactive"
+            return True  # get_session() handles the commit
 
     @staticmethod
     def get_user_information(user_id) -> dict:
-        from app.entity.models.expert import Expert
-        from app.entity.models.investor import Investor
-        user = session.query(UserAccount).filter(
-            UserAccount.user_id == user_id).first()
-        if not user:
-            return None
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return None
 
-        return {
-            "user_id": user.user_id,
-            "username": user.username,
-            "full_name": user.full_name,
-            "email": user.email_address,
-            "phone_number": user.phone_number,
-            "address": user.address,
-            "join_date": user.join_date,
-            "account_status": user.account_status,
-        }
-# auto generate the admin account
+            return {
+                "user_id": user.user_id,
+                "username": user.username,
+                "full_name": user.full_name,
+                "email": user.email_address,
+                "phone_number": user.phone_number,
+                "address": user.address,
+                "join_date": user.join_date,
+                "account_status": user.account_status,
+            }
 
 
+# Auto generate the admin account
 def seed_admin_account():
-    admin_username = "admin"
-    admin_email = "admin@gmail.com"
-    admin_password = "admin123"
-    admin_full_name = "Admin User"
-    admin_phone_number = 1234567890
-    admin_address = "123 Admin Street"
-
-    # Create admin account
-    user_id = UserAccount.createAccount(
-        username=admin_username,
-        full_name=admin_full_name,
-        email_address=admin_email,
-        password=admin_password,
-        phone_number=admin_phone_number,
-        address=admin_address,
+    UserAccount.createAccount(
+        username="admin",
+        full_name="Admin User",
+        email_address="admin@gmail.com",
+        password="admin123",
+        phone_number=1234567890,
+        address="123 Admin Street",
         profile_name="admin"
     )
 

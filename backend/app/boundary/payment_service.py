@@ -13,7 +13,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 router = APIRouter(prefix="/user", tags=["User"])
 
 PLAN_CONFIG = {
-    "basic": {"name": "Basic Subscription", "amount": 0000},
+    "basic": {"name": "Basic Subscription", "amount": 0},
     "premium": {"name": "Premium Subscription", "amount": 2099},
 }
 
@@ -44,27 +44,30 @@ create_subscription_service = CreateSubscription()
 @router.post("/create-checkout-session")
 def create_checkout_session(request: SubscriptionRequest):
 
-    # Basic plan
+    # Basic plan — no payment required, activate immediately
     if request.plan_type == "basic":
-
         result = create_subscription_service.createSubscription(
             request.user_id, request.plan_type, request.user_id
         )
         if result is False:
-            return {"success": False, "message": "The account already has an active basic subscription. Do you want to upgrade to premium?"}
+            return {
+                "success": False,
+                "message": "The account already has an active basic subscription. Do you want to upgrade to premium?"
+            }
         if not result:
             raise HTTPException(
                 status_code=400, detail="Failed to activate basic subscription")
-        else:
-            return {
-                "success": True,
-                "message": "Basic subscription activated",
-                "checkout_url": FRONTEND_URL + "/investor/payment-success"
-            }
+        return {
+            "success": True,
+            "message": "Basic subscription activated",
+            "checkout_url": FRONTEND_URL + "/investor/payment-success"
+        }
 
-    # Premium plan
+    # Premium plan — create Stripe session only.
+    # ✅ Subscription is NOT activated here.
+    # ✅ It will only be activated by the webhook AFTER Stripe confirms payment.
+    # ✅ If the user cancels or payment fails, their status stays unchanged.
     elif request.plan_type == "premium":
-
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
@@ -73,7 +76,7 @@ def create_checkout_session(request: SubscriptionRequest):
                     "product_data": {
                         "name": "Premium Subscription"
                     },
-                    "unit_amount": 000,
+                    "unit_amount": PLAN_CONFIG["premium"]["amount"],
                 },
                 "quantity": 1,
             }],
@@ -85,18 +88,14 @@ def create_checkout_session(request: SubscriptionRequest):
             success_url=f"{FRONTEND_URL}/investor/payment-success",
             cancel_url=f"{FRONTEND_URL}/investor/payment-fail",
         )
-        result = create_subscription_service.createSubscription(
-            request.user_id, request.plan_type, request.user_id
-        )
-        if not result:
-            raise HTTPException(
-                status_code=400, detail="Failed to activate premium subscription")
-        else:
-            return {
-                "success": True,
-                "message": "Premium subscription activated",
-                "checkout_url": checkout_session.url
-            }
+        return {
+            "success": True,
+            "message": "Checkout session created. Awaiting payment confirmation.",
+            "checkout_url": checkout_session.url
+        }
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid plan type")
 
 
 @router.get("/subscription-status/{user_id}")
@@ -121,7 +120,7 @@ def get_subscription_status(user_id: str):
 async def stripe_webhook(request: Request):
     """
     Stripe calls this after a successful payment.
-    This is the correct place to record the subscription in your DB.
+    This is the ONLY place premium subscriptions are activated.
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -134,6 +133,13 @@ async def stripe_webhook(request: Request):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
+
+        # Only activate if payment was actually successful
+        if session.get("payment_status") != "paid":
+            print(
+                f"[INFO] Session {session['id']} not paid yet — skipping activation")
+            return {"status": "ok"}
+
         user_id = str(session["metadata"]["user_id"])
         plan_type = session["metadata"]["plan_type"]
         transaction_id = session["id"]
@@ -144,5 +150,8 @@ async def stripe_webhook(request: Request):
             # Log this — don't raise, Stripe will retry if you return non-200
             print(
                 f"[WARN] Failed to record subscription for user_id={user_id}, session={transaction_id}")
+        else:
+            print(
+                f"[INFO] Premium subscription activated for user_id={user_id}")
 
     return {"status": "ok"}

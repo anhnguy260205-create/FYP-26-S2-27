@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey,  String
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 
 from uuid import uuid4
 
@@ -36,20 +36,23 @@ class Investor(Base):
                 user_id=user_id,
                 stock_level=stock_level,
             )
-            session.add(investor)
-            session.commit()
+            with get_session() as session:
+                session.add(investor)
+                session.commit()
             print("INVESTOR CREATED")
             return user_id
         except Exception as e:
-            session.rollback()
+            with get_session() as session:
+                session.rollback()
             print("INVESTOR ERROR:", e)
             return False
 
     @staticmethod
     def getInvestorByUserId(user_id):
-        return session.query(Investor).filter(
-            Investor.user_id == user_id
-        ).first()
+        with get_session() as session:
+            return session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
 
     @staticmethod
     def get_investor_information(user_id):
@@ -57,8 +60,9 @@ class Investor(Base):
         investor_id = Investor.getInvestorByUserId(user_id)
         if not investor_id:
             return None
-        investor = session.query(Investor).filter(
-            Investor.investor_id == investor_id.investor_id).first()
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.investor_id == investor_id.investor_id).first()
         return {
             **user,
             "investor_id": investor.investor_id,
