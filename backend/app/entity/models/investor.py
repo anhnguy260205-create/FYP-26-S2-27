@@ -51,7 +51,6 @@ class Investor(Base):
             ).first()
             if not investor:
                 return None
-            # ✅ Return plain dict — ORM object would be detached after session closes
             return {
                 "investor_id": investor.investor_id,
                 "user_id": investor.user_id,
@@ -73,3 +72,4 @@ class Investor(Base):
             "stock_level": investor["stock_level"],
             "investor_subscription_status": investor["investor_subscription_status"]
         }
+    
