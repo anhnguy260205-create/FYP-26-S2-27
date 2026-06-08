@@ -54,7 +54,6 @@ export const updateSubscriptionStatus = async (
   );
 
   const result = await response.json();
-
   if (!result.success) {
     alert(result.message);
     return result;
@@ -76,3 +75,4 @@ export const getExpertInformation = async (userId) => {
   const response = await fetch(`${BASE_URL}/expert-information/${userId}`);
   return await response.json();
 };
+

@@ -2,7 +2,10 @@ import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
+
+import { useEffect } from "react";
 function PaymentFail() {
+
     const navigate = useNavigate();
     return (
         <motion.div

@@ -2,7 +2,7 @@ from sqlalchemy import Column, ForeignKey, String, DateTime
 from app.entity.models.investor import Investor
 from app.entity.database.base import Base
 from datetime import datetime, timedelta
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
@@ -23,19 +23,21 @@ class Subscription(Base):
 
     @staticmethod
     def createSubscription(transaction_id, plan_type, investor_id):
-        try:
+        with get_session() as session:
             if plan_type == "basic":
-                if subscription := session.query(Subscription).filter(
+                if session.query(Subscription).filter(
                     Subscription.investor_id == investor_id,
                     Subscription.sub_status == "active"
                 ).first():
                     print("ACTIVE SUBSCRIPTION EXISTS")
                     return False
+
             renewal_date = (
                 datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=30)
                 if plan_type == "premium"
                 else None
             )
+
             subscription = Subscription(
                 transaction_id=f"trans_{uuid4()}",
                 plan_type=plan_type,
@@ -43,16 +45,14 @@ class Subscription(Base):
                 sub_status="active",
                 sub_renewal_date=renewal_date
             )
+
             investor = session.query(Investor).filter(
                 Investor.investor_id == investor_id
             ).first()
             if investor:
                 investor.investor_subscription_status = plan_type
+
             session.add(subscription)
-            session.commit()
+            session.flush()  # get sub_id before commit
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id
-        except Exception as e:
-            session.rollback()
-            print("SUBSCRIPTION ERROR:", e)
-            return False

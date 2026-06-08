@@ -1,4 +1,4 @@
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
@@ -7,7 +7,7 @@ from app.entity.models.expert import Expert
 class AdminUserAccountController:
     def getUserAccounts(self, keyword=None, role=None, status=None):
         query = (
-            session.query(UserAccount, Investor, Expert)
+            get_session().query(UserAccount, Investor, Expert)
             .outerjoin(Investor, UserAccount.user_id == Investor.user_id)
             .outerjoin(Expert, UserAccount.user_id == Expert.user_id)
         )
