@@ -33,7 +33,7 @@ class CreateSubscription:
         if not investor:
             return False
         subscription = self.create_investor_controller.createSubscription(
-            transaction_id, plan_type, investor.investor_id)
+            transaction_id, plan_type, investor["investor_id"])  # ✅ dict access
 
         return subscription
 
@@ -112,7 +112,8 @@ def get_subscription_status(user_id: str):
 
     return {
         "success": True,
-        "subscription_status": investor.investor_subscription_status or "inactive"
+        # ✅ dict access
+        "subscription_status": investor["investor_subscription_status"] or "inactive"
     }
 
 
@@ -147,7 +148,6 @@ async def stripe_webhook(request: Request):
         success = create_subscription_service.createSubscription(
             transaction_id, plan_type, user_id)
         if not success:
-            # Log this — don't raise, Stripe will retry if you return non-200
             print(
                 f"[WARN] Failed to record subscription for user_id={user_id}, session={transaction_id}")
         else:

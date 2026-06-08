@@ -18,21 +18,24 @@ class UserProfile(Base):
     @staticmethod
     def get_or_create(profile_name, description=None):
         normalized_name = profile_name.strip().lower()
+
         with get_session() as session:
             profile = session.query(UserProfile).filter(
                 UserProfile.profile_name == normalized_name
             ).first()
 
-        if profile:
-            return profile
+            if profile:
+                return profile.profile_id
 
-        profile = UserProfile(
-            profile_name=normalized_name,
-            description=description
-        )
-        session.add(profile)
-        session.flush()
-        return profile
+            profile = UserProfile(
+                profile_name=normalized_name,
+                description=description
+            )
+
+            session.add(profile)
+            session.flush()
+
+            return profile.profile_id
 
 
 def seed_profiles():
