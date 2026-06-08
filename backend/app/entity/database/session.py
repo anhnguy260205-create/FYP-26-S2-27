@@ -4,9 +4,10 @@ from app.entity.database.connection import engine
 from contextlib import contextmanager
 
 SessionLocal = sessionmaker(
-    autocommit=False,
+    bind=engine,
     autoflush=False,
-    bind=engine
+    autocommit=False,
+    expire_on_commit=False
 )
 
 

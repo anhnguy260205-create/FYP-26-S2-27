@@ -1,10 +1,10 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
+from sqlalchemy.orm import relationship, joinedload
 from app.entity.database.base import Base
 from datetime import datetime
 from uuid import uuid4
 
 from zoneinfo import ZoneInfo
-from sqlalchemy.orm import relationship
 
 from app.entity.database.session import get_session
 from app.entity.models.userprofile import UserProfile
@@ -30,11 +30,9 @@ class UserAccount(Base):
     is_active = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
 
-    # Create user account
     @staticmethod
     def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
         with get_session() as session:
-            # Check duplication
             existing_user = session.query(UserAccount).filter(
                 (UserAccount.username == username) |
                 (UserAccount.email_address == email_address) |
@@ -44,7 +42,7 @@ class UserAccount(Base):
                 return False
 
             try:
-                profile = UserProfile.get_or_create(profile_name)
+                profile_id = UserProfile.get_or_create(profile_name)
                 new_user = UserAccount(
                     username=username,
                     full_name=full_name,
@@ -52,16 +50,16 @@ class UserAccount(Base):
                     password=password,
                     phone_number=phone_number,
                     address=address,
-                    profile_id=profile.profile_id,
+                    profile_id=profile_id,
                     account_status="active",
                     is_active=False
                 )
                 session.add(new_user)
-                session.flush()  # flush to get the user_id before commit
+                session.flush()
                 return new_user.user_id
             except Exception as e:
                 print("USER ACCOUNT ERROR:", e)
-                raise  # let get_session() handle the rollback
+                raise
 
     @staticmethod
     def login(username, password) -> dict:
@@ -69,7 +67,9 @@ class UserAccount(Base):
         from app.entity.models.investor import Investor
 
         with get_session() as session:
-            matching_account = session.query(UserAccount).filter(
+            matching_account = session.query(UserAccount).options(
+                joinedload(UserAccount.profile)
+            ).filter(
                 (UserAccount.username == username) &
                 (UserAccount.password == password)
             ).first()
@@ -83,21 +83,24 @@ class UserAccount(Base):
             matching_account.is_active = True
             matching_account.account_status = "active"
 
-            # Determine role
-            role = matching_account.profile.profile_name if matching_account.profile else "admin"
+            profile_name = matching_account.profile.profile_name if matching_account.profile else None
+
             investor = session.query(Investor).filter(
                 Investor.user_id == matching_account.user_id).first()
             expert = session.query(Expert).filter(
                 Expert.user_id == matching_account.user_id).first()
 
+            # Determine role
             if investor:
                 role = "investor"
-            elif matching_account.profile:
-                if matching_account.profile.profile_name == "admin":
-                    role = "admin"
             elif expert:
                 role = "expert"
+            elif profile_name == "admin":
+                role = "admin"
+            else:
+                role = profile_name or "unknown"
 
+            # ✅ Extract all values inside the session before it closes
             return {
                 "success": True,
                 "user": {
@@ -117,10 +120,9 @@ class UserAccount(Base):
                 UserAccount.user_id == user_id).first()
             if not user:
                 return False
-
             user.is_active = False
             user.account_status = "inactive"
-            return True  # get_session() handles the commit
+            return True
 
     @staticmethod
     def get_user_information(user_id) -> dict:
@@ -129,7 +131,6 @@ class UserAccount(Base):
                 UserAccount.user_id == user_id).first()
             if not user:
                 return None
-
             return {
                 "user_id": user.user_id,
                 "username": user.username,
@@ -142,7 +143,6 @@ class UserAccount(Base):
             }
 
 
-# Auto generate the admin account
 def seed_admin_account():
     UserAccount.createAccount(
         username="admin",

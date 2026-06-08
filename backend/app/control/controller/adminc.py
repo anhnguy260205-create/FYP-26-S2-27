@@ -6,60 +6,61 @@ from app.entity.models.expert import Expert
 
 class AdminUserAccountController:
     def getUserAccounts(self, keyword=None, role=None, status=None):
-        query = (
-            get_session().query(UserAccount, Investor, Expert)
-            .outerjoin(Investor, UserAccount.user_id == Investor.user_id)
-            .outerjoin(Expert, UserAccount.user_id == Expert.user_id)
-        )
-
-        if keyword:
-            search = f"%{keyword}%"
-            query = query.filter(
-                (UserAccount.username.like(search)) |
-                (UserAccount.full_name.like(search)) |
-                (UserAccount.email_address.like(search)) |
-                (UserAccount.phone_number.like(search)) |
-                (UserAccount.user_id.like(search))
+        with get_session() as session:
+            query = (
+                session.query(UserAccount, Investor, Expert)
+                .outerjoin(Investor, UserAccount.user_id == Investor.user_id)
+                .outerjoin(Expert, UserAccount.user_id == Expert.user_id)
             )
 
-        if status:
-            query = query.filter(UserAccount.account_status == status)
+            if keyword:
+                search = f"%{keyword}%"
+                query = query.filter(
+                    (UserAccount.username.like(search)) |
+                    (UserAccount.full_name.like(search)) |
+                    (UserAccount.email_address.like(search)) |
+                    (UserAccount.phone_number.like(search)) |
+                    (UserAccount.user_id.like(search))
+                )
 
-        results = query.all()
+            if status:
+                query = query.filter(UserAccount.account_status == status)
 
-        users = []
+            results = query.all()
 
-        for user_account, investor, expert in results:
-            if expert:
-                user_role = "Expert"
-            elif investor:
-                if investor.investor_subscription_status == "active":
-                    user_role = "Premium"
+            users = []
+
+            for user_account, investor, expert in results:
+                if expert:
+                    user_role = "Expert"
+                elif investor:
+                    if investor.investor_subscription_status == "active":
+                        user_role = "Premium"
+                    else:
+                        user_role = "Investor"
+
                 else:
-                    user_role = "Investor"
+                    user_role = "Admin"
 
-            else:
-                user_role = "Admin"
+                if role and user_role.lower() != role.lower():
+                    continue
 
-            if role and user_role.lower() != role.lower():
-                continue
+                users.append({
+                    "initials": self.makeInitials(user_account.full_name),
+                    "user_id": user_account.user_id,
+                    "username": user_account.username,
+                    "full_name": user_account.full_name,
+                    "email_address": user_account.email_address,
+                    "phone_number": str(user_account.phone_number),
+                    "address": user_account.address,
+                    "role": user_role,
+                    "account_status": user_account.account_status,
+                    "join_date": user_account.join_date.strftime("%Y-%m-%d") if user_account.join_date else None,
+                    "last_login": user_account.last_login.strftime("%Y-%m-%d") if user_account.last_login else None,
+                    "is_active": user_account.is_active,
+                })
 
-            users.append({
-                "initials": self.makeInitials(user_account.full_name),
-                "user_id": user_account.user_id,
-                "username": user_account.username,
-                "full_name": user_account.full_name,
-                "email_address": user_account.email_address,
-                "phone_number": str(user_account.phone_number),
-                "address": user_account.address,
-                "role": user_role,
-                "account_status": user_account.account_status,
-                "join_date": user_account.join_date.strftime("%Y-%m-%d") if user_account.join_date else None,
-                "last_login": user_account.last_login.strftime("%Y-%m-%d") if user_account.last_login else None,
-                "is_active": user_account.is_active,
-            })
-
-        return users
+            return users
 
     def makeInitials(self, full_name):
         if not full_name:

@@ -51,8 +51,8 @@ class Subscription(Base):
             ).first()
             if investor:
                 investor.investor_subscription_status = plan_type
-
-            session.add(subscription)
-            session.flush()  # get sub_id before commit
+            with get_session() as session:
+                session.add(subscription)
+                session.flush()  # get sub_id before commit
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id

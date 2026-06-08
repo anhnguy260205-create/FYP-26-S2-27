@@ -9,31 +9,31 @@ import { Link } from "react-router-dom";
 
 function AdminPanelPage() {
   const menuItems = [
-  {
-    name: "Dashboard",
-    path: "/adminpanel",
-  },
-  {
-    name: "User Accounts",
-    path: "/adminpanel/useraccounts",
-  },
-  {
-    name: "User Profiles",
-    path: "/adminpanel/profiles",
-  },
-  {
-    name: "Community Post",
-    path: "/adminpanel/posts",
-  },
-  {
-    name: "Trade",
-    path: "/adminpanel/trade",
-  },
-  {
-    name: "Investment Guidance Articles",
-    path: "/adminpanel/articles",
-  },
-];
+    {
+      name: "Dashboard",
+      path: "/adminpanel",
+    },
+    {
+      name: "User Accounts",
+      path: "/adminpanel/useraccounts",
+    },
+    {
+      name: "User Profiles",
+      path: "/adminpanel/profiles",
+    },
+    {
+      name: "Community Post",
+      path: "/adminpanel/posts",
+    },
+    {
+      name: "Trade",
+      path: "/adminpanel/trade",
+    },
+    {
+      name: "Investment Guidance Articles",
+      path: "/adminpanel/articles",
+    },
+  ];
 
   const stats = [
     {
@@ -79,7 +79,7 @@ function AdminPanelPage() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       {/* Top Header */}
-      <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-6">
+      <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 shrink-0 z-50">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
 
         <div className="flex items-center gap-3">
@@ -101,11 +101,10 @@ function AdminPanelPage() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`block w-full text-left px-3 py-3 rounded-lg text-sm transition ${
-                  item.name === "Dashboard"
-                    ? "bg-blue-50 text-blue-600 font-semibold"
-                    : "text-slate-700 hover:bg-gray-100"
-                }`}
+                className={`block w-full text-left px-3 py-3 rounded-lg text-sm transition ${item.name === "Dashboard"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-slate-700 hover:bg-gray-100"
+                  }`}
               >
                 {item.name}
               </Link>
