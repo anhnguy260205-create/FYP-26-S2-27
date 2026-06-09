@@ -7,3 +7,12 @@
   + cd frontend
   + npm run dev
 - app link: http://localhost:5173/ 
+- Admin account:
+  + Username: admin
+  + Password: admin123
+- Investor account:
+  + Username: Kim
+  + Password: password
+- Expert account:
+  + Username: Anh
+  + Password: password
