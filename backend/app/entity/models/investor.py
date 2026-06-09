@@ -72,4 +72,15 @@ class Investor(Base):
             "stock_level": investor["stock_level"],
             "investor_subscription_status": investor["investor_subscription_status"]
         }
-    
+
+
+def seed_investor_account():
+    Investor.createAccount(
+        username="Kim",
+        full_name="Nguy Kim Anh",
+        email_address="kim@gmail.com",
+        password="password",
+        phone_number=12343243,
+        address="123 Kim Street",
+        stock_level="basic"
+    )

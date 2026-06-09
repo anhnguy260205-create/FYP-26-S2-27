@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
+import { BellRing } from "lucide-react";
+
+
 function NavDropdown({ items }) {
   const navigate = useNavigate();
   return (
@@ -107,6 +110,8 @@ function GeneralHeader() {
       submenu: [
         { title: "Watchlist Management", path: "/investor/watchlist" },
         { title: "Real-time Dashboard", path: "/investor/realtimedashboard" },
+        { title: "Stock Recommendation", path: "/investor/realtimedashboard" },
+
       ],
     },
     {
@@ -120,6 +125,7 @@ function GeneralHeader() {
       submenu: [
         { title: "Educational Content", path: "#" },
         { title: "Expert Advice", path: "#" },
+        { title: "Expert Portfolio", path: "#" },
         { title: "AI Chatbot", path: "#" },
       ],
     },
@@ -160,6 +166,13 @@ function GeneralHeader() {
       </div>
 
       <div className="flex items-center gap-8">
+        <button
+          onClick={() => navigate("/investor/subscription")}
+          className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+        >
+          <BellRing size={18} />
+          <span>Notification</span>
+        </button>
         <ProfileButton />
       </div>
     </div>

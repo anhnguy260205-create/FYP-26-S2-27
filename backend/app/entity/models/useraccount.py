@@ -35,8 +35,7 @@ class UserAccount(Base):
         with get_session() as session:
             existing_user = session.query(UserAccount).filter(
                 (UserAccount.username == username) |
-                (UserAccount.email_address == email_address) |
-                (UserAccount.phone_number == phone_number)
+                (UserAccount.email_address == email_address)
             ).first()
             if existing_user:
                 return False
