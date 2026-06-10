@@ -5,8 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { useEffect } from "react";
 function PaymentFail() {
-
-    const navigate = useNavigate();
     return (
         <motion.div
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"

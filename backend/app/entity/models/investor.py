@@ -15,6 +15,7 @@ class Investor(Base):
                          default=lambda: f"investor_{uuid4()}")
     stock_level = Column(String(20), default="beginner")
     paper_money = Column(Float, default=2000)
+    used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
@@ -56,6 +57,8 @@ class Investor(Base):
                 "investor_id": investor.investor_id,
                 "user_id": investor.user_id,
                 "stock_level": investor.stock_level,
+                "paper_money": investor.paper_money,
+                "used_amount": investor.used_amount,
                 "investor_subscription_status": investor.investor_subscription_status
             }
 
@@ -71,6 +74,8 @@ class Investor(Base):
             **user,
             "investor_id": investor["investor_id"],
             "stock_level": investor["stock_level"],
+            "paper_money": investor["paper_money"],
+            "used_amount": investor["used_amount"],
             "investor_subscription_status": investor["investor_subscription_status"]
         }
 
