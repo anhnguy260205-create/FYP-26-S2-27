@@ -14,8 +14,16 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
+import Watchlist from "./pages/investor/Watchlist.jsx";
+import Notification from "./pages/investor/Watchlist.jsx";
+import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
+import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
+import EducationContent from "./pages/investor/EducationContent.jsx";
+import AIChatbot from "./pages/investor/AIChatbot.jsx";
+
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
+
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
@@ -59,6 +67,31 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
     },
     {
+        path: "/investor/watchlist",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Watchlist /></ProtectedRoute>
+    },
+    {
+        path: "/investor/notification",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Notification /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertportfolio",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertPortfolio /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertadvice",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertAdvice /></ProtectedRoute>
+    },
+    {
+        path: "/investor/educationcontent",
+        element: <ProtectedRoute allowedRoles={["investor"]}><EducationContent /></ProtectedRoute>
+    },
+    {
+        path: "/investor/aichatbot",
+        element: <ProtectedRoute allowedRoles={["investor"]}><AIChatbot /></ProtectedRoute>
+    },
+
+    {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
@@ -66,6 +99,8 @@ export const router = createBrowserRouter([
         path: "/adminpanel/useraccounts",
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
+
+
     {
         path: "/expert/edit-profile",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
@@ -73,6 +108,7 @@ export const router = createBrowserRouter([
     {
         path: "/expert",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
-    }
+    },
+
 ]);
 
