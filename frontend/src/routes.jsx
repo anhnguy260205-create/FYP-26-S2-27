@@ -15,6 +15,7 @@ import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
+import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
@@ -68,6 +69,10 @@ export const router = createBrowserRouter([
     {
         path: "/expert/edit-profile",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
+    },
+    {
+        path: "/expert",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
     }
 ]);
 

@@ -108,9 +108,9 @@ function GeneralHeader() {
       label: "DashBoard",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Watchlist Management", path: "/investor/watchlist" },
+        { title: "Watchlist", path: "/investor/watchlist" },
         { title: "Real-time Dashboard", path: "/investor/realtimedashboard" },
-        { title: "Stock Recommendation", path: "/investor/realtimedashboard" },
+
 
       ],
     },
