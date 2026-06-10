@@ -123,10 +123,10 @@ function GeneralHeader() {
       label: "Knowledge Hub",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Educational Content", path: "#" },
-        { title: "Expert Advice", path: "#" },
-        { title: "Expert Portfolio", path: "#" },
-        { title: "AI Chatbot", path: "#" },
+        { title: "Educational Content", path: "/investor/educationcontent" },
+        { title: "Expert Advice", path: "/investor/expertadvice" },
+        { title: "Expert Portfolio", path: "/investor/expertportfolio" },
+        { title: "AI Chatbot", path: "/investor/aichatbot" },
       ],
     },
     {

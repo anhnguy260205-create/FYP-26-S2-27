@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, String, Float
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -14,6 +14,7 @@ class Investor(Base):
     investor_id = Column(String(50), primary_key=True,
                          default=lambda: f"investor_{uuid4()}")
     stock_level = Column(String(20), default="beginner")
+    paper_money = Column(Float, default=2000)
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
