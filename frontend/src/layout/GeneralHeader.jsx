@@ -166,7 +166,7 @@ function GeneralHeader() {
 
       <div className="flex items-center gap-8">
         <button
-          onClick={() => navigate("/investor/subscription")}
+          onClick={() => navigate("/investor/notification")}
           className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
         >
           <BellRing size={18} />

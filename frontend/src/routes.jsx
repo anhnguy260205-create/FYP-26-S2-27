@@ -15,7 +15,7 @@ import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
 import Watchlist from "./pages/investor/Watchlist.jsx";
-import Notification from "./pages/investor/Watchlist.jsx";
+import Notification from "./pages/investor/Notification.jsx";
 import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
 import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
 import EducationContent from "./pages/investor/EducationContent.jsx";
