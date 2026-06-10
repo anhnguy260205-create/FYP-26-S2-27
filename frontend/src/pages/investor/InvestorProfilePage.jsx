@@ -497,7 +497,7 @@ function PersonalInformationCard({ investorInfo }) {
 }
 function AccountSettingsCard({ investorInfo }) {
     const [editingSection, setEditingSection] = useState(null);
-    const [riskLevel, setRiskLevel] = useState(investorInfo.stock_level);
+    const [riskLevel, setRiskLevel] = useState(investorInfo?.stock_level);
     const [accountType, setAccountType] = useState("Investor");
 
     const isEditing = (section) => editingSection === section;
@@ -784,7 +784,7 @@ function SecurityCard({ investorInfo }) {
                                     fontSize: "16px",
                                 }}
                             >
-                                Password : {investorInfo.password}
+                                Password : {investorInfo?.password}
                             </div>
                             <div
                                 style={{
@@ -822,7 +822,7 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function PaperMoneyCard() { return <div />; }
+
 function SubscriptionCard() { return <div />; }
 
 function InvestorProfilePage() {
@@ -870,7 +870,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "paper-money" && <PaperMoneyCard />}
+
                     {activeTab === "subscription" && <SubscriptionCard />}
                 </div>
             </main>
