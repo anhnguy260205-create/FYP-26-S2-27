@@ -20,6 +20,7 @@ import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
 import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
 import EducationContent from "./pages/investor/EducationContent.jsx";
 import AIChatbot from "./pages/investor/AIChatbot.jsx";
+import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
@@ -90,7 +91,10 @@ export const router = createBrowserRouter([
         path: "/investor/aichatbot",
         element: <ProtectedRoute allowedRoles={["investor"]}><AIChatbot /></ProtectedRoute>
     },
-
+    {
+        path: "/investor/expertdetails",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertDetails /></ProtectedRoute>
+    },
     {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
