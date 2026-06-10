@@ -139,6 +139,7 @@ class UserAccount(Base):
                 "address": user.address,
                 "join_date": user.join_date,
                 "account_status": user.account_status,
+                "password": user.password
             }
 
     @staticmethod

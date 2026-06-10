@@ -496,22 +496,35 @@ function PersonalInformationCard({ investorInfo }) {
     );
 }
 function AccountSettingsCard({ investorInfo }) {
-    const [riskLevel, setRiskLevel] = useState("Moderate");
-    const [accountType, setAccountType] = useState("Investor");
     const [editingSection, setEditingSection] = useState(null);
+    const [riskLevel, setRiskLevel] = useState(investorInfo.stock_level);
+    const [accountType, setAccountType] = useState("Investor");
+
     const isEditing = (section) => editingSection === section;
+
     const cancelEdit = () => {
         setEditingSection(null);
     };
-    return
-    (
+
+    const saveSettings = () => {
+        console.log({
+            riskLevel,
+            accountType
+        });
+
+        setEditingSection(null);
+    };
+
+    return (
         <GlassCard>
             {!isEditing("account") ? (
                 <>
-                    {/* HEADER */}
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold">Account Settings</h1>
+                            <h1 className="text-xl font-bold">
+                                Account Settings
+                            </h1>
+
                             <p
                                 style={{
                                     fontSize: "13px",
@@ -524,162 +537,291 @@ function AccountSettingsCard({ investorInfo }) {
                         </div>
 
                         <button
-                            className="flex items-center gap-2 transition-all hover:opacity-80 active:scale-[0.97]"
+                            onClick={() =>
+                                setEditingSection("account")
+                            }
+                            className="flex items-center gap-2"
                             style={{
                                 height: "38px",
                                 padding: "0 18px",
                                 borderRadius: "100px",
                                 background:
                                     "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
-                                border: "0.667px solid rgba(0,211,243,0.35)",
+                                border:
+                                    "0.667px solid rgba(0,211,243,0.35)",
                                 color: "#00D3F2",
-                                fontSize: "13px",
-                                fontWeight: 600,
                                 cursor: "pointer",
                             }}
-                            onClick={() => setEditingSection("account")}
                         >
                             <SquarePen size={14} />
                             Edit
                         </button>
                     </div>
 
+                    <div style={{ marginTop: "32px" }}>
+                        <p
+                            style={{
+                                fontSize: "12px",
+                                color: "rgba(255,255,255,0.4)",
+                                marginBottom: "16px",
+                                fontWeight: 600,
+                            }}
+                        >
+                            RISK LEVEL
+                        </p>
+
+                        <div className="flex items-center gap-3">
+                            <div
+                                style={{
+                                    width: "10px",
+                                    height: "10px",
+                                    borderRadius: "50%",
+                                    background: "#3B82F6",
+                                }}
+                            />
+
+                            <span
+                                style={{
+                                    fontSize: "18px",
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {riskLevel}
+                            </span>
+
+                            <span
+                                style={{
+                                    color:
+                                        "rgba(255,255,255,0.4)",
+                                }}
+                            >
+                                · Balanced risk & reward
+                            </span>
+                        </div>
+                    </div>
+
                     <div
                         style={{
                             height: "1px",
-                            background: "rgba(255,255,255,0.06)",
-                            marginBottom: "24px",
+                            background:
+                                "rgba(255,255,255,0.06)",
+                            margin: "32px 0",
                         }}
                     />
 
-                    {/* Info Grid */}
-                    <div
-                        className="grid grid-cols-2"
-                        style={{ gap: "24px 32px" }}
-                    >
-                        <InfoRow
-                            label="Full Name"
-                            value={investorInfo?.full_name}
-                        />
-                        <InfoRow
-                            label="Phone Number"
-                            value={investorInfo?.phone_number}
-                        />
-                        <InfoRow
-                            label="Location"
-                            value={investorInfo?.address}
-                        />
-                        <InfoRow
-                            label="Email Address"
-                            value={investorInfo?.email}
-                        />
-                        <InfoRow
-                            label="Balance"
-                            value={
-                                investorInfo?.balance
-                                    ? `$${investorInfo.balance.toLocaleString()}`
-                                    : null
-                            }
-                        />
-                    </div>
-                </>
-
-            ) : (
-                <>
-                    {/* EDIT MODE */}
                     <div>
-                        <h1 className="text-xl font-bold">
-                            Edit Personal Information
-                        </h1>
                         <p
                             style={{
-                                fontSize: "13px",
-                                color: "rgba(255,255,255,0.5)",
-                                marginTop: "4px",
+                                fontSize: "12px",
+                                color: "rgba(255,255,255,0.4)",
+                                marginBottom: "16px",
+                                fontWeight: 600,
                             }}
                         >
-                            Update your profile details
+                            ACCOUNT TYPE
                         </p>
+
+                        <div className="flex items-center gap-4">
+                            <div
+                                style={{
+                                    width: "36px",
+                                    height: "36px",
+                                    borderRadius: "10px",
+                                    background:
+                                        "rgba(0,211,242,0.1)",
+                                    border:
+                                        "1px solid rgba(0,211,242,0.3)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                $
+                            </div>
+
+                            <div>
+                                <div
+                                    style={{
+                                        fontWeight: 700,
+                                        fontSize: "18px",
+                                    }}
+                                >
+                                    {accountType}
+                                </div>
+
+                                <div
+                                    style={{
+                                        color:
+                                            "rgba(255,255,255,0.45)",
+                                    }}
+                                >
+                                    Trade & track your portfolio
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </>
+            ) : (
+                <>
+                    <h1 className="text-xl font-bold">
+                        Edit Account Settings
+                    </h1>
 
                     <div
                         className="flex flex-col"
-                        style={{ gap: "20px", marginTop: "24px" }}
+                        style={{
+                            gap: "20px",
+                            marginTop: "24px",
+                        }}
                     >
-                        <div>
-                            <FormField label="Full Name *">
-                                <TextInput
-                                    value={draftFull}
-                                    onChange={setDraftFull}
-                                    placeholder="Full name"
-                                />
-                            </FormField>
-                        </div>
-                        <div
-                            className="grid grid-cols-2"
-                            style={{ gap: "16px" }}
-                        >
-
-                        </div>
-
-                        <div
-                            className="grid grid-cols-2"
-                            style={{ gap: "16px" }}
-                        >
-                            <FormField label="Username *">
-                                <TextInput
-                                    value={draftUser}
-                                    onChange={setDraftUser}
-                                    placeholder="username"
-                                    prefix="@"
-                                />
-                            </FormField>
-
-                            <FormField
-                                label="Email Address"
-                                hint="Contact support to change email"
+                        <FormField label="Risk Level">
+                            <select
+                                value={riskLevel}
+                                onChange={(e) =>
+                                    setRiskLevel(e.target.value)
+                                }
+                                className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
                             >
-                                <TextInput
-                                    value={investorInfo?.email}
-                                    disabled
-                                />
-                            </FormField>
-                        </div>
+                                <option>Conservative</option>
+                                <option>Moderate</option>
+                                <option>Aggressive</option>
+                            </select>
+                        </FormField>
 
-                        <div
-                            className="grid grid-cols-2"
-                            style={{ gap: "16px" }}
-                        >
-                            <FormField label="Phone Number">
-                                <TextInput
-                                    value={draftPhone}
-                                    onChange={setDraftPhone}
-                                    placeholder="+1 (555) 000-0000"
-                                    type="tel"
-                                />
-                            </FormField>
-
-                            <FormField label="Location">
-                                <TextInput
-                                    value={draftLoc}
-                                    onChange={setDraftLoc}
-                                    placeholder="City, Country"
-                                />
-                            </FormField>
-                        </div>
+                        <FormField label="Account Type">
+                            <select
+                                value={accountType}
+                                onChange={(e) =>
+                                    setAccountType(e.target.value)
+                                }
+                                className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
+                            >
+                                <option>Investor</option>
+                                <option>Consultant</option>
+                            </select>
+                        </FormField>
 
                         <SaveRow
-                            onSave={savePersonal}
+                            onSave={saveSettings}
                             onCancel={cancelEdit}
                         />
                     </div>
                 </>
             )}
         </GlassCard>
-
     );
 }
-function SecurityCard() { return <div />; }
+function SecurityCard({ investorInfo }) {
+    const navigate = useNavigate();
+
+
+    return (
+        <GlassCard>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold">
+                        Security
+                    </h1>
+
+                    <p
+                        style={{
+                            fontSize: "13px",
+                            color: "rgba(255,255,255,0.5)",
+                            marginTop: "4px",
+                        }}
+                    >
+                        Password and account protection
+                    </p>
+                </div>
+
+                <button
+                    onClick={() => navigate("/change-password")}
+                    className="flex items-center gap-2"
+                    style={{
+                        height: "38px",
+                        padding: "0 18px",
+                        borderRadius: "100px",
+                        background:
+                            "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
+                        border:
+                            "0.667px solid rgba(0,211,243,0.35)",
+                        color: "#00D3F2",
+                        cursor: "pointer",
+                    }}
+                >
+                    <SquarePen size={14} />
+                    Change Password
+                </button>
+            </div>
+
+            <div style={{ marginTop: "32px" }}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div
+                            style={{
+                                width: "42px",
+                                height: "42px",
+                                borderRadius: "12px",
+                                background:
+                                    "rgba(34,197,94,0.08)",
+                                border:
+                                    "1px solid rgba(34,197,94,0.25)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Shield
+                                size={18}
+                                color="#22c55e"
+                            />
+                        </div>
+
+                        <div>
+                            <div
+                                style={{
+                                    fontWeight: 700,
+                                    fontSize: "16px",
+                                }}
+                            >
+                                Password : {investorInfo.password}
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: "13px",
+                                    color:
+                                        "rgba(255,255,255,0.4)",
+                                    marginTop: "2px",
+                                }}
+                            >
+                                Last changed 3 months ago
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style={{
+                            padding: "6px 14px",
+                            borderRadius: "999px",
+                            background:
+                                "rgba(34,197,94,0.12)",
+                            border:
+                                "1px solid rgba(34,197,94,0.25)",
+                            color: "#22c55e",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                        }}
+                    >
+                        Secure
+                    </div>
+                </div>
+            </div>
+        </GlassCard>
+    );
+
+
+}
+
 function PaperMoneyCard() { return <div />; }
 function SubscriptionCard() { return <div />; }
 
@@ -726,8 +868,8 @@ function InvestorProfilePage() {
                 {/* Right content */}
                 <div className="flex-1 flex flex-col">
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} />}
-                    {activeTab === "account" && <AccountSettingsCard />}
-                    {activeTab === "security" && <SecurityCard />}
+                    {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} />}
+                    {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
                     {activeTab === "paper-money" && <PaperMoneyCard />}
                     {activeTab === "subscription" && <SubscriptionCard />}
                 </div>
