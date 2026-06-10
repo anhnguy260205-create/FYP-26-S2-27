@@ -114,7 +114,7 @@ function MenuButton({ children, active, onClick }) {
     );
 }
 
-// FIX 1: LeftSection is now a proper React component with destructured props
+// LeftSection is now a proper React component with destructured props
 function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
     const navigate = useNavigate();
     const initials = investorInfo?.full_name
@@ -280,95 +280,219 @@ function PersonalInformationCard({ investorInfo }) {
         }
     };
     return (
-
         <GlassCard>
-            {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-xl font-bold">Personal Information</h1>
-                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
-                        Your name, contact details and bio
-                    </p>
-                </div>
-                <button
-                    className="flex items-center gap-2 transition-all hover:opacity-80 active:scale-[0.97]"
-                    style={{
-                        height: "38px", padding: "0 18px", borderRadius: "100px",
-                        background: "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
-                        border: "0.667px solid rgba(0,211,243,0.35)", color: "#00D3F2",
-                        fontSize: "13px", fontWeight: 600, cursor: "pointer",
-                    }}
-                    onClick={() => setEditingSection("personal")}
-                >
-                    <SquarePen size={14} /> Edit
-                </button>
-            </div>
+            {!isEditing("personal") ? (
+                <>
+                    {/* HEADER */}
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-xl font-bold">Personal Information</h1>
+                            <p
+                                style={{
+                                    fontSize: "13px",
+                                    color: "rgba(255,255,255,0.5)",
+                                    marginTop: "4px",
+                                }}
+                            >
+                                Your name, contact details and bio
+                            </p>
+                        </div>
 
-            {/* Avatar + name row */}
-            <div className="flex items-center gap-4" style={{ margin: "24px 0" }}>
-                <div style={{
-                    width: "56px", height: "56px", borderRadius: "50%",
-                    background: "linear-gradient(135deg, #3b82f6, #0092b8)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "18px", fontWeight: 700, color: "white", flexShrink: 0,
-                }}>
-                    {initials}
-                </div>
-                <div>
-                    <p className="font-bold text-white" style={{ fontSize: "18px" }}>
-                        {investorInfo?.full_name}
-                    </p>
-                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
-                        @{investorInfo?.username}
-                    </p>
-                </div>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "24px" }} />
-
-            {/* Info grid */}
-            <div className="grid grid-cols-2" style={{ gap: "24px 32px" }}>
-                <InfoRow label="Full Name" value={investorInfo?.full_name} />
-                <InfoRow label="Phone Number" value={investorInfo?.phone_number} />
-                <InfoRow label="Location" value={investorInfo?.address} />
-                <InfoRow label="Email Address" value={investorInfo?.email} />
-                <InfoRow label="Balance" value={investorInfo?.balance ? `$${investorInfo.balance.toLocaleString()}` : null} />
-            </div>
-
-            {/* ── EDIT MODE ── */}
-            {isEditing("personal") && (
-                <div className="flex flex-col" style={{ gap: "20px" }}>
-                    <div className="grid grid-cols-2" style={{ gap: "16px" }}>
-                        <FormField label="Full Name *">
-                            <TextInput value={draftFull} onChange={setDraftFull} placeholder="Full name" />
-                        </FormField>
-
-                    </div>
-                    <div className="grid grid-cols-2" style={{ gap: "16px" }}>
-                        <FormField label="Username *">
-                            <TextInput value={draftUser} onChange={setDraftUser} placeholder="username" prefix="@" />
-                        </FormField>
-                        <FormField label="Email Address" hint="Contact support to change email">
-                            <TextInput value={investorInfo?.email} disabled />
-                        </FormField>
-                    </div>
-                    <div className="grid grid-cols-2" style={{ gap: "16px" }}>
-                        <FormField label="Phone Number">
-                            <TextInput value={draftPhone} onChange={setDraftPhone} placeholder="+1 (555) 000-0000" type="tel" />
-                        </FormField>
-                        <FormField label="Location">
-                            <TextInput value={draftLoc} onChange={setDraftLoc} placeholder="City, Country" />
-                        </FormField>
+                        <button
+                            className="flex items-center gap-2 transition-all hover:opacity-80 active:scale-[0.97]"
+                            style={{
+                                height: "38px",
+                                padding: "0 18px",
+                                borderRadius: "100px",
+                                background:
+                                    "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
+                                border: "0.667px solid rgba(0,211,243,0.35)",
+                                color: "#00D3F2",
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                            onClick={() => setEditingSection("personal")}
+                        >
+                            <SquarePen size={14} />
+                            Edit
+                        </button>
                     </div>
 
-                    <SaveRow onSave={savePersonal} onCancel={cancelEdit} />
-                </div>
+                    {/* Avatar */}
+                    <div
+                        className="flex items-center gap-4"
+                        style={{ margin: "24px 0" }}
+                    >
+                        <div
+                            style={{
+                                width: "56px",
+                                height: "56px",
+                                borderRadius: "50%",
+                                background:
+                                    "linear-gradient(135deg, #3b82f6, #0092b8)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "18px",
+                                fontWeight: 700,
+                                color: "white",
+                                flexShrink: 0,
+                            }}
+                        >
+                            {initials}
+                        </div>
+
+                        <div>
+                            <p
+                                className="font-bold text-white"
+                                style={{ fontSize: "18px" }}
+                            >
+                                {investorInfo?.full_name}
+                            </p>
+
+                            <p
+                                style={{
+                                    fontSize: "13px",
+                                    color: "rgba(255,255,255,0.4)",
+                                }}
+                            >
+                                @{investorInfo?.username}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        style={{
+                            height: "1px",
+                            background: "rgba(255,255,255,0.06)",
+                            marginBottom: "24px",
+                        }}
+                    />
+
+                    {/* Info Grid */}
+                    <div
+                        className="grid grid-cols-2"
+                        style={{ gap: "24px 32px" }}
+                    >
+                        <InfoRow
+                            label="Full Name"
+                            value={investorInfo?.full_name}
+                        />
+                        <InfoRow
+                            label="Phone Number"
+                            value={investorInfo?.phone_number}
+                        />
+                        <InfoRow
+                            label="Location"
+                            value={investorInfo?.address}
+                        />
+                        <InfoRow
+                            label="Email Address"
+                            value={investorInfo?.email}
+                        />
+                        <InfoRow
+                            label="Balance"
+                            value={
+                                investorInfo?.balance
+                                    ? `$${investorInfo.balance.toLocaleString()}`
+                                    : null
+                            }
+                        />
+                    </div>
+                </>
+            ) : (
+                <>
+                    {/* EDIT MODE */}
+                    <div>
+                        <h1 className="text-xl font-bold">
+                            Edit Personal Information
+                        </h1>
+                        <p
+                            style={{
+                                fontSize: "13px",
+                                color: "rgba(255,255,255,0.5)",
+                                marginTop: "4px",
+                            }}
+                        >
+                            Update your profile details
+                        </p>
+                    </div>
+
+                    <div
+                        className="flex flex-col"
+                        style={{ gap: "20px", marginTop: "24px" }}
+                    >
+                        <div>
+                            <FormField label="Full Name *">
+                                <TextInput
+                                    value={draftFull}
+                                    onChange={setDraftFull}
+                                    placeholder="Full name"
+                                />
+                            </FormField>
+                        </div>
+                        <div
+                            className="grid grid-cols-2"
+                            style={{ gap: "16px" }}
+                        >
+
+                        </div>
+
+                        <div
+                            className="grid grid-cols-2"
+                            style={{ gap: "16px" }}
+                        >
+                            <FormField label="Username *">
+                                <TextInput
+                                    value={draftUser}
+                                    onChange={setDraftUser}
+                                    placeholder="username"
+                                    prefix="@"
+                                />
+                            </FormField>
+
+                            <FormField
+                                label="Email Address"
+                                hint="Contact support to change email"
+                            >
+                                <TextInput
+                                    value={investorInfo?.email}
+                                    disabled
+                                />
+                            </FormField>
+                        </div>
+
+                        <div
+                            className="grid grid-cols-2"
+                            style={{ gap: "16px" }}
+                        >
+                            <FormField label="Phone Number">
+                                <TextInput
+                                    value={draftPhone}
+                                    onChange={setDraftPhone}
+                                    placeholder="+1 (555) 000-0000"
+                                    type="tel"
+                                />
+                            </FormField>
+
+                            <FormField label="Location">
+                                <TextInput
+                                    value={draftLoc}
+                                    onChange={setDraftLoc}
+                                    placeholder="City, Country"
+                                />
+                            </FormField>
+                        </div>
+
+                        <SaveRow
+                            onSave={savePersonal}
+                            onCancel={cancelEdit}
+                        />
+                    </div>
+                </>
             )}
-
-
         </GlassCard>
-
     );
 }
 function AccountSettingsCard() { return <div />; }
