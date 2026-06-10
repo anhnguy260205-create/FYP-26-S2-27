@@ -5,7 +5,7 @@ import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation } from "../../api/userApi.js";
-import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen } from "lucide-react";
+import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank } from "lucide-react";
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint }) {
     return (
@@ -822,7 +822,149 @@ function SecurityCard({ investorInfo }) {
 
 }
 
+function PaperMoneyCard({ investorInfo }) {
+    const navigate = useNavigate();
+    return (
+        <GlassCard>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold">
+                        Paper Money
+                    </h1>
 
+                    <p
+                        style={{
+                            fontSize: "13px",
+                            color: "rgba(255,255,255,0.5)",
+                            marginTop: "4px",
+                        }}
+                    >
+                        Manage your virtual trading funds
+                    </p>
+                </div>
+
+
+            </div>
+            <div
+                style={{
+                    height: "1px",
+                    background:
+                        "rgba(255,255,255,0.06)",
+                    margin: "32px 0",
+                }}
+            />
+
+            <div style={{ marginTop: "32px" }}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div
+                            style={{
+                                width: "42px",
+                                height: "42px",
+                                borderRadius: "12px",
+                                background:
+                                    "rgba(34,197,94,0.08)",
+                                border:
+                                    "1px solid rgba(34,197,94,0.25)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <PiggyBank
+                                size={18}
+                                color="yellow"
+                            />
+                        </div>
+
+                        <div>
+                            <div
+                                style={{
+                                    fontWeight: 700,
+                                    fontSize: "16px",
+                                }}
+                            >
+                                Available Balance : $ {investorInfo?.paper_money}.00
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: "13px",
+                                    color:
+                                        "rgba(255,255,255,0.4)",
+                                    marginTop: "2px",
+                                }}
+                            >
+                                Use paper money to practice stock trading
+                                without risking real capital.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        style={{
+                            padding: "6px 14px",
+                            borderRadius: "999px",
+                            background:
+                                "rgba(34,197,94,0.12)",
+                            border:
+                                "1px solid rgba(34,197,94,0.25)",
+                            color: "#22c55e",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            cursor: "pointer"
+                        }}
+                    >
+                        Add Money
+                    </button>
+                </div>
+                <div style={{ marginTop: "24px" }}>
+                    <div
+                        className="flex justify-between"
+                        style={{
+                            fontSize: "13px",
+                            marginBottom: "8px",
+                            color: "rgba(255,255,255,0.7)"
+                        }}
+                    >
+                        <span>Paper Trading Capital</span>
+                        <span>$2,000 / $10,000</span>
+                    </div>
+
+                    <div
+                        style={{
+                            width: "100%",
+                            height: "10px",
+                            borderRadius: "999px",
+                            background: "rgba(255,255,255,0.08)",
+                            overflow: "hidden"
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: "20%", // hardcoded
+                                height: "100%",
+                                background:
+                                    "linear-gradient(90deg,#22c55e,#00D3F2)",
+                                borderRadius: "999px"
+                            }}
+                        />
+                    </div>
+
+                    <div
+                        className="flex justify-between"
+                        style={{
+                            marginTop: "8px",
+                            fontSize: "12px",
+                            color: "rgba(255,255,255,0.4)"
+                        }}
+                    >
+                        <span>Used: $8,000</span>
+                        <span>Remaining: $2,000</span>
+                    </div>
+                </div>
+            </div>
+        </GlassCard>);
+}
 function SubscriptionCard() { return <div />; }
 
 function InvestorProfilePage() {
@@ -870,7 +1012,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-
+                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard />}
                 </div>
             </main>
