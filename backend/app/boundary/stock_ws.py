@@ -72,7 +72,8 @@ def get_snapshot_yfinance(symbol: str) -> dict:
     ticker = yf.Ticker(symbol)
 
     # One call: last 2 daily bars → today + yesterday
-    hist = ticker.history(period="2d", interval="1d")
+    hist = ticker.history(period="5d", interval="1d")
+    hist = hist.dropna(subset=["Close"])  # drops the partial June 10 row
 
     today = None
     yesterday = None
