@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { getInvestorInformation } from "../../api/userApi.js";
+import { getInvestorInformation, deleteInvestor } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
@@ -216,23 +216,71 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
 function DeleteAccountButton() {
     const navigate = useNavigate();
-    const handleDeleteAccount = () => {
-        navigate("/");
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        setLoading(true);
+        try {
+            const result = await deleteInvestor(currentUser?.user_id);
+            if (result.success) {
+                localStorage.removeItem("currentUser");
+                navigate("/");
+            } else {
+                alert(result.message || "Failed to delete account");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete account");
+        } finally {
+            setLoading(false);
+            setShowConfirm(false);
+        }
     };
 
     return (
-        <div className="flex flex-col items-start gap-4 p-6">
-            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>Danger Zone</p>
-            <div style={{ width: "85%", height: "0.667px", background: "rgba(255,255,255,0.07)", marginLeft: "15px", marginRight: "15px" }} />
-            <button
-                onClick={handleDeleteAccount}
-                style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(255,0,0,0.1)", border: "1px solid rgba(255,0,0,0.3)", color: "#FF6347", fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "red"; e.currentTarget.style.border = "1px solid red"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "#FF6347"; e.currentTarget.style.border = "1px solid rgba(255,0,0,0.3)"; }}
-            >
-                Delete Account
-            </button>
-        </div>
+        <>
+            <div className="flex flex-col items-start gap-4 p-6">
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>Danger Zone</p>
+                <div style={{ width: "85%", height: "0.667px", background: "rgba(255,255,255,0.07)" }} />
+                <button
+                    onClick={() => setShowConfirm(true)}
+                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(255,0,0,0.1)", border: "1px solid rgba(255,0,0,0.3)", color: "#FF6347", fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: "pointer" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "red"; e.currentTarget.style.border = "1px solid red"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "#FF6347"; e.currentTarget.style.border = "1px solid rgba(255,0,0,0.3)"; }}
+                >
+                    Delete Account
+                </button>
+            </div>
+
+            {showConfirm && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "12px" }}>Delete Account</h2>
+                        <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
+                            This will permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowConfirm(false)}
+                                disabled={loading}
+                                style={{ padding: "8px 20px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={loading}
+                                style={{ padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.5)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
+                            >
+                                {loading ? "Deleting…" : "Yes, Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 

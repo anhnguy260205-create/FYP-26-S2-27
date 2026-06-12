@@ -79,6 +79,33 @@ class Investor(Base):
             "investor_subscription_status": investor["investor_subscription_status"]
         }
 
+    @staticmethod
+    def deleteInvestor(user_id):
+        from app.entity.models.subscription import Subscription
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+
+            # 1. Delete subscriptions (child of investor)
+            session.query(Subscription).filter(
+                Subscription.investor_id == investor.investor_id
+            ).delete()
+
+            # 2. Delete investor row (child of user_account)
+            session.delete(investor)
+            session.flush()
+
+            # 3. Delete user_account row
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id
+            ).first()
+            if user:
+                session.delete(user)
+            return True
+
 
 def seed_investor_account():
     Investor.createAccount(
