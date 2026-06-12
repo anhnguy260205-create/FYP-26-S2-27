@@ -2,7 +2,7 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -223,4 +223,30 @@ def update_information(user_id: str, data: UpdateInformationRequest):
     return {
         "success": True,
         "message": "Information updated successfully"
+    }
+
+
+# Delete Investor
+class DeleteInvestorPage:
+    def __init__(self):
+        self.controller = DeleteInvestorController()
+
+    def delete_account(self, user_id):
+        return self.controller.delete_account(user_id)
+
+
+@router.delete("/delete-investor/{user_id}")
+def delete_account(user_id: str):
+    boundary = DeleteInvestorPage()
+
+    result = boundary.delete_account(user_id)
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Account not found"
+        }
+    return {
+        "success": True,
+        "message": "Account deleted successfully"
     }

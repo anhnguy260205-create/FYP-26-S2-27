@@ -90,3 +90,10 @@ export const updateUserInformation = async (userId, fullName, emailAddress, phon
   });
   return await response.json();
 };
+
+export const deleteInvestor = async (userId) => {
+  const response = await fetch(`${BASE_URL}/delete-investor/${userId}`, {
+    method: "DELETE",
+  });
+  return await response.json();
+};
