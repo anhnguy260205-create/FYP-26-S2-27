@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from app.control.controller.alertc import CheckAndTriggerAlertsController
 import websockets
 import json
 import asyncio
@@ -231,7 +232,7 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
         timeframe = "1Min"
         start_days = 2
 
-    start = (datetime.utcnow() - timedelta(days=start_days)
+    start = (datetime.now(ZoneInfo("UTC")) - timedelta(days=start_days)
              ).strftime("%Y-%m-%dT%H:%M:%SZ")
     params = urlencode({
         "timeframe": timeframe,
@@ -458,16 +459,22 @@ async def run_alpaca_connection():
 
                         if msg_type == "t":
                             # "S" = symbol (uppercase), "s" = trade size (shares), "p" = price
+                            symbol = msg.get("S")
+                            price = msg.get("p")
                             await broadcast_to_clients(json.dumps({
                                 "type": "trade",
                                 "data": {
-                                    "s":    msg.get("S"),   # symbol
-                                    "p":    msg.get("p"),   # price
-                                    # shares traded in this tick
+                                    "s":    symbol,
+                                    "p":    price,
                                     "size": msg.get("s"),
-                                    "t":    msg.get("t"),   # ISO timestamp
+                                    "t":    msg.get("t"),
                                 }
                             }))
+                            if symbol and price is not None:
+                                asyncio.create_task(asyncio.to_thread(
+                                    CheckAndTriggerAlertsController().check,
+                                    symbol, float(price), None
+                                ))
 
                         elif msg_type == "b":
                             # Authoritative 1-minute OHLCV bar from Alpaca
