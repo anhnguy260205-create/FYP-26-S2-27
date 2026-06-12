@@ -20,7 +20,7 @@ function DynamicFeatureBubbleHero() {
       title: "Market Trends",
       desc: "Live stock movement",
       size: 170,
-      target: { top: "10%", right: "18%" },
+      target: { top: "10%", right: "6%" },
       fadeDelay: "0.15s",
       floatDelay: "1.75s",
     },
@@ -44,31 +44,60 @@ function DynamicFeatureBubbleHero() {
       title: "Professional Experts",
       desc: "Insights from industry leaders",
       size: 155,
-      target: { top: "40%", left: "14%" },
+      target: { top: "40%", left: "4%" },
       fadeDelay: "0.6s",
       floatDelay: "2.2s",
     },
   ];
 
-  const buildKeyframes = (index) => `
-    @keyframes spreadOut${index} {
-      0%   { opacity: 0; transform: scale(0.2); }
-      20%  { opacity: 1; transform: scale(1.05); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-  `;
+  // Build a unique CSS animation per bubble that goes from center to its target corner
+  const buildKeyframes = (index, size, target) => {
+    const half = size / 2;
+    // translate from center to 0,0 offset at final position
+    // We use translate trick: start at CSS center offset, end at 0
+    const directions = [
+      `translate(-50%, -50%)`,  // will be overridden per bubble
+    ];
+
+    // Map target position to a translate offset from center
+    // Each bubble's final resting place is its `target` styles (top/left/bottom/right)
+    // We animate using translate so absolute position stays at 50%/50% then moves
+    const moves = [
+      { tx: "-20vw", ty: "-32vh" }, // top-left
+      { tx: "38vw", ty: "-20vh" }, // top-right
+      { tx: "-10vw", ty: "40vh" }, // bottom-left
+      { tx: "36vw", ty: "30vh" }, // bottom-right
+      { tx: "-40vw", ty: "0vh" }, // mid-left
+    ];
+
+    const { tx, ty } = moves[index] || { tx: "0", ty: "0" };
+
+    return `
+      @keyframes spreadOut${index} {
+        0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+        20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        100% { opacity: 1; transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) scale(1); }
+      }
+      @keyframes floatY${index} {
+        0%, 100% { transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) translateY(0px); }
+        50%       { transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) translateY(-14px); }
+      }
+    `;
+  };
 
   return (
     <div
       style={{
         position: "relative",
-        height: "100vh",
+        height: "130vh",
         width: "100%",
         overflow: "hidden",
         color: "white",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        marginTop: "-25vh",
+        marginBottom: "-20vh",
       }}
     >
       {/* Background glow */}
@@ -172,71 +201,60 @@ function DynamicFeatureBubbleHero() {
         </div>
       </div>
 
-      {/* Feature bubbles — positioned at their target coords, resize-safe */}
+      {/* Feature bubbles — all anchored at 50%/50%, moved via translate */}
       {features.map((feature, index) => (
         <div
           key={index}
           style={{
             position: "absolute",
-            ...feature.target,
+            top: "50%",
+            left: "50%",
             width: feature.size,
             height: feature.size,
-            animation: `spreadOut${index} 1.4s cubic-bezier(0.22, 1, 0.36, 1) ${feature.fadeDelay} forwards`,
+            animation: `spreadOut${index} 1.4s cubic-bezier(0.22, 1, 0.36, 1) ${feature.fadeDelay} forwards, floatY${index} 4s ease-in-out ${feature.floatDelay} infinite`,
           }}
         >
-          {/* inner div isolates the float so it doesn't clash with spreadOut transform */}
           <div
             style={{
-              width: "100%",
-              height: "100%",
-              animation: `floatY 4s ease-in-out ${feature.floatDelay} infinite`,
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              background: "rgba(59,130,246,0.22)",
+              border: "1px solid rgba(59,130,246,0.22)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "box-shadow 0.3s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 32px rgba(34,211,238,0.4)")}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
           >
             <div
               style={{
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                background: "rgba(59,130,246,0.22)",
-                border: "1px solid rgba(59,130,246,0.22)",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "box-shadow 0.3s ease",
+                background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(59,130,246,0.08))",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 32px rgba(34,211,238,0.4)")}
-              onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(59,130,246,0.08))",
-                }}
-              />
-              <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0.5rem" }}>
-                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "white" }}>
-                  {feature.title}
-                </h3>
-                <p style={{ margin: "4px 0 0", fontSize: "0.72rem", color: "#94a3b8" }}>
-                  {feature.desc}
-                </p>
-              </div>
+            />
+
+            <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0.5rem" }}>
+              <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "white" }}>
+                {feature.title}
+              </h3>
+              <p style={{ margin: "4px 0 0", fontSize: "0.72rem", color: "#94a3b8" }}>
+                {feature.desc}
+              </p>
             </div>
           </div>
         </div>
       ))}
 
       <style>{`
-        ${features.map((f, i) => buildKeyframes(i)).join("")}
-        @keyframes floatY {
-          0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-14px); }
-        }
+        ${features.map((f, i) => buildKeyframes(i, f.size, f.target)).join("")}
         @keyframes spin {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
@@ -253,16 +271,17 @@ function HomePage() {
 
   return (
     <motion.div
-      className="bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-      style={{ position: "relative" }}
+      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 50 }}>
-        <Header />
-      </div>
-      <DynamicFeatureBubbleHero />
+      <Header />
+      <main className="flex-1 p-7.5">
+
+        <DynamicFeatureBubbleHero />
+      </main>
+
       <Footer />
     </motion.div>
 
