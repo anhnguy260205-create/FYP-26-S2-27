@@ -126,5 +126,5 @@ def seed_investor_account():
         password="password",
         phone_number=12343243,
         address="123 Kim Street",
-        stock_level="Beginner"
+        stock_level="Basic"
     )
