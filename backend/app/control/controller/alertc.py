@@ -69,11 +69,12 @@ class CheckAndTriggerAlertsController:
                         condition = f"Price decreased {pct:.2f}% (threshold: {float(alert.decrease_percent):.2f}%)"
 
                 if condition:
-                    send_alert_email(
+                    sent = send_alert_email(
                         to_email=alert.notification_email,
                         stock_symbol=symbol,
                         current_price=current_price,
                         condition=condition,
                         custom_message=alert.custom_message,
                     )
-                    alert.is_triggered = True
+                    if sent:
+                        alert.is_triggered = True

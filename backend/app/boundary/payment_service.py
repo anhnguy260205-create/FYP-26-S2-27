@@ -34,7 +34,7 @@ class CreateSubscription:
         if not investor:
             return False
         subscription = self.create_investor_controller.createSubscription(
-            transaction_id, plan_type, investor["investor_id"])  # ✅ dict access
+            transaction_id, plan_type, investor["investor_id"])
 
         return subscription
 
@@ -184,6 +184,7 @@ def verify_session(request: VerifySessionRequest):
         # Already activated (webhook may have fired first — that's fine)
         return {"success": True, "already_active": True}
     if not result:
-        raise HTTPException(status_code=400, detail="Failed to activate subscription")
+        raise HTTPException(
+            status_code=400, detail="Failed to activate subscription")
 
     return {"success": True}
