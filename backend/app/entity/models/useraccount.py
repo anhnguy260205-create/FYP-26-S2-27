@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean
 from sqlalchemy.orm import relationship, joinedload
 from app.entity.database.base import Base
 from datetime import datetime
@@ -18,7 +18,7 @@ class UserAccount(Base):
         "user_profiles.profile_id"), nullable=True)
     username = Column(String(50), unique=True, nullable=False)
     full_name = Column(String(100), nullable=False)
-    phone_number = Column(Integer, unique=True, nullable=False)
+    phone_number = Column(String(20), unique=True, nullable=False)
     address = Column(String(255), nullable=False)
     email_address = Column(String(255), unique=True, nullable=False)
     account_status = Column(String(20), default="active")
@@ -157,7 +157,7 @@ class UserAccount(Base):
             if address:
                 user.address = address
             if phone_number:
-                user.phone_number = int(phone_number)
+                user.phone_number = str(phone_number)
             return True
 
 

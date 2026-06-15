@@ -1,4 +1,3 @@
-import Footer from "../../layout/Footer.jsx";
 import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -81,6 +80,7 @@ function LoginPage() {
     username: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -88,6 +88,7 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const payload = {
         username: formData.username.trim(),
@@ -103,7 +104,6 @@ function LoginPage() {
 
       localStorage.setItem("currentUser", JSON.stringify(result.user));
 
-      //  Redirect based on role
       const role = result.user.role;
       if (role === "investor") navigate("/investor/loggedhome");
       else if (role === "expert") navigate("/expert");
@@ -113,6 +113,8 @@ function LoginPage() {
     } catch (error) {
       console.error(error);
       alert("Failed to login");
+    } finally {
+      setLoading(false);
     }
   };
   return (
@@ -124,7 +126,7 @@ function LoginPage() {
 
       <Header />
       <main className="flex-1 p-7.5">
-        <div className="flex items-center justify-center min-h-screen px-24" style={{ marginTop: "-80px", paddingBottom: "-80px" }}>
+        <div className="flex items-center justify-center px-24" style={{ marginTop: "-80px", marginBottom: "-80px" }}>
           <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
             <div
@@ -177,7 +179,7 @@ function LoginPage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between">
                     <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
-                    <label className="text-blue-700 text-[14px]" onClick={() => navigate("#")}> Forget password?</label>
+                    <label className="text-blue-700 text-[14px]"> Forget password?</label>
                   </div>
                   <input
                     type="password"
@@ -205,11 +207,12 @@ function LoginPage() {
                 {/* Submit */}
                 <button
                   type="submit"
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer"
+                  disabled={loading}
+                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
                   }}>
-                  Sign In
+                  {loading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
               {/* Create Account button — cyan gradient */}
