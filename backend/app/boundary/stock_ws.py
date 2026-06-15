@@ -30,6 +30,7 @@ ALPACA_DATA_WS_URL = "wss://stream.data.alpaca.markets/v2/iex"
 connected_clients: Dict[WebSocket, asyncio.Lock] = {}
 clients_lock = asyncio.Lock()
 alpaca_task: Optional[asyncio.Task] = None
+previous_close_cache: Dict[str, float] = {}
 
 stock_pool = [
     "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
@@ -373,6 +374,8 @@ async def send_snapshot_prices(websocket: WebSocket):
             failed_symbols.append(symbol)
             continue
         quotes.append(result)
+        if result.get("previousClose") is not None:
+            previous_close_cache[symbol] = float(result["previousClose"])
 
     await send_json_to_client(websocket, {
         "type":   "snapshot",
@@ -473,7 +476,7 @@ async def run_alpaca_connection():
                             if symbol and price is not None:
                                 asyncio.create_task(asyncio.to_thread(
                                     CheckAndTriggerAlertsController().check,
-                                    symbol, float(price), None
+                                    symbol, float(price), previous_close_cache.get(symbol)
                                 ))
 
                         elif msg_type == "b":

@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,14 +12,43 @@ from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account
 from app.entity.models.subscription import Subscription
-from app.boundary.stock_ws import router as stock_ws_router
+from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
 from app.boundary.predictionb import router as prediction_router
 from app.boundary.payment_service import router as payment_router
-
+from app.boundary.alertb import router as alertb
+from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-app = FastAPI()
+
+
+async def yfinance_alert_poller():
+    """Check alerts every 60 s using yfinance prices — works even when no browser tab is open."""
+    await asyncio.sleep(10)  # wait for server to fully start
+    while True:
+        for symbol in stock_pool:
+            try:
+                snapshot = await asyncio.to_thread(get_snapshot_yfinance, symbol)
+                price = snapshot.get("p")
+                prev_close = snapshot.get("previousClose")
+                if price is not None:
+                    await asyncio.to_thread(
+                        CheckAndTriggerAlertsController().check,
+                        symbol, float(price), float(prev_close) if prev_close else None
+                    )
+            except Exception as e:
+                print(f"[ALERT-POLL] Error checking {symbol}: {e}")
+        await asyncio.sleep(60)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(yfinance_alert_poller())
+    yield
+    task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +70,7 @@ app.include_router(admin_router)
 app.include_router(stock_ws_router)
 app.include_router(prediction_router)
 app.include_router(payment_router)
+app.include_router(alertb)
 
 
 @app.get("/")
