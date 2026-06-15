@@ -99,7 +99,6 @@ class UserAccount(Base):
             else:
                 role = profile_name or "unknown"
 
-            # ✅ Extract all values inside the session before it closes
             return {
                 "success": True,
                 "user": {
@@ -143,16 +142,22 @@ class UserAccount(Base):
             }
 
     @staticmethod
-    def updateInformation(user_id, full_name, email_address, phone_number, address):
+    def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
         with get_session() as session:
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id).first()
             if not user:
                 return False
-            user.full_name = full_name
-            user.email_address = email_address
-            user.phone_number = phone_number
-            user.address = address
+            if user_name:
+                user.username = user_name
+            if full_name:
+                user.full_name = full_name
+            if email_address:
+                user.email_address = email_address
+            if address:
+                user.address = address
+            if phone_number:
+                user.phone_number = int(phone_number)
             return True
 
 

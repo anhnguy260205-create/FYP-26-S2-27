@@ -4,24 +4,24 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { updateUserInformation } from "../../api/userApi.js";
+import { updateUserInformation, updateStockLevel } from "../../api/userApi.js";
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank } from "lucide-react";
 /* ─── Editable field ──────────────────────────────────────── */
-function FormField({ label, children, hint }) {
+function FormField({ label, children, hint, htmlFor }) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+            <label htmlFor={htmlFor} style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
             {children}
             {hint && <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{hint}</p>}
         </div>
     );
 }
 
-function TextInput({ value, onChange, placeholder, type = "text", disabled = false, prefix }) {
+function TextInput({ value, onChange, placeholder, type = "text", disabled = false, prefix, id }) {
     return (
         <div style={{ position: "relative" }}>
             {prefix && <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", color: "rgba(255,255,255,0.35)" }}>{prefix}</span>}
-            <input type={type} value={value} onChange={e => onChange?.(e.target.value)} placeholder={placeholder} disabled={disabled}
+            <input id={id} type={type} value={value} onChange={e => onChange?.(e.target.value)} placeholder={placeholder} disabled={disabled}
                 style={{
                     height: "44px", borderRadius: "10px",
                     border: "0.667px solid rgba(255,255,255,0.15)",
@@ -133,7 +133,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 ? { background: "rgba(0, 0, 0, 0.35)", border: "1px solid rgba(0, 211, 243, 0.4)", color: "#00D3F2" }
                 : {};
     const savePersonal = async (e) => {
-        e.preventDefault
+        e.preventDefault()
     }
     return (
         <div className="flex flex-col shrink-0" style={{ gap: "16px" }}>
@@ -284,10 +284,11 @@ function DeleteAccountButton() {
     );
 }
 
-function PersonalInformationCard({ investorInfo }) {
+function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftFull, setDraftFull] = useState(investorInfo?.full_name || "");
+    const [draftEmail, setDraftEmail] = useState(investorInfo?.email || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
-    const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number || "");
+    const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
     const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
@@ -299,25 +300,38 @@ function PersonalInformationCard({ investorInfo }) {
         .slice(0, 2)
         .toUpperCase() || "??";
 
+    useEffect(() => {
+        setDraftFull(investorInfo?.full_name || "");
+        setDraftEmail(investorInfo?.email || "");
+        setDraftUser(investorInfo?.username || "");
+        setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
+        setDraftLoc(investorInfo?.address || "");
+    }, [investorInfo]);
+
     const cancelEdit = () => {
+        setDraftFull(investorInfo?.full_name || "");
+        setDraftEmail(investorInfo?.email || "");
+        setDraftUser(investorInfo?.username || "");
+        setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
+        setDraftLoc(investorInfo?.address || "");
         setEditingSection(null);
     };
-    const savePersonal = async () => {
+    const handleChange = async () => {
         try {
 
             const result = await updateUserInformation(
                 investorInfo.user_id,
-                {
-                    full_name: draftFull,
-                    username: draftUser,
-                    phone_number: draftPhone,
-                    address: draftLoc
-                }
+                draftUser,
+                draftFull,
+                draftEmail,
+                draftPhone,
+                draftLoc
             );
 
             if (result.success) {
                 alert("Profile updated");
                 setEditingSection(null);
+                onUpdate();
             } else {
                 alert(result.message);
             }
@@ -472,27 +486,23 @@ function PersonalInformationCard({ investorInfo }) {
                         style={{ gap: "20px", marginTop: "24px" }}
                     >
                         <div>
-                            <FormField label="Full Name *">
+                            <FormField label="Full Name *" htmlFor="field-full-name">
                                 <TextInput
+                                    id="field-full-name"
                                     value={draftFull}
                                     onChange={setDraftFull}
                                     placeholder="Full name"
                                 />
                             </FormField>
                         </div>
-                        <div
-                            className="grid grid-cols-2"
-                            style={{ gap: "16px" }}
-                        >
-
-                        </div>
 
                         <div
                             className="grid grid-cols-2"
                             style={{ gap: "16px" }}
                         >
-                            <FormField label="Username *">
+                            <FormField label="Username *" htmlFor="field-username">
                                 <TextInput
+                                    id="field-username"
                                     value={draftUser}
                                     onChange={setDraftUser}
                                     placeholder="username"
@@ -502,12 +512,14 @@ function PersonalInformationCard({ investorInfo }) {
 
                             <FormField
                                 label="Email Address"
-                                hint="Contact support to change email"
+
+                                htmlFor="field-email"
                             >
-                                <TextInput
-                                    value={investorInfo?.email}
-                                    disabled
-                                />
+                                <TextInput id="field-email"
+                                    value={draftEmail}
+                                    onChange={setDraftEmail}
+                                    placeholder="email@example.com"
+                                    type="email" />
                             </FormField>
                         </div>
 
@@ -515,8 +527,9 @@ function PersonalInformationCard({ investorInfo }) {
                             className="grid grid-cols-2"
                             style={{ gap: "16px" }}
                         >
-                            <FormField label="Phone Number">
+                            <FormField label="Phone Number" htmlFor="field-phone">
                                 <TextInput
+                                    id="field-phone"
                                     value={draftPhone}
                                     onChange={setDraftPhone}
                                     placeholder="+1 (555) 000-0000"
@@ -524,8 +537,9 @@ function PersonalInformationCard({ investorInfo }) {
                                 />
                             </FormField>
 
-                            <FormField label="Location">
+                            <FormField label="Location" htmlFor="field-location">
                                 <TextInput
+                                    id="field-location"
                                     value={draftLoc}
                                     onChange={setDraftLoc}
                                     placeholder="City, Country"
@@ -534,7 +548,7 @@ function PersonalInformationCard({ investorInfo }) {
                         </div>
 
                         <SaveRow
-                            onSave={savePersonal}
+                            onSave={handleChange}
                             onCancel={cancelEdit}
                         />
                     </div>
@@ -543,24 +557,35 @@ function PersonalInformationCard({ investorInfo }) {
         </GlassCard>
     );
 }
-function AccountSettingsCard({ investorInfo }) {
+function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
     const [riskLevel, setRiskLevel] = useState(investorInfo?.stock_level);
-    const [accountType, setAccountType] = useState("Investor");
-
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const role = currentUser?.role;
+    const userId = currentUser?.user_id
     const isEditing = (section) => editingSection === section;
+
 
     const cancelEdit = () => {
         setEditingSection(null);
     };
 
-    const saveSettings = () => {
-        console.log({
-            riskLevel,
-            accountType
-        });
+    const handleClick = async (e) => {
+        e.preventDefault();
 
-        setEditingSection(null);
+        try {
+            const result = await updateStockLevel(userId, riskLevel);
+            if (result.success) {
+                alert("Risk level updated");
+                setEditingSection(null);
+                onUpdate();
+            } else {
+                alert(result.message || "Failed to update risk level");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Failed to update information");
+        }
     };
 
     return (
@@ -694,7 +719,7 @@ function AccountSettingsCard({ investorInfo }) {
                                         fontSize: "18px",
                                     }}
                                 >
-                                    {accountType}
+                                    {role}
                                 </div>
 
                                 <div
@@ -722,35 +747,23 @@ function AccountSettingsCard({ investorInfo }) {
                             marginTop: "24px",
                         }}
                     >
-                        <FormField label="Risk Level">
+                        <FormField label="Risk Level" htmlFor="field-risk-level">
                             <select
+                                id="field-risk-level"
                                 value={riskLevel}
                                 onChange={(e) =>
                                     setRiskLevel(e.target.value)
                                 }
                                 className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
                             >
-                                <option>Conservative</option>
-                                <option>Moderate</option>
-                                <option>Aggressive</option>
-                            </select>
-                        </FormField>
-
-                        <FormField label="Account Type">
-                            <select
-                                value={accountType}
-                                onChange={(e) =>
-                                    setAccountType(e.target.value)
-                                }
-                                className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
-                            >
-                                <option>Investor</option>
-                                <option>Consultant</option>
+                                <option>Basic</option>
+                                <option>Intermediate</option>
+                                <option>Advanced</option>
                             </select>
                         </FormField>
 
                         <SaveRow
-                            onSave={saveSettings}
+                            onSave={handleClick}
                             onCancel={cancelEdit}
                         />
                     </div>
@@ -1020,7 +1033,8 @@ function InvestorProfilePage() {
     const [investorInfo, setInvestorInfo] = useState(null);
     const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser")));
     const userId = currentUser?.user_id;
-    useEffect(() => {
+
+    const fetchInvestorInfo = () => {
         if (userId) {
             getInvestorInformation(userId)
                 .then(data => {
@@ -1034,7 +1048,12 @@ function InvestorProfilePage() {
                     console.error("Failed to fetch investor information:", error);
                 });
         }
-    }, [userId]); // stable primitive — no infinite loop
+    };
+
+    useEffect(() => {
+        fetchInvestorInfo();
+    }, [userId]);
+
     return (
         <motion.div
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -1047,7 +1066,6 @@ function InvestorProfilePage() {
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
                     <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
-                        {/* FIX 1 applied here: JSX usage is now valid since LeftSection is a proper component */}
                         <LeftSection activeTab={activeTab} setActiveTab={setActiveTab} investorInfo={investorInfo} currentUser={currentUser} />
                     </div>
                     <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
@@ -1057,8 +1075,8 @@ function InvestorProfilePage() {
 
                 {/* Right content */}
                 <div className="flex-1 flex flex-col">
-                    {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} />}
-                    {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} />}
+                    {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
+                    {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
                     {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard />}

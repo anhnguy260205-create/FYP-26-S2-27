@@ -343,8 +343,64 @@ function AlertBoard({ symbol }) {
   );
 }
 
+/* ─── Premium Lock Card ────────────────────────────────────── */
+function PremiumLockCard() {
+  const navigate = useNavigate();
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      style={{
+        width: "300px", flexShrink: 0,
+        background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
+        border: "1px solid rgba(255,215,0,0.2)", borderRadius: "12px",
+        padding: "20px", backdropFilter: "blur(12px)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "12px", textAlign: "center",
+      }}
+    >
+      <div style={{
+        width: "52px", height: "52px", borderRadius: "50%",
+        background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px",
+      }}>
+        🔒
+      </div>
+      <h2 style={{
+        fontFamily: "'DM Mono', monospace", fontSize: "13px", color: "#FFD700",
+        fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0,
+      }}>
+        Premium Feature
+      </h2>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif", fontSize: "12px",
+        color: "#64748b", lineHeight: 1.6, margin: 0,
+      }}>
+        Custom stock alerts are available for <span style={{ color: "#FFD700" }}>Premium</span> members only.
+        Upgrade to get notified when prices hit your targets.
+      </p>
+      <button
+        onClick={() => navigate("/investor-profile")}
+        style={{
+          marginTop: "4px", padding: "10px 24px", borderRadius: "8px",
+          background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
+          border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700",
+          fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px",
+          letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = "linear-gradient(90deg, rgba(255,215,0,0.35), rgba(255,165,0,0.35))"}
+        onMouseLeave={e => e.currentTarget.style.background = "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))"}
+      >
+        ★ Upgrade to Premium
+      </button>
+    </motion.div>
+  );
+}
+
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -409,8 +465,8 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
         </motion.div>
       </div>
 
-      {/* RIGHT COLUMN: alerts board (spans full height) */}
-      <AlertBoard symbol={symbol} />
+      {/* RIGHT COLUMN: alerts board (premium only) */}
+      {isPremium ? <AlertBoard symbol={symbol} /> : <PremiumLockCard />}
     </motion.div>
   );
 }
@@ -423,6 +479,8 @@ function AStockDashBoardPage() {
   const stock = stocks[selectedStock];             // the live data object for this symbol
   const stockCandles = candles?.[selectedStock] ?? [];
   const stockList = Object.values(stocks ?? {});
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
 
   return (
@@ -455,6 +513,7 @@ function AStockDashBoardPage() {
             stockList={stockList}
             candles={candles}
             candleRanges={candleRanges}
+            isPremium={isPremium}
           />
 
         </main>
