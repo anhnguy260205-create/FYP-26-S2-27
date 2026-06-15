@@ -11,7 +11,7 @@ class Subscription(Base):
     __tablename__ = "subscription"
     sub_id = Column(String(50), primary_key=True,
                     default=lambda: f"sub_{uuid4()}")
-    transaction_id = Column(String(50), unique=True, nullable=False)
+    transaction_id = Column(String(200), unique=True, nullable=False)
     plan_type = Column(String(20), default='basic')  # e.g., "basic", "premium"
     investor_id = Column(String(50), ForeignKey(
         "investor.investor_id"), nullable=False)
