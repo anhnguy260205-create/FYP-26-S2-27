@@ -69,7 +69,7 @@ class UserAccount(Base):
             matching_account = session.query(UserAccount).options(
                 joinedload(UserAccount.profile)
             ).filter(
-                (func.lower(UserAccount.username) == username.lower()) &
+                (func.binary(UserAccount.username) == username) &
                 (UserAccount.password == password)
             ).first()
 
