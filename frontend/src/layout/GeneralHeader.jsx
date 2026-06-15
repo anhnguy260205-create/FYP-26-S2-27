@@ -129,8 +129,9 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Community",
+      label: "Forum Community",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      onClick: () => navigate("/forum")
     },
     {
       label: "Transactions",

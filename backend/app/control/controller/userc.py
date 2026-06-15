@@ -40,8 +40,8 @@ class ExpertInformationController:
 
 
 class UpdateInformationController:
-    def update_information(self, user_id, full_name, email_address, phone_number, address):
-        return UserAccount.updateInformation(user_id, full_name, email_address, phone_number, address)
+    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
+        return UserAccount.updateInformation(user_id, user_name, full_name, email_address, phone_number, address)
 
 
 class DeleteInvestorController:

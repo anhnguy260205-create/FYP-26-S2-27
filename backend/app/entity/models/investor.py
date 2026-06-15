@@ -106,6 +106,17 @@ class Investor(Base):
                 session.delete(user)
             return True
 
+    @staticmethod
+    def update_investor_stock_level(user_id, stock_level):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.stock_level = stock_level
+            return True
+
 
 def seed_investor_account():
     Investor.createAccount(

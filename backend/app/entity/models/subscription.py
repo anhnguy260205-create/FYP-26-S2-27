@@ -39,20 +39,20 @@ class Subscription(Base):
             )
 
             subscription = Subscription(
-                transaction_id=f"trans_{uuid4()}",
+                transaction_id=transaction_id,
                 plan_type=plan_type,
                 investor_id=investor_id,
                 sub_status="active",
                 sub_renewal_date=renewal_date
             )
+            session.add(subscription)
 
             investor = session.query(Investor).filter(
                 Investor.investor_id == investor_id
             ).first()
             if investor:
                 investor.investor_subscription_status = plan_type
-            with get_session() as session:
-                session.add(subscription)
-                session.flush()  # get sub_id before commit
+
+            session.flush()
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id
