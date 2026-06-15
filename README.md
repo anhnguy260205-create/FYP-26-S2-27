@@ -7,3 +7,4 @@
   + cd frontend
   + npm run dev
 - app link: http://localhost:5173/ 
+- check api: http://127.0.0.1:8000/docs#/
