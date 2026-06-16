@@ -6,6 +6,7 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { createAlert } from "../../api/alertApi.js";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -27,12 +28,12 @@ function companyName(symbol) {
 }
 
 /* ─── Trade Buttons ────────────────────────────────────────── */
-function Button({ marketStatus, symbol }) {
+function Button({ marketStatus }) {
   const navigate = useNavigate();
   const isOpen = marketStatus === "OPEN";
   const handleTrade = (type) => {
     if (!isOpen) { alert("Market is closed. Cannot make any transactions."); return; }
-    navigate(`/${type}/${symbol}`);
+    navigate(`/${type}`);
   };
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -180,7 +181,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated })
         </span>
       </div>
       <WatchlistButton />
-      <Button marketStatus={marketStatus} symbol={selectedStock} />
+      <Button marketStatus={marketStatus} />
 
     </motion.div>
   );
@@ -464,7 +465,7 @@ function PremiumLockCard() {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -577,6 +578,7 @@ function AStockDashBoardPage() {
             stockList={stockList}
             candles={candles}
             candleRanges={candleRanges}
+            isPremium={isPremium}
           />
 
         </main>
