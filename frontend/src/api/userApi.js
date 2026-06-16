@@ -145,6 +145,10 @@ export const getWatchlist = async (userId) => {
 export const removeStockFromWatchlist = async (userId, stock_symbol) => {
   const response = await fetch(`${BASE_URL}/investor-watchlist/${userId}/${stock_symbol}`, {
     method: "DELETE",
+  });
+  return await response.json();
+};
+
 // ---- Password Reset ----
 
 export const requestPasswordResetOtp = async (emailAddress) => {
