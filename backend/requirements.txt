@@ -4,3 +4,6 @@ sqlalchemy
 pymysql
 cryptography
 websockets
+yfinance
+xgboost
+

@@ -6,7 +6,6 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import MiniBoard from "../../components/MiniBoard.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -14,26 +13,26 @@ function formatNumber(num) {
   num = Number(num);
   const fmt = (v, s) => parseFloat(v.toFixed(1)) + s;
   if (num >= 1_000_000_000) return fmt(num / 1_000_000_000, "B");
-  if (num >= 1_000_000)     return fmt(num / 1_000_000, "M");
-  if (num >= 1_000)         return fmt(num / 1_000, "K");
+  if (num >= 1_000_000) return fmt(num / 1_000_000, "M");
+  if (num >= 1_000) return fmt(num / 1_000, "K");
   return num.toString();
 }
 function companyName(symbol) {
   const names = {
-    AAPL: "Apple",     TSLA: "Tesla",     NVDA: "NVIDIA",
+    AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA",
     MSFT: "Microsoft", GOOGL: "Alphabet", AMZN: "Amazon",
-    META: "Meta",      AMD: "AMD",        NFLX: "Netflix", INTC: "Intel",
+    META: "Meta", AMD: "AMD", NFLX: "Netflix", INTC: "Intel",
   };
   return names[symbol] ?? "";
 }
 
 /* ─── Trade Buttons ────────────────────────────────────────── */
-function Button({ marketStatus }) {
+function Button({ marketStatus, symbol }) {
   const navigate = useNavigate();
   const isOpen = marketStatus === "OPEN";
   const handleTrade = (type) => {
     if (!isOpen) { alert("Market is closed. Cannot make any transactions."); return; }
-    navigate(`/${type}`);
+    navigate(`/${type}/${symbol}`);
   };
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -83,26 +82,26 @@ function Button({ marketStatus }) {
   );
 }
 /* Watchlist Feature */
-function WatchlistButton(){
-  const handleSubmit = async(e)=> {
+function WatchlistButton() {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     alert("The feature is coming soon!!")
   }
   return (
     <button onClick={handleSubmit}
-            style={{
-          width: "200px", marginTop: "16px", padding: "11px", borderRadius: "8px",
-          background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
-          fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
-          cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
-        }}>
-      + Add to Watchlist 
+      style={{
+        width: "200px", marginTop: "16px", padding: "11px", borderRadius: "8px",
+        background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
+        fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
+        cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
+      }}>
+      + Add to Watchlist
     </button>
   );
 }
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
-function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) {
+function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated }) {
   //Price data lives in `stock` (passed from stocks[selectedStock] in the page).
   const chg = stock?.price != null && stock?.previousClose != null
     ? (stock.price - stock.previousClose).toFixed(3)
@@ -156,7 +155,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           </span>
           <p className="text-gray-400">|</p>
           <span style={{
-            fontFamily: "'DM Mono', monospace", fontSize: "11px"}}>
+            fontFamily: "'DM Mono', monospace", fontSize: "11px"
+          }}>
             Lasted update: {lastUpdated || "Loading..."}
           </span>
         </div>
@@ -170,8 +170,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           color: changeColor, letterSpacing: "0.02em",
         }}>
           {stock?.price != null ? `$${stock.price.toFixed(3)}` : "—"} USD
-        </span> 
-        <span className="inline"style={{
+        </span>
+        <span className="inline" style={{
           color: changeColor, letterSpacing: "0.04em",
         }}>
           {chg !== null ? `${isUp ? "+" : ""}${chg}` : "—"}
@@ -179,9 +179,9 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus,lastUpdated }) 
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-      <WatchlistButton/>
-      <Button marketStatus={marketStatus} />
-      
+      <WatchlistButton />
+      <Button marketStatus={marketStatus} symbol={selectedStock} />
+
     </motion.div>
   );
 }
@@ -237,7 +237,8 @@ function AlertBoard({ symbol }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      style={{ width: "300px", flexShrink: 0,
+      style={{
+        width: "300px", flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
         padding: "20px", backdropFilter: "blur(12px)",
@@ -343,7 +344,7 @@ function AlertBoard({ symbol }) {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -352,7 +353,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      style={{ display: "flex", gap: "16px", alignItems: "flex-start",  flexShrink: 0}}
+      style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexShrink: 0 }}
     >
       {/* LEFT COLUMN: stats strip + chart stacked */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
@@ -364,10 +365,11 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
           backdropFilter: "blur(12px)", overflow: "hidden",
         }}>
           {[
-            { label: "Open",       value: `$${open.toFixed(2)}` },
-            { label: "High",       value: `$${high.toFixed(2)}` },
-            { label: "Low",        value: `$${low.toFixed(2)}` },
-            { label: "Volume",     value: formatNumber(volume) },
+            // Ensure the system work smoothly even if some data points are missing by showing "N/A"
+            { label: "Open", value: open != null ? `$${open.toFixed(2)}` : "N/A" },
+            { label: "High", value: high != null ? `$${high.toFixed(2)}` : "N/A" },
+            { label: "Low", value: low != null ? `$${low.toFixed(2)}` : "N/A" },
+            { label: "Volume", value: formatNumber(volume) },
             { label: "Avg Volume", value: formatNumber(avgVolume) },
           ].map((s, i, arr) => (
             <div key={s.label} style={{
@@ -400,6 +402,9 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
             data={stockCandles}
             symbol={symbol}
             requestRangeData={requestRangeData}
+            stockList={stockList}
+            compareDataBySymbol={candles}
+            candleRanges={candleRanges}
           />
         </motion.div>
       </div>
@@ -414,7 +419,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData }) 
 function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();     // string, e.g. "NVDA"
-  const { marketStatus, stocks, candles, requestRangeData, lastUpdated } = useLiveStocks();
+  const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const stock = stocks[selectedStock];             // the live data object for this symbol
   const stockCandles = candles?.[selectedStock] ?? [];
   const stockList = Object.values(stocks ?? {});
@@ -428,10 +433,10 @@ function AStockDashBoardPage() {
 
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }}animate={{ opacity: 1, y:0 }} transition={{ duration: 0.6 }}>
-    
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
 
-        <GeneralHeader/>
+
+        <GeneralHeader />
 
         <main style={{ flex: 1, padding: "28px 32px", position: "relative", zIndex: 1 }}>
 
@@ -447,8 +452,11 @@ function AStockDashBoardPage() {
             stock={stock}
             stockCandles={stockCandles}
             requestRangeData={requestRangeData}
+            stockList={stockList}
+            candles={candles}
+            candleRanges={candleRanges}
           />
-          <MiniBoard stocks ={stockList}/>
+
         </main>
 
         <Footer />
