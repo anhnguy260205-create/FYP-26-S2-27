@@ -3,7 +3,7 @@ import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { loginAccount } from "../../api/userApi.js";
+import { loginAccount } from "../../api/userApi";
 import image1 from "../../images/image1.png";
 
 function ImageStockMarketTradingCharts() {
@@ -74,10 +74,9 @@ function ImageStockMarketTradingCharts() {
     </div>
   );
 }
-
 function LoginPage() {
   const navigate = useNavigate();
-  //Store form data in React state 
+  // Store form data in React state 
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -107,7 +106,7 @@ function LoginPage() {
       //  Redirect based on role
       const role = result.user.role;
       if (role === "investor") navigate("/investor/loggedhome");
-      else if (role === "expert") navigate("/expert");
+      else if (role === "expert") navigate("/forum");
       else if (role === "admin") navigate("/adminpanel");
       else alert("Unknown role: " + role);
 

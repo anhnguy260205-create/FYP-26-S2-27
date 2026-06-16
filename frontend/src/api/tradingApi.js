@@ -39,3 +39,16 @@ export const getTransactionHistory = async (investorId) => {
   const response = await fetch(`${BASE_URL}/transactions/${investorId}`);
   return await response.json();
 };
+
+export const getPortalTransactions = async (userId, { limit = 100, symbol = null, transactionType = null } = {}) => {
+  const params = new URLSearchParams({ limit });
+  if (symbol) params.append("symbol", symbol);
+  if (transactionType) params.append("transaction_type", transactionType);
+  const response = await fetch(`${BASE_URL}/portal/${userId}?${params}`);
+  return await response.json();
+};
+
+export const getPortalSummary = async (userId) => {
+  const response = await fetch(`${BASE_URL}/portal/${userId}/summary`);
+  return await response.json();
+};

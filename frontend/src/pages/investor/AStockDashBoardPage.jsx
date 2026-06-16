@@ -6,6 +6,7 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { createAlert } from "../../api/alertApi.js";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -464,7 +465,7 @@ function PremiumLockCard() {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges }) {
+function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -577,6 +578,7 @@ function AStockDashBoardPage() {
             stockList={stockList}
             candles={candles}
             candleRanges={candleRanges}
+            isPremium={isPremium}
           />
 
         </main>

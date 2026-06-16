@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter
 
@@ -6,6 +7,7 @@ from app.control.controller.tradingc import (
     SellStockController,
     PortfolioController,
     TransactionHistoryController,
+    TransactionPortalController,
 )
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
@@ -110,3 +112,48 @@ def get_transaction_history(investor_id: str):
         "message": "Transaction history retrieved successfully",
         "transactions": result
     }
+
+
+# ---- Transaction portal (by user_id, with optional filters) ----
+
+class TransactionPortalPage:
+    def __init__(self):
+        self.controller = TransactionPortalController()
+
+    def get_transactions(self, user_id, limit, symbol, transaction_type):
+        return self.controller.get_transactions(
+            user_id, limit=limit, symbol=symbol,
+            transaction_type=transaction_type
+        )
+
+    def get_summary(self, user_id):
+        return self.controller.get_summary(user_id)
+
+
+@router.get("/portal/{user_id}")
+def get_portal_transactions(
+    user_id: str,
+    limit: int = 100,
+    symbol: Optional[str] = None,
+    transaction_type: Optional[str] = None,
+):
+    boundary = TransactionPortalPage()
+    transactions = boundary.get_transactions(
+        user_id, limit, symbol, transaction_type
+    )
+    if transactions is None:
+        return {"success": False, "message": "Investor not found"}
+    return {
+        "success": True,
+        "message": "Transactions retrieved",
+        "transactions": transactions,
+    }
+
+
+@router.get("/portal/{user_id}/summary")
+def get_portal_summary(user_id: str):
+    boundary = TransactionPortalPage()
+    summary = boundary.get_summary(user_id)
+    if summary is None:
+        return {"success": False, "message": "Investor not found"}
+    return {"success": True, "summary": summary}

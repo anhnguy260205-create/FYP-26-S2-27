@@ -28,6 +28,8 @@ import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
 import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
 import SellStockPage from "./pages/investor/SellStockPage.jsx";
+import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
+import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
 
 
 export const router = createBrowserRouter([
@@ -44,6 +46,14 @@ export const router = createBrowserRouter([
     {
         path: "/sell/:symbol",
         element: <ProtectedRoute allowedRoles={["investor"]}><SellStockPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-history",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionHistoryPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-portal",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionPortalPage /></ProtectedRoute>
     },
 
     {
