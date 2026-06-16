@@ -104,7 +104,6 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
 
-
     {
         path: "/expert/edit-profile",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>

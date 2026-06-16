@@ -12,6 +12,7 @@ from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account
 from app.entity.models.subscription import Subscription
+from app.entity.models.watchlist import Watchlist
 from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
 from app.boundary.predictionb import router as prediction_router
 from app.boundary.payment_service import router as payment_router
