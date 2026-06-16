@@ -203,6 +203,7 @@ class Investor(Base):
     @staticmethod
     def deleteInvestor(user_id):
         from app.entity.models.subscription import Subscription
+        from app.entity.models.watchlist import Watchlist
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -214,12 +215,16 @@ class Investor(Base):
             session.query(Subscription).filter(
                 Subscription.investor_id == investor.investor_id
             ).delete()
+            # 2. Delete watchlist row
+            session.query(Watchlist).filter(
+                Watchlist.investor_id == investor.investor_id
+            ).delete()
 
-            # 2. Delete investor row (child of user_account)
+            # 3. Delete investor row (child of user_account)
             session.delete(investor)
             session.flush()
 
-            # 3. Delete user_account row
+            # 4. Delete user_account row
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id
             ).first()
