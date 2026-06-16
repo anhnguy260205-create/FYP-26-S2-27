@@ -31,6 +31,15 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
+
+def _safe_float(val, fallback: float = 0.0) -> float:
+    """Return val as float, replacing NaN/inf with fallback."""
+    try:
+        f = float(val)
+        return f if math.isfinite(f) else fallback
+    except (TypeError, ValueError):
+        return fallback
+
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ml_models", "xgb_stock_model.json")
 
 # Validation AUC reported by the model's training run (attributes.best_score)
@@ -178,8 +187,7 @@ def compute_features(history: pd.DataFrame) -> dict | None:
         if name in sentiment:
             features[name] = sentiment[name]
         else:
-            val = latest[name]
-            features[name] = float(val) if pd.notna(val) else 0.0
+            features[name] = _safe_float(latest[name])
 
     return features
 
