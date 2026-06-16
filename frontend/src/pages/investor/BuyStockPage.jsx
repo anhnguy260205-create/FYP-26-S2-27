@@ -180,7 +180,7 @@ function BuyStockPage() {
                 <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "24px", fontWeight: 700, color: changeColor }}>
                   {price != null ? formatCurrency(price) : "—"} USD
                 </div>
-                {chg !== null && (
+                {chg !== null && pctChg !== null && (
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: changeColor }}>
                     {isUp ? "+" : ""}{chg.toFixed(3)} ({isUp ? "+" : ""}{pctChg.toFixed(3)}%)
                   </div>
