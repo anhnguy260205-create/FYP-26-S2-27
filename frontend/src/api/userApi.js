@@ -137,6 +137,14 @@ export const deleteInvestor = async (userId) => {
   return await response.json();
 };
 
+export const getWatchlist = async (userId) => {
+  const response = await fetch(`${BASE_URL}/investor-watchlist/${userId}`);
+  return await response.json();
+};
+
+export const removeStockFromWatchlist = async (userId, stock_symbol) => {
+  const response = await fetch(`${BASE_URL}/investor-watchlist/${userId}/${stock_symbol}`, {
+    method: "DELETE",
 // ---- Password Reset ----
 
 export const requestPasswordResetOtp = async (emailAddress) => {
@@ -157,6 +165,19 @@ export const verifyPasswordResetOtp = async (emailAddress, otpCode) => {
   return await response.json();
 };
 
+export const addStockToWatchlist = async (userId, stock_symbol) => {
+  const response = await fetch(`${BASE_URL}/investor-watchlist/${userId}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        stock_symbol: stock_symbol
+      })
+    }
+  );
+  return await response.json();
+};
 export const resetPassword = async (emailAddress, otpCode, newPassword) => {
   const response = await fetch(`${BASE_URL}/reset-password`, {
     method: "POST",

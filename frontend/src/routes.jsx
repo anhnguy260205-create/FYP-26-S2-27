@@ -57,7 +57,7 @@ export const router = createBrowserRouter([
     },
 
     {
-        path: "/investor/loggedhome",
+        path: "/investor",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
     },
     {
@@ -128,7 +128,6 @@ export const router = createBrowserRouter([
         path: "/adminpanel/useraccounts",
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
-
 
     {
         path: "/expert/edit-profile",
