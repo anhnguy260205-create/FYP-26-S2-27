@@ -80,127 +80,6 @@ class Investor(Base):
         }
 
     @staticmethod
-    def buyStock(user_id, symbol, quantity, price):
-        """
-        Deduct cost from paper_money, increase used_amount, add shares to holding,
-        and record the transaction. Returns dict with success flag and message.
-        """
-        from app.entity.models.holding import Holding
-        from app.entity.models.transaction import Transaction
-
-        if quantity <= 0 or price <= 0:
-            return {"success": False, "message": "Invalid quantity or price"}
-
-        total_cost = round(price * quantity, 2)
-
-        with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            if not investor:
-                return {"success": False, "message": "Investor not found"}
-
-            if investor.paper_money < total_cost:
-                return {"success": False, "message": "Insufficient paper funds"}
-
-            investor.paper_money -= total_cost
-            investor.used_amount += total_cost
-            investor_id = investor.investor_id
-            session.flush()
-
-            new_balance = investor.paper_money
-
-        Holding.addShares(investor_id, symbol, quantity, price)
-        transaction_id = Transaction.createTransaction(
-            investor_id, symbol, "buy", quantity, price, total_cost
-        )
-
-        return {
-            "success": True,
-            "message": "Buy order executed successfully",
-            "transaction_id": transaction_id,
-            "paper_money": new_balance,
-            "total_amount": total_cost
-        }
-
-    @staticmethod
-    def sellStock(user_id, symbol, quantity, price):
-        """
-        Remove shares from holding, credit proceeds to paper_money,
-        decrease used_amount, and record the transaction.
-        """
-        from app.entity.models.holding import Holding
-        from app.entity.models.transaction import Transaction
-
-        if quantity <= 0 or price <= 0:
-            return {"success": False, "message": "Invalid quantity or price"}
-
-        with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            if not investor:
-                return {"success": False, "message": "Investor not found"}
-
-            investor_id = investor.investor_id
-
-        existing_holding = Holding.getHolding(investor_id, symbol)
-        if not existing_holding or existing_holding["quantity"] < quantity:
-            return {"success": False, "message": "Not enough shares to sell"}
-
-        total_proceeds = round(price * quantity, 2)
-        cost_basis = round(existing_holding["average_cost"] * quantity, 2)
-
-        removed = Holding.removeShares(investor_id, symbol, quantity)
-        if not removed:
-            return {"success": False, "message": "Not enough shares to sell"}
-
-        with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            investor.paper_money += total_proceeds
-            investor.used_amount -= cost_basis
-            if investor.used_amount < 0:
-                investor.used_amount = 0
-            session.flush()
-            new_balance = investor.paper_money
-
-        transaction_id = Transaction.createTransaction(
-            investor_id, symbol, "sell", quantity, price, total_proceeds
-        )
-
-        return {
-            "success": True,
-            "message": "Sell order executed successfully",
-            "transaction_id": transaction_id,
-            "paper_money": new_balance,
-            "total_amount": total_proceeds
-        }
-
-    @staticmethod
-    def getPortfolio(user_id):
-        from app.entity.models.holding import Holding
-
-        with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            if not investor:
-                return None
-            investor_id = investor.investor_id
-            paper_money = investor.paper_money
-            used_amount = investor.used_amount
-
-        holdings = Holding.getHoldingsByInvestor(investor_id)
-
-        return {
-            "paper_money": paper_money,
-            "used_amount": used_amount,
-            "holdings": holdings
-        }
-
-    @staticmethod
     def deleteInvestor(user_id):
         from app.entity.models.subscription import Subscription
         with get_session() as session:
@@ -227,6 +106,17 @@ class Investor(Base):
                 session.delete(user)
             return True
 
+    @staticmethod
+    def update_investor_stock_level(user_id, stock_level):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.stock_level = stock_level
+            return True
+
 
 def seed_investor_account():
     Investor.createAccount(
@@ -236,5 +126,5 @@ def seed_investor_account():
         password="password",
         phone_number=12343243,
         address="123 Kim Street",
-        stock_level="Beginner"
+        stock_level="Basic"
     )

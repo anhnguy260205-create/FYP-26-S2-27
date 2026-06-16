@@ -24,27 +24,12 @@ import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
-import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
-import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
-import SellStockPage from "./pages/investor/SellStockPage.jsx";
 
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
     { path: "/register", Component: RegistrationPage },
     { path: "/login", Component: LoginPage },
-    { path: "/forgot-password", Component: ForgotPasswordPage },
-    { path: "/reset-password", Component: ResetPasswordPage },
-
-    {
-        path: "/buy/:symbol",
-        element: <ProtectedRoute allowedRoles={["investor"]}><BuyStockPage /></ProtectedRoute>
-    },
-    {
-        path: "/sell/:symbol",
-        element: <ProtectedRoute allowedRoles={["investor"]}><SellStockPage /></ProtectedRoute>
-    },
 
     {
         path: "/investor/loggedhome",
