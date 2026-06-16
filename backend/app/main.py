@@ -7,6 +7,8 @@ from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
 from app.entity.models.useraccount import seed_admin_account
+from app.entity.models.investor import seed_investor_account
+from app.entity.models.expert import seed_expert_account
 from app.entity.models.subscription import Subscription
 from app.boundary.stock_ws import router as stock_ws_router
 from app.boundary.predictionb import router as prediction_router
@@ -30,6 +32,8 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 seed_profiles()
 seed_admin_account()
+seed_investor_account()
+seed_expert_account()
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(stock_ws_router)

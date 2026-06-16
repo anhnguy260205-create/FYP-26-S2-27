@@ -12,3 +12,8 @@ class CreateInvestorController:
 class GetInvestorController:
     def getInvestorByUserId(self, user_id):
         return Investor.getInvestorByUserId(user_id)
+
+
+class UpdateStockLevel:
+    def updateStockLevel(self, user_id, stock_level):
+        return Investor.update_investor_stock_level(user_id, stock_level)

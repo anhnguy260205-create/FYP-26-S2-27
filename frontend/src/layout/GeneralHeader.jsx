@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
+import { BellRing } from "lucide-react";
+
+
 function NavDropdown({ items }) {
   const navigate = useNavigate();
   return (
@@ -105,8 +108,10 @@ function GeneralHeader() {
       label: "DashBoard",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Watchlist Management", path: "/investor/watchlist" },
+        { title: "Watchlist", path: "/investor/watchlist" },
         { title: "Real-time Dashboard", path: "/investor/realtimedashboard" },
+
+
       ],
     },
     {
@@ -118,14 +123,15 @@ function GeneralHeader() {
       label: "Knowledge Hub",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Educational Content", path: "#" },
-        { title: "Expert Advice", path: "#" },
-        { title: "AI Chatbot", path: "#" },
+        { title: "Educational Content", path: "/investor/educationcontent" },
+        { title: "Expert Portfolio", path: "/investor/expertportfolio" },
+        { title: "AI Chatbot", path: "/investor/aichatbot" },
       ],
     },
     {
-      label: "Community",
+      label: "Forum Community",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      onClick: () => navigate("/forum")
     },
     {
       label: "Transactions",
@@ -160,6 +166,13 @@ function GeneralHeader() {
       </div>
 
       <div className="flex items-center gap-8">
+        <button
+          onClick={() => navigate("/investor/notification")}
+          className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+        >
+          <BellRing size={18} />
+          <span>Notification</span>
+        </button>
         <ProfileButton />
       </div>
     </div>

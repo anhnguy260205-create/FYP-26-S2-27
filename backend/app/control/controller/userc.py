@@ -37,3 +37,13 @@ class InvestorInformationController:
 class ExpertInformationController:
     def get_expert_information(self, user_id):
         return Expert.get_expert_information(user_id)
+
+
+class UpdateInformationController:
+    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
+        return UserAccount.updateInformation(user_id, user_name, full_name, email_address, phone_number, address)
+
+
+class DeleteInvestorController:
+    def delete_account(self, user_id):
+        return Investor.deleteInvestor(user_id)

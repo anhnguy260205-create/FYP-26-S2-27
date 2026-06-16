@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String
 from app.entity.database.base import Base
 from sqlalchemy.orm import relationship
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 from uuid import uuid4
 
 
@@ -18,20 +18,24 @@ class UserProfile(Base):
     @staticmethod
     def get_or_create(profile_name, description=None):
         normalized_name = profile_name.strip().lower()
-        profile = session.query(UserProfile).filter(
-            UserProfile.profile_name == normalized_name
-        ).first()
 
-        if profile:
-            return profile
+        with get_session() as session:
+            profile = session.query(UserProfile).filter(
+                UserProfile.profile_name == normalized_name
+            ).first()
 
-        profile = UserProfile(
-            profile_name=normalized_name,
-            description=description
-        )
-        session.add(profile)
-        session.flush()
-        return profile
+            if profile:
+                return profile.profile_id
+
+            profile = UserProfile(
+                profile_name=normalized_name,
+                description=description
+            )
+
+            session.add(profile)
+            session.flush()
+
+            return profile.profile_id
 
 
 def seed_profiles():
@@ -45,10 +49,12 @@ def seed_profiles():
     try:
         for profile_name, description in profiles:
             UserProfile.get_or_create(profile_name, description)
-        session.commit()
+        with get_session() as session:
+            session.commit()
 
     except Exception as e:
-        session.rollback()
+        with get_session() as session:
+            session.rollback()
         print("Error generating profiles:", e)
 
 

@@ -2,7 +2,7 @@ from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from uuid import uuid4
-from app.entity.database.session import session
+from app.entity.database.session import get_session
 
 
 class Expert(Base):
@@ -40,30 +40,54 @@ class Expert(Base):
                 experience_years=experience_year,
                 linked_in_url=linked_in_url
             )
-            session.add(expert)
-            session.commit()
+            with get_session() as session:
+                session.add(expert)
+                session.commit()
             print("EXPERT CREATED")
             return user_id
         except Exception as e:
-            session.rollback()
+            with get_session() as session:
+                session.rollback()
             print("EXPERT ERROR:", e)
             return False
 
     @staticmethod
     def get_expert_information(user_id):
         user = UserAccount.get_user_information(user_id)
-        expert_id = session.query(Expert).filter(
-            Expert.user_id == user_id
-        ).first()
-        if not expert_id:
-            return None
-        expert = session.query(Expert).filter(
-            Expert.user_id == user_id
-        ).first()
-        return {
-            **user,
-            "expert_status": expert.expert_status,
-            "rating": expert.rating,
-            "experience_years": expert.experience_years,
-            "linked_in_url": expert.linked_in_url,
-        }
+        with get_session() as session:
+            expert_id = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert_id:
+                return None
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert:
+                return None
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            return {
+                **user,
+                "expert_status": expert.expert_status,
+                "rating": expert.rating,
+                "experience_years": expert.experience_years,
+                "linked_in_url": expert.linked_in_url,
+            }
+
+
+def seed_expert_account():
+    Expert.createAccount(
+        username="Anh",
+        full_name="Nguy Anh",
+        email_address="kimhi@gmail.com",
+        password="password",
+        phone_number=12433243,
+        address="123 Kim Street",
+        experience_year=3,
+        linked_in_url="@anh"
+
+    )
