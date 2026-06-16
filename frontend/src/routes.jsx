@@ -11,10 +11,14 @@ import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+<<<<<<< Updated upstream
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
+=======
+import UserProfilePage from "./pages/administrator/UserProfilePage.jsx";
+>>>>>>> Stashed changes
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
@@ -63,11 +67,20 @@ export const router = createBrowserRouter([
     },
     {
         path: "/adminpanel/useraccounts",
+<<<<<<< Updated upstream
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
     {
         path: "/expert/edit-profile",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
+=======
+        element: <UserAccountsPage />
+    },
+    {
+        path: "/adminpanel/profiles",
+        element: <UserProfilePage />
+>>>>>>> Stashed changes
     }
+
 ]);
 

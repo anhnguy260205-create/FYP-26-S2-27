@@ -31,6 +31,37 @@ function UserAccountsPage() {
         }
     };
 
+    const handleView = async (userId) => {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        alert(
+          `Name: ${data.user.full_name}\nEmail: ${data.user.email_address}\nRole: ${data.user.role}\nStatus: ${data.user.account_status}`
+        );
+      }
+    };
+
+    const handleSuspend = async (userId) => {
+      if (!window.confirm("Suspend this user?")) return;
+
+      await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/suspend`, {
+        method: "PUT",
+      });
+
+      fetchUsers(keyword);
+    };
+
+    const handleDelete = async (userId) => {
+      if (!window.confirm("Delete this user?")) return;
+
+      await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}`, {
+        method: "DELETE",
+      });
+
+      fetchUsers(keyword);
+      };
+
 useEffect(() => {
   fetchUsers();
 }, []);
@@ -202,9 +233,21 @@ useEffect(() => {
 
                         <td className="px-5 py-5">
                             <div className="flex items-center gap-5">
-                                <Eye size={18} className="text-blue-600 cursor-pointer" />
-                                <Ban size={18} className="text-orange-600 cursor-pointer" />
-                                <Trash2 size={18} className="text-red-600 cursor-pointer" />
+                                <Eye
+                                  size={18}
+                                  className="text-blue-600 cursor-pointer"
+                                  onClick={() => handleView(user.user_id)}
+                                />
+                                <Ban
+                                  size={18}
+                                  className="text-orange-600 cursor-pointer"
+                                  onClick={() => handleSuspend(user.user_id)}
+                                />
+                                <Trash2
+                                  size={18}
+                                  className="text-red-600 cursor-pointer"
+                                  onClick={() => handleDelete(user.user_id)}
+                                />
                             </div>
                         </td>
                     </tr>
