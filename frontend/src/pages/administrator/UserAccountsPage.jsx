@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, Filter, Eye, Ban, Trash2, Mail, Phone } from "lucide-react";
+import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layout/AdminPage.jsx";
@@ -62,6 +63,29 @@ function UserAccountsPage() {
     } catch (error) {
       console.error("Failed to suspend user:", error);
       alert("Failed to suspend user");
+    }
+  };
+
+  const handleActivate = async (userId) => {
+    const confirmed = window.confirm("Are you sure you want to activate this user?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/activate`, {
+        method: "PUT",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("User activated successfully");
+        fetchUsers(keyword);
+      } else {
+        alert(data.message || "Failed to activate user");
+      }
+    } catch (error) {
+      console.error("Failed to activate user:", error);
+      alert("Failed to activate user");
     }
   };
 
@@ -218,11 +242,19 @@ function UserAccountsPage() {
                             className="text-blue-600 cursor-pointer"
                           />
 
-                          <Ban
-                            size={18}
-                            onClick={() => handleSuspend(user.user_id)}
-                            className="text-orange-600 cursor-pointer"
-                          />
+                          {user.account_status === "suspended" ? (
+                            <UserCheck
+                              size={18}
+                              onClick={() => handleActivate(user.user_id)}
+                              className="text-green-600 cursor-pointer"
+                            />
+                          ) : (
+                            <Ban
+                              size={18}
+                              onClick={() => handleSuspend(user.user_id)}
+                              className="text-orange-600 cursor-pointer"
+                            />
+                          )}
 
                           <Trash2
                             size={18}
