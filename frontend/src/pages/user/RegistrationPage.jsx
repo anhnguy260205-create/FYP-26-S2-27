@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
 import image1 from "../../images/image1.png";
-
+import { useNavigate } from "react-router-dom";
 function ImageStockMarketTradingCharts() {
   return (
     <div className="flex flex-col gap-6">
@@ -15,7 +15,7 @@ function ImageStockMarketTradingCharts() {
         data-name="Image (Stock market trading charts)"
       >
         {/* Background Image */}
-        <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]"/>
+        <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]" />
 
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
@@ -73,131 +73,114 @@ function ImageStockMarketTradingCharts() {
     </div>
   );
 }
-function RegistrationPage(){
-    // Store form data in React state 
-    const [formData, setFormData] = useState({
-       role: "",
-       username: "",
-       fullName: "",
-       email: "",
-       password: "",
-       confirmPassword: "",
-       phoneNumber: "",
-       location: "",
-       accountType: "",
-       stock_level: "",
-       experience_year: "",
-       linked_in_url: "",
-     });
 
-    const [submitted, setSubmitted] = useState(false);
-    // Update data into React frontend
-    const handleChange = (field, value) => {
-      setFormData((prev) => ({
+function RegistrationPage() {
+  const navigate = useNavigate();
+  // Store form data in React state 
+  const [formData, setFormData] = useState({
+    role: "",
+    username: "",
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phoneNumber: "",
+    location: "",
+    accountType: "",
+    stock_level: "",
+    experience_year: "",
+    linked_in_url: "",
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  // Update data into React frontend
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value,}));
-     };
-    // validate form data and handle submission
-    const handleSubmit = async (e) => {
+      [field]: value,
+    }));
+  };
+  // validate form data and handle submission
+  const handleSubmit = async (e) => {
 
-      e.preventDefault();
+    e.preventDefault();
 
-      if (formData.password !== formData.confirmPassword) {
-         alert("Passwords do not match!");
-         return;
-      }
+    if (!formData.accountType) {
+      alert("Please select an account type (Investor or Expert).");
+      return;
+    }
 
-      try {
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
 
       const payload = {
-         role: formData.accountType,
-         username: formData.username,
-         full_name: formData.fullName,
-         email_address: formData.email,
-         password: formData.password,
-         phone_number: formData.phoneNumber,
-         address: formData.location,
-       };
+        role: formData.accountType,
+        username: formData.username,
+        full_name: formData.fullName,
+        email_address: formData.email,
+        password: formData.password,
+        phone_number: formData.phoneNumber,
+        address: formData.location,
+      };
 
       if (formData.accountType === "investor") {
-         payload.stock_level = formData.stock_level || "beginner";
+        payload.stock_level = formData.stock_level || "beginner";
       }
 
       if (formData.accountType === "expert") {
-         payload.experience_year = formData.experience_year;
-         payload.linked_in_url = formData.linked_in_url;
+        payload.experience_year = formData.experience_year;
+        payload.linked_in_url = formData.linked_in_url;
       }
 
       const result = await createAccount(payload);
 
       console.log(result);
       if (!result.success) {
-         alert(result.message || "Account already exists");
-         return;
+        alert(result.message || "Account already exists");
+        return;
       }
-
-      alert(result.message || "Account created successfully");
+      navigate("/login");
       setSubmitted(true);
-      } catch (error) {
+    } catch (error) {
       console.error(error);
       alert("Failed to create account");
-     }};
-    return(
-      <motion.div 
+    }
+  };
+  return (
+    <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}>
 
-        <Header/>
-        <main className="flex-1 p-7.5">
-          <div className="flex items-center justify-center min-h-screen px-24">
-            <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
+      <Header />
+      <main className="flex-1 p-7.5">
+        <div className="flex items-center justify-center min-h-screen px-24">
+          <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
             <div
-            className="bg-[rgba(255,255,255,0.82)] w-175 shrink-0 flex flex-col justify-center"
-            style={{borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)",}}>
-            <div className="text-center">
-              <h1
-              className="font-bold text-black leading-[1.1]"
-              style={{ fontSize: "40px" }}
-            >
-              Open an account
-             </h1>
-             <p
-              className="text-black mt-2 mb-8"
-              style={{ fontSize: "20px", marginTop: "8px", marginBottom: "36px" }}
-            >
-              Let's Trade with RocketTrading
-             </p>
-            </div>
-
-            {submitted ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-                  style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
+              className="bg-[rgba(255,255,255,0.82)] w-175 shrink-0 flex flex-col justify-center"
+              style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)", }}>
+              <div className="text-center">
+                <h1
+                  className="font-bold text-black leading-[1.1]"
+                  style={{ fontSize: "40px" }}
                 >
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h2 className="font-bold text-[28px] text-black mb-2">Account Created!</h2>
-                <p className="text-gray-600 text-[17px] mb-1">
-                  Welcome, <span className="font-semibold" style={{ color: "#0092b8" }}>{formData.username}</span>
-                </p>
-                <p className="text-gray-500 text-[15px]">
-                  Registered as a <span className="capitalize font-medium">{formData.accountType}</span>{" "}
-                  · <span className="font-medium">{formData.riskLevel}</span> risk
-                </p>
-                <button onClick={() => setSubmitted(false)}
-                        className="mt-6 px-8 py-3 rounded-[14px] text-white font-medium text-[16px]"
-                        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)" }}
+                  Open an account
+                </h1>
+                <p
+                  className="text-black mt-2 mb-8"
+                  style={{ fontSize: "20px", marginTop: "8px", marginBottom: "36px" }}
                 >
-                  Back to Form
-                </button>
+                  Let's Trade with RocketTrading
+                </p>
               </div>
-            ) : (
+
+
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 {/* Username */}
                 <div className="flex flex-col gap-1">
@@ -227,15 +210,15 @@ function RegistrationPage(){
                 {/* Full Name */}
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-[14px] text-gray-700 pl-1">Full Name</label>
-                  <input type="text"  placeholder="Enter your full name"
-                         value={formData.fullName} onChange={(e) => handleChange("fullName", e.target.value)} required
-                         className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                         style={{height: "40px", borderColor: "rgba(0,0,0,0.15)",}}
-                         onFocus={(e) => {
+                  <input type="text" placeholder="Enter your full name"
+                    value={formData.fullName} onChange={(e) => handleChange("fullName", e.target.value)} required
+                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                    style={{ height: "40px", borderColor: "rgba(0,0,0,0.15)", }}
+                    onFocus={(e) => {
                       e.target.style.borderColor = "#0092b8";
                       e.target.style.boxShadow = "0 0 0 3px rgba(0,146,184,0.15)";
                     }}
-                          onBlur={(e) => {
+                    onBlur={(e) => {
                       e.target.style.borderColor = "rgba(0,0,0,0.15)";
                       e.target.style.boxShadow = "none";
                     }}
@@ -367,7 +350,7 @@ function RegistrationPage(){
                   />
                 </div>
 
-                
+
 
                 {/* Account Type */}
                 <div className="flex flex-col gap-2">
@@ -400,91 +383,92 @@ function RegistrationPage(){
                 </div>
                 {/* Investor Fields */}
                 {formData.accountType === "investor" && (
-                   <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-blue-50 border border-blue-100">
-                   <h3 className="text-[16px] font-semibold text-blue-700"> Investor Information</h3>
-                   <div className="flex flex-col gap-1">
-                   <label className="font-semibold text-[14px] text-gray-700 pl-1"> Stock Level </label>
-                   <select value={formData.stock_level}
-                           onChange={(e) => handleChange("stock_level", e.target.value)}
-                           className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
-                           style={{ height: "40px" }}>
-                      <option value="">Select Stock Level</option>
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                   </select>
-                   </div>
-                   </div>)}
+                  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-blue-50 border border-blue-100">
+                    <h3 className="text-[16px] font-semibold text-blue-700"> Investor Information</h3>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-semibold text-[14px] text-gray-700 pl-1"> Stock Level </label>
+                      <select value={formData.stock_level}
+                        onChange={(e) => handleChange("stock_level", e.target.value)}
+                        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
+                        style={{ height: "40px" }}>
+                        <option value="">Select Stock Level</option>
+                        <option value="beginner">Basic</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </div>
+                  </div>)}
 
                 {/* Expert Fields */}
                 {formData.accountType === "expert" && (
-                   <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-purple-50 border border-purple-100">
+                  <div className="flex flex-col gap-4 p-4 rounded-[14px] bg-purple-50 border border-purple-100">
 
-                   <h3 className="text-[16px] font-semibold text-purple-700"> Expert Information </h3>
+                    <h3 className="text-[16px] font-semibold text-purple-700"> Expert Information </h3>
 
-                   <div className="flex flex-col gap-1">
-                     <label className="font-semibold text-[14px] text-gray-700 pl-1"> Years of Experience </label>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-semibold text-[14px] text-gray-700 pl-1"> Years of Experience </label>
 
                       <input type="number" placeholder="Enter years of experience" value={formData.experience_year} onChange={(e) => handleChange("experience_year", e.target.value)}
-                             className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
-                             style={{ height: "40px" }}/>
-                   </div>
+                        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+                        style={{ height: "40px" }} />
+                    </div>
 
-                   <div className="flex flex-col gap-1">
-                     <label className="font-semibold text-[14px] text-gray-700 pl-1"> LinkedIn URL </label>
-                     <input type="text" placeholder="Enter LinkedIn profile URL" value={formData.linked_in_url}
-                            onChange={(e) => handleChange("linked_in_url", e.target.value)}
-                            className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
-                            style={{ height: "40px" }}/>
-                     </div>
-                   </div>)}
-                {/* Risk Tolerance */}  
+                    <div className="flex flex-col gap-1">
+                      <label className="font-semibold text-[14px] text-gray-700 pl-1"> LinkedIn URL </label>
+                      <input type="text" placeholder="Enter LinkedIn profile URL" value={formData.linked_in_url}
+                        onChange={(e) => handleChange("linked_in_url", e.target.value)}
+                        className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800"
+                        style={{ height: "40px" }} />
+                    </div>
+                  </div>)}
+                {/* Risk Tolerance */}
                 <div className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className="mt-1 w-4 h-4 rounded border-blue-900/30 bg-slate-900/50 text-cyan-500 focus:ring-cyan-500"
-                  required
-                />
-                <label htmlFor="terms" className="text-sm text-gray-600">
-                  I acknowledge that I have read, understood, and agree to RocketTrade's {' '}
-                  <a href="#" className="text-blue-500 hover:text-blue-500 transition-colors">
-                    Terms and Conditions
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-blue-500 hover:text-blue-500 transition-colors">
-                    Privacy Policy
-                  </a>
-                </label>
-              </div>
-                
-              {/* Submit */}
-              <button
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    className="mt-1 w-4 h-4 rounded border-blue-900/30 bg-slate-900/50 text-cyan-500 focus:ring-cyan-500"
+                    required
+                  />
+                  <label htmlFor="terms" className="text-sm text-gray-600">
+                    I acknowledge that I have read, understood, and agree to RocketTrade's {' '}
+                    <a href="#" className="text-blue-500 hover:text-blue-500 transition-colors">
+                      Terms and Conditions
+                    </a>{' '}
+                    and{' '}
+                    <a href="#" className="text-blue-500 hover:text-blue-500 transition-colors">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+
+                {/* Submit */}
+                <button
                   type="submit"
                   className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all"
-                  style={{height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
+                  style={{
+                    height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
                   }}>
                   Create Account
-              </button>
-            </form>)}
+                </button>
+              </form>
               {/* Sign In Link */}
-            <div className="mt-6 text-center">
-              <p className="text-gray-400">
-                Already have an account?{' '}
-                <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors font-semibold">
-                  Sign In
-                </a>
-              </p>
-            </div>
+              <div className="mt-6 text-center">
+                <p className="text-gray-400">
+                  Already have an account?{' '}
+                  <a href="/login" className="text-blue-500 hover:text-blue-600 transition-colors font-semibold">
+                    Sign In
+                  </a>
+                </p>
+              </div>
             </div>
             <div className="flex-1 flex justify-end">
-             <ImageStockMarketTradingCharts />
+              <ImageStockMarketTradingCharts />
             </div>
           </div>
-          </div>
-        </main>
-        <Footer/>
-       </motion.div>
-    );
+        </div>
+      </main>
+
+    </motion.div>
+  );
 }
 export default RegistrationPage;

@@ -1,9 +1,24 @@
+# database.py or session.py
 from sqlalchemy.orm import sessionmaker
 from app.entity.database.connection import engine
+from contextlib import contextmanager
 
 SessionLocal = sessionmaker(
-    autocommit=False,
+    bind=engine,
     autoflush=False,
-    bind=engine
+    autocommit=False,
+    expire_on_commit=False
 )
-session = SessionLocal()
+
+
+@contextmanager
+def get_session():
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

@@ -1,529 +1,508 @@
 import {
-  useEffect,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
 } from "react";
 
 /* NORMALIZE + REMOVE DUPLICATES */
 function normalizeCandles(candles) {
-  const byTime = new Map();
+    const byTime = new Map();
 
-  candles.forEach((candle) => {
-    const time = Number(candle.time);
+    candles.forEach((candle) => {
+        const time = Number(candle.time);
 
-    const close = Number(candle.close);
+        const close = Number(candle.close);
 
-    if (
-      !Number.isFinite(time) ||
-      !Number.isFinite(close)
-    ) {
-      return;
+        if (
+            !Number.isFinite(time) ||
+            !Number.isFinite(close)
+        ) {
+            return;
+        }
+
+        byTime.set(time, {
+            ...candle,
+
+            time,
+
+            open: Number(
+                candle.open ?? close
+            ),
+
+            high: Number(
+                candle.high ?? close
+            ),
+
+            low: Number(
+                candle.low ?? close
+            ),
+
+            close,
+
+            volume: Number(
+                candle.volume ?? 0
+            ),
+        });
+    });
+
+    return Array.from(byTime.values()).sort(
+        (a, b) => a.time - b.time
+    );
+}
+
+function parseStockMessage(rawMessage) {
+    try {
+        return JSON.parse(rawMessage);
+    } catch {
+        const sanitizedMessage = rawMessage.replace(
+            /:\s*(NaN|Infinity|-Infinity)(\s*[,}])/g,
+            ": null$2"
+        );
+
+        return JSON.parse(sanitizedMessage);
+    }
+}
+
+const LIVE_UPDATE_FLUSH_MS = 300;
+
+function applyTradeCandleUpdate(list, trade) {
+    const tradeMs = new Date(trade.t).getTime();
+    const bucket = Math.floor(tradeMs / 60000) * 60000;
+    const price = Number(trade.p);
+    const size = Number(trade.size ?? 0);
+    const next = list ? [...list] : [];
+    const last = next.at(-1);
+
+    if (!Number.isFinite(bucket) || !Number.isFinite(price)) return next;
+
+    if (last && last.time === bucket) {
+        next[next.length - 1] = {
+            ...last,
+            high: Math.max(last.high, price),
+            low: Math.min(last.low, price),
+            close: price,
+            volume: Number(last.volume ?? 0) + size,
+        };
+    } else {
+        next.push({
+            time: bucket,
+            open: price,
+            high: price,
+            low: price,
+            close: price,
+            volume: size,
+        });
     }
 
-    byTime.set(time, {
-      ...candle,
+    return next;
+}
 
-      time,
+function applyBarCandleUpdate(list, bar) {
+    const barMs = new Date(bar.t).getTime();
+    const bucket = Math.floor(barMs / 60000) * 60000;
+    const next = list ? [...list] : [];
+    const nextBar = {
+        time: bucket,
+        open: Number(bar.open),
+        high: Number(bar.high),
+        low: Number(bar.low),
+        close: Number(bar.close),
+        volume: Number(bar.volume ?? 0),
+    };
 
-      open: Number(
-        candle.open ?? close
-      ),
+    if (
+        !Number.isFinite(nextBar.time) ||
+        !Number.isFinite(nextBar.close)
+    ) {
+        return next;
+    }
 
-      high: Number(
-        candle.high ?? close
-      ),
+    const last = next.at(-1);
+    if (last && last.time === bucket) {
+        next[next.length - 1] = nextBar;
+    } else {
+        next.push(nextBar);
+    }
 
-      low: Number(
-        candle.low ?? close
-      ),
-
-      close,
-
-      volume: Number(
-        candle.volume ?? 0
-      ),
-    });
-  });
-
-  return Array.from(byTime.values()).sort(
-    (a, b) => a.time - b.time
-  );
+    return next;
 }
 
 function useLiveStocks() {
-  const [stocks, setStocks] = useState(
-    {}
-  );
-
-  const [candles, setCandles] =
-    useState({});
-
-  const [marketStatus, setMarketStatus] =
-    useState("");
-
-  const [
-    connectionStatus,
-    setConnectionStatus,
-  ] = useState("Connecting...");
-
-  const [error, setError] =
-    useState("");
-
-  const [lastUpdated, setLastUpdated] =
-    useState("");
-
-  const socketRef = useRef(null);
-
-  /* SEND RANGE REQUEST */
-  const requestRangeData = (
-    symbol,
-    range
-  ) => {
-    if (
-      socketRef.current &&
-      socketRef.current.readyState ===
-        WebSocket.OPEN
-    ) {
-      socketRef.current.send(
-        JSON.stringify({
-          type: "range",
-          symbol,
-          range,
-        })
-      );
-    }
-  };
-
-  useEffect(() => {
-    const socket = new WebSocket(
-      "ws://127.0.0.1:8000/ws/stocks"
+    const [stocks, setStocks] = useState(
+        {}
     );
 
-    socketRef.current = socket;
+    const [candles, setCandles] =
+        useState({});
 
-    /* CONNECT */
-    socket.onopen = () => {
-      console.log("Connected");
+    const [candleRanges, setCandleRanges] =
+        useState({});
 
-      setConnectionStatus(
-        "Connected"
-      );
+    const [marketStatus, setMarketStatus] =
+        useState("");
 
-      setError("");
+    const [
+        connectionStatus,
+        setConnectionStatus,
+    ] = useState("Connecting...");
+
+    const [error, setError] =
+        useState("");
+
+    const [lastUpdated, setLastUpdated] =
+        useState("");
+
+    const socketRef = useRef(null);
+    const pendingPricesRef = useRef({});
+    const pendingTradesRef = useRef([]);
+    const pendingBarsRef = useRef([]);
+    const flushTimerRef = useRef(null);
+
+    /* SEND RANGE REQUEST */
+    const requestRangeData = (
+        symbol,
+        range
+    ) => {
+        if (
+            socketRef.current &&
+            socketRef.current.readyState ===
+            WebSocket.OPEN
+        ) {
+            socketRef.current.send(
+                JSON.stringify({
+                    type: "range",
+                    symbol,
+                    range,
+                })
+            );
+        }
     };
 
-    /* RECEIVE DATA */
-    socket.onmessage = (event) => {
-      const response = JSON.parse(
-        event.data
-      );
+    const flushLiveUpdates = useCallback(() => {
+        flushTimerRef.current = null;
 
-      console.log(response);
+        const pendingPrices = pendingPricesRef.current;
+        const pendingTrades = pendingTradesRef.current;
+        const pendingBars = pendingBarsRef.current;
 
-      /* MARKET STATUS */
-      if (
-        response.type ===
-        "market_status"
-      ) {
-        setMarketStatus(
-          response.status
+        pendingPricesRef.current = {};
+        pendingTradesRef.current = [];
+        pendingBarsRef.current = [];
+
+        if (
+            Object.keys(pendingPrices).length === 0 &&
+            pendingTrades.length === 0 &&
+            pendingBars.length === 0
+        ) {
+            return;
+        }
+
+        setLastUpdated(new Date().toLocaleTimeString());
+
+        if (Object.keys(pendingPrices).length > 0) {
+            setStocks((prev) => {
+                let changed = false;
+                const updated = { ...prev };
+
+                Object.entries(pendingPrices).forEach(([symbol, price]) => {
+                    if (!updated[symbol] || updated[symbol].price === price) return;
+                    changed = true;
+                    updated[symbol] = {
+                        ...updated[symbol],
+                        price,
+                    };
+                });
+
+                return changed ? updated : prev;
+            });
+        }
+
+        if (pendingTrades.length > 0 || pendingBars.length > 0) {
+            setCandles((prev) => {
+                const updated = { ...prev };
+                const changedSymbols = new Set();
+
+                pendingTrades.forEach((trade) => {
+                    if (!trade.s) return;
+                    updated[trade.s] = applyTradeCandleUpdate(updated[trade.s], trade);
+                    changedSymbols.add(trade.s);
+                });
+
+                pendingBars.forEach((bar) => {
+                    if (!bar.s) return;
+                    updated[bar.s] = applyBarCandleUpdate(updated[bar.s], bar);
+                    changedSymbols.add(bar.s);
+                });
+
+                changedSymbols.forEach((symbol) => {
+                    updated[symbol] = normalizeCandles(updated[symbol]);
+                });
+
+                return changedSymbols.size > 0 ? updated : prev;
+            });
+        }
+    }, []);
+
+    const scheduleLiveFlush = useCallback(() => {
+        if (flushTimerRef.current) return;
+        flushTimerRef.current = window.setTimeout(
+            flushLiveUpdates,
+            LIVE_UPDATE_FLUSH_MS
+        );
+    }, [flushLiveUpdates]);
+
+    useEffect(() => {
+        const socket = new WebSocket(
+            "ws://127.0.0.1:8000/ws/stocks"
         );
 
-        return;
-      }
+        socketRef.current = socket;
 
-      /* BACKEND ERROR */
-      if (
-        response.type === "error"
-      ) {
-        setError(response.message);
+        /* CONNECT */
+        socket.onopen = () => {
+            console.log("Connected");
 
-        return;
-      }
+            setConnectionStatus(
+                "Connected"
+            );
 
-      /* SNAPSHOT */
-      if (
-        response.type ===
-        "snapshot"
-      ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
+            setError("");
+        };
 
-        setStocks((prev) => {
-          const updated = {
-            ...prev,
-          };
+        /* RECEIVE DATA */
+        socket.onmessage = (event) => {
+            let response;
 
-          response.data.forEach(
-            (stock) => {
-              updated[stock.s] = {
-                symbol: stock.s,
-
-                price: stock.p,
-
-                open: stock.open,
-
-                high: stock.high,
-
-                low: stock.low,
-
-                close:
-                  stock.close ??
-                  stock.p,
-
-                previousClose:
-                  stock.previousClose,
-
-                volume:
-                  stock.volume,
-
-                avgVolume:
-                  stock.avgVolume,
-              };
-            }
-          );
-
-          return updated;
-        });
-
-        return;
-      }
-
-      /* HISTORICAL DATA */
-      if (
-        response.type ===
-        "history"
-      ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
-
-        setCandles((prev) => {
-          const updated = {
-            ...prev,
-          };
-
-          Object.entries(
-            response.data ?? {}
-          ).forEach(
-            ([symbol, bars]) => {
-              if (
-                !Array.isArray(
-                  bars
-                )
-              )
-                return;
-
-              updated[symbol] =
-                normalizeCandles(
-                  bars.map((bar) => ({
-                    time: Number(
-                      bar.time
-                    ),
-
-                    open: Number(
-                      bar.open
-                    ),
-
-                    high: Number(
-                      bar.high
-                    ),
-
-                    low: Number(
-                      bar.low
-                    ),
-
-                    close: Number(
-                      bar.close
-                    ),
-
-                    volume: Number(
-                      bar.volume ??
-                        0
-                    ),
-                  }))
+            try {
+                response = parseStockMessage(
+                    event.data
                 );
+            } catch (parseError) {
+                console.error(
+                    "Invalid stock websocket message",
+                    parseError,
+                    event.data
+                );
+
+                setError(
+                    "Received invalid stock data from backend"
+                );
+
+                return;
             }
-          );
 
-          return updated;
-        });
+            /* MARKET STATUS */
+            if (
+                response.type ===
+                "market_status"
+            ) {
+                setMarketStatus(
+                    response.status
+                );
 
-        return;
-      }
+                return;
+            }
 
-      /* LIVE TRADE */
-      if (
-        response.type === "trade"
-      ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
+            /* BACKEND ERROR */
+            if (
+                response.type === "error"
+            ) {
+                setError(response.message);
 
-        const trade =
-          response.data;
+                return;
+            }
 
-        const tradeMs =
-          new Date(
-            trade.t
-          ).getTime();
+            /* SNAPSHOT */
+            if (
+                response.type ===
+                "snapshot"
+            ) {
+                setLastUpdated(
+                    new Date().toLocaleTimeString()
+                );
 
-        /* 1 MINUTE BUCKET */
-        const bucket =
-          Math.floor(
-            tradeMs / 60000
-          ) * 60000;
+                setStocks((prev) => {
+                    const updated = {
+                        ...prev,
+                    };
 
-        /* UPDATE PRICE */
-        setStocks((prev) => {
-          if (!prev[trade.s])
-            return prev;
+                    response.data.forEach(
+                        (stock) => {
+                            updated[stock.s] = {
+                                symbol: stock.s,
 
-          return {
-            ...prev,
+                                price: stock.p,
 
-            [trade.s]: {
-              ...prev[
-                trade.s
-              ],
+                                open: stock.open,
 
-              price: trade.p,
-            },
-          };
-        });
+                                high: stock.high,
 
-        /* UPDATE CANDLE */
-        setCandles((prev) => {
-          const list = prev[
-            trade.s
-          ]
-            ? [
-                ...prev[
-                  trade.s
-                ],
-              ]
-            : [];
+                                low: stock.low,
 
-          const last =
-            list.at(-1);
+                                close:
+                                    stock.close ??
+                                    stock.p,
 
-          if (
-            last &&
-            last.time ===
-              bucket
-          ) {
-            list[
-              list.length - 1
-            ] = {
-              ...last,
+                                previousClose:
+                                    stock.previousClose,
 
-              high:
-                Math.max(
-                  last.high,
-                  trade.p
-                ),
+                                volume:
+                                    stock.volume,
 
-              low:
-                Math.min(
-                  last.low,
-                  trade.p
-                ),
+                                avgVolume:
+                                    stock.avgVolume,
+                            };
+                        }
+                    );
 
-              close:
-                trade.p,
+                    return updated;
+                });
 
-              volume:
-                Number(
-                  last.volume ??
-                    0
-                ) +
-                Number(
-                  trade.size ??
-                    0
-                ),
-            };
-          } else {
-            list.push({
-              time: bucket,
+                return;
+            }
 
-              open:
-                trade.p,
+            /* HISTORICAL DATA */
+            if (
+                response.type ===
+                "history"
+            ) {
+                setLastUpdated(
+                    new Date().toLocaleTimeString()
+                );
 
-              high:
-                trade.p,
+                setCandles((prev) => {
+                    const updated = {
+                        ...prev,
+                    };
 
-              low:
-                trade.p,
+                    Object.entries(
+                        response.data ?? {}
+                    ).forEach(
+                        ([symbol, bars]) => {
+                            if (
+                                !Array.isArray(
+                                    bars
+                                )
+                            )
+                                return;
 
-              close:
-                trade.p,
+                            updated[symbol] =
+                                normalizeCandles(
+                                    bars.map((bar) => ({
+                                        time: Number(
+                                            bar.time
+                                        ),
 
-              volume:
-                Number(
-                  trade.size ??
-                    0
-                ),
-            });
-          }
+                                        open: Number(
+                                            bar.open
+                                        ),
 
-          return {
-            ...prev,
+                                        high: Number(
+                                            bar.high
+                                        ),
 
-            [trade.s]:
-              normalizeCandles(
-                list
-              ),
-          };
-        });
+                                        low: Number(
+                                            bar.low
+                                        ),
 
-        return;
-      }
+                                        close: Number(
+                                            bar.close
+                                        ),
 
-      /* ALPACA BAR */
-      if (
-        response.type === "bar"
-      ) {
-        setLastUpdated(
-          new Date().toLocaleTimeString()
-        );
+                                        volume: Number(
+                                            bar.volume ??
+                                            0
+                                        ),
+                                    }))
+                                );
+                        }
+                    );
 
-        const bar =
-          response.data;
+                    return updated;
+                });
 
-        const barMs =
-          new Date(
-            bar.t
-          ).getTime();
+                setCandleRanges((prev) => {
+                    const updated = {
+                        ...prev,
+                    };
 
-        const bucket =
-          Math.floor(
-            barMs / 60000
-          ) * 60000;
+                    Object.keys(response.data ?? {}).forEach((symbol) => {
+                        updated[symbol] = response.range ?? "1D";
+                    });
 
-        setCandles((prev) => {
-          const list = prev[
-            bar.s
-          ]
-            ? [
-                ...prev[
-                  bar.s
-                ],
-              ]
-            : [];
+                    return updated;
+                });
 
-          const last =
-            list.at(-1);
+                return;
+            }
 
-          if (
-            last &&
-            last.time ===
-              bucket
-          ) {
-            list[
-              list.length - 1
-            ] = {
-              time: bucket,
+            /* LIVE TRADE */
+            if (
+                response.type === "trade"
+            ) {
+                const trade =
+                    response.data;
+                if (trade?.s) {
+                    pendingPricesRef.current[trade.s] = trade.p;
+                    pendingTradesRef.current.push(trade);
+                    scheduleLiveFlush();
+                }
 
-              open:
-                Number(
-                  bar.open
-                ),
+                return;
+            }
 
-              high:
-                Number(
-                  bar.high
-                ),
+            /* ALPACA BAR */
+            if (
+                response.type === "bar"
+            ) {
+                const bar =
+                    response.data;
+                if (bar?.s) {
+                    pendingBarsRef.current.push(bar);
+                    scheduleLiveFlush();
+                }
 
-              low: Number(
-                bar.low
-              ),
+                return;
+            }
+        };
 
-              close:
-                Number(
-                  bar.close
-                ),
+        /* SOCKET ERROR */
+        socket.onerror = () => {
+            setError(
+                "Could not connect to stock websocket"
+            );
 
-              volume:
-                Number(
-                  bar.volume ??
-                    0
-                ),
-            };
-          } else {
-            list.push({
-              time: bucket,
+            setConnectionStatus(
+                "Error"
+            );
+        };
 
-              open:Number(bar.open),
+        /* SOCKET CLOSE */
+        socket.onclose = () => {
+            setConnectionStatus(
+                "Disconnected"
+            );
+        };
 
-              high:
-                Number(
-                  bar.high
-                ),
+        return () => {
+            if (flushTimerRef.current) {
+                window.clearTimeout(flushTimerRef.current);
+            }
+            socket.close();
+        };
+    }, [scheduleLiveFlush]);
 
-              low: Number(
-                bar.low
-              ),
-
-              close:
-                Number(
-                  bar.close
-                ),
-
-              volume:
-                Number(
-                  bar.volume ??
-                    0
-                ),
-            });
-          }
-
-          return {
-            ...prev,
-
-            [bar.s]:
-              normalizeCandles(
-                list
-              ),
-          };
-        });
-
-        return;
-      }
+    return {
+        stocks,
+        candles,
+        candleRanges,
+        marketStatus,
+        connectionStatus,
+        error,
+        lastUpdated,
+        requestRangeData,
     };
-
-    /* SOCKET ERROR */
-    socket.onerror = () => {
-      setError(
-        "Could not connect to stock websocket"
-      );
-
-      setConnectionStatus(
-        "Error"
-      );
-    };
-
-    /* SOCKET CLOSE */
-    socket.onclose = () => {
-      setConnectionStatus(
-        "Disconnected"
-      );
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  return {
-    stocks,
-    candles,
-    marketStatus,
-    connectionStatus,
-    error,
-    lastUpdated,
-    requestRangeData,
-  };
 }
 
 export default useLiveStocks;

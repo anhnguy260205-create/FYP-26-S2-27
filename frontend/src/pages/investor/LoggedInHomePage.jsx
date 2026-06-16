@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import RegistrationPage from "./RegistrationPage.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
-import Header from "../../layout/Header.jsx";
+import GeneralHeader from "../../layout/GeneralHeader.jsx";
 
 function DynamicFeatureBubbleHero() {
-  const navigate = useNavigate();
+
   const features = [
     {
       title: "AI Assistant",
@@ -158,48 +157,8 @@ function DynamicFeatureBubbleHero() {
         <p style={{ margin: "1rem 0 1.5rem", color: "#94a3b8", fontSize: "1rem" }}>
           Explore powerful tools floating around your financial universe.
         </p>
-
-        <div className="flex gap-4 justify-center">
-          <button
-            onClick={() => navigate("/register")}
-            style={{
-              width: "150px",
-              padding: "0.75rem 2rem",
-              borderRadius: 14,
-              background: "#06b6d4",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(34,211,238,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#22d3ee")}
-            onMouseLeave={(e) => (e.target.style.background = "#06b6d4")}
-          >
-            Get Started
-          </button>
-          <button
-            onClick={() => navigate("/login")}
-            style={{
-              padding: "0.75rem 2rem",
-              width: "150px",
-              borderRadius: 14,
-              background: "#eab308",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(250,204,21,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#f59e0b")}
-            onMouseLeave={(e) => (e.target.style.background = "#facc15")}
-          >
-            Login
-          </button>
-        </div>
       </div>
+
 
       {/* Feature bubbles — all anchored at 50%/50%, moved via translate */}
       {features.map((feature, index) => (
@@ -263,11 +222,9 @@ function DynamicFeatureBubbleHero() {
     </div>
   );
 }
-function MarketDemo() {
 
-}
 
-function HomePage() {
+function LoggedInHomePage() {
 
   return (
     <motion.div
@@ -276,7 +233,7 @@ function HomePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <Header />
+      <GeneralHeader />
       <main className="flex-1 p-7.5">
 
         <DynamicFeatureBubbleHero />
@@ -289,4 +246,4 @@ function HomePage() {
 
   );
 }
-export default HomePage; 
+export default LoggedInHomePage; 

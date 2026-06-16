@@ -1,6 +1,32 @@
+import { memo, useId, useMemo } from "react";
+
+const MAX_SPARKLINE_POINTS = 32;
+
 function MiniChart({ candles, width = 120, height = 40 }) {
+  const reactId = useId();
+  const gradientId = `spark-grad-${reactId.replace(/:/g, "")}`;
+  const prices = useMemo(() => {
+    const sourceCandles = candles ?? [];
+
+    if (sourceCandles.length < 2) return [];
+
+    const step = Math.max(
+      1,
+      Math.ceil(sourceCandles.length / MAX_SPARKLINE_POINTS)
+    );
+
+    const sampled = sourceCandles
+      .filter((_, index) => index % step === 0)
+      .map((c) => c.close);
+
+    const last = sourceCandles.at(-1)?.close;
+    if (sampled.at(-1) !== last) sampled.push(last);
+
+    return sampled;
+  }, [candles]);
+
   // ── Need at least 2 points to draw a line ──────────────────────────────────
-  if (!candles || candles.length < 2) {
+  if (prices.length < 2) {
     return (
       <svg width={width} height={height}>
         <line
@@ -15,22 +41,20 @@ function MiniChart({ candles, width = 120, height = 40 }) {
   }
 
   // ── Use close prices as the data series ────────────────────────────────────
-  const prices = candles.map((c) => c.close);
-  const first  = prices[0];
-  const last   = prices[prices.length - 1];
-  const isUp   = last >= first;
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  const isUp = last >= first;
 
-  const color      = isUp ? "#4ade80" : "#f87171";   // green-400 / red-400
-  const dotColor   = isUp ? "#86efac" : "#fca5a5";   // green-300 / red-300
-  const glowColor  = isUp
+  const color = isUp ? "#4ade80" : "#f87171";   // green-400 / red-400
+  const glowColor = isUp
     ? "rgba(74,222,128,0.25)"
     : "rgba(248,113,113,0.25)";
 
   // ── Scale prices → SVG coordinates ────────────────────────────────────────
-  const pad    = 6;   // padding so dots aren't clipped at edges
-  const minP   = Math.min(...prices);
-  const maxP   = Math.max(...prices);
-  const range  = maxP - minP || 1;   // avoid division by zero on flat lines
+  const pad = 6;   // padding so dots aren't clipped at edges
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const range = maxP - minP || 1;   // avoid division by zero on flat lines
 
   const toX = (i) =>
     pad + (i / (prices.length - 1)) * (width - pad * 2);
@@ -48,8 +72,6 @@ function MiniChart({ candles, width = 120, height = 40 }) {
     `L ${points.join(" L ")} ` +
     `L ${toX(prices.length - 1)},${height} Z`;
 
-  const gradientId = `spark-grad-${Math.random().toString(36).slice(2, 7)}`;
-
   return (
     <svg
       width={width}
@@ -61,8 +83,8 @@ function MiniChart({ candles, width = 120, height = 40 }) {
       <defs>
         {/* Vertical gradient for the area fill */}
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.18" />
-          <stop offset="100%" stopColor={color} stopOpacity="0"    />
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -88,23 +110,19 @@ function MiniChart({ candles, width = 120, height = 40 }) {
         d={linePath}
         fill="none"
         stroke={color}
-        strokeWidth="1.75"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      {/* Dots on each data point */}
-      {prices.map((p, i) => (
-        <circle
-          key={i}
-          cx={toX(i)}
-          cy={toY(p)}
-          r={i === prices.length - 1 ? 3 : 2}          // last dot slightly bigger
-          fill={i === prices.length - 1 ? color : dotColor}
-          stroke={i === prices.length - 1 ? "rgba(0,0,0,0.4)" : "none"}
-          strokeWidth="1"
-        />
-      ))}
+      <circle
+        cx={toX(prices.length - 1)}
+        cy={toY(last)}
+        r={2}
+        fill={color}
+        stroke="rgba(0,0,0,0.4)"
+        strokeWidth="1"
+      />
 
       {/* Pulsing ring on the last (live) dot */}
       <circle
@@ -133,4 +151,4 @@ function MiniChart({ candles, width = 120, height = 40 }) {
   );
 }
 
-export default MiniChart;
+export default memo(MiniChart);
