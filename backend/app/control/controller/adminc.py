@@ -71,3 +71,65 @@ class AdminUserAccountController:
             return parts[0][:2].upper()
 
         return (parts[0][0] + parts[-1][0]).upper()
+<<<<<<< Updated upstream
+=======
+    
+    def getUserAccountById(self, user_id):
+        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+
+        if not user:
+            return None
+
+        investor = session.query(Investor).filter(Investor.user_id == user_id).first()
+        expert = session.query(Expert).filter(Expert.user_id == user_id).first()
+
+        if expert:
+            role = "Expert"
+        elif investor:
+            role = "Premium" if investor.investor_subscription_status == "active" else "Investor"
+        else:
+            role = "User"
+
+        return {
+            "user_id": user.user_id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "email_address": user.email_address,
+            "phone_number": str(user.phone_number),
+            "address": user.address,
+            "role": role,
+            "account_status": user.account_status,
+            "join_date": user.join_date.strftime("%Y-%m-%d") if user.join_date else None,
+            "last_login": user.last_login.strftime("%Y-%m-%d") if user.last_login else None,
+            "is_active": user.is_active,
+        }
+    
+    def suspendUserAccount(self, user_id):
+        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+
+        if not user:
+            return False
+
+        user.account_status = "suspended"
+        user.is_active = False
+        session.commit()
+
+        return True
+    
+    def deleteUserAccount(self, user_id):
+        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+
+        if not user:
+            return False
+
+        try:
+            session.query(Investor).filter(Investor.user_id == user_id).delete()
+            session.query(Expert).filter(Expert.user_id == user_id).delete()
+            session.delete(user)
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print("DELETE USER ERROR:", e)
+            return False
+>>>>>>> Stashed changes
