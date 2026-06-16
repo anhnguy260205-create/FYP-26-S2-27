@@ -137,8 +137,8 @@ function GeneralHeader() {
       label: "Transactions",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Trading Portal", path: "/transactions/trading" },
-        { title: "Transaction History", path: "/transactions/history" },
+        { title: "Transaction Portal", path: "/investor/transaction-portal" },
+        { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },
   ];
