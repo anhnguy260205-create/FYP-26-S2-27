@@ -13,6 +13,15 @@ class AdminUserAccountPage:
     def searchUserAccounts(self, keyword=None, role=None, status=None):
         return self.controller.getUserAccounts(keyword, role, status)
 
+    def viewUserAccount(self, user_id):
+        return self.controller.getUserAccountById(user_id)
+
+    def suspendUserAccount(self, user_id):
+        return self.controller.suspendUserAccount(user_id)
+
+    def deleteUserAccount(self, user_id):
+        return self.controller.deleteUserAccount(user_id)
+
 
 @router.get("/useraccounts")
 def get_user_accounts(
@@ -21,7 +30,6 @@ def get_user_accounts(
     status: Optional[str] = None,
 ):
     boundary = AdminUserAccountPage()
-
     users = boundary.searchUserAccounts(keyword, role, status)
 
     return {
@@ -30,10 +38,11 @@ def get_user_accounts(
         "users": users,
     }
 
+
 @router.get("/useraccounts/{user_id}")
 def view_user_account(user_id: str):
     boundary = AdminUserAccountPage()
-    user = boundary.controller.getUserAccountById(user_id)
+    user = boundary.viewUserAccount(user_id)
 
     if not user:
         return {
@@ -50,9 +59,9 @@ def view_user_account(user_id: str):
 @router.put("/useraccounts/{user_id}/suspend")
 def suspend_user_account(user_id: str):
     boundary = AdminUserAccountPage()
-    result = boundary.controller.suspendUserAccount(user_id)
+    success = boundary.suspendUserAccount(user_id)
 
-    if not result:
+    if not success:
         return {
             "success": False,
             "message": "User not found",
@@ -67,12 +76,12 @@ def suspend_user_account(user_id: str):
 @router.delete("/useraccounts/{user_id}")
 def delete_user_account(user_id: str):
     boundary = AdminUserAccountPage()
-    result = boundary.controller.deleteUserAccount(user_id)
+    success = boundary.deleteUserAccount(user_id)
 
-    if not result:
+    if not success:
         return {
             "success": False,
-            "message": "User not found or delete failed",
+            "message": "User not found",
         }
 
     return {

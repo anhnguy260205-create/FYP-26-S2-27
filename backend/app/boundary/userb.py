@@ -2,7 +2,8 @@ from typing import Optional, Union
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
+from app.control.controller.investorc import UpdateStockLevel
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -182,4 +183,102 @@ def get_expert_information(user_id: str):
         "success": True,
         "message": "Expert information retrieved successfully",
         "expert_information": result
+    }
+
+# Update user information
+
+
+class UpdateInformationRequest(BaseModel):
+    user_id: str
+    user_name: Optional[str] = None
+    full_name: Optional[str] = None
+    email_address: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+
+
+class UpdateInformationPage:
+    def __init__(self):
+        self.controller = UpdateInformationController()
+
+    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
+        return self.controller.update_information(user_id, user_name, full_name, email_address, phone_number, address)
+
+
+@router.post("/update-information/{user_id}")
+def update_information(user_id: str, data: UpdateInformationRequest):
+    boundary = UpdateInformationPage()
+
+    result = boundary.update_information(
+        user_id,
+        data.user_name,
+        data.full_name,
+        data.email_address,
+        data.phone_number,
+        data.address
+    )
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Failed to update information"
+        }
+    return {
+        "success": True,
+        "message": "Information updated successfully"
+    }
+
+
+# Delete Investor
+class DeleteInvestorPage:
+    def __init__(self):
+        self.controller = DeleteInvestorController()
+
+    def delete_account(self, user_id):
+        return self.controller.delete_account(user_id)
+
+
+@router.delete("/delete-investor/{user_id}")
+def delete_account(user_id: str):
+    boundary = DeleteInvestorPage()
+
+    result = boundary.delete_account(user_id)
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Account not found"
+        }
+    return {
+        "success": True,
+        "message": "Account deleted successfully"
+    }
+
+
+class UpdateStockLevelRequest(BaseModel):
+    user_id: str
+    stock_level: Optional[str] = None
+
+
+class UpdateInvestorStockLevel:
+    def __init__(self):
+        self.controller = UpdateStockLevel()
+
+    def update_stock_level(self, user_id, stock_level):
+        return self.controller.updateStockLevel(user_id, stock_level)
+
+
+@router.post("/update_stock_level")
+def update_stock_level(data: UpdateStockLevelRequest):
+    boundary = UpdateInvestorStockLevel()
+
+    result = boundary.update_stock_level(data.user_id, data.stock_level)
+    if not result:
+        return {
+            "success": False,
+            "message": "The stock level is not updated"
+        }
+    return {
+        "success": True,
+        "message": "The stock level is successfully updated"
     }

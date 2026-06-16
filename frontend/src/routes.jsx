@@ -8,17 +8,28 @@ import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
 import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
+import UserAccountDetailsPage from "./pages/administrator/UserAccountDetailsPage.jsx";
+import UserProfilesPage from "./pages/administrator/UserProfilesPage.jsx";
+import CommunityPostsPage from "./pages/administrator/CommunityPostsPage.jsx";
+import CommunityPostDetailsPage from "./pages/administrator/CommunityPostDetailsPage.jsx";
+import TradeManagementPage from "./pages/administrator/TradeManagementPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-<<<<<<< Updated upstream
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
+import Watchlist from "./pages/investor/Watchlist.jsx";
+import Notification from "./pages/investor/Notification.jsx";
+import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
+import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
+import EducationContent from "./pages/investor/EducationContent.jsx";
+import AIChatbot from "./pages/investor/AIChatbot.jsx";
+import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
+
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
-=======
-import UserProfilePage from "./pages/administrator/UserProfilePage.jsx";
->>>>>>> Stashed changes
+import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
+
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
@@ -62,25 +73,71 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
     },
     {
+        path: "/investor/watchlist",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Watchlist /></ProtectedRoute>
+    },
+    {
+        path: "/investor/notification",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Notification /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertportfolio",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertPortfolio /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertadvice",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertAdvice /></ProtectedRoute>
+    },
+    {
+        path: "/investor/educationcontent",
+        element: <ProtectedRoute allowedRoles={["investor"]}><EducationContent /></ProtectedRoute>
+    },
+    {
+        path: "/investor/aichatbot",
+        element: <ProtectedRoute allowedRoles={["investor"]}><AIChatbot /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertdetails",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertDetails /></ProtectedRoute>
+    },
+    {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
     {
         path: "/adminpanel/useraccounts",
-<<<<<<< Updated upstream
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
     {
-        path: "/expert/edit-profile",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
-=======
-        element: <UserAccountsPage />
+        path: "/adminpanel/useraccounts/:userId",
+        element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountDetailsPage /></ProtectedRoute>
     },
     {
         path: "/adminpanel/profiles",
-        element: <UserProfilePage />
->>>>>>> Stashed changes
-    }
+        element: <ProtectedRoute allowedRoles={["admin"]}><UserProfilesPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/posts",
+        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostsPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/posts/:postId",
+        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostDetailsPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/trade",
+        element: <ProtectedRoute allowedRoles={["admin"]}><TradeManagementPage /></ProtectedRoute>
+    },
+
+
+    {
+        path: "/expert/edit-profile",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
+    },
+    {
+        path: "/expert",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
+    },
 
 ]);
 
