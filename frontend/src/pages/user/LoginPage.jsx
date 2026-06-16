@@ -105,8 +105,8 @@ function LoginPage() {
 
       //  Redirect based on role
       const role = result.user.role;
-      if (role === "investor") navigate("/investor/loggedhome");
-      else if (role === "expert") navigate("/forum");
+      if (role === "investor") navigate("/investor");
+      else if (role === "expert") navigate("/expert");
       else if (role === "admin") navigate("/adminpanel");
       else alert("Unknown role: " + role);
 

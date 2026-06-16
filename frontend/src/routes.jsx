@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
     { path: "/login", Component: LoginPage },
 
     {
-        path: "/investor/loggedhome",
+        path: "/investor",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
     },
     {
