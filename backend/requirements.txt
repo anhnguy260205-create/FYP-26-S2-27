@@ -5,3 +5,5 @@ pymysql
 cryptography
 websockets
 yfinance
+xgboost
+

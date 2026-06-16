@@ -76,63 +76,57 @@ export const getExpertInformation = async (userId) => {
   return await response.json();
 };
 
-export const updateUserInformation = async (userId, user_name, fullName, emailAddress, phoneNumber, address) => {
-  const response = await fetch(`${BASE_URL}/update-information/${userId}`, {
+export const updateUserInformation = async (userId, fullName, emailAddress, phoneNumber, address) => {
+  const response = await fetch(`${BASE_URL}/update-information`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: userId,
-      user_name: user_name,
       full_name: fullName,
       email_address: emailAddress,
-      phone_number: phoneNumber != null ? String(phoneNumber) : null,
+      phone_number: phoneNumber,
       address: address
     })
   });
   return await response.json();
 };
 
-export const updateStockLevel = async (useId, stock_level) => {
-  const response = await fetch(`${BASE_URL}/update_stock_level`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(
-      {
-        user_id: useId,
-        stock_level: stock_level
-      }
-    )
-
-  })
-  return await response.json();
-}
-
-export const verifySession = async (sessionId) => {
-  let response;
-  try {
-    response = await fetch(`${BASE_URL}/verify-session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId }),
-    });
-  } catch (e) {
-    return { success: false, message: `Network error: ${e.message}` };
-  }
-
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    const text = await response.text().catch(() => "(no body)");
-    return { success: false, message: `Server returned non-JSON (${response.status}): ${text.slice(0, 200)}` };
-  }
-
-  return data;
-};
-
 export const deleteInvestor = async (userId) => {
   const response = await fetch(`${BASE_URL}/delete-investor/${userId}`, {
     method: "DELETE",
+  });
+  return await response.json();
+};
+
+// ---- Password Reset ----
+
+export const requestPasswordResetOtp = async (emailAddress) => {
+  const response = await fetch(`${BASE_URL}/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email_address: emailAddress }),
+  });
+  return await response.json();
+};
+
+export const verifyPasswordResetOtp = async (emailAddress, otpCode) => {
+  const response = await fetch(`${BASE_URL}/verify-reset-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email_address: emailAddress, otp_code: otpCode }),
+  });
+  return await response.json();
+};
+
+export const resetPassword = async (emailAddress, otpCode, newPassword) => {
+  const response = await fetch(`${BASE_URL}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email_address: emailAddress,
+      otp_code: otpCode,
+      new_password: newPassword,
+    }),
   });
   return await response.json();
 };
