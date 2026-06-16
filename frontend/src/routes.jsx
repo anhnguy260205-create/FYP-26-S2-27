@@ -13,6 +13,7 @@ import UserProfilesPage from "./pages/administrator/UserProfilesPage.jsx";
 import CommunityPostsPage from "./pages/administrator/CommunityPostsPage.jsx";
 import CommunityPostDetailsPage from "./pages/administrator/CommunityPostDetailsPage.jsx";
 import TradeManagementPage from "./pages/administrator/TradeManagementPage.jsx";
+import InvestmentGuidanceArticlesPage from "./pages/administrator/InvestmentGuidanceArticlesPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -128,7 +129,10 @@ export const router = createBrowserRouter([
         path: "/adminpanel/trade",
         element: <ProtectedRoute allowedRoles={["admin"]}><TradeManagementPage /></ProtectedRoute>
     },
-
+    {
+        path: "/adminpanel/articles",
+        element: <ProtectedRoute allowedRoles={["admin"]}><InvestmentGuidanceArticlesPage /></ProtectedRoute>
+    },
 
     {
         path: "/expert/edit-profile",
