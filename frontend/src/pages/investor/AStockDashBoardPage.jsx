@@ -29,12 +29,12 @@ function companyName(symbol) {
 }
 
 /* ─── Trade Buttons ────────────────────────────────────────── */
-function Button({ marketStatus }) {
+function Button({ marketStatus, symbol }) {
   const navigate = useNavigate();
   const isOpen = marketStatus === "OPEN";
   const handleTrade = (type) => {
     if (!isOpen) { alert("Market is closed. Cannot make any transactions."); return; }
-    navigate(`/${type}`);
+    navigate(`/${type}/${symbol}`);
   };
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -193,8 +193,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-      <WatchlistButton stock_symbol={symbol} currentUser={currentUser} />
-      <Button marketStatus={marketStatus} currentUser={currentUser} />
+      <WatchlistButton />
+      <Button marketStatus={marketStatus} symbol={selectedStock} />
 
     </motion.div>
   );
