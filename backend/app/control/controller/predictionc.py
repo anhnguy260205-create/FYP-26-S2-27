@@ -31,6 +31,17 @@ import pandas as pd
 from app.control.services import ml_model
 
 
+def _sanitize(obj):
+    """Recursively replace NaN/inf floats with None so JSON serialization never fails."""
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    if isinstance(obj, float) and not math.isfinite(obj):
+        return None
+    return obj
+
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 SUPPORTED_SYMBOLS = [
@@ -80,17 +91,17 @@ class PredictionController:
         sentiment = self._run_sentiment(symbol, prob_up)
 
         if mode == "daytrade":
-            return self._build_daytrade_response(
+            return _sanitize(self._build_daytrade_response(
                 symbol, last_close, prob_up, confidence, typical_move_pct,
                 sentiment, horizon_hours or 24
-            )
+            ))
 
         if mode == "goal":
-            return self._build_goal_response(
+            return _sanitize(self._build_goal_response(
                 symbol, last_close, prob_up, confidence, typical_move_pct,
                 sentiment, budget or 1000.0, target_return_pct or 10.0,
                 timeline_days or ONE_MONTH_TRADING_DAYS
-            )
+            ))
 
         # Default: standard multi-day forecast
         days = max(1, min(days, 30))
@@ -98,7 +109,7 @@ class PredictionController:
             last_close, prob_up, typical_move_pct, days
         )
 
-        return {
+        return _sanitize({
             "mode": "standard",
             "symbol": symbol,
             "days": days,
@@ -114,7 +125,7 @@ class PredictionController:
                     prob_up, typical_move_pct
                 ),
             },
-        }
+        })
 
     # ── Data fetching ────────────────────────────────────────────────────────
 
