@@ -193,7 +193,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-      <WatchlistButton />
+      <WatchlistButton stock_symbol={selectedStock} currentUser={currentUser} />
       <Button marketStatus={marketStatus} symbol={selectedStock} />
 
     </motion.div>
