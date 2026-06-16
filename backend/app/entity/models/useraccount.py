@@ -18,7 +18,7 @@ class UserAccount(Base):
         "user_profiles.profile_id"), nullable=True)
     username = Column(String(50), unique=True, nullable=False)
     full_name = Column(String(100), nullable=False)
-    phone_number = Column(Integer, unique=True, nullable=False)
+    phone_number = Column(String(20), unique=True, nullable=False)
     address = Column(String(255), nullable=False)
     email_address = Column(String(255), unique=True, nullable=False)
     account_status = Column(String(20), default="active")

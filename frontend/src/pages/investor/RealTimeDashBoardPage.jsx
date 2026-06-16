@@ -2,9 +2,8 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import MiniChart from "../../components/MiniChart.jsx";
-import AStockDashBoardPage from "./AStockDashBoardPage.jsx";
 import { useNavigate } from "react-router-dom";
 function SearchBar({ onSearch }) {
   const [inputValue, setInputValue] = useState("");
@@ -56,23 +55,71 @@ function MarketStatus({ marketStatus, lastUpdated }) {
 
 function companyName(symbol) {
   const names = {
-    AAPL: "Apple",     TSLA: "Tesla",     NVDA: "NVIDIA",
+    AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA",
     MSFT: "Microsoft", GOOGL: "Alphabet", AMZN: "Amazon",
-    META: "Meta",      AMD: "AMD",        NFLX: "Netflix",  INTC: "Intel",
+    META: "Meta", AMD: "AMD", NFLX: "Netflix", INTC: "Intel",
   };
   return names[symbol] ?? "";
 }
+
+const StockRow = memo(function StockRow({ stock, candles, onSelect }) {
+  const chg = stock.price && stock.previousClose
+    ? (stock.price - stock.previousClose).toFixed(3)
+    : null;
+  const pctChg =
+    stock.price && stock.previousClose
+      ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
+      : null;
+  const isUp = chg === null ? true : Number(chg) >= 0;
+  const color = isUp ? "text-green-400" : "text-red-400";
+
+  return (
+    <div onClick={() => onSelect(stock.symbol)}
+      className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
+      style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }} >
+      {/* Symbol */}
+      <div className="flex flex-col">
+        <span className="text-white font-semibold text-sm">{stock.symbol}</span>
+        <span className="text-gray-500 text-xs">{companyName(stock.symbol)}</span>
+      </div>
+
+      {/* Price */}
+      <span className={`text-right font-medium text-sm ${color}`}>
+        {stock.price?.toFixed(3) ?? "—"}
+      </span>
+
+      {/* Chg */}
+      <span className={`text-right font-medium text-sm ${color}`}>
+        {chg !== null ? (isUp ? "+" : "") + chg : "—"}
+      </span>
+
+      {/* % Chg */}
+      <span className={`text-right font-medium text-sm ${color}`}>
+        {pctChg !== null ? (isUp ? "+" : "") + pctChg + "%" : "—"}
+      </span>
+
+      {/* Trend sparkline */}
+      <span className="flex justify-center items-center">
+        <MiniChart candles={candles} width={100} height={40} />
+      </span>
+    </div>
+  );
+});
 
 // ── StockTable now accepts candles too ──────────────────────────────────────
 function StockTable({ stocks, candles }) {
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
+  const handleSelect = useCallback((symbol) => {
+    navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+  }, [navigate]);
+
   return (
     <div className="w-full mt-6 rounded-xl overflow-hidden border border-white/20">
 
       {/* Header — 5 columns, added Trend */}
       <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
-           style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr"}}>
+        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }}>
         <span>Symbol</span>
         <span className="text-right">Price</span>
         <span className="text-right">Change</span>
@@ -86,50 +133,14 @@ function StockTable({ stocks, candles }) {
           Waiting for data...
         </div>
       ) : (
-        stockList.map((stock) => {
-          const chg = stock.price && stock.previousClose
-              ? (stock.price - stock.previousClose).toFixed(3)
-              : null;
-          const pctChg =
-            stock.price && stock.previousClose
-              ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
-              : null;
-          const isUp  = chg === null ? true : Number(chg) >= 0;
-          const color = isUp ? "text-green-400" : "text-red-400";
-
-          return (
-
-            <div key={stock.symbol} onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${stock.symbol}`)} 
-                 className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
-              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }} >
-              {/* Symbol */}
-              <div className="flex flex-col">
-                <span className="text-white font-semibold text-sm">{stock.symbol}</span>
-                <span className="text-gray-500 text-xs">{companyName(stock.symbol)}</span>
-              </div>
-
-              {/* Price */}
-              <span className={`text-right font-medium text-sm ${color}`}>
-                {stock.price?.toFixed(3) ?? "—"}
-              </span>
-
-              {/* Chg */}
-              <span className={`text-right font-medium text-sm ${color}`}>
-                {chg !== null ? (isUp ? "+" : "") + chg : "—"}
-              </span>
-
-              {/* % Chg */}
-              <span className={`text-right font-medium text-sm ${color}`}>
-                {pctChg !== null ? (isUp ? "+" : "") + pctChg + "%" : "—"}
-              </span>
-
-              {/* Trend sparkline */}
-              <span className="flex justify-center items-center">
-                <MiniChart candles={candles?.[stock.symbol]} width={100} height={40}/>
-              </span>
-            </div>
-          );
-        })
+        stockList.map((stock) => (
+          <StockRow
+            key={stock.symbol}
+            stock={stock}
+            candles={candles?.[stock.symbol]}
+            onSelect={handleSelect}
+          />
+        ))
       )}
     </div>
   );
@@ -139,17 +150,21 @@ function RealTimeDashBoardPage() {
   const { stocks, candles, marketStatus, lastUpdated, error } = useLiveStocks();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const stockList = Object.values(stocks ?? {});
-  const filtered  = stockList.filter((s) =>
-    s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+
+    return Object.values(stocks ?? {}).filter((s) =>
+      s.symbol.toLowerCase().includes(query)
+    );
+  }, [stocks, searchQuery]);
 
   return (
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
       <GeneralHeader />
       <main className="flex-1 p-7">
-        <h1 className="text-2xl font-semibold mb-2">Real-Time Dashboard</h1>
+        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
+          Real-Time Dashboard</h1>
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 
@@ -157,7 +172,7 @@ function RealTimeDashBoardPage() {
         {/* Pass candles so each row can render its sparkline */}
         <StockTable stocks={filtered} candles={candles} />
       </main>
-      <Footer/>
+      <Footer />
     </motion.div>
   );
 }
