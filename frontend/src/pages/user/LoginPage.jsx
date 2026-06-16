@@ -177,7 +177,7 @@ function LoginPage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between">
                     <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
-                    <label className="text-blue-700 text-[14px]" onClick={() => navigate("#")}> Forget password?</label>
+                    <label className="text-blue-700 text-[14px] cursor-pointer" onClick={() => navigate("/forgot-password")}> Forget password?</label>
                   </div>
                   <input
                     type="password"

@@ -142,6 +142,23 @@ class UserAccount(Base):
             }
 
     @staticmethod
+    def emailExists(email_address) -> bool:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == email_address).first()
+            return user is not None
+
+    @staticmethod
+    def resetPasswordByEmail(email_address, new_password) -> bool:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == email_address).first()
+            if not user:
+                return False
+            user.password = new_password
+            return True
+
+    @staticmethod
     def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
         with get_session() as session:
             user = session.query(UserAccount).filter(
