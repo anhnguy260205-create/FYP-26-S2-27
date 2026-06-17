@@ -261,20 +261,20 @@ function DeleteAccountButton() {
                         <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
                             This will permanently delete your account and all associated data. This action cannot be undone.
                         </p>
-                        <div className="flex justify-end gap-3">
+                        <div className="flex gap-3">
                             <button
                                 onClick={() => setShowConfirm(false)}
                                 disabled={loading}
-                                style={{ padding: "8px 20px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}
+                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
                                 disabled={loading}
-                                style={{ padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.5)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
+                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.5)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
                             >
-                                {loading ? "Deleting…" : "Yes, Delete"}
+                                {loading ? "Deleting…" : "Yes"}
                             </button>
                         </div>
                     </div>
@@ -796,7 +796,7 @@ function SecurityCard({ investorInfo }) {
                 </div>
 
                 <button
-                    onClick={() => navigate("/change-password")}
+                    onClick={() => navigate("/reset-password")}
                     className="flex items-center gap-2"
                     style={{
                         height: "38px",
@@ -811,7 +811,7 @@ function SecurityCard({ investorInfo }) {
                     }}
                 >
                     <SquarePen size={14} />
-                    Change Password
+                    Reset Password
                 </button>
             </div>
 
