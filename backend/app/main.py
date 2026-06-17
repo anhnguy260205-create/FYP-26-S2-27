@@ -15,12 +15,14 @@ from app.entity.models.subscription import Subscription
 from app.entity.models.holding import Holding
 from app.entity.models.transaction import Transaction
 from app.entity.models.password_reset import PasswordReset
+from app.entity.models.article import Article
 from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
 from app.boundary.predictionb import router as prediction_router
 from app.boundary.payment_service import router as payment_router
 from app.boundary.alertb import router as alertb
 from app.boundary.passwordresetb import router as password_reset_router
 from app.boundary.tradingb import router as trading_router
+from app.boundary.knowledgehub_b import router as knowledge_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError
@@ -78,6 +80,7 @@ app.include_router(payment_router)
 app.include_router(alertb)
 app.include_router(password_reset_router)
 app.include_router(trading_router)
+app.include_router(knowledge_router)
 
 
 @app.get("/")
