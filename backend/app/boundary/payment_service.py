@@ -34,7 +34,7 @@ class CreateSubscription:
         if not investor:
             return False
         subscription = self.create_investor_controller.createSubscription(
-            transaction_id, plan_type, investor["investor_id"])
+            transaction_id, plan_type, investor["investor_id"])  # ✅ dict access
 
         return subscription
 
