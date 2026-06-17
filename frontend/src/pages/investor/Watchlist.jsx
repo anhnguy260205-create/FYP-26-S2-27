@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import useLiveStocks from "../../api/useLiveStocks.js";
+import { useNavigate } from "react-router-dom";
+import { getWatchlist, addStockToWatchlist, removeStockFromWatchlist } from "../../api/userApi.js";
 
-// Tiny sparkline SVG rendered from a series of relative values
 function Sparkline({ data, positive }) {
     const w = 80, h = 28, pad = 2;
     const min = Math.min(...data);
@@ -24,62 +26,84 @@ function Sparkline({ data, positive }) {
                     <stop offset="100%" stopColor={color} stopOpacity="0" />
                 </linearGradient>
             </defs>
-            <polygon
-                points={`${pad},${h} ${pts.join(" ")} ${w - pad},${h}`}
-                fill={`url(#${fillId})`}
-            />
-            <polyline
-                points={pts.join(" ")}
-                stroke={color}
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-            />
+            <polygon points={`${pad},${h} ${pts.join(" ")} ${w - pad},${h}`} fill={`url(#${fillId})`} />
+            <polyline points={pts.join(" ")} stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
         </svg>
     );
 }
 
-const INITIAL_STOCKS = [
-    { id: 1, symbol: "AAPL", company: "Apple Inc.", price: 195.89, change: +2.35, percent: +1.21, positive: true, spark: [188, 190, 191, 189, 192, 194, 193, 196] },
-    { id: 2, symbol: "MSFT", company: "Microsoft Corp.", price: 415.32, change: +4.13, percent: +1.00, positive: true, spark: [408, 410, 411, 412, 409, 413, 414, 415] },
-    { id: 3, symbol: "NVDA", company: "NVIDIA Corporation", price: 432.10, change: -3.45, percent: -0.79, positive: false, spark: [438, 437, 436, 435, 434, 436, 433, 432] },
-    { id: 4, symbol: "TSLA", company: "Tesla Inc.", price: 171.95, change: +1.26, percent: +0.74, positive: true, spark: [168, 169, 170, 168, 170, 171, 171, 172] },
-    { id: 5, symbol: "AMZN", company: "Amazon.com Inc.", price: 186.21, change: -0.98, percent: -0.52, positive: false, spark: [189, 188, 187, 186, 187, 186, 186, 186] },
-    { id: 6, symbol: "GOOGL", company: "Alphabet Inc.", price: 162.48, change: +0.85, percent: +0.53, positive: true, spark: [160, 160, 161, 161, 162, 161, 162, 163] },
-];
+const COMPANY_NAMES = {
+    AAPL: "Apple Inc.", TSLA: "Tesla Inc.", NVDA: "NVIDIA Corporation",
+    MSFT: "Microsoft Corp.", GOOGL: "Alphabet Inc.", AMZN: "Amazon.com Inc.",
+    META: "Meta Platforms", AMD: "Advanced Micro Devices", NFLX: "Netflix Inc.", INTC: "Intel Corp.",
+};
 
 export default function Watchlist() {
-    const [stocks, setStocks] = useState(INITIAL_STOCKS);
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const userId = currentUser?.user_id;
+
+    const { stocks: liveStocks, candles } = useLiveStocks();
+
+    const [symbols, setSymbols] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [adding, setAdding] = useState(false);
     const [newSymbol, setNewSymbol] = useState("");
 
-    const removeStock = useCallback((id) => {
-        setStocks(prev => prev.filter(s => s.id !== id));
-    }, []);
+    useEffect(() => {
+        if (!userId) { setLoading(false); return; }
+        getWatchlist(userId).then(res => {
+            if (res.success) {
+                setSymbols(res.watchlist.map(e => e.stock_symbol));
+            }
+        }).finally(() => setLoading(false));
+    }, [userId]);
 
-    const handleAdd = () => {
+    const handleAdd = useCallback(async () => {
         const sym = newSymbol.trim().toUpperCase();
         if (!sym) return;
-        setStocks(prev => [
-            ...prev,
-            {
-                id: Date.now(),
-                symbol: sym,
-                company: "—",
-                price: 0,
-                change: 0,
-                percent: 0,
-                positive: true,
-                spark: [50, 50, 50, 50, 50, 50, 50, 50],
-            }
-        ]);
-        setNewSymbol("");
-        setAdding(false);
-    };
+        if (symbols.includes(sym)) {
+            alert(`${sym} is already in your watchlist.`);
+            return;
+        }
+        const res = await addStockToWatchlist(userId, sym);
+        if (res.success) {
+            setSymbols(prev => [...prev, sym]);
+            setNewSymbol("");
+            setAdding(false);
+        } else {
+            alert(res.message || "Failed to add stock.");
+        }
+    }, [newSymbol, symbols, userId]);
+
+    const handleRemove = useCallback(async (sym) => {
+        const res = await removeStockFromWatchlist(userId, sym);
+        if (res.success) {
+            setSymbols(prev => prev.filter(s => s !== sym));
+        } else {
+            alert(res.message || "Failed to remove stock.");
+        }
+    }, [userId]);
+    const navigate = useNavigate();
+    const handleSelect = useCallback((symbol) => {
+        navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+    }, [navigate]);
+    const rows = symbols.map(sym => {
+        const live = liveStocks[sym];
+        const price = live?.price ?? null;
+        const prev = live?.previousClose ?? null;
+        const change = price != null && prev != null ? price - prev : null;
+        const percent = change != null && prev ? (change / prev) * 100 : null;
+        const positive = change === null ? true : change >= 0;
+        const symCandles = candles[sym];
+        const spark = symCandles && symCandles.length >= 2
+            ? symCandles.slice(-8).map(c => c.close)
+            : [50, 50, 50, 50, 50, 50, 50, 50];
+        return { sym, price, change, percent, positive, spark };
+    });
 
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <GeneralHeader />
 
             <main className="flex-1 p-7">
@@ -88,7 +112,6 @@ export default function Watchlist() {
                 <div className="flex justify-between items-start mb-8">
                     <div>
                         <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
-
                             My Watchlist
                         </h1>
                         <p className="mt-1.5 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
@@ -120,7 +143,7 @@ export default function Watchlist() {
                                         }}
                                     />
                                     <button
-                                        onClick={() => setAdding(false)}
+                                        onClick={() => { setAdding(false); setNewSymbol(""); }}
                                         className="text-xs px-3 py-2 rounded-lg"
                                         style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}
                                     >
@@ -141,10 +164,7 @@ export default function Watchlist() {
                 </div>
 
                 {/* Table */}
-                <div
-                    className="rounded-xl overflow-hidden"
-                    style={{ border: "1px solid rgba(255,255,255,0.07)" }}
-                >
+                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
                     {/* Header row */}
                     <div
                         className="grid text-xs uppercase tracking-widest px-5 py-3"
@@ -165,7 +185,19 @@ export default function Watchlist() {
 
                     {/* Data rows */}
                     <AnimatePresence initial={false}>
-                        {stocks.length === 0 && (
+                        {loading && (
+                            <div className="text-center py-16 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                                Loading watchlist...
+                            </div>
+                        )}
+
+                        {!loading && !userId && (
+                            <div className="text-center py-16 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                                Please log in to view your watchlist.
+                            </div>
+                        )}
+
+                        {!loading && userId && rows.length === 0 && (
                             <motion.div
                                 className="text-center py-16 text-sm"
                                 style={{ color: "rgba(255,255,255,0.3)" }}
@@ -176,9 +208,9 @@ export default function Watchlist() {
                             </motion.div>
                         )}
 
-                        {stocks.map((stock, index) => (
+                        {rows.map((row, index) => (
                             <motion.div
-                                key={stock.id}
+                                key={row.sym}
                                 layout
                                 initial={{ opacity: 0, y: -6 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -189,7 +221,9 @@ export default function Watchlist() {
                                     gridTemplateColumns: "2fr 1.1fr 1.1fr 1.1fr 90px 60px",
                                     borderTop: "1px solid rgba(255,255,255,0.05)",
                                     transition: "background 0.15s",
+                                    cursor: "pointer",
                                 }}
+                                onClick={() => handleSelect(row.sym)}
                                 onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                             >
@@ -197,26 +231,21 @@ export default function Watchlist() {
                                 <div className="flex items-center gap-3">
                                     <span style={{ color: "#3b82f6", fontSize: "14px" }}>★</span>
                                     <div>
-                                        <div className="text-sm font-semibold font-mono tracking-wide">
-                                            {stock.symbol}
-                                        </div>
+                                        <div className="text-sm font-semibold font-mono tracking-wide">{row.sym}</div>
                                         <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
-                                            {stock.company}
+                                            {COMPANY_NAMES[row.sym] ?? "—"}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Price */}
                                 <div className="text-right text-sm font-mono font-medium">
-                                    {stock.price ? `$${stock.price.toFixed(2)}` : "—"}
+                                    {row.price != null ? `$${row.price.toFixed(2)}` : "—"}
                                 </div>
 
                                 {/* Change */}
-                                <div
-                                    className="text-right text-sm font-mono"
-                                    style={{ color: stock.positive ? "#22c55e" : "#ef4444" }}
-                                >
-                                    {stock.change ? `${stock.change > 0 ? "+" : ""}${stock.change.toFixed(2)}` : "—"}
+                                <div className="text-right text-sm font-mono" style={{ color: row.positive ? "#22c55e" : "#ef4444" }}>
+                                    {row.change != null ? `${row.change > 0 ? "+" : ""}${row.change.toFixed(2)}` : "—"}
                                 </div>
 
                                 {/* % Change */}
@@ -224,27 +253,26 @@ export default function Watchlist() {
                                     <span
                                         className="text-xs font-semibold px-2 py-0.5 rounded-full font-mono"
                                         style={{
-                                            color: stock.positive ? "#22c55e" : "#ef4444",
-                                            background: stock.positive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                                            color: row.positive ? "#22c55e" : "#ef4444",
+                                            background: row.positive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
                                         }}
                                     >
-                                        {stock.percent ? `${stock.percent > 0 ? "+" : ""}${stock.percent.toFixed(2)}%` : "—"}
+                                        {row.percent != null ? `${row.percent > 0 ? "+" : ""}${row.percent.toFixed(2)}%` : "—"}
                                     </span>
                                 </div>
 
                                 {/* Sparkline */}
                                 <div className="flex justify-center">
-                                    <Sparkline data={stock.spark} positive={stock.positive} />
+                                    <Sparkline data={row.spark} positive={row.positive} />
                                 </div>
 
                                 {/* Remove */}
                                 <div className="flex justify-end">
                                     <button
-                                        onClick={() => removeStock(stock.id)}
+                                        onClick={e => { e.stopPropagation(); handleRemove(row.sym); }}
                                         className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg text-xs"
                                         style={{
-                                            width: "30px",
-                                            height: "30px",
+                                            width: "30px", height: "30px",
                                             background: "rgba(239,68,68,0.1)",
                                             border: "1px solid rgba(239,68,68,0.25)",
                                             color: "#ef4444",
@@ -260,14 +288,9 @@ export default function Watchlist() {
                 </div>
 
                 {/* Footer */}
-                <div
-                    className="flex justify-between items-center mt-4 text-xs"
-                    style={{ color: "rgba(255,255,255,0.35)" }}
-                >
-                    <span>Showing {stocks.length} entr{stocks.length === 1 ? "y" : "ies"}</span>
-                    <span style={{ color: "rgba(255,255,255,0.2)" }}>
-                        Last updated: just now
-                    </span>
+                <div className="flex justify-between items-center mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    <span>Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}</span>
+                    <span style={{ color: "rgba(255,255,255,0.2)" }}>Live prices via WebSocket</span>
                 </div>
 
             </main>

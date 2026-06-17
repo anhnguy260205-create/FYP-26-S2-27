@@ -1,6 +1,11 @@
-import {RouterProvider} from "react-router-dom";
-import {router} from "./routes.jsx";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./routes.jsx";
+import { StocksProvider } from "./context/StocksContext.jsx";
 
 export default function App() {
-    return <RouterProvider router={router} />;
+    return (
+        <StocksProvider>
+            <RouterProvider router={router} />
+        </StocksProvider>
+    );
 }
