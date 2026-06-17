@@ -6,6 +6,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import AdminLayout from "../../layout/AdminPage.jsx";
 
 function AdminPanelPage() {
   const menuItems = [
@@ -77,6 +78,10 @@ function AdminPanelPage() {
   };
 
   return (
+    <AdminLayout
+      title="Dashboard Overview"
+      subtitle="Welcome back! Here's what's happening today."
+    >
     <div className="min-h-screen bg-slate-100 text-slate-900">
       {/* Top Header */}
       <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 shrink-0 z-50">
@@ -257,8 +262,7 @@ function AdminPanelPage() {
             </table>
           </section>
         </motion.main>
-      </div>
-    </div>
+      </AdminLayout>
   );
 }
 
