@@ -30,6 +30,7 @@ import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
+import ExpertKnowledgeHub from "./pages/expert/ExpertKnowledgeHub.jsx";
 import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
 import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
@@ -173,6 +174,11 @@ export const router = createBrowserRouter([
         path: "/expert",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
     },
+    {
+        path: "/expert/knowledge-hub",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertKnowledgeHub /></ProtectedRoute>
+    },
+
 
 
 ]);
