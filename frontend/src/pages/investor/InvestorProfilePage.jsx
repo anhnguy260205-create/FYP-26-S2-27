@@ -562,7 +562,7 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [riskLevel, setRiskLevel] = useState(investorInfo?.stock_level);
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     const role = currentUser?.role;
-    const userId = currentUser?.user_id;
+    const userId = currentUser?.user_id
     const isEditing = (section) => editingSection === section;
 
 

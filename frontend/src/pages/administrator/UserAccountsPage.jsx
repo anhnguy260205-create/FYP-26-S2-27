@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Search, Filter, Eye, Ban, Trash2, Mail, Phone } from "lucide-react";
+import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import AdminLayout from "../../layout/AdminPage.jsx";
 
 function UserAccountsPage() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const fetchUsers = async (searchKeyword = "") => {
     try {
@@ -35,6 +39,79 @@ function UserAccountsPage() {
     fetchUsers();
   }, []);
 
+  const handleView = (userId) => {
+    navigate(`/adminpanel/useraccounts/${userId}`);
+  };
+
+  const handleSuspend = async (userId) => {
+    const confirmed = window.confirm("Are you sure you want to suspend this user?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/suspend`, {
+        method: "PUT",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("User suspended successfully");
+        fetchUsers(keyword);
+      } else {
+        alert(data.message || "Failed to suspend user");
+      }
+    } catch (error) {
+      console.error("Failed to suspend user:", error);
+      alert("Failed to suspend user");
+    }
+  };
+
+  const handleActivate = async (userId) => {
+    const confirmed = window.confirm("Are you sure you want to activate this user?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/activate`, {
+        method: "PUT",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("User activated successfully");
+        fetchUsers(keyword);
+      } else {
+        alert(data.message || "Failed to activate user");
+      }
+    } catch (error) {
+      console.error("Failed to activate user:", error);
+      alert("Failed to activate user");
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    const confirmed = window.confirm("Are you sure you want to delete this user?");
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("User deleted successfully");
+        fetchUsers(keyword);
+      } else {
+        alert(data.message || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      alert("Failed to delete user");
+    }
+  };
+
   const menuItems = [
     { name: "Dashboard", path: "/adminpanel" },
     { name: "User Accounts", path: "/adminpanel/useraccounts" },
@@ -57,52 +134,10 @@ function UserAccountsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-900 ">
-      <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-[250px] bg-white border-r border-gray-200 sticky top-0 shrink-0 z-50">
-          <div className="h-[84px] flex items-center px-9 border-b border-gray-100">
-            <h1 className="text-2xl font-bold">Admin Panel</h1>
-          </div>
-
-          <nav className="p-7 space-y-3">
-            {menuItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`block px-4 py-3 rounded-lg text-sm font-medium ${item.name === "User Accounts"
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-slate-700 hover:bg-gray-100"
-                  }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Main */}
-        <main className="flex-1 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
-          {/* Header */}
-          <header className="h-[84px] bg-white flex items-center justify-between px-8 shrink-0 sticky top-0 z-50">
-            <div>
-              <h2 className="text-2xl font-bold">User Accounts</h2>
-              <p className="text-base text-black mt-1">
-                Search and manage all user accounts
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 border-l border-gray-200 pl-6">
-              <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-                AD
-              </div>
-              <div>
-                <p className="font-semibold text-sm">Admin User</p>
-                <p className="text-xs text-gray-500">administrator</p>
-              </div>
-            </div>
-          </header>
-
+    <AdminLayout
+      title="User Accounts"
+      subtitle="Search and manage all user accounts"
+    >
           <div className="p-3">
             {/* Search Box */}
             <section className="bg-white rounded-lg p-7 mb-5">
@@ -201,9 +236,31 @@ function UserAccountsPage() {
 
                       <td className="px-5 py-5">
                         <div className="flex items-center gap-5">
-                          <Eye size={18} className="text-blue-600 cursor-pointer" />
-                          <Ban size={18} className="text-orange-600 cursor-pointer" />
-                          <Trash2 size={18} className="text-red-600 cursor-pointer" />
+                          <Eye
+                            size={18}
+                            onClick={() => handleView(user.user_id)}
+                            className="text-blue-600 cursor-pointer"
+                          />
+
+                          {user.account_status === "suspended" ? (
+                            <UserCheck
+                              size={18}
+                              onClick={() => handleActivate(user.user_id)}
+                              className="text-green-600 cursor-pointer"
+                            />
+                          ) : (
+                            <Ban
+                              size={18}
+                              onClick={() => handleSuspend(user.user_id)}
+                              className="text-orange-600 cursor-pointer"
+                            />
+                          )}
+
+                          <Trash2
+                            size={18}
+                            onClick={() => handleDelete(user.user_id)}
+                            className="text-red-600 cursor-pointer"
+                          />
                         </div>
                       </td>
                     </tr>
@@ -231,9 +288,7 @@ function UserAccountsPage() {
               </div>
             </section>
           </div>
-        </main>
-      </div>
-    </div>
+        </AdminLayout>
   );
 }
 
