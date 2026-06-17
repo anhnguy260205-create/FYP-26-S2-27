@@ -547,7 +547,10 @@ async def websocket_endpoint(websocket: WebSocket):
         # 1. Latest prices (Alpaca if open, yfinance if closed)
         await send_snapshot_prices(websocket)
 
-        # 2. Market status banner (history is fetched on-demand via "range" requests)
+        # 2. 1D historical candles for all stocks (needed for sparklines)
+        await send_historical_candles(websocket, symbols=stock_pool, range="1D")
+
+        # 3. Market status banner
         await send_json_to_client(websocket, {
             "type":   "market_status",
             "status": market,

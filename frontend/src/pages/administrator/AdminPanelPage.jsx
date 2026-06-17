@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { DollarSign, ShoppingCart, Users, MoreVertical } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 
@@ -49,11 +48,7 @@ function AdminPanelPage() {
       title="Dashboard Overview"
       subtitle="Welcome back! Here's what's happening today."
     >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div>
         {/* Stat Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {stats.map((stat) => (
@@ -143,7 +138,7 @@ function AdminPanelPage() {
             </tbody>
           </table>
         </section>
-      </motion.div>
+      </div>
     </AdminLayout>
   );
 }
