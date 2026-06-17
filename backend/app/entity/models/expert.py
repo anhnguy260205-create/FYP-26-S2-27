@@ -72,7 +72,7 @@ class Expert(Base):
             ).first()
             return {
                 **user,
-                "expert_status": expert.expert_status,
+                "verification_status": expert.verification_status,
                 "rating": expert.rating,
                 "experience_years": expert.experience_years,
                 "linked_in_url": expert.linked_in_url,
