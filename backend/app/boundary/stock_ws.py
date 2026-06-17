@@ -1,11 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.control.controller.alertc import CheckAndTriggerAlertsController
 import websockets
 import json
 import asyncio
 import os
 import math
-import time
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -31,17 +29,11 @@ ALPACA_DATA_WS_URL = "wss://stream.data.alpaca.markets/v2/iex"
 connected_clients: Dict[WebSocket, asyncio.Lock] = {}
 clients_lock = asyncio.Lock()
 alpaca_task: Optional[asyncio.Task] = None
-previous_close_cache: Dict[str, float] = {}
 
 stock_pool = [
     "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
     "AMZN", "META", "AMD",  "NFLX", "INTC"
 ]
-
-# Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
-_snapshot_cache: Dict[str, dict] = {}
-_snapshot_cache_ts: Dict[str, float] = {}
-SNAPSHOT_TTL = 30.0  # seconds
 
 
 def clean_json_value(value):
@@ -80,8 +72,7 @@ def get_snapshot_yfinance(symbol: str) -> dict:
     ticker = yf.Ticker(symbol)
 
     # One call: last 2 daily bars → today + yesterday
-    hist = ticker.history(period="5d", interval="1d")
-    hist = hist.dropna(subset=["Close"])  # drops the partial June 10 row
+    hist = ticker.history(period="2d", interval="1d")
 
     today = None
     yesterday = None
@@ -239,7 +230,7 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
         timeframe = "1Min"
         start_days = 2
 
-    start = (datetime.now(ZoneInfo("UTC")) - timedelta(days=start_days)
+    start = (datetime.utcnow() - timedelta(days=start_days)
              ).strftime("%Y-%m-%dT%H:%M:%SZ")
     params = urlencode({
         "timeframe": timeframe,
@@ -277,26 +268,20 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
 # ── Unified fetchers (auto-switch by market status) ────────────────────────────
 
 def get_snapshot(symbol: str) -> dict:
-    now = time.monotonic()
-    if symbol in _snapshot_cache and now - _snapshot_cache_ts.get(symbol, 0) < SNAPSHOT_TTL:
-        return _snapshot_cache[symbol]
-
     if get_market_status() == "OPEN":
         try:
-            result = get_snapshot_alpaca(symbol)
+            return get_snapshot_alpaca(symbol)
         except Exception as e:
-            print(f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
-            result = get_snapshot_yfinance(symbol)
+            print(
+                f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
+            return get_snapshot_yfinance(symbol)
     else:
         try:
-            result = get_snapshot_yfinance(symbol)
+            return get_snapshot_yfinance(symbol)
         except Exception as e:
-            print(f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
-            result = get_snapshot_alpaca(symbol)
-
-    _snapshot_cache[symbol] = result
-    _snapshot_cache_ts[symbol] = now
-    return result
+            print(
+                f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
+            return get_snapshot_alpaca(symbol)
 
 
 def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> list:
@@ -386,8 +371,6 @@ async def send_snapshot_prices(websocket: WebSocket):
             failed_symbols.append(symbol)
             continue
         quotes.append(result)
-        if result.get("previousClose") is not None:
-            previous_close_cache[symbol] = float(result["previousClose"])
 
     await send_json_to_client(websocket, {
         "type":   "snapshot",
@@ -474,22 +457,16 @@ async def run_alpaca_connection():
 
                         if msg_type == "t":
                             # "S" = symbol (uppercase), "s" = trade size (shares), "p" = price
-                            symbol = msg.get("S")
-                            price = msg.get("p")
                             await broadcast_to_clients(json.dumps({
                                 "type": "trade",
                                 "data": {
-                                    "s":    symbol,
-                                    "p":    price,
+                                    "s":    msg.get("S"),   # symbol
+                                    "p":    msg.get("p"),   # price
+                                    # shares traded in this tick
                                     "size": msg.get("s"),
-                                    "t":    msg.get("t"),
+                                    "t":    msg.get("t"),   # ISO timestamp
                                 }
                             }))
-                            if symbol and price is not None:
-                                asyncio.create_task(asyncio.to_thread(
-                                    CheckAndTriggerAlertsController().check,
-                                    symbol, float(price), previous_close_cache.get(symbol)
-                                ))
 
                         elif msg_type == "b":
                             # Authoritative 1-minute OHLCV bar from Alpaca
@@ -547,7 +524,10 @@ async def websocket_endpoint(websocket: WebSocket):
         # 1. Latest prices (Alpaca if open, yfinance if closed)
         await send_snapshot_prices(websocket)
 
-        # 2. Market status banner (history is fetched on-demand via "range" requests)
+        # 2. Historical bars to seed sparklines
+        await send_historical_candles(websocket)
+
+        # 3. Market status banner
         await send_json_to_client(websocket, {
             "type":   "market_status",
             "status": market,

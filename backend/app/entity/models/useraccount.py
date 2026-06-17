@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean, func
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship, joinedload
 from app.entity.database.base import Base
 from datetime import datetime
@@ -18,7 +18,7 @@ class UserAccount(Base):
         "user_profiles.profile_id"), nullable=True)
     username = Column(String(50), unique=True, nullable=False)
     full_name = Column(String(100), nullable=False)
-    phone_number = Column(String(20), unique=True, nullable=False)
+    phone_number = Column(Integer, unique=True, nullable=False)
     address = Column(String(255), nullable=False)
     email_address = Column(String(255), unique=True, nullable=False)
     account_status = Column(String(20), default="active")
@@ -35,7 +35,8 @@ class UserAccount(Base):
         with get_session() as session:
             existing_user = session.query(UserAccount).filter(
                 (UserAccount.username == username) |
-                (UserAccount.email_address == email_address)
+                (UserAccount.email_address == email_address) |
+                (UserAccount.phone_number == phone_number)
             ).first()
             if existing_user:
                 return False
@@ -69,7 +70,7 @@ class UserAccount(Base):
             matching_account = session.query(UserAccount).options(
                 joinedload(UserAccount.profile)
             ).filter(
-                (func.binary(UserAccount.username) == username) &
+                (UserAccount.username == username) &
                 (UserAccount.password == password)
             ).first()
 
@@ -99,6 +100,7 @@ class UserAccount(Base):
             else:
                 role = profile_name or "unknown"
 
+            # ✅ Extract all values inside the session before it closes
             return {
                 "success": True,
                 "user": {
@@ -138,43 +140,19 @@ class UserAccount(Base):
                 "address": user.address,
                 "join_date": user.join_date,
                 "account_status": user.account_status,
-                "password": user.password
             }
 
     @staticmethod
-    def emailExists(email_address) -> bool:
-        with get_session() as session:
-            user = session.query(UserAccount).filter(
-                UserAccount.email_address == email_address).first()
-            return user is not None
-
-    @staticmethod
-    def resetPasswordByEmail(email_address, new_password) -> bool:
-        with get_session() as session:
-            user = session.query(UserAccount).filter(
-                UserAccount.email_address == email_address).first()
-            if not user:
-                return False
-            user.password = new_password
-            return True
-
-    @staticmethod
-    def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
+    def updateInformation(user_id, full_name, email_address, phone_number, address):
         with get_session() as session:
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id).first()
             if not user:
                 return False
-            if user_name:
-                user.username = user_name
-            if full_name:
-                user.full_name = full_name
-            if email_address:
-                user.email_address = email_address
-            if address:
-                user.address = address
-            if phone_number:
-                user.phone_number = str(phone_number)
+            user.full_name = full_name
+            user.email_address = email_address
+            user.phone_number = phone_number
+            user.address = address
             return True
 
 

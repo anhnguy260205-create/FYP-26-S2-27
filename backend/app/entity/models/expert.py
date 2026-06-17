@@ -77,17 +77,3 @@ class Expert(Base):
                 "experience_years": expert.experience_years,
                 "linked_in_url": expert.linked_in_url,
             }
-
-
-def seed_expert_account():
-    Expert.createAccount(
-        username="Anh",
-        full_name="Nguy Anh",
-        email_address="kimhi@gmail.com",
-        password="password",
-        phone_number=12433243,
-        address="123 Kim Street",
-        experience_year=3,
-        linked_in_url="@anh"
-
-    )

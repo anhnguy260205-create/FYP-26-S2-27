@@ -64,10 +64,10 @@ function DynamicFeatureBubbleHero() {
     // We animate using translate so absolute position stays at 50%/50% then moves
     const moves = [
       { tx: "-20vw", ty: "-32vh" }, // top-left
-      { tx: "38vw", ty: "-20vh" }, // top-right
-      { tx: "-10vw", ty: "40vh" }, // bottom-left
-      { tx: "36vw", ty: "30vh" }, // bottom-right
-      { tx: "-40vw", ty: "0vh" }, // mid-left
+      { tx: "38vw",  ty: "-20vh" }, // top-right
+      { tx: "-10vw", ty: "40vh"  }, // bottom-left
+      { tx: "36vw",  ty: "30vh"  }, // bottom-right
+      { tx: "-40vw", ty: "0vh"   }, // mid-left
     ];
 
     const { tx, ty } = moves[index] || { tx: "0", ty: "0" };
@@ -161,43 +161,43 @@ function DynamicFeatureBubbleHero() {
 
         <div className="flex gap-4 justify-center">
           <button
-            onClick={() => navigate("/register")}
-            style={{
-              width: "150px",
-              padding: "0.75rem 2rem",
-              borderRadius: 14,
-              background: "#06b6d4",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(34,211,238,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#22d3ee")}
-            onMouseLeave={(e) => (e.target.style.background = "#06b6d4")}
-          >
-            Get Started
-          </button>
-          <button
-            onClick={() => navigate("/login")}
-            style={{
-              padding: "0.75rem 2rem",
-              width: "150px",
-              borderRadius: 14,
-              background: "#eab308",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(250,204,21,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#f59e0b")}
-            onMouseLeave={(e) => (e.target.style.background = "#facc15")}
-          >
-            Login
-          </button>
+          onClick={() => navigate("/register")}
+          style={{
+            width: "150px",
+            padding: "0.75rem 2rem",
+            borderRadius: 14,
+            background: "#06b6d4",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "1rem",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 20px rgba(34,211,238,0.4)",
+          }}
+          onMouseEnter={(e) => (e.target.style.background = "#22d3ee")}
+          onMouseLeave={(e) => (e.target.style.background = "#06b6d4")}
+        >
+          Get Started
+        </button>
+        <button
+          onClick={() => navigate("/login")}
+          style={{
+            padding: "0.75rem 2rem",
+            width: "150px",
+            borderRadius: 14,
+            background: "#eab308",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "1rem",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 0 20px rgba(250,204,21,0.4)",
+          }}
+          onMouseEnter={(e) => (e.target.style.background = "#f59e0b")}
+          onMouseLeave={(e) => (e.target.style.background = "#facc15")}
+        >
+          Login
+        </button>
         </div>
       </div>
 
@@ -219,8 +219,8 @@ function DynamicFeatureBubbleHero() {
               position: "absolute",
               inset: 0,
               borderRadius: "50%",
-              background: "rgba(59,130,246,0.22)",
-              border: "1px solid rgba(59,130,246,0.22)",
+              background:  "rgba(59,130,246,0.22)",
+              border:  "1px solid rgba(59,130,246,0.22)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               overflow: "hidden",
@@ -240,7 +240,7 @@ function DynamicFeatureBubbleHero() {
                 background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(59,130,246,0.08))",
               }}
             />
-
+            
             <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0.5rem" }}>
               <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "white" }}>
                 {feature.title}
@@ -263,30 +263,30 @@ function DynamicFeatureBubbleHero() {
     </div>
   );
 }
-function MarketDemo() {
+function MarketDemo(){
 
 }
 
-function HomePage() {
+function HomePage(){
 
   return (
-    <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+    <motion.div 
+    className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6 }}
     >
-      <Header />
+      <Header/>
       <main className="flex-1 p-7.5">
 
-        <DynamicFeatureBubbleHero />
+       <DynamicFeatureBubbleHero/>
       </main>
 
-      <Footer />
+      <Footer/>
     </motion.div>
-
-
-
+    
+    
+    
   );
 }
 export default HomePage; 

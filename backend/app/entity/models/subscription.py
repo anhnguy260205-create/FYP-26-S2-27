@@ -11,7 +11,7 @@ class Subscription(Base):
     __tablename__ = "subscription"
     sub_id = Column(String(50), primary_key=True,
                     default=lambda: f"sub_{uuid4()}")
-    transaction_id = Column(String(200), unique=True, nullable=False)
+    transaction_id = Column(String(50), unique=True, nullable=False)
     plan_type = Column(String(20), default='basic')  # e.g., "basic", "premium"
     investor_id = Column(String(50), ForeignKey(
         "investor.investor_id"), nullable=False)
@@ -39,20 +39,20 @@ class Subscription(Base):
             )
 
             subscription = Subscription(
-                transaction_id=transaction_id,
+                transaction_id=f"trans_{uuid4()}",
                 plan_type=plan_type,
                 investor_id=investor_id,
                 sub_status="active",
                 sub_renewal_date=renewal_date
             )
-            session.add(subscription)
 
             investor = session.query(Investor).filter(
                 Investor.investor_id == investor_id
             ).first()
             if investor:
                 investor.investor_subscription_status = plan_type
-
-            session.flush()
+            with get_session() as session:
+                session.add(subscription)
+                session.flush()  # get sub_id before commit
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id

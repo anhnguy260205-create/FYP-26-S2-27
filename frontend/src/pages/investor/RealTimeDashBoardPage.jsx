@@ -163,8 +163,7 @@ function RealTimeDashBoardPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
       <GeneralHeader />
       <main className="flex-1 p-7">
-        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
-          Real-Time Dashboard</h1>
+        <h1 className="text-2xl font-semibold mb-2">Real-Time Dashboard</h1>
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 

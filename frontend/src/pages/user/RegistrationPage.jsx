@@ -105,11 +105,6 @@ function RegistrationPage() {
 
     e.preventDefault();
 
-    if (!formData.accountType) {
-      alert("Please select an account type (Investor or Expert).");
-      return;
-    }
-
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
@@ -392,7 +387,7 @@ function RegistrationPage() {
                         className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 focus:outline-none"
                         style={{ height: "40px" }}>
                         <option value="">Select Stock Level</option>
-                        <option value="beginner">Basic</option>
+                        <option value="beginner">Beginner</option>
                         <option value="intermediate">Intermediate</option>
                         <option value="advanced">Advanced</option>
                       </select>
