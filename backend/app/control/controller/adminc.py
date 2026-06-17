@@ -3,6 +3,7 @@ from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
 from app.entity.models.investmentarticle import InvestmentArticle
+from app.entity.models.emailalert import StockAlert
 
 class AdminUserAccountController:
     def getUserAccounts(self, keyword=None, role=None, status=None):
@@ -41,6 +42,9 @@ class AdminUserAccountController:
 
                 else:
                     user_role = "Admin"
+
+                if user_role == "Admin":
+                    continue
 
                 if role and user_role.lower() != role.lower():
                     continue
@@ -128,7 +132,10 @@ class AdminUserAccountController:
             session.commit()
             return True
 
-    def deleteUserAccount(self, user_id):
+    def deleteUserAccount(self, user_id, requesting_user_id=None):
+        if requesting_user_id and requesting_user_id == user_id:
+            return "self_delete"
+
         with get_session() as session:
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id
@@ -144,6 +151,10 @@ class AdminUserAccountController:
             expert = session.query(Expert).filter(
                 Expert.user_id == user_id
             ).first()
+
+            session.query(StockAlert).filter(
+                StockAlert.user_id == user_id
+            ).delete()
 
             if investor:
                 session.delete(investor)
