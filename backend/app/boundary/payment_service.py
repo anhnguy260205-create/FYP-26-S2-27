@@ -184,6 +184,7 @@ def verify_session(request: VerifySessionRequest):
         # Already activated (webhook may have fired first — that's fine)
         return {"success": True, "already_active": True}
     if not result:
-        raise HTTPException(status_code=400, detail="Failed to activate subscription")
+        raise HTTPException(
+            status_code=400, detail="Failed to activate subscription")
 
     return {"success": True}

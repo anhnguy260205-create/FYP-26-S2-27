@@ -151,7 +151,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
             </div>
 
             {/* Avatar */}
-            <div style={{ padding: "0 18px", marginTop: "-34px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "10px" }}>
+            <div style={{ position: "relative", padding: "0 18px", marginTop: "-34px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "10px" }}>
                 <div className="relative group" style={{ cursor: "pointer" }}>
                     <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>

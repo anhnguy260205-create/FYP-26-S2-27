@@ -82,6 +82,40 @@ function AdminPanelPage() {
       title="Dashboard Overview"
       subtitle="Welcome back! Here's what's happening today."
     >
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      {/* Top Header */}
+      <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 shrink-0 z-50">
+        <h1 className="text-2xl font-bold">Admin Panel</h1>
+
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+            AD
+          </div>
+          <div>
+            <p className="font-semibold text-sm">Admin User</p>
+            <p className="text-xs text-gray-500">administrator</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-[230px] min-h-[calc(100vh-72px)] bg-white border-r border-gray-200 p-4">
+          <nav className="space-y-2">
+            {menuItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`block w-full text-left px-3 py-3 rounded-lg text-sm transition ${item.name === "Dashboard"
+                  ? "bg-blue-50 text-blue-600 font-semibold"
+                  : "text-slate-700 hover:bg-gray-100"
+                  }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+        </aside>
 
         {/* Main Content */}
         <motion.main

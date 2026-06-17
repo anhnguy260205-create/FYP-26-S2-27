@@ -137,8 +137,8 @@ function GeneralHeader() {
       label: "Transactions",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       submenu: [
-        { title: "Trading Portal", path: "/transactions/trading" },
-        { title: "Transaction History", path: "/transactions/history" },
+        { title: "Transaction Portal", path: "/investor/transaction-portal" },
+        { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },
   ];
@@ -147,7 +147,7 @@ function GeneralHeader() {
     <div className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50"
       style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)", padding: "0 32px" }}>
 
-      <img alt="logo" src={logo} onClick={() => navigate("/investor/loggedhome")} style={{ width: "120px", height: "130px" }} className="cursor-pointer" />
+      <img alt="logo" src={logo} onClick={() => navigate("/investor")} style={{ width: "120px", height: "130px" }} className="cursor-pointer" />
 
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (

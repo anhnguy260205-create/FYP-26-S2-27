@@ -1,7 +1,8 @@
+from app.control.services.email_service import send_alert_email
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter
-from app.control.controller.alertc import CreateAlertController, GetAlertsController, DeleteAlertController
+from app.control.controller.alertc import CreateAlertController, GetAlertsController, DeleteAlertController, CheckAndTriggerAlertsController
 
 router = APIRouter(prefix="/alert", tags=["Alert"])
 
