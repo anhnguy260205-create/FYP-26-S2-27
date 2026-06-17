@@ -36,6 +36,7 @@ import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
 import SellStockPage from "./pages/investor/SellStockPage.jsx";
 import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
 import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
+import VerifyDocumnetationPage from "./pages/administrator/VerifyDocument.jsx";
 
 
 export const router = createBrowserRouter([
@@ -159,6 +160,10 @@ export const router = createBrowserRouter([
         path: "/adminpanel/articles",
         element: <ProtectedRoute allowedRoles={["admin"]}><InvestmentGuidanceArticlesPage /></ProtectedRoute>
     },
+    {
+        path: "/adminpanel/verifydocumentation",
+        element: <ProtectedRoute allowedRoles={["admin"]}><VerifyDocumnetationPage /></ProtectedRoute>
+    },
 
     {
         path: "/expert/edit-profile",
@@ -168,6 +173,7 @@ export const router = createBrowserRouter([
         path: "/expert",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
     },
+
 
 ]);
 
