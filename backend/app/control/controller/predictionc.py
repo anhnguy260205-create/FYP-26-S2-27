@@ -82,7 +82,7 @@ class PredictionController:
 
         last_close = float(history["Close"].iloc[-1])
 
-        prob_up = ml_model.predict_probability_up(history)
+        prob_up = ml_model.predict_probability_up(history, symbol)
         if prob_up is None:
             return None
 
@@ -351,15 +351,28 @@ class PredictionController:
 
     def _run_sentiment(self, symbol: str, prob_up: float) -> dict:
         """
-        ╔══════════════════════════════════════════════════════════════╗
-        ║  ← REPLACE THIS with real FinBERT sentiment scorer          ║
-        ╚══════════════════════════════════════════════════════════════╝
-
-        Until the FinBERT news pipeline is connected, derive a placeholder
-        sentiment reading from the model's directional probability so the
-        UI has something representative to display.
+        Build the sentiment panel from VADER-scored news headlines (cached
+        in ml_model from the same fetch used for model features). Falls back
+        to a prob_up-derived estimate when no news is available.
         """
-        score = round((prob_up - 0.5) * 2, 4)  # -1..+1
+        feat = ml_model._get_sentiment_features(symbol)
+        news_count = feat.get("news_count", 0.0)
+
+        if news_count > 0:
+            score = feat["finbert_score_mean"]
+            pos   = feat["finbert_pos_mean"]
+            neg   = feat["finbert_neg_mean"]
+            neu   = round(max(0.0, 1.0 - pos - neg), 4)
+            confidence = round(min(0.99, abs(score) * 0.8 + 0.15), 4)
+        else:
+            # No news available — fall back to model probability signal
+            score = round((prob_up - 0.5) * 2, 4)
+            magnitude = abs(score)
+            neu = round(max(0.1, 1 - magnitude), 4)
+            remaining = round(1 - neu, 4)
+            pos = round(remaining * (0.5 + score / 2), 4)
+            neg = round(remaining - pos, 4)
+            confidence = round(min(0.99, magnitude * 0.8 + 0.15), 4)
 
         if score > 0.15:
             label = "Bullish"
@@ -368,24 +381,13 @@ class PredictionController:
         else:
             label = "Neutral"
 
-        # Center the breakdown around a neutral baseline so weak signals
-        # don't collapse "neutral" to zero.
-        magnitude = abs(score)
-        neu = round(max(0.1, 1 - magnitude), 4)
-        remaining = round(1 - neu, 4)
-        pos = round(remaining * (0.5 + score / 2), 4)
-        neg = round(remaining - pos, 4)
-
-        confidence = round(abs(score) * 0.8 + 0.15, 4)
-        confidence = min(confidence, 0.99)
-
         return {
-            "score": score,
+            "score": round(score, 4),
             "label": label,
             "confidence": confidence,
             "breakdown": {
-                "positive": pos,
-                "neutral": neu,
-                "negative": neg,
+                "positive": round(pos, 4),
+                "neutral": round(neu, 4),
+                "negative": round(neg, 4),
             },
         }
