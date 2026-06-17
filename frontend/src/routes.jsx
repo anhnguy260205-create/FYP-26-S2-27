@@ -14,15 +14,50 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
 import PaymentFail from "./pages/investor/PaymentFail.jsx";
 import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
+import Watchlist from "./pages/investor/Watchlist.jsx";
+import Notification from "./pages/investor/Notification.jsx";
+import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
+import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
+import EducationContent from "./pages/investor/EducationContent.jsx";
+import AIChatbot from "./pages/investor/AIChatbot.jsx";
+import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
+
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
+import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
+import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
+import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
+import SellStockPage from "./pages/investor/SellStockPage.jsx";
+import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
+import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
+
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
     { path: "/register", Component: RegistrationPage },
     { path: "/login", Component: LoginPage },
+    { path: "/forgot-password", Component: ForgotPasswordPage },
+    { path: "/reset-password", Component: ResetPasswordPage },
 
     {
-        path: "/investor/loggedhome",
+        path: "/buy/:symbol",
+        element: <ProtectedRoute allowedRoles={["investor"]}><BuyStockPage /></ProtectedRoute>
+    },
+    {
+        path: "/sell/:symbol",
+        element: <ProtectedRoute allowedRoles={["investor"]}><SellStockPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-history",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionHistoryPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-portal",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionPortalPage /></ProtectedRoute>
+    },
+
+    {
+        path: "/investor",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
     },
     {
@@ -58,6 +93,34 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
     },
     {
+        path: "/investor/watchlist",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Watchlist /></ProtectedRoute>
+    },
+    {
+        path: "/investor/notification",
+        element: <ProtectedRoute allowedRoles={["investor"]}><Notification /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertportfolio",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertPortfolio /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertadvice",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertAdvice /></ProtectedRoute>
+    },
+    {
+        path: "/investor/educationcontent",
+        element: <ProtectedRoute allowedRoles={["investor"]}><EducationContent /></ProtectedRoute>
+    },
+    {
+        path: "/investor/aichatbot",
+        element: <ProtectedRoute allowedRoles={["investor"]}><AIChatbot /></ProtectedRoute>
+    },
+    {
+        path: "/investor/expertdetails",
+        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertDetails /></ProtectedRoute>
+    },
+    {
         path: "/adminpanel",
         element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
     },
@@ -65,9 +128,15 @@ export const router = createBrowserRouter([
         path: "/adminpanel/useraccounts",
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
+
     {
         path: "/expert/edit-profile",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
-    }
+    },
+    {
+        path: "/expert",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
+    },
+
 ]);
 
