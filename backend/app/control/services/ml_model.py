@@ -16,20 +16,25 @@ to predict next-period direction (up/down). Its best_iteration achieved an
 AUC (best_score) of ~0.692 on the validation set, which we use as the model's
 baseline statistical confidence ceiling.
 
-NOTE on sentiment features:
-The model expects FinBERT sentiment features (finbert_score_mean,
-finbert_pos_mean, finbert_neg_mean, news_count, sentiment_lag1/2). Since the
-live FinBERT/news pipeline isn't wired into this project yet, those features
-default to neutral (0.0 score, 0 news count). When the news pipeline is
-ready, replace `_get_sentiment_features()` with real FinBERT output - the
-rest of this module does not need to change.
+Sentiment features: the model expects FinBERT-style features. We approximate
+them using VADER (vaderSentiment) scored against recent news headlines fetched
+via yfinance. VADER compound/pos/neg map cleanly onto FinBERT's expected
+score range; XGBoost's tree splits are robust to the distributional difference.
+Results are cached per (symbol, UTC date) so the news fetch runs at most once
+per symbol per day.
 """
 
 import os
 import math
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import yfinance as yf
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+_vader = SentimentIntensityAnalyzer()
+_sentiment_cache: dict = {}  # (symbol, "YYYY-MM-DD") -> feature dict
 
 
 def _safe_float(val, fallback: float = 0.0) -> float:
@@ -109,26 +114,82 @@ def _atr_pct(high, low, close, period=14):
     return (atr / close.replace(0, np.nan)).fillna(0)
 
 
-def _get_sentiment_features() -> dict:
+_NEUTRAL_SENTIMENT = {
+    "finbert_score_mean": 0.0,
+    "finbert_pos_mean": 0.0,
+    "finbert_neg_mean": 0.0,
+    "news_count": 0.0,
+    "sentiment_lag1": 0.0,
+    "sentiment_lag2": 0.0,
+}
+
+
+def _get_sentiment_features(symbol: str) -> dict:
     """
-    ╔══════════════════════════════════════════════════════════════╗
-    ║  ← REPLACE THIS with real FinBERT news-sentiment pipeline   ║
-    ║  Expected keys: finbert_score_mean, finbert_pos_mean,        ║
-    ║  finbert_neg_mean, news_count, sentiment_lag1, sentiment_lag2║
-    ╚══════════════════════════════════════════════════════════════╝
-    Neutral defaults until the news pipeline is connected.
+    Fetch recent news headlines via yfinance and score them with VADER.
+    VADER compound (-1..+1) maps onto finbert_score_mean; VADER pos/neg
+    proportions map onto finbert_pos/neg_mean. Results are cached per
+    (symbol, UTC date) so the network call runs at most once per day.
     """
-    return {
-        "finbert_score_mean": 0.0,
-        "finbert_pos_mean": 0.0,
-        "finbert_neg_mean": 0.0,
-        "news_count": 0.0,
-        "sentiment_lag1": 0.0,
-        "sentiment_lag2": 0.0,
+    cache_key = (symbol, datetime.utcnow().strftime("%Y-%m-%d"))
+    if cache_key in _sentiment_cache:
+        return _sentiment_cache[cache_key]
+
+    try:
+        news = yf.Ticker(symbol).news or []
+    except Exception:
+        return _NEUTRAL_SENTIMENT
+
+    if not news:
+        return _NEUTRAL_SENTIMENT
+
+    today = datetime.utcnow().date()
+
+    # Group article titles by days-ago (0 = today, 1 = yesterday, 2 = two days ago)
+    groups: dict[int, list[str]] = {0: [], 1: [], 2: []}
+    for article in news:
+        ts = article.get("providerPublishTime")
+        if not ts:
+            continue
+        try:
+            delta = (today - datetime.utcfromtimestamp(int(ts)).date()).days
+        except Exception:
+            continue
+        if delta in groups:
+            title = article.get("title", "")
+            if title:
+                groups[delta].append(title)
+
+    def _mean_scores(titles: list[str]) -> tuple[float, float, float]:
+        if not titles:
+            return 0.0, 0.0, 0.0
+        scores = [_vader.polarity_scores(t) for t in titles]
+        n = len(scores)
+        return (
+            sum(s["compound"] for s in scores) / n,
+            sum(s["pos"] for s in scores) / n,
+            sum(s["neg"] for s in scores) / n,
+        )
+
+    # Current sentiment: pool all articles across the 3-day window
+    all_recent = groups[0] + groups[1] + groups[2]
+    compound, pos, neg = _mean_scores(all_recent)
+    lag1, _, _ = _mean_scores(groups[1] + groups[2])
+    lag2, _, _ = _mean_scores(groups[2])
+
+    result = {
+        "finbert_score_mean": round(compound, 4),
+        "finbert_pos_mean": round(pos, 4),
+        "finbert_neg_mean": round(neg, 4),
+        "news_count": float(len(all_recent)),
+        "sentiment_lag1": round(lag1, 4),
+        "sentiment_lag2": round(lag2, 4),
     }
+    _sentiment_cache[cache_key] = result
+    return result
 
 
-def compute_features(history: pd.DataFrame) -> dict | None:
+def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
     """
     Given a DataFrame of OHLCV data (yfinance .history() output, daily),
     compute the 26 features required by the model. Returns the feature
@@ -169,7 +230,7 @@ def compute_features(history: pd.DataFrame) -> dict | None:
     df["rsi_lag2"] = df["rsi"].shift(2)
     df["rsi_lag3"] = df["rsi"].shift(3)
 
-    sentiment = _get_sentiment_features()
+    sentiment = _get_sentiment_features(symbol)
 
     latest = df.iloc[-1]
 
@@ -192,12 +253,12 @@ def compute_features(history: pd.DataFrame) -> dict | None:
     return features
 
 
-def predict_probability_up(history: pd.DataFrame) -> float | None:
+def predict_probability_up(history: pd.DataFrame, symbol: str) -> float | None:
     """
     Returns the model's probability (0..1) that the stock will close UP
     in the next trading session, or None if features can't be computed.
     """
-    features = compute_features(history)
+    features = compute_features(history, symbol)
     if features is None:
         return None
 
