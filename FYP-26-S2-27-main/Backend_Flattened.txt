@@ -1,0 +1,3373 @@
+﻿
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\.env ===
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=stock_prediction_platform
+DB_USER=root
+DB_PASSWORD=stock123
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\requirements.txt ===
+
+fastapi
+python-dotenv
+sqlalchemy
+pymysql
+cryptography
+websockets
+yfinance
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\main.py ===
+
+# backend/app/main.py
+import asyncio
+import os
+import sys
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+# Import routers
+from app.boundary.userb import router as user_router
+from app.boundary.adminb import router as admin_router
+from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
+from app.boundary.predictionb import router as prediction_router
+from app.boundary.payment_service import router as payment_router
+from app.boundary.alertb import router as alertb
+from app.boundary.expertb import router as expert_router
+
+# Import database & models
+from app.entity.database.connection import engine, check_database_connection
+from app.entity.database.base import Base
+from app.entity.database.session import get_session
+from app.entity.models.userprofile import seed_profiles, UserProfile
+from app.entity.models.useraccount import seed_admin_account, UserAccount
+from app.entity.models.investor import seed_investor_account, Investor
+from app.entity.models.expert import seed_expert_account, Expert
+from app.entity.models.forumquestion import ForumQuestion, ForumReply
+from app.entity.models.subscription import Subscription
+from app.control.controller.alertc import CheckAndTriggerAlertsController
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Configuration via Environment Variables
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+AUTO_SEED = os.getenv("AUTO_SEED", "true").lower() in ("1", "true", "yes")
+FORCE_RESEED = os.getenv("FORCE_RESEED", "false").lower() in ("1", "true", "yes")
+CREATE_TABLES = os.getenv("CREATE_TABLES", "true").lower() in ("1", "true", "yes")
+
+
+def tables_exist(session) -> bool:
+    """Check if core tables already exist in the database."""
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    required_tables = [
+        "user_account",
+        "user_profiles",
+        "investor",
+        "expert",
+        "subscription",
+        "stock_alert",
+        "forum_questions",
+        "forum_replies",
+    ]
+    existing = inspector.get_table_names()
+    return all(tbl in existing for tbl in required_tables)
+
+
+def seed_data_exists(session) -> bool:
+    """Check if essential seed data already exists."""
+    # Check for admin profile & account
+    admin_profile = session.query(UserProfile).filter(
+        UserProfile.profile_name == "admin"
+    ).first()
+    admin_user = session.query(UserAccount).filter(
+        UserAccount.username == "admin"
+    ).first()
+    return admin_profile is not None and admin_user is not None
+
+
+def conditional_seed():
+    """Seed data only if AUTO_SEED is enabled and data doesn't exist (unless FORCE_RESEED)."""
+    if not AUTO_SEED:
+        print("â­ï¸  AUTO_SEED disabled â€” skipping data seeding")
+        return
+
+    with get_session() as session:
+        if not FORCE_RESEED and seed_data_exists(session):
+            print("âœ… Seed data already exists â€” skipping (use FORCE_RESEED=1 to override)")
+            return
+
+        print("ðŸŒ± Seeding initial data...")
+        try:
+            seed_profiles()
+            seed_admin_account()
+            seed_investor_account()
+            seed_expert_account()
+            print("âœ… Seeding completed successfully")
+        except Exception as e:
+            print(f"âŒ Seeding failed: {e}")
+            # Don't crash the app â€” log and continue
+            session.rollback()
+
+
+def conditional_create_tables():
+    """Create tables only if they don't exist (unless forced)."""
+    if not CREATE_TABLES:
+        print("â­ï¸  CREATE_TABLES disabled â€” skipping table creation")
+        return
+
+    with get_session() as session:
+        if tables_exist(session) and not FORCE_RESEED:
+            print("âœ… Database tables already exist â€” skipping creation")
+            return
+
+        print("ðŸ—„ï¸  Creating database tables...")
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("âœ… Tables created successfully")
+        except Exception as e:
+            print(f"âŒ Table creation failed: {e}")
+            raise
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Background Alert Poller (unchanged)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async def yfinance_alert_poller():
+    """Check alerts every 60s using yfinance prices â€” works even when no browser tab is open."""
+    await asyncio.sleep(10)  # wait for server to fully start
+    while True:
+        for symbol in stock_pool:
+            try:
+                snapshot = await asyncio.to_thread(get_snapshot_yfinance, symbol)
+                price = snapshot.get("p")
+                prev_close = snapshot.get("previousClose")
+                if price is not None:
+                    await asyncio.to_thread(
+                        CheckAndTriggerAlertsController().check,
+                        symbol, float(price), float(prev_close) if prev_close else None
+                    )
+            except Exception as e:
+                print(f"[ALERT-POLL] Error checking {symbol}: {e}")
+        await asyncio.sleep(60)
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Lifespan Context Manager
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize DB & seed data
+    print("ðŸš€ Starting DeskStock backend...")
+    
+    # 1. Test DB connection
+    try:
+        check_database_connection()
+    except Exception as e:
+        print(f"âŒ Database connection failed: {e}")
+        sys.exit(1)
+    
+    # 2. Create tables (if needed)
+    conditional_create_tables()
+    
+    # 3. Seed data (if needed)
+    conditional_seed()
+    
+    # 4. Start background alert poller
+    alert_task = asyncio.create_task(yfinance_alert_poller())
+    
+    print("âœ… Backend ready â€” listening for requests\n")
+    yield
+    
+    # Shutdown: Cancel background tasks
+    print("ðŸ›‘ Shutting down...")
+    alert_task.cancel()
+    try:
+        await alert_task
+    except asyncio.CancelledError:
+        pass
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# FastAPI App Initialization
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app = FastAPI(
+    title="DeskStock API",
+    description="AI-powered stock prediction & trading platform",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include API routers
+app.include_router(user_router)
+app.include_router(admin_router)
+app.include_router(stock_ws_router)
+app.include_router(prediction_router)
+app.include_router(payment_router)
+app.include_router(alertb)
+app.include_router(expert_router)
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Health & Utility Endpoints
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@app.get("/")
+def home():
+    return {
+        "message": "DeskStock Backend Connected âœ…",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+
+@app.get("/health")
+def health_check():
+    """Lightweight health check for load balancers / monitoring."""
+    return {"status": "healthy", "timestamp": asyncio.get_event_loop().time()}
+
+
+@app.get("/db/status")
+def db_status():
+    """Check database connectivity and table status."""
+    from sqlalchemy import inspect
+    try:
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        return {
+            "connected": True,
+            "tables": tables,
+            "required_tables_present": all(
+                t in tables for t in 
+                [
+                    "user_account",
+                    "user_profiles",
+                    "investor",
+                    "expert",
+                    "subscription",
+                    "stock_alert",
+                    "forum_questions",
+                    "forum_replies",
+                ]
+            )
+        }
+    except Exception as e:
+        return {"connected": False, "error": str(e)}
+
+
+# Manual seeding endpoint (protected â€” use in dev only)
+@app.post("/admin/seed", tags=["Admin", "Dev Only"])
+def manual_seed(force: bool = False):
+    """
+    Manually trigger seeding.
+    âš ï¸  For development only â€” disable in production!
+    """
+    if os.getenv("ENVIRONMENT") == "production":
+        raise HTTPException(status_code=403, detail="Seeding disabled in production")
+    
+    with get_session() as session:
+        if force:
+            # Optional: add logic to clear existing seed data first
+            print("ðŸ”„ Force reseeding...")
+        conditional_seed()
+        return {"success": True, "message": "Seeding completed"}
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Error Handlers
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"âš ï¸  422 VALIDATION ERROR on {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "error": "Validation failed",
+            "details": exc.errors()
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"âŒ UNHANDLED ERROR on {request.url.path}: {exc}")
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "Internal server error",
+            "message": "Please try again later"
+        }
+    )
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# CLI Entry Point (optional â€” for manual init)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+if __name__ == "__main__":
+    import uvicorn
+    
+    # Allow manual init via CLI: `python -m app.main --init`
+    if "--init" in sys.argv or "--seed" in sys.argv:
+        print("ðŸ”§ Running manual initialization...")
+        conditional_create_tables()
+        conditional_seed()
+        print("âœ… Initialization complete")
+        sys.exit(0)
+    
+    # Normal server run
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=os.getenv("DEBUG", "false").lower() == "true"
+    )
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\adminb.py ===
+
+from typing import Optional
+from fastapi import APIRouter
+
+from app.control.controller.adminc import AdminUserAccountController
+
+router = APIRouter(prefix="/admin", tags=["Admin"])
+
+
+class AdminUserAccountPage:
+    def __init__(self):
+        self.controller = AdminUserAccountController()
+
+    def searchUserAccounts(self, keyword=None, role=None, status=None):
+        return self.controller.getUserAccounts(keyword, role, status)
+
+
+@router.get("/useraccounts")
+def get_user_accounts(
+    keyword: Optional[str] = None,
+    role: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    boundary = AdminUserAccountPage()
+
+    users = boundary.searchUserAccounts(keyword, role, status)
+
+    return {
+        "success": True,
+        "count": len(users),
+        "users": users,
+    }
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\alertb.py ===
+
+from app.control.services.email_service import send_alert_email
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import APIRouter
+from app.control.controller.alertc import CreateAlertController, GetAlertsController, DeleteAlertController, CheckAndTriggerAlertsController
+
+router = APIRouter(prefix="/alert", tags=["Alert"])
+
+
+class CreateAlertRequest(BaseModel):
+    user_id: str
+    stock_symbol: str
+    price_above: Optional[float] = None
+    price_below: Optional[float] = None
+    increase_percent: Optional[float] = None
+    decrease_percent: Optional[float] = None
+    custom_message: Optional[str] = None
+    notification_email: str
+
+
+@router.post("/create")
+def create_alert(data: CreateAlertRequest):
+    alert_id = CreateAlertController().create_alert(
+        data.user_id, data.stock_symbol, data.price_above, data.price_below,
+        data.increase_percent, data.decrease_percent, data.custom_message, data.notification_email
+    )
+    return {"success": True, "alert_id": alert_id}
+
+
+@router.get("/list/{user_id}")
+def get_alerts(user_id: str):
+    alerts = GetAlertsController().get_alerts(user_id)
+    return {"success": True, "alerts": [
+        {"alert_id": a.alert_id, "stock_symbol": a.stock_symbol,
+         "price_above": float(a.price_above) if a.price_above else None,
+         "price_below": float(a.price_below) if a.price_below else None,
+         "increase_percent": float(a.increase_percent) if a.increase_percent else None,
+         "decrease_percent": float(a.decrease_percent) if a.decrease_percent else None,
+         "custom_message": a.custom_message,
+         "notification_email": a.notification_email}
+        for a in alerts
+    ]}
+
+
+@router.delete("/delete/{alert_id}")
+def delete_alert(alert_id: int, user_id: str):
+    ok = DeleteAlertController().delete_alert(alert_id, user_id)
+    return {"success": ok}
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\debug.py ===
+
+
+import yfinance as yf
+
+ticker = yf.Ticker("META")
+hist = ticker.history(period="1mo")
+
+print(hist.empty)
+print(hist.tail())
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\expertb.py ===
+
+from typing import Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from app.control.controller.expertc import ExpertPortfolioController
+from app.control.controller.forumc import ForumController
+
+router = APIRouter(prefix="/expert", tags=["Expert"])
+
+# Request/Response Models
+class ExpertPortfolioCreate(BaseModel):
+    user_id: str
+    experience_years: int
+    linked_in_url: Optional[str] = None
+
+class ExpertPortfolioUpdate(BaseModel):
+    experience_years: Optional[int] = None
+    linked_in_url: Optional[str] = None
+    expert_status: Optional[str] = None
+
+class ForumQuestionCreate(BaseModel):
+    user_id: str
+    title: str
+    content: str
+    category: Optional[str] = None
+
+class ForumReplyCreate(BaseModel):
+    question_id: str
+    content: str
+    expert_id: Optional[str] = None
+    user_id: Optional[str] = None
+    is_expert_reply: bool = False
+
+class QuestionAssign(BaseModel):
+    expert_id: str
+
+# Expert Portfolio Controller
+expert_portfolio_controller = ExpertPortfolioController()
+
+@router.get("/portfolios")
+def get_all_expert_portfolios():
+    """Get all expert portfolios"""
+    experts = expert_portfolio_controller.get_all_experts()
+    return {"success": True, "count": len(experts), "experts": experts}
+
+@router.get("/portfolio/{expert_id}")
+def get_expert_portfolio(expert_id: str):
+    """Get expert portfolio by ID"""
+    expert = expert_portfolio_controller.get_expert_by_id(expert_id)
+    if not expert:
+        raise HTTPException(status_code=404, detail="Expert not found")
+    return {"success": True, "expert": expert}
+
+@router.post("/portfolio/create")
+def create_expert_portfolio(data: ExpertPortfolioCreate):
+    """Create new expert portfolio"""
+    success = expert_portfolio_controller.create_expert_portfolio(
+        user_id=data.user_id,
+        experience_years=data.experience_years,
+        linked_in_url=data.linked_in_url
+    )
+    if not success:
+        raise HTTPException(status_code=400, detail="Expert portfolio already exists")
+    return {"success": True, "message": "Expert portfolio created successfully"}
+
+@router.put("/portfolio/{expert_id}/update")
+def update_expert_portfolio(expert_id: str, data: ExpertPortfolioUpdate, user_id: str):
+    """Update expert portfolio"""
+    success = expert_portfolio_controller.update_expert_portfolio(
+        expert_id=expert_id,
+        user_id=user_id,
+        experience_years=data.experience_years,
+        linked_in_url=data.linked_in_url,
+        expert_status=data.expert_status
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Expert portfolio not found or unauthorized")
+    return {"success": True, "message": "Expert portfolio updated successfully"}
+
+# Forum Controller
+forum_controller = ForumController()
+
+@router.get("/forum/questions")
+def get_forum_questions(limit: int = 50, offset: int = 0):
+    """Get all forum questions with pagination"""
+    questions = forum_controller.get_all_questions(limit=limit, offset=offset)
+    return {"success": True, "count": len(questions), "questions": questions}
+
+@router.get("/forum/question/{question_id}")
+def get_forum_question(question_id: str):
+    """Get single question with replies"""
+    question = forum_controller.get_question_by_id(question_id)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return {"success": True, "question": question}
+
+@router.post("/forum/question/create")
+def create_forum_question(data: ForumQuestionCreate):
+    """Create new forum question"""
+    question_id = forum_controller.create_question(
+        user_id=data.user_id,
+        title=data.title,
+        content=data.content,
+        category=data.category
+    )
+    return {"success": True, "question_id": question_id, "message": "Question created successfully"}
+
+@router.post("/forum/reply/create")
+def create_forum_reply(data: ForumReplyCreate):
+    """Create reply to a question"""
+    reply_id = forum_controller.create_reply(
+        question_id=data.question_id,
+        content=data.content,
+        expert_id=data.expert_id,
+        user_id=data.user_id,
+        is_expert_reply=data.is_expert_reply
+    )
+    return {"success": True, "reply_id": reply_id, "message": "Reply created successfully"}
+
+@router.get("/{expert_id}/questions")
+def get_expert_questions(expert_id: str):
+    """Get all questions assigned to an expert"""
+    questions = forum_controller.get_questions_by_expert(expert_id)
+    return {"success": True, "count": len(questions), "questions": questions}
+
+@router.post("/forum/question/{question_id}/assign")
+def assign_question(question_id: str, data: QuestionAssign):
+    """Assign a question to an expert"""
+    success = forum_controller.assign_question_to_expert(
+        question_id=question_id,
+        expert_id=data.expert_id
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return {"success": True, "message": "Question assigned successfully"}
+
+@router.post("/forum/question/{question_id}/resolve")
+def resolve_question(question_id: str, user_id: str):
+    """Mark a question as resolved"""
+    success = forum_controller.mark_question_resolved(
+        question_id=question_id,
+        user_id=user_id
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Question not found or unauthorized")
+    return {"success": True, "message": "Question marked as resolved"}
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\payment_service.py ===
+
+import os
+from uuid import uuid4
+from pydantic import BaseModel
+import stripe
+from fastapi import APIRouter, HTTPException, Request
+from app.control.controller.investorc import GetInvestorController, CreateInvestorController
+
+# Set once at module load, not per-request
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+router = APIRouter(prefix="/user", tags=["User"])
+
+PLAN_CONFIG = {
+    "basic": {"name": "Basic Subscription", "amount": 0},
+    "premium": {"name": "Premium Subscription", "amount": 0},
+}
+
+
+class SubscriptionRequest(BaseModel):
+    user_id: str
+    plan_type: str  # "basic" or "premium"
+
+
+class CreateSubscription:
+    def __init__(self):
+        self.get_investor_controller = GetInvestorController()
+        self.create_investor_controller = CreateInvestorController()
+
+    def createSubscription(self, transaction_id: str, plan_type: str, user_id: str):
+        investor = self.get_investor_controller.getInvestorByUserId(user_id)
+        if not investor:
+            return False
+        subscription = self.create_investor_controller.createSubscription(
+            transaction_id, plan_type, investor["investor_id"])
+
+        return subscription
+
+
+create_subscription_service = CreateSubscription()
+
+
+@router.post("/create-checkout-session")
+def create_checkout_session(request: SubscriptionRequest):
+
+    # Basic plan â€” no payment required, activate immediately
+    if request.plan_type == "basic":
+        result = create_subscription_service.createSubscription(
+            f"basic_{uuid4()}", request.plan_type, request.user_id
+        )
+        if result is False:
+            return {
+                "success": False,
+                "message": "The account already has an active basic subscription. Do you want to upgrade to premium?"
+            }
+        if not result:
+            raise HTTPException(
+                status_code=400, detail="Failed to activate basic subscription")
+        return {
+            "success": True,
+            "message": "Basic subscription activated",
+            "checkout_url": FRONTEND_URL + "/investor/payment-success"
+        }
+
+    # Premium plan â€” create Stripe session only.
+
+    elif request.plan_type == "premium":
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "sgd",
+                    "product_data": {
+                        "name": "Premium Subscription"
+                    },
+                    "unit_amount": PLAN_CONFIG["premium"]["amount"],
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            metadata={
+                "user_id": request.user_id,
+                "plan_type": "premium"
+            },
+            success_url=f"{FRONTEND_URL}/investor/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{FRONTEND_URL}/investor/payment-fail",
+        )
+        return {
+            "success": True,
+            "message": "Checkout session created. Awaiting payment confirmation.",
+            "checkout_url": checkout_session.url
+        }
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid plan type")
+
+
+@router.get("/subscription-status/{user_id}")
+def get_subscription_status(user_id: str):
+    investor = create_subscription_service.get_investor_controller.getInvestorByUserId(
+        user_id
+    )
+    if not investor:
+        return {
+            "success": False,
+            "message": "Investor not found",
+            "subscription_status": "inactive"
+        }
+
+    return {
+        "success": True,
+        "subscription_status": investor["investor_subscription_status"] or "inactive"
+    }
+
+
+@router.post("/webhook")
+async def stripe_webhook(request: Request):
+    """
+    Stripe calls this after a successful payment.
+    This is the ONLY place premium subscriptions are activated.
+    """
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError) as e:
+        raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+
+        # Activate on paid OR no_payment_required (zero-amount test/free sessions)
+        payment_status = session["payment_status"]
+        if payment_status not in ("paid", "no_payment_required"):
+            print(f"[INFO] Session not paid yet â€” skipping activation")
+            return {"status": "ok"}
+
+        user_id = str(session["metadata"]["user_id"])
+        plan_type = session["metadata"]["plan_type"]
+        transaction_id = session["id"]
+
+        success = create_subscription_service.createSubscription(
+            transaction_id, plan_type, user_id)
+        if not success:
+            print(
+                f"[WARN] Failed to record subscription for user_id={user_id}, session={transaction_id}")
+        else:
+            print(
+                f"[INFO] Premium subscription activated for user_id={user_id}")
+
+    return {"status": "ok"}
+
+
+class VerifySessionRequest(BaseModel):
+    session_id: str
+
+
+@router.post("/verify-session")
+def verify_session(request: VerifySessionRequest):
+    """
+    Called from the payment success page to activate a premium subscription
+    by retrieving the Stripe session directly â€” no webhook dependency.
+    """
+    try:
+        session = stripe.checkout.Session.retrieve(request.session_id)
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+
+    payment_status = getattr(session, "payment_status", None)
+    if payment_status not in ("paid", "no_payment_required"):
+        return {"success": False, "message": "Payment not completed"}
+
+    user_id = str(session.metadata["user_id"])
+    plan_type = session.metadata["plan_type"]
+
+    result = create_subscription_service.createSubscription(
+        session.id, plan_type, user_id)
+
+    if result is False:
+        # Already activated (webhook may have fired first â€” that's fine)
+        return {"success": True, "already_active": True}
+    if not result:
+        raise HTTPException(
+            status_code=400, detail="Failed to activate subscription")
+
+    return {"success": True}
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\predictionb.py ===
+
+from fastapi import APIRouter
+from pydantic import BaseModel
+from app.control.controller.predictionc import PredictionController
+
+router = APIRouter(prefix="/predict", tags=["Prediction"])
+
+
+class PredictRequest(BaseModel):
+    symbol: str
+    days: int  # 1â€“30
+
+
+@router.post("")
+def predict(data: PredictRequest):
+    controller = PredictionController()
+    result = controller.predict(data.symbol.upper(), data.days)
+
+    if result is None:
+        return {"success": False, "message": "Prediction failed"}
+
+    return {"success": True, **result}
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\stock_ws.py ===
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from app.control.controller.alertc import CheckAndTriggerAlertsController
+import websockets
+import json
+import asyncio
+import os
+import math
+from pathlib import Path
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
+from dotenv import load_dotenv
+from typing import Dict, Optional
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+import yfinance as yf
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(BASE_DIR / ".env")
+
+router = APIRouter()
+
+ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
+ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
+
+ALPACA_DATA_REST_URL = "https://data.alpaca.markets/v2/stocks"
+ALPACA_DATA_WS_URL = "wss://stream.data.alpaca.markets/v2/iex"
+
+
+# Store connected clients
+connected_clients: Dict[WebSocket, asyncio.Lock] = {}
+clients_lock = asyncio.Lock()
+alpaca_task: Optional[asyncio.Task] = None
+previous_close_cache: Dict[str, float] = {}
+
+stock_pool = [
+    "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
+    "AMZN", "META", "AMD",  "NFLX", "INTC"
+]
+
+
+def clean_json_value(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: clean_json_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [clean_json_value(item) for item in value]
+    return value
+
+
+def alpaca_headers() -> dict:
+    return {
+        "APCA-API-KEY-ID":     ALPACA_API_KEY,
+        "APCA-API-SECRET-KEY": ALPACA_API_SECRET,
+    }
+
+
+# getting market status
+def get_market_status() -> str:
+    eastern = ZoneInfo("America/New_York")
+    now = datetime.now(eastern)
+    current_time = now.time()
+    market_open = current_time >= datetime.strptime("09:30", "%H:%M").time()
+    market_close = current_time <= datetime.strptime("16:00", "%H:%M").time()
+    weekday = now.weekday() < 5
+    if weekday and market_open and market_close:
+        return "OPEN"
+    return "CLOSED"
+
+
+# â”€â”€ yfinance helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+def get_snapshot_yfinance(symbol: str) -> dict:
+    try:
+        ticker = yf.Ticker(symbol)
+
+        # One call: last 2 daily bars â†’ today + yesterday
+        hist = ticker.history(period="5d", interval="1d")
+        hist = hist.dropna(subset=["Close"])  # drops the partial June 10 row
+
+        today = None
+        yesterday = None
+
+        if not hist.empty:
+            # hist is sorted oldestâ†’newest
+            today = hist.iloc[-1]
+            yesterday = hist.iloc[-2] if len(hist) >= 2 else None
+
+        # avg volume: three_month_average_volume from fast_info is reliable
+        # (it's pre-computed by Yahoo, not derived from tick data)
+        avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
+
+        return {
+            "s":             symbol,
+            # Use today's close as the current price (market closed â†’ last close)
+            "p":             float(today["Close"]) if today is not None else None,
+            "close":         float(today["Close"]) if today is not None else None,
+            "previousClose": float(yesterday["Close"]) if yesterday is not None else None,
+            "open":          float(today["Open"]) if today is not None else None,
+            "high":          float(today["High"]) if today is not None else None,
+            "low":           float(today["Low"]) if today is not None else None,
+            # today's total volume â€” matches Google Finance
+            "volume":        int(today["Volume"]) if today is not None else None,
+            # 3-month average daily volume â€” matches Google Finance
+            "avgVolume":     int(avg_volume) if avg_volume is not None else None,
+        }
+    except Exception as e:
+        # yfinance can raise internal KeyError when Yahoo response is missing fields
+        # Return a safe snapshot so callers don't crash; log concise message.
+        print(f"yfinance snapshot error for {symbol}: {e.__class__.__name__}: {e}")
+        return {
+            "s": symbol,
+            "p": None,
+            "close": None,
+            "previousClose": None,
+            "open": None,
+            "high": None,
+            "low": None,
+            "volume": None,
+            "avgVolume": None,
+        }
+
+
+def get_historical_bars_yfinance(symbol: str, range: str = "1D",  limit: int = 1800) -> list:
+
+    ticker = yf.Ticker(symbol)
+    if range == "1D":
+        period = "1d"
+        interval = "1m"
+
+    elif range == "1W":
+        period = "7d"
+        interval = "5m"
+
+    elif range == "1M":
+        period = "1mo"
+        interval = "1d"
+
+    elif range == "3M":
+        period = "3mo"
+        interval = "1d"
+
+    elif range == "6M":
+        period = "6mo"
+        interval = "1d"
+
+    elif range == "1Y":
+        period = "1y"
+        interval = "1wk"
+
+    else:
+        period = "1d"
+        interval = "1m"
+    df = ticker.history(period=period, interval=interval)
+    if df.empty:
+        return []
+
+    df = df.tail(limit).reset_index()
+
+    bars = []
+    for _, row in df.iterrows():
+        dt = row.get("Datetime") or row.get("Date")
+        if dt is None:
+            continue
+
+        if hasattr(dt, "timestamp"):
+            ts_ms = int(dt.timestamp() * 1000)
+        else:
+            ts_ms = int(datetime.fromisoformat(str(dt)).timestamp() * 1000)
+
+        bars.append({
+            "time":   ts_ms,
+            "open":   round(float(row["Open"]),   4),
+            "high":   round(float(row["High"]),   4),
+            "low":    round(float(row["Low"]),    4),
+            "close":  round(float(row["Close"]),  4),
+            "volume": int(row["Volume"]),
+        })
+
+    return bars
+
+
+# â”€â”€ Alpaca REST helpers (market OPEN) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+def get_snapshot_alpaca(symbol: str) -> dict:
+    """
+    Alpaca snapshot for live market hours.
+
+    Volume note: Alpaca IEX feed only captures ~10-15% of real market volume.
+    avgVolume comes from yfinance (Yahoo/SIP) so it uses the full market figure,
+    matching what Google Finance shows. The current volume will be lower than
+    Google's until you upgrade to the Alpaca SIP feed.
+    """
+    url = f"{ALPACA_DATA_REST_URL}/{symbol}/snapshot?feed=iex"
+    req = Request(url, headers=alpaca_headers())
+    with urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read().decode())
+
+    daily_bar = data.get("dailyBar") or {}
+    prev_bar = data.get("prevDailyBar") or {}
+    latest_trade = data.get("latestTrade") or {}
+
+    # avgVolume: pull from yfinance fast_info (fast â€” no heavy fundamentals fetch)
+    today_volume = None
+    avg_volume = None
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="1d", interval="1d")
+
+        if not hist.empty:
+            today_volume = int(hist.iloc[-1]["Volume"])
+
+        avg_volume = getattr(
+            ticker.fast_info, "three_month_average_volume", None)
+        if avg_volume is not None:
+            avg_volume = int(avg_volume)
+    except Exception as e:
+        print(f"yfinance volume fields failed for {symbol}: {e}")
+
+    return {
+        "s":             symbol,
+        "p":             latest_trade.get("p"),
+        "close":         daily_bar.get("c"),
+        "previousClose": prev_bar.get("c"),
+        "open":          daily_bar.get("o"),
+        "high":          daily_bar.get("h"),
+        "low":           daily_bar.get("l"),
+        # IEX-only volume â€” will be ~10x lower than Google Finance
+        "volume":        today_volume,
+        "avgVolume":     avg_volume,
+    }
+
+
+def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800) -> list:
+    """Fetch historical bars from Alpaca REST for the selected chart range."""
+    if range == "1D":
+        timeframe = "1Min"
+        start_days = 2
+    elif range == "1W":
+        timeframe = "5Min"
+        start_days = 10
+    elif range in {"1M", "3M", "6M"}:
+        timeframe = "1Day"
+        start_days = {"1M": 45, "3M": 120, "6M": 220}[range]
+    elif range == "1Y":
+        timeframe = "1Week"
+        start_days = 370
+    else:
+        timeframe = "1Min"
+        start_days = 2
+
+    start = (datetime.now(ZoneInfo("UTC")) - timedelta(days=start_days)
+             ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    params = urlencode({
+        "timeframe": timeframe,
+        "start":     start,
+        "limit":     limit,
+        "feed":      "iex",
+        "sort":      "asc",
+    })
+    url = f"{ALPACA_DATA_REST_URL}/{symbol}/bars?{params}"
+    req = Request(url, headers=alpaca_headers())
+
+    try:
+        with urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"Alpaca historical bars error for {symbol}: {e}")
+        return []
+
+    bars = data.get("bars") or []
+    return [
+        {
+            "time":   int(datetime.fromisoformat(
+                          b["t"].replace("Z", "+00:00")
+                          ).timestamp() * 1000),
+            "open":   b.get("o"),
+            "high":   b.get("h"),
+            "low":    b.get("l"),
+            "close":  b.get("c"),
+            "volume": b.get("v"),
+        }
+        for b in bars
+    ]
+
+
+# â”€â”€ Unified fetchers (auto-switch by market status) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+def get_snapshot(symbol: str) -> dict:
+    if get_market_status() == "OPEN":
+        try:
+            return get_snapshot_alpaca(symbol)
+        except Exception as e:
+            print(
+                f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
+            return get_snapshot_yfinance(symbol)
+    else:
+        try:
+            return get_snapshot_yfinance(symbol)
+        except Exception as e:
+            print(
+                f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
+            return get_snapshot_alpaca(symbol)
+
+
+def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> list:
+    if get_market_status() == "OPEN":
+        try:
+            bars = get_historical_bars_alpaca(symbol, range=range, limit=limit)
+            if bars:
+                return bars
+        except Exception as e:
+            print(f"Alpaca bars failed for {symbol}: {e}")
+        return get_historical_bars_yfinance(symbol, range=range, limit=limit)
+    else:
+        try:
+            bars = get_historical_bars_yfinance(
+                symbol, range=range, limit=limit)
+            if bars:
+                return bars
+        except Exception as e:
+            print(f"yfinance bars failed for {symbol}: {e}")
+        return get_historical_bars_alpaca(symbol, range=range, limit=limit)
+
+
+# â”€â”€ Client management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+async def register_client(websocket: WebSocket):
+    async with clients_lock:
+        connected_clients[websocket] = asyncio.Lock()
+# Stop streaming data when no one uses
+
+
+async def unregister_client(websocket: WebSocket):
+    global alpaca_task
+    async with clients_lock:
+        connected_clients.pop(websocket, None)
+        if not connected_clients and alpaca_task:
+            alpaca_task.cancel()
+            alpaca_task = None
+
+
+async def send_to_client(websocket: WebSocket, message: str):
+    async with clients_lock:
+        send_lock = connected_clients.get(websocket)
+    if not send_lock:
+        return
+    async with send_lock:
+        await websocket.send_text(message)
+
+
+async def send_json_to_client(websocket: WebSocket, message: dict):
+    async with clients_lock:
+        send_lock = connected_clients.get(websocket)
+    if not send_lock:
+        return
+    async with send_lock:
+        await websocket.send_json(clean_json_value(message))
+
+
+async def broadcast_to_clients(message: str):
+    async with clients_lock:
+        clients = list(connected_clients.keys())
+
+    disconnected = []
+    for websocket in clients:
+        try:
+            await send_to_client(websocket, message)
+        except Exception:
+            disconnected.append(websocket)
+
+    for websocket in disconnected:
+        await unregister_client(websocket)
+
+
+# â”€â”€ On-connect data burst â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+async def send_snapshot_prices(websocket: WebSocket):
+    """Send latest price snapshot â€” Alpaca if open, yfinance if closed."""
+    results = await asyncio.gather(
+        *[asyncio.to_thread(get_snapshot, s) for s in stock_pool],
+        return_exceptions=True,
+    )
+    quotes = []
+    failed_symbols = []
+
+    for symbol, result in zip(stock_pool, results):
+        if isinstance(result, Exception):
+            print(f"Snapshot fetch failed for {symbol}: {result}")
+            failed_symbols.append(symbol)
+            continue
+        quotes.append(result)
+        if result.get("previousClose") is not None:
+            previous_close_cache[symbol] = float(result["previousClose"])
+
+    await send_json_to_client(websocket, {
+        "type":   "snapshot",
+        "data":   quotes,
+        "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+    })
+
+    if failed_symbols:
+        await send_json_to_client(websocket, {
+            "type": "error",
+            "message": f"Could not fetch stock snapshot for: {', '.join(failed_symbols)}",
+        })
+
+
+async def send_historical_candles(websocket: WebSocket, symbols: Optional[list[str]] = None, range: str = "1D"):
+    """Send historical bars for the requested range."""
+    symbols = symbols or stock_pool
+    results = await asyncio.gather(
+        *[asyncio.to_thread(get_historical_bars, s, range, 1800)
+          for s in symbols],
+        return_exceptions=True,
+    )
+    payload = {}
+    failed_symbols = []
+
+    for symbol, result in zip(symbols, results):
+        if isinstance(result, Exception):
+            print(f"Historical bars fetch failed for {symbol}: {result}")
+            failed_symbols.append(symbol)
+            continue
+        payload[symbol] = result
+
+    await send_json_to_client(websocket, {
+        "type":   "history",
+        "data":   payload,
+        "range":  range,
+        "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+    })
+
+    if failed_symbols:
+        await send_json_to_client(websocket, {
+            "type": "error",
+            "message": f"Could not fetch chart data for: {', '.join(failed_symbols)}",
+        })
+
+
+# â”€â”€ Alpaca WebSocket streaming (only when market OPEN) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+async def run_alpaca_connection():
+    while True:
+        try:
+            async with websockets.connect(
+                ALPACA_DATA_WS_URL,
+                ping_interval=20,
+                ping_timeout=20,
+            ) as alpaca_ws:
+                print("Connected to Alpaca data stream")
+
+                await alpaca_ws.send(json.dumps({
+                    "action": "auth",
+                    "key":    ALPACA_API_KEY,
+                    "secret": ALPACA_API_SECRET,
+                }))
+                await alpaca_ws.recv()
+
+                await alpaca_ws.send(json.dumps({
+                    "action": "subscribe",
+                    "trades": stock_pool,
+                    "bars":   stock_pool,
+                }))
+                await alpaca_ws.recv()
+
+                while True:
+                    async with clients_lock:
+                        has_clients = bool(connected_clients)
+                    if not has_clients:
+                        return
+
+                    raw = await alpaca_ws.recv()
+                    messages = json.loads(raw)
+
+                    for msg in messages:
+                        msg_type = msg.get("T")
+
+                        if msg_type == "t":
+                            # "S" = symbol (uppercase), "s" = trade size (shares), "p" = price
+                            symbol = msg.get("S")
+                            price = msg.get("p")
+                            await broadcast_to_clients(json.dumps({
+                                "type": "trade",
+                                "data": {
+                                    "s":    symbol,
+                                    "p":    price,
+                                    "size": msg.get("s"),
+                                    "t":    msg.get("t"),
+                                }
+                            }))
+                            if symbol and price is not None:
+                                asyncio.create_task(asyncio.to_thread(
+                                    CheckAndTriggerAlertsController().check,
+                                    symbol, float(price), previous_close_cache.get(symbol)
+                                ))
+
+                        elif msg_type == "b":
+                            # Authoritative 1-minute OHLCV bar from Alpaca
+                            await broadcast_to_clients(json.dumps({
+                                "type": "bar",
+                                "data": {
+                                    "s":      msg.get("S"),
+                                    "open":   msg.get("o"),
+                                    "high":   msg.get("h"),
+                                    "low":    msg.get("l"),
+                                    "close":  msg.get("c"),
+                                    "volume": msg.get("v"),
+                                    "t":      msg.get("t"),
+                                }
+                            }))
+
+                        elif msg_type == "error":
+                            print("Alpaca stream error:", msg)
+
+        except asyncio.CancelledError:
+            print("Alpaca WebSocket task cancelled")
+            raise
+
+        except Exception as e:
+            print("Alpaca connection error:", e)
+            await asyncio.sleep(5)
+
+
+async def ensure_alpaca_connection():
+    global alpaca_task
+    async with clients_lock:
+        if not alpaca_task or alpaca_task.done():
+            alpaca_task = asyncio.create_task(run_alpaca_connection())
+
+
+# â”€â”€ WebSocket endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+@router.websocket("/ws/stocks")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    if not ALPACA_API_KEY or not ALPACA_API_SECRET:
+        await websocket.send_json({
+            "type":    "error",
+            "message": "Missing ALPACA_API_KEY or ALPACA_API_SECRET in backend .env",
+        })
+        await websocket.close()
+        return
+
+    await register_client(websocket)
+
+    try:
+        market = get_market_status()
+
+        # 1. Latest prices (Alpaca if open, yfinance if closed)
+        await send_snapshot_prices(websocket)
+
+        # 2. Historical bars to seed sparklines
+        await send_historical_candles(websocket)
+
+        # 3. Market status banner
+        await send_json_to_client(websocket, {
+            "type":   "market_status",
+            "status": market,
+        })
+
+        # 4. Only start live WebSocket stream when market is open
+        if market == "OPEN":
+            await ensure_alpaca_connection()
+        else:
+            print("Market closed â€” skipping Alpaca WebSocket, using yfinance data only")
+
+        while True:
+            raw_message = await websocket.receive_text()
+
+            try:
+                message = json.loads(raw_message)
+            except json.JSONDecodeError:
+                continue
+
+            if message.get("type") == "range":
+                requested_symbol = str(message.get("symbol", "")).upper()
+                requested_range = str(message.get("range", "1D")).upper()
+
+                if requested_symbol not in stock_pool:
+                    await send_json_to_client(websocket, {
+                        "type": "error",
+                        "message": f"Unsupported symbol: {requested_symbol}",
+                    })
+                    continue
+
+                if requested_range not in {"1D", "1W", "1M", "3M", "6M", "1Y"}:
+                    requested_range = "1D"
+
+                await send_historical_candles(
+                    websocket,
+                    symbols=[requested_symbol],
+                    range=requested_range,
+                )
+
+    except WebSocketDisconnect:
+        print("Frontend WebSocket disconnected")
+
+    finally:
+        await unregister_client(websocket)
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\boundary\userb.py ===
+
+from typing import Optional, Union
+from pydantic import BaseModel
+from fastapi import APIRouter
+
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
+from app.control.controller.investorc import UpdateStockLevel
+
+router = APIRouter(prefix="/user", tags=["User"])
+
+
+# Request body model
+class CreateAccountRequest(BaseModel):
+    role: str
+    username: str
+    full_name: str
+    email_address: str
+    password: str
+    phone_number: str
+    address: str
+    stock_level: Optional[str] = "beginner"
+    experience_year: Optional[Union[int, str]] = None
+    linked_in_url: Optional[str] = None
+
+# Create user account
+
+
+class CreateAccountPage:
+    def __init__(self):
+        self.controller = CreateAccountController()
+
+    def clickCreateAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url):
+
+        return self.controller.createAccount(role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url)
+
+
+@router.post("/create-account")
+def create_account(data: CreateAccountRequest):
+
+    boundary = CreateAccountPage()
+
+    result = boundary.clickCreateAccount(
+        data.role,
+        data.username,
+        data.full_name,
+        data.email_address,
+        data.password,
+        data.phone_number,
+        data.address,
+        data.stock_level,
+        data.experience_year,
+        data.linked_in_url
+    )
+
+    if result == False:
+        return {
+            "success": False,
+            "message": "Account already exists"
+        }
+
+    return {
+        "success": True,
+        "message": "Account created successfully",
+        "user_id": result
+    }
+
+# Login
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginPage:
+    def __init__(self):
+        self.controller = LoginController()
+
+    def login(self, username, password):
+        return self.controller.login(username, password)
+
+
+@router.post("/login")
+def login(data: LoginRequest):
+
+    boundary = LoginPage()
+
+    result = boundary.login(
+        data.username,
+        data.password
+    )
+
+    if not result.get("success"):
+        return {
+            "success": False,
+            "message": "Invalid username or password"
+        }
+
+    return {
+        "success": True,
+        "message": "Login successful",
+        "user": result.get("user")
+    }
+
+# Logout
+
+
+class LogoutRequest(BaseModel):
+    user_id: str
+
+
+class LogoutPage:
+    def __init__(self):
+        self.controller = LogoutController()
+
+    def logout(self, user_id):
+        return self.controller.logout(user_id)
+
+
+@router.post("/logout")
+def logout(data: LogoutRequest):
+
+    boundary = LogoutPage()
+
+    result = boundary.logout(data.user_id)
+    if not result:
+        return {
+            "success": False,
+            "message": "Logout failed"
+        }
+    return {
+        "success": True,
+        "message": "Logout successful"
+    }
+
+
+# Display user information (for both investor and expert)
+
+
+class InvestorInformationPage:
+    def __init__(self):
+        self.controller = InvestorInformationController()
+
+    def get_investor_information(self, user_id):
+        return self.controller.get_investor_information(user_id)
+
+
+@router.get("/investor-information/{user_id}")
+def get_investor_information(user_id: str):
+    boundary = InvestorInformationPage()
+
+    result = boundary.get_investor_information(user_id)
+    if not result:
+        return {
+            "success": False,
+            "message": "Investor information not found"
+        }
+    return {
+        "success": True,
+        "message": "Investor information retrieved successfully",
+        "investor_information": result
+    }
+
+
+class ExpertInformationPage:
+    def __init__(self):
+        self.controller = ExpertInformationController()
+
+    def get_expert_information(self, user_id):
+        return self.controller.get_expert_information(user_id)
+
+
+@router.get("/expert-information/{user_id}")
+def get_expert_information(user_id: str):
+    boundary = ExpertInformationPage()
+
+    result = boundary.get_expert_information(user_id)
+    if not result:
+        return {
+            "success": False,
+            "message": "Expert information not found"
+        }
+    return {
+        "success": True,
+        "message": "Expert information retrieved successfully",
+        "expert_information": result
+    }
+
+# Update user information
+
+
+class UpdateInformationRequest(BaseModel):
+    user_id: str
+    user_name: Optional[str] = None
+    full_name: Optional[str] = None
+    email_address: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+
+
+class UpdateInformationPage:
+    def __init__(self):
+        self.controller = UpdateInformationController()
+
+    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
+        return self.controller.update_information(user_id, user_name, full_name, email_address, phone_number, address)
+
+
+@router.post("/update-information/{user_id}")
+def update_information(user_id: str, data: UpdateInformationRequest):
+    boundary = UpdateInformationPage()
+
+    result = boundary.update_information(
+        user_id,
+        data.user_name,
+        data.full_name,
+        data.email_address,
+        data.phone_number,
+        data.address
+    )
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Failed to update information"
+        }
+    return {
+        "success": True,
+        "message": "Information updated successfully"
+    }
+
+
+# Delete Investor
+class DeleteInvestorPage:
+    def __init__(self):
+        self.controller = DeleteInvestorController()
+
+    def delete_account(self, user_id):
+        return self.controller.delete_account(user_id)
+
+
+@router.delete("/delete-investor/{user_id}")
+def delete_account(user_id: str):
+    boundary = DeleteInvestorPage()
+
+    result = boundary.delete_account(user_id)
+
+    if not result:
+        return {
+            "success": False,
+            "message": "Account not found"
+        }
+    return {
+        "success": True,
+        "message": "Account deleted successfully"
+    }
+
+
+class UpdateStockLevelRequest(BaseModel):
+    user_id: str
+    stock_level: Optional[str] = None
+
+
+class UpdateInvestorStockLevel:
+    def __init__(self):
+        self.controller = UpdateStockLevel()
+
+    def update_stock_level(self, user_id, stock_level):
+        return self.controller.updateStockLevel(user_id, stock_level)
+
+
+@router.post("/update_stock_level")
+def update_stock_level(data: UpdateStockLevelRequest):
+    boundary = UpdateInvestorStockLevel()
+
+    result = boundary.update_stock_level(data.user_id, data.stock_level)
+    if not result:
+        return {
+            "success": False,
+            "message": "The stock level is not updated"
+        }
+    return {
+        "success": True,
+        "message": "The stock level is successfully updated"
+    }
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\adminc.py ===
+
+from app.entity.database.session import get_session
+from app.entity.models.useraccount import UserAccount
+from app.entity.models.investor import Investor
+from app.entity.models.expert import Expert
+
+
+class AdminUserAccountController:
+    def getUserAccounts(self, keyword=None, role=None, status=None):
+        with get_session() as session:
+            query = (
+                session.query(UserAccount, Investor, Expert)
+                .outerjoin(Investor, UserAccount.user_id == Investor.user_id)
+                .outerjoin(Expert, UserAccount.user_id == Expert.user_id)
+            )
+
+            if keyword:
+                search = f"%{keyword}%"
+                query = query.filter(
+                    (UserAccount.username.like(search)) |
+                    (UserAccount.full_name.like(search)) |
+                    (UserAccount.email_address.like(search)) |
+                    (UserAccount.phone_number.like(search)) |
+                    (UserAccount.user_id.like(search))
+                )
+
+            if status:
+                query = query.filter(UserAccount.account_status == status)
+
+            results = query.all()
+
+            users = []
+
+            for user_account, investor, expert in results:
+                if expert:
+                    user_role = "Expert"
+                elif investor:
+                    if investor.investor_subscription_status == "active":
+                        user_role = "Premium"
+                    else:
+                        user_role = "Investor"
+
+                else:
+                    user_role = "Admin"
+
+                if role and user_role.lower() != role.lower():
+                    continue
+
+                users.append({
+                    "initials": self.makeInitials(user_account.full_name),
+                    "user_id": user_account.user_id,
+                    "username": user_account.username,
+                    "full_name": user_account.full_name,
+                    "email_address": user_account.email_address,
+                    "phone_number": str(user_account.phone_number),
+                    "address": user_account.address,
+                    "role": user_role,
+                    "account_status": user_account.account_status,
+                    "join_date": user_account.join_date.strftime("%Y-%m-%d") if user_account.join_date else None,
+                    "last_login": user_account.last_login.strftime("%Y-%m-%d") if user_account.last_login else None,
+                    "is_active": user_account.is_active,
+                })
+
+            return users
+
+    def makeInitials(self, full_name):
+        if not full_name:
+            return "NA"
+
+        parts = full_name.split()
+
+        if len(parts) == 1:
+            return parts[0][:2].upper()
+
+        return (parts[0][0] + parts[-1][0]).upper()
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\alertc.py ===
+
+from app.entity.models.emailalert import StockAlert
+from app.entity.database.session import get_session
+from app.control.services.email_service import send_alert_email
+
+
+class CreateAlertController:
+    def create_alert(self, user_id, stock_symbol, price_above, price_below,
+                     increase_percent, decrease_percent, custom_message, notification_email):
+        with get_session() as session:
+            alert = StockAlert(
+                user_id=user_id,
+                stock_symbol=stock_symbol,
+                price_above=price_above,
+                price_below=price_below,
+                increase_percent=increase_percent,
+                decrease_percent=decrease_percent,
+                custom_message=custom_message,
+                notification_email=notification_email,
+            )
+            session.add(alert)
+            session.flush()
+            return alert.alert_id
+
+
+class GetAlertsController:
+    def get_alerts(self, user_id):
+        with get_session() as session:
+            return session.query(StockAlert).filter_by(
+                user_id=user_id, is_active=True
+            ).all()
+
+
+class DeleteAlertController:
+    def delete_alert(self, alert_id, user_id):
+        with get_session() as session:
+            alert = session.query(StockAlert).filter_by(
+                alert_id=alert_id, user_id=user_id
+            ).first()
+            if not alert:
+                return False
+            session.delete(alert)
+            return True
+
+
+class CheckAndTriggerAlertsController:
+    def check(self, symbol: str, current_price: float, previous_close: float | None):
+        with get_session() as session:
+            alerts = session.query(StockAlert).filter_by(
+                stock_symbol=symbol, is_active=True, is_triggered=False
+            ).all()
+
+            for alert in alerts:
+                condition = None
+
+                if alert.price_above and current_price >= float(alert.price_above):
+                    condition = f"Price rose above ${float(alert.price_above):.2f}"
+
+                elif alert.price_below and current_price <= float(alert.price_below):
+                    condition = f"Price fell below ${float(alert.price_below):.2f}"
+
+                elif alert.increase_percent and previous_close:
+                    pct = ((current_price - previous_close) / previous_close) * 100
+                    if pct >= float(alert.increase_percent):
+                        condition = f"Price increased {pct:.2f}% (threshold: {float(alert.increase_percent):.2f}%)"
+
+                elif alert.decrease_percent and previous_close:
+                    pct = ((previous_close - current_price) / previous_close) * 100
+                    if pct >= float(alert.decrease_percent):
+                        condition = f"Price decreased {pct:.2f}% (threshold: {float(alert.decrease_percent):.2f}%)"
+
+                if condition:
+                    sent = send_alert_email(
+                        to_email=alert.notification_email,
+                        stock_symbol=symbol,
+                        current_price=current_price,
+                        condition=condition,
+                        custom_message=alert.custom_message,
+                    )
+                    if sent:
+                        alert.is_triggered = True
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\expertc.py ===
+
+from app.entity.database.session import get_session
+from app.entity.models.expert import Expert
+from app.entity.models.useraccount import UserAccount
+from typing import Optional, List, Dict
+from datetime import datetime
+
+class ExpertPortfolioController:
+    def get_all_experts(self) -> List[Dict]:
+        """Get all experts with their portfolio information"""
+        with get_session() as session:
+            experts = session.query(Expert).all()
+            result = []
+            for expert in experts:
+                user = session.query(UserAccount).filter(
+                    UserAccount.user_id == expert.user_id
+                ).first()
+                if user:
+                    result.append({
+                        "expert_id": expert.expert_id,
+                        "user_id": expert.user_id,
+                        "username": user.username,
+                        "full_name": user.full_name,
+                        "email": user.email_address,
+                        "expert_status": expert.expert_status,
+                        "rating": expert.rating,
+                        "experience_years": expert.experience_years,
+                        "linked_in_url": expert.linked_in_url,
+                        "verification_status": expert.verification_status,
+                        "verification_score": expert.verification_score,
+                    })
+            return result
+    
+    def get_expert_by_id(self, expert_id: str) -> Optional[Dict]:
+        """Get expert by expert_id"""
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.expert_id == expert_id
+            ).first()
+            if not expert:
+                return None
+            
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == expert.user_id
+            ).first()
+            
+            return {
+                "expert_id": expert.expert_id,
+                "user_id": expert.user_id,
+                "username": user.username if user else None,
+                "full_name": user.full_name if user else None,
+                "email": user.email_address if user else None,
+                "phone_number": user.phone_number if user else None,
+                "address": user.address if user else None,
+                "expert_status": expert.expert_status,
+                "rating": expert.rating,
+                "experience_years": expert.experience_years,
+                "linked_in_url": expert.linked_in_url,
+                "verification_status": expert.verification_status,
+                "verification_score": expert.verification_score,
+            }
+    
+    def update_expert_portfolio(self, expert_id: str, user_id: str, 
+                                 experience_years: Optional[int] = None,
+                                 linked_in_url: Optional[str] = None,
+                                 expert_status: Optional[str] = None) -> bool:
+        """Update expert portfolio information"""
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.expert_id == expert_id,
+                Expert.user_id == user_id
+            ).first()
+            
+            if not expert:
+                return False
+            
+            if experience_years is not None:
+                expert.experience_years = experience_years
+            if linked_in_url is not None:
+                expert.linked_in_url = linked_in_url
+            if expert_status is not None:
+                expert.expert_status = expert_status
+            
+            session.commit()
+            return True
+    
+    def create_expert_portfolio(self, user_id: str, experience_years: int,
+                                 linked_in_url: Optional[str] = None) -> bool:
+        """Create new expert portfolio"""
+        with get_session() as session:
+            # Check if expert already exists
+            existing = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if existing:
+                return False
+            
+            expert = Expert(
+                user_id=user_id,
+                experience_years=experience_years,
+                linked_in_url=linked_in_url,
+                expert_status="active",
+                verification_status="pending"
+            )
+            session.add(expert)
+            session.commit()
+            return True
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\forumc.py ===
+
+from app.entity.database.session import get_session
+from app.entity.models.forumquestion import ForumQuestion, ForumReply
+from app.entity.models.expert import Expert
+from app.entity.models.useraccount import UserAccount
+from typing import Optional, List, Dict
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+class ForumController:
+    def get_all_questions(self, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """Get all forum questions with pagination"""
+        with get_session() as session:
+            questions = session.query(ForumQuestion).order_by(
+                ForumQuestion.created_at.desc()
+            ).offset(offset).limit(limit).all()
+            
+            result = []
+            for q in questions:
+                expert_name = None
+                if q.expert_id:
+                    expert = session.query(Expert).filter(
+                        Expert.expert_id == q.expert_id
+                    ).first()
+                    if expert:
+                        user = session.query(UserAccount).filter(
+                            UserAccount.user_id == expert.user_id
+                        ).first()
+                        expert_name = user.full_name if user else None
+                
+                reply_count = session.query(ForumReply).filter(
+                    ForumReply.question_id == q.question_id
+                ).count()
+                
+                result.append({
+                    "question_id": q.question_id,
+                    "user_id": q.user_id,
+                    "username": q.user.username if q.user else None,
+                    "title": q.title,
+                    "content": q.content,
+                    "category": q.category,
+                    "status": q.status,
+                    "expert_name": expert_name,
+                    "reply_count": reply_count,
+                    "is_resolved": q.is_resolved,
+                    "created_at": q.created_at.isoformat(),
+                    "updated_at": q.updated_at.isoformat(),
+                })
+            return result
+    
+    def get_question_by_id(self, question_id: str) -> Optional[Dict]:
+        """Get single question with all replies"""
+        with get_session() as session:
+            question = session.query(ForumQuestion).filter(
+                ForumQuestion.question_id == question_id
+            ).first()
+            
+            if not question:
+                return None
+            
+            replies = session.query(ForumReply).filter(
+                ForumReply.question_id == question_id
+            ).order_by(ForumReply.created_at.asc()).all()
+            
+            replies_data = []
+            for reply in replies:
+                reply_author = None
+                if reply.is_expert_reply and reply.expert_id:
+                    expert = session.query(Expert).filter(
+                        Expert.expert_id == reply.expert_id
+                    ).first()
+                    if expert:
+                        user = session.query(UserAccount).filter(
+                            UserAccount.user_id == expert.user_id
+                        ).first()
+                        reply_author = user.full_name if user else "Expert"
+                elif reply.user_id:
+                    user = session.query(UserAccount).filter(
+                        UserAccount.user_id == reply.user_id
+                    ).first()
+                    reply_author = user.full_name if user else "User"
+                
+                replies_data.append({
+                    "reply_id": reply.reply_id,
+                    "content": reply.content,
+                    "author": reply_author,
+                    "is_expert_reply": reply.is_expert_reply,
+                    "created_at": reply.created_at.isoformat(),
+                })
+            
+            return {
+                "question_id": question.question_id,
+                "user_id": question.user_id,
+                "username": question.user.username if question.user else None,
+                "title": question.title,
+                "content": question.content,
+                "category": question.category,
+                "status": question.status,
+                "is_resolved": question.is_resolved,
+                "created_at": question.created_at.isoformat(),
+                "replies": replies_data,
+            }
+    
+    def create_question(self, user_id: str, title: str, content: str,
+                       category: Optional[str] = None) -> str:
+        """Create new forum question"""
+        with get_session() as session:
+            question = ForumQuestion(
+                user_id=user_id,
+                title=title,
+                content=content,
+                category=category,
+                status="pending"
+            )
+            session.add(question)
+            session.commit()
+            return question.question_id
+    
+    def create_reply(self, question_id: str, content: str,
+                    expert_id: Optional[str] = None,
+                    user_id: Optional[str] = None,
+                    is_expert_reply: bool = False) -> str:
+        """Create reply to a question"""
+        with get_session() as session:
+            reply = ForumReply(
+                question_id=question_id,
+                expert_id=expert_id,
+                user_id=user_id,
+                content=content,
+                is_expert_reply=is_expert_reply
+            )
+            session.add(reply)
+            
+            # Update question status
+            question = session.query(ForumQuestion).filter(
+                ForumQuestion.question_id == question_id
+            ).first()
+            if question:
+                question.status = "answered"
+                question.updated_at = datetime.now(ZoneInfo("Asia/Singapore"))
+            
+            session.commit()
+            return reply.reply_id
+    
+    def get_questions_by_expert(self, expert_id: str) -> List[Dict]:
+        """Get all questions assigned to an expert"""
+        with get_session() as session:
+            questions = session.query(ForumQuestion).filter(
+                ForumQuestion.expert_id == expert_id
+            ).order_by(ForumQuestion.created_at.desc()).all()
+            
+            result = []
+            for q in questions:
+                reply_count = session.query(ForumReply).filter(
+                    ForumReply.question_id == q.question_id
+                ).count()
+                
+                result.append({
+                    "question_id": q.question_id,
+                    "title": q.title,
+                    "content": q.content,
+                    "status": q.status,
+                    "is_resolved": q.is_resolved,
+                    "reply_count": reply_count,
+                    "created_at": q.created_at.isoformat(),
+                })
+            return result
+    
+    def assign_question_to_expert(self, question_id: str, expert_id: str) -> bool:
+        """Assign a question to an expert"""
+        with get_session() as session:
+            question = session.query(ForumQuestion).filter(
+                ForumQuestion.question_id == question_id
+            ).first()
+            
+            if not question:
+                return False
+            
+            question.expert_id = expert_id
+            question.status = "in_progress"
+            session.commit()
+            return True
+    
+    def mark_question_resolved(self, question_id: str, user_id: str) -> bool:
+        """Mark a question as resolved"""
+        with get_session() as session:
+            question = session.query(ForumQuestion).filter(
+                ForumQuestion.question_id == question_id,
+                ForumQuestion.user_id == user_id
+            ).first()
+            
+            if not question:
+                return False
+            
+            question.is_resolved = True
+            question.status = "closed"
+            session.commit()
+            return True
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\investorc.py ===
+
+from app.entity.models.investor import Investor
+from app.entity.models.subscription import Subscription
+
+
+class CreateInvestorController:
+    def createSubscription(self, transaction_id, plan_type, investor_id):
+        subscription = Subscription.createSubscription(
+            transaction_id, plan_type, investor_id)
+        return subscription
+
+
+class GetInvestorController:
+    def getInvestorByUserId(self, user_id):
+        return Investor.getInvestorByUserId(user_id)
+
+
+class UpdateStockLevel:
+    def updateStockLevel(self, user_id, stock_level):
+        return Investor.update_investor_stock_level(user_id, stock_level)
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\predictionc.py ===
+
+"""
+PredictionController
+====================
+Currently runs a *mock* prediction so the frontend works before the real
+BiLSTM + FinBERT ensemble is ready.
+
+When your model is ready, replace the block inside `_run_model()` that is
+marked with  â† REPLACE THIS  comments.  Everything else (API shape, error
+handling, response format) stays exactly the same.
+"""
+
+import random
+import math
+from datetime import datetime, timedelta
+
+import yfinance as yf
+
+
+# â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+SUPPORTED_SYMBOLS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "AVGO", "ORCL", "AMD",
+]
+
+# Confidence interval half-widths as % of price (widens with forecast horizon)
+CI_BASE_PCT = 0.015   # Â±1.5 % on day-1
+CI_GROWTH   = 0.008   # adds 0.8 % per extra day
+
+
+# â”€â”€ Controller â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class PredictionController:
+
+    def predict(self, symbol: str, days: int) -> dict | None:
+        """
+        Returns a dict ready to be sent straight to the frontend, or None on error.
+
+        Response shape
+        --------------
+        {
+          "symbol":       str,
+          "days":         int,
+          "last_close":   float,
+
+          "predictions": [
+            {
+              "date":   "YYYY-MM-DD",
+              "price":  float,
+              "upper":  float,   # upper confidence bound
+              "lower":  float,   # lower confidence bound
+            },
+            ...
+          ],
+
+          "sentiment": {
+            "score":      float,   # â€“1.0 (bearish) â€¦ +1.0 (bullish)
+            "label":      "Bullish" | "Neutral" | "Bearish",
+            "confidence": float,   # 0.0 â€“ 1.0
+            "breakdown":  {
+              "positive": float,   # share of articles positive
+              "neutral":  float,
+              "negative": float,
+            }
+          }
+        }
+        """
+        if symbol not in SUPPORTED_SYMBOLS:
+            return None
+
+        days = max(1, min(days, 30))
+
+        # Fetch the last known close price from yfinance
+        last_close = self._fetch_last_close(symbol)
+        if last_close is None:
+            return None
+
+        # Run model (or mock)
+        predictions = self._run_model(symbol, last_close, days)
+        sentiment   = self._run_sentiment(symbol)
+
+        return {
+            "symbol":      symbol,
+            "days":        days,
+            "last_close":  round(last_close, 4),
+            "predictions": predictions,
+            "sentiment":   sentiment,
+        }
+
+    # â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    def _fetch_last_close(self, symbol: str) -> float | None:
+        try:
+            ticker = yf.Ticker(symbol)
+            hist   = ticker.history(period="2d", interval="1d")
+            if hist.empty:
+                return None
+            return float(hist.iloc[-1]["Close"])
+        except Exception as e:
+            print(f"yfinance fetch failed for {symbol}: {e}")
+            return None
+
+    def _run_model(self, symbol: str, last_close: float, days: int) -> list[dict]:
+        """
+        â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+        â•‘  â† REPLACE THIS with your real BiLSTM + FinBERT ensemble   â•‘
+        â•‘                                                              â•‘
+        â•‘  Expected output: a list of dicts, one per forecast day:     â•‘
+        â•‘    [{"date": "YYYY-MM-DD",                                   â•‘
+        â•‘       "price": float,                                        â•‘
+        â•‘       "upper": float,                                        â•‘
+        â•‘       "lower": float }, ...]                                 â•‘
+        â•‘                                                              â•‘
+        â•‘  Tip: load your .h5 / .pt model file once at module level   â•‘
+        â•‘  (outside this method) to avoid reloading on every request. â•‘
+        â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        Mock logic below: random walk with slight upward drift.
+        """
+        predictions = []
+        price = last_close
+
+        # Skip weekends when labelling dates
+        current_date = datetime.today()
+        trading_days_added = 0
+        calendar_day = current_date
+
+        while trading_days_added < days:
+            calendar_day += timedelta(days=1)
+            if calendar_day.weekday() >= 5:   # Sat=5, Sun=6
+                continue
+
+            # Random walk: Â±1 % per day with tiny upward drift
+            pct_change = random.gauss(0.001, 0.012)
+            price = price * (1 + pct_change)
+
+            # Widening confidence interval
+            half_width_pct = CI_BASE_PCT + CI_GROWTH * trading_days_added
+            upper = price * (1 + half_width_pct)
+            lower = price * (1 - half_width_pct)
+
+            predictions.append({
+                "date":  calendar_day.strftime("%Y-%m-%d"),
+                "price": round(price, 4),
+                "upper": round(upper, 4),
+                "lower": round(lower, 4),
+            })
+            trading_days_added += 1
+
+        return predictions
+
+    def _run_sentiment(self, symbol: str) -> dict:
+        """
+        â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+        â•‘  â† REPLACE THIS with your real FinBERT sentiment scorer    â•‘
+        â•‘                                                              â•‘
+        â•‘  Expected output:                                            â•‘
+        â•‘    {                                                         â•‘
+        â•‘      "score":      float,   # â€“1.0 â€¦ +1.0                  â•‘
+        â•‘      "label":      str,     # "Bullish"|"Neutral"|"Bearish" â•‘
+        â•‘      "confidence": float,   # 0.0 â€“ 1.0                    â•‘
+        â•‘      "breakdown":  {                                         â•‘
+        â•‘        "positive": float,                                    â•‘
+        â•‘        "neutral":  float,                                    â•‘
+        â•‘        "negative": float,                                    â•‘
+        â•‘      }                                                       â•‘
+        â•‘    }                                                         â•‘
+        â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        Mock logic below: random plausible sentiment.
+        """
+        pos = random.uniform(0.25, 0.65)
+        neg = random.uniform(0.05, 0.35)
+        neg = min(neg, 1 - pos)          # ensure pos + neg <= 1
+        neu = round(1 - pos - neg, 4)
+        pos = round(pos, 4)
+        neg = round(neg, 4)
+
+        score = round(pos - neg, 4)      # â€“1 â€¦ +1
+
+        if score > 0.15:
+            label = "Bullish"
+        elif score < -0.15:
+            label = "Bearish"
+        else:
+            label = "Neutral"
+
+        confidence = round(abs(score) * 0.8 + random.uniform(0.1, 0.2), 4)
+        confidence = min(confidence, 0.99)
+
+        return {
+            "score":      score,
+            "label":      label,
+            "confidence": confidence,
+            "breakdown": {
+                "positive": pos,
+                "neutral":  neu,
+                "negative": neg,
+            },
+        }
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\controller\userc.py ===
+
+from app.entity.models.investor import Investor
+from app.entity.models.expert import Expert
+from app.entity.models.useraccount import UserAccount
+
+
+class CreateAccountController:
+    def createAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url) -> bool:
+        role = role.strip().lower()
+
+        if role == "investor":
+            if not stock_level:
+                stock_level = "beginner"
+            return Investor.createAccount(username, full_name, email_address, password, phone_number, address, stock_level)
+        if role == "expert":
+            if experience_year in (None, ""):
+                return False
+            experience_year = int(experience_year)
+            return Expert.createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url)
+        return False
+
+
+class LoginController:
+    def login(self, username, password):
+        return UserAccount.login(username, password)
+
+
+class LogoutController:
+    def logout(self, user_id):
+        return UserAccount.logout(user_id)
+
+
+class InvestorInformationController:
+    def get_investor_information(self, user_id):
+        return Investor.get_investor_information(user_id)
+
+
+class ExpertInformationController:
+    def get_expert_information(self, user_id):
+        return Expert.get_expert_information(user_id)
+
+
+class UpdateInformationController:
+    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
+        return UserAccount.updateInformation(user_id, user_name, full_name, email_address, phone_number, address)
+
+
+class DeleteInvestorController:
+    def delete_account(self, user_id):
+        return Investor.deleteInvestor(user_id)
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\control\services\email_service.py ===
+
+import smtplib
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+load_dotenv(BASE_DIR / ".env")
+
+GMAIL_USER = os.getenv("GMAIL_USER")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+
+
+def send_alert_email(to_email: str, stock_symbol: str, current_price: float,
+                     condition: str, custom_message: str = None):
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        print("Email credentials not set â€” skipping alert email")
+        return
+
+    subject = f"DeskStock Price Alert: {stock_symbol} reached your target"
+
+    custom_block = ""
+    if custom_message:
+        custom_block = f"""
+        <tr>
+          <td style="padding: 0 32px 20px;">
+            <div style="background:#1e2d5a;border-left:3px solid #0092b8;border-radius:6px;padding:14px 16px;
+                        font-size:14px;color:#94a3b8;font-style:italic;">
+              {custom_message}
+            </div>
+          </td>
+        </tr>
+        """
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0092b8,#155dfc);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.02em;">
+                DeskStock Alert
+              </h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.75);">
+                Your price condition has been triggered
+              </p>
+            </td>
+          </tr>
+
+          <!-- Symbol badge -->
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <span style="display:inline-block;background:rgba(96,165,250,0.15);color:#60a5fa;
+                           font-size:13px;font-weight:700;letter-spacing:0.08em;
+                           padding:5px 14px;border-radius:8px;">
+                {stock_symbol}
+              </span>
+            </td>
+          </tr>
+
+          <!-- Condition row -->
+          <tr>
+            <td style="padding:0 32px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0"
+                     style="background:#162040;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <td style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <p style="margin:0;font-size:12px;color:#64748b;text-transform:uppercase;
+                               letter-spacing:0.08em;">Condition</p>
+                    <p style="margin:6px 0 0;font-size:16px;font-weight:600;color:#e2e8f0;">
+                      {condition}
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0;font-size:12px;color:#64748b;text-transform:uppercase;
+                               letter-spacing:0.08em;">Current Price</p>
+                    <p style="margin:6px 0 0;font-size:28px;font-weight:700;color:#34d399;">
+                      ${current_price:.2f}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          {custom_block}
+
+          <!-- Footer note -->
+          <tr>
+            <td style="padding:0 32px 28px;">
+              <p style="margin:0;font-size:12px;color:#475569;line-height:1.6;">
+                This alert has been deactivated. Log in to DeskStock to create a new alert.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer bar -->
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">
+                Â© 2025 DeskStock Â· You received this because you set up a price alert.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock Alerts <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, to_email, msg.as_string())
+        print(f"[ALERT] Email sent to {to_email} for {stock_symbol}")
+        return True
+    except Exception as e:
+        print(f"[ALERT] Failed to send email: {e}")
+        return False
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\database\base.py ===
+
+# All database models will inherit from this base class
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\database\connection.py ===
+
+# This module sets up the database connection using SQLAlchemy and loads configuration from environment variables.  
+# It also includes a function to check the database connection and prints a success message if the connection is established.
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import URL
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+load_dotenv(BASE_DIR / ".env")
+
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+missing_values = [
+    name
+    for name, value in {
+        "DB_HOST": DB_HOST,
+        "DB_PORT": DB_PORT,
+        "DB_NAME": DB_NAME,
+        "DB_USER": DB_USER,
+        "DB_PASSWORD": DB_PASSWORD,
+    }.items()
+    if not value
+]
+
+if missing_values:
+    raise RuntimeError(
+        "Missing database environment variables: "
+        + ", ".join(missing_values)
+    )
+
+DATABASE_URL = URL.create(
+    "mysql+pymysql",
+    username=DB_USER,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=int(DB_PORT),
+    database=DB_NAME,
+)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+
+def check_database_connection():
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+
+print("Database connection successful")
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\database\session.py ===
+
+# database.py or session.py
+from sqlalchemy.orm import sessionmaker
+from app.entity.database.connection import engine
+from contextlib import contextmanager
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False
+)
+
+
+@contextmanager
+def get_session():
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\emailalert.py ===
+
+from sqlalchemy import DECIMAL, BOOLEAN, Column, Integer, String, DateTime
+from app.entity.database.base import Base
+from zoneinfo import ZoneInfo
+from datetime import datetime
+
+
+class StockAlert(Base):
+    __tablename__ = "stock_alert"
+
+    alert_id = Column(Integer, primary_key=True)
+    user_id = Column(String(50))
+    stock_symbol = Column(String(10))
+
+    price_above = Column(DECIMAL(10, 2))
+    price_below = Column(DECIMAL(10, 2))
+
+    increase_percent = Column(DECIMAL(5, 2))
+    decrease_percent = Column(DECIMAL(5, 2))
+
+    custom_message = Column(String(500))
+
+    notification_email = Column(String(255))
+
+    is_active = Column(BOOLEAN, default=True)
+    is_triggered = Column(BOOLEAN, default=False)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")), nullable=True)
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\expert.py ===
+
+from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime
+from app.entity.models.useraccount import UserAccount
+from app.entity.database.base import Base
+from uuid import uuid4
+from app.entity.database.session import get_session
+
+
+class Expert(Base):
+    __tablename__ = 'expert'
+    # Additional fields specific to Expert can be added here
+    expert_id = Column(String(50), primary_key=True,
+                       default=lambda: f"expert_{uuid4()}")
+    user_id = Column(String(50), ForeignKey(
+        "user_account.user_id"), nullable=False)
+    expert_status = Column(String(20), default="active")
+    rating = Column(Float, default=0)
+    experience_years = Column(Integer, nullable=False)
+    linked_in_url = Column(String(255), nullable=True)
+    verification_status = Column(String(20), default="pending")
+    verification_score = Column(Integer, default=0)
+    # This will define later
+    approved_date = Column(DateTime, nullable=True)
+
+    @staticmethod
+    def createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url) -> bool:
+        user_id = UserAccount.createAccount(
+            username=username,
+            full_name=full_name,
+            email_address=email_address,
+            password=password,
+            phone_number=phone_number,
+            address=address,
+            profile_name="expert"
+        )
+        if user_id == False:
+            return False
+        try:
+            expert = Expert(
+                user_id=user_id,
+                experience_years=experience_year,
+                linked_in_url=linked_in_url
+            )
+            with get_session() as session:
+                session.add(expert)
+                session.commit()
+            print("EXPERT CREATED")
+            return user_id
+        except Exception as e:
+            with get_session() as session:
+                session.rollback()
+            print("EXPERT ERROR:", e)
+            return False
+
+    @staticmethod
+    def get_expert_information(user_id):
+        user = UserAccount.get_user_information(user_id)
+        with get_session() as session:
+            expert_id = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert_id:
+                return None
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert:
+                return None
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            return {
+                **user,
+                "expert_status": expert.expert_status,
+                "rating": expert.rating,
+                "experience_years": expert.experience_years,
+                "linked_in_url": expert.linked_in_url,
+            }
+
+
+def seed_expert_account():
+    Expert.createAccount(
+        username="Anh",
+        full_name="Nguy Anh",
+        email_address="kimhi@gmail.com",
+        password="password",
+        phone_number=12433243,
+        address="123 Kim Street",
+        experience_year=3,
+        linked_in_url="@anh"
+
+    )
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\forumquestion.py ===
+
+from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey, Boolean
+from sqlalchemy.orm import relationship
+from app.entity.database.base import Base
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from uuid import uuid4
+
+class ForumQuestion(Base):
+    __tablename__ = "forum_questions"
+    
+    question_id = Column(String(50), primary_key=True, 
+                         default=lambda: f"q_{uuid4()}")
+    user_id = Column(String(50), ForeignKey("user_account.user_id"), nullable=False)
+    expert_id = Column(String(50), ForeignKey("expert.expert_id"), nullable=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    category = Column(String(50), nullable=True)
+    status = Column(String(20), default="pending")  # pending, answered, closed
+    created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
+    updated_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
+    is_resolved = Column(Boolean, default=False)
+    
+    # Relationships
+    user = relationship("UserAccount", backref="forum_questions")
+    expert = relationship("Expert", backref="forum_questions")
+    replies = relationship("ForumReply", backref="question", cascade="all, delete-orphan")
+
+class ForumReply(Base):
+    __tablename__ = "forum_replies"
+    
+    reply_id = Column(String(50), primary_key=True,
+                      default=lambda: f"r_{uuid4()}")
+    question_id = Column(String(50), ForeignKey("forum_questions.question_id"), nullable=False)
+    expert_id = Column(String(50), ForeignKey("expert.expert_id"), nullable=True)
+    user_id = Column(String(50), ForeignKey("user_account.user_id"), nullable=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
+    is_expert_reply = Column(Boolean, default=False)
+    
+    # Relationships
+    expert = relationship("Expert", backref="forum_replies")
+    user = relationship("UserAccount", backref="forum_replies")
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\investor.py ===
+
+from sqlalchemy import Column, ForeignKey, String, Float
+from app.entity.models.useraccount import UserAccount
+from app.entity.database.base import Base
+from app.entity.database.session import get_session
+
+from uuid import uuid4
+
+
+class Investor(Base):
+    __tablename__ = 'investor'
+
+    user_id = Column(String(50), ForeignKey(
+        "user_account.user_id"), nullable=False)
+    investor_id = Column(String(50), primary_key=True,
+                         default=lambda: f"investor_{uuid4()}")
+    stock_level = Column(String(20), default="beginner")
+    paper_money = Column(Float, default=2000)
+    used_amount = Column(Float, default=0)
+    investor_subscription_status = Column(String(20), default="inactive")
+
+    @staticmethod
+    def createAccount(username, full_name, email_address, password, phone_number, address, stock_level) -> bool:
+        user_id = UserAccount.createAccount(
+            username=username,
+            full_name=full_name,
+            email_address=email_address,
+            password=password,
+            phone_number=phone_number,
+            address=address,
+            profile_name="investor"
+        )
+        if user_id == False:
+            return False
+        try:
+            with get_session() as session:
+                investor = Investor(
+                    user_id=user_id,
+                    stock_level=stock_level,
+                )
+                session.add(investor)
+                # get_session() handles commit automatically
+            print("INVESTOR CREATED")
+            return user_id
+        except Exception as e:
+            print("INVESTOR ERROR:", e)
+            return False
+
+    @staticmethod
+    def getInvestorByUserId(user_id):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return None
+            return {
+                "investor_id": investor.investor_id,
+                "user_id": investor.user_id,
+                "stock_level": investor.stock_level,
+                "paper_money": investor.paper_money,
+                "used_amount": investor.used_amount,
+                "investor_subscription_status": investor.investor_subscription_status
+            }
+
+    @staticmethod
+    def get_investor_information(user_id):
+        user = UserAccount.get_user_information(user_id)
+        if not user:
+            return None
+        investor = Investor.getInvestorByUserId(user_id)  # now returns dict
+        if not investor:
+            return None
+        return {
+            **user,
+            "investor_id": investor["investor_id"],
+            "stock_level": investor["stock_level"],
+            "paper_money": investor["paper_money"],
+            "used_amount": investor["used_amount"],
+            "investor_subscription_status": investor["investor_subscription_status"]
+        }
+
+    @staticmethod
+    def deleteInvestor(user_id):
+        from app.entity.models.subscription import Subscription
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+
+            # 1. Delete subscriptions (child of investor)
+            session.query(Subscription).filter(
+                Subscription.investor_id == investor.investor_id
+            ).delete()
+
+            # 2. Delete investor row (child of user_account)
+            session.delete(investor)
+            session.flush()
+
+            # 3. Delete user_account row
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id
+            ).first()
+            if user:
+                session.delete(user)
+            return True
+
+    @staticmethod
+    def update_investor_stock_level(user_id, stock_level):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.stock_level = stock_level
+            return True
+
+
+def seed_investor_account():
+    Investor.createAccount(
+        username="Kim",
+        full_name="Nguy Kim Anh",
+        email_address="kim@gmail.com",
+        password="password",
+        phone_number=12343243,
+        address="123 Kim Street",
+        stock_level="Basic"
+    )
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\subscription.py ===
+
+from sqlalchemy import Column, ForeignKey, String, DateTime
+from app.entity.models.investor import Investor
+from app.entity.database.base import Base
+from datetime import datetime, timedelta
+from app.entity.database.session import get_session
+from zoneinfo import ZoneInfo
+from uuid import uuid4
+
+
+class Subscription(Base):
+    __tablename__ = "subscription"
+    sub_id = Column(String(50), primary_key=True,
+                    default=lambda: f"sub_{uuid4()}")
+    transaction_id = Column(String(200), unique=True, nullable=False)
+    plan_type = Column(String(20), default='basic')  # e.g., "basic", "premium"
+    investor_id = Column(String(50), ForeignKey(
+        "investor.investor_id"), nullable=False)
+    sub_date = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")))
+    sub_status = Column(String(20), default="active")
+    sub_renewal_date = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")), nullable=True)
+
+    @staticmethod
+    def createSubscription(transaction_id, plan_type, investor_id):
+        with get_session() as session:
+            if plan_type == "basic":
+                if session.query(Subscription).filter(
+                    Subscription.investor_id == investor_id,
+                    Subscription.sub_status == "active"
+                ).first():
+                    print("ACTIVE SUBSCRIPTION EXISTS")
+                    return False
+
+            renewal_date = (
+                datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=30)
+                if plan_type == "premium"
+                else None
+            )
+
+            subscription = Subscription(
+                transaction_id=transaction_id,
+                plan_type=plan_type,
+                investor_id=investor_id,
+                sub_status="active",
+                sub_renewal_date=renewal_date
+            )
+            session.add(subscription)
+
+            investor = session.query(Investor).filter(
+                Investor.investor_id == investor_id
+            ).first()
+            if investor:
+                investor.investor_subscription_status = plan_type
+
+            session.flush()
+            print("SUBSCRIPTION CREATED")
+            return subscription.sub_id
+
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\useraccount.py ===
+
+from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean, func
+from sqlalchemy.orm import relationship, joinedload
+from app.entity.database.base import Base
+from datetime import datetime
+from uuid import uuid4
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
+from app.entity.database.session import get_session
+from app.entity.models.userprofile import UserProfile
+
+
+class UserAccount(Base):
+    __tablename__ = "user_account"
+    user_id = Column(String(50), primary_key=True,
+                     default=lambda: f"user_{uuid4()}")
+    profile_id = Column(String(50), ForeignKey(
+        "user_profiles.profile_id"), nullable=True)
+    username = Column(String(50), unique=True, nullable=False)
+    full_name = Column(String(100), nullable=False)
+    phone_number = Column(String(20), unique=True, nullable=False)
+    address = Column(String(255), nullable=False)
+    email_address = Column(String(255), unique=True, nullable=False)
+    account_status = Column(String(20), default="active")
+    join_date = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")))
+    last_login = Column(DateTime, default=lambda: datetime.now(
+        ZoneInfo("Asia/Singapore")))
+    password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=False)
+    profile = relationship("UserProfile", back_populates="users")
+
+    @staticmethod
+    def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
+        from app.entity.models.investor import Investor  # Import your investor model
+        
+        with get_session() as session:
+            existing_user = session.query(UserAccount).filter(
+                (UserAccount.username == username) |
+                (UserAccount.email_address == email_address)
+            ).first()
+            if existing_user:
+                return False
+
+            try:
+                profile_id = UserProfile.get_or_create(profile_name)
+                new_user = UserAccount(
+                    username=username,
+                    full_name=full_name,
+                    email_address=email_address,
+                    password=password,
+                    phone_number=phone_number,
+                    address=address,
+                    profile_id=profile_id,
+                    account_status="active",
+                    is_active=False
+                )
+                session.add(new_user)
+                session.flush() # This gives us access to new_user.user_id
+
+                # AUTO-CREATE INVESTOR PROFILE SO FEATURES UNLOCK
+                if profile_name.strip().lower() == "investor":
+                    new_investor = Investor(
+                        user_id=new_user.user_id,
+                        investor_subscription_status="active" # Forces subscription to be active
+                    )
+                    session.add(new_investor)
+
+                session.commit()
+                return new_user.user_id
+            except Exception as e:
+                session.rollback()
+                print("USER ACCOUNT CREATE ERROR:", e)
+                raise
+
+    @staticmethod
+    def login(username, password) -> dict:
+        from app.entity.models.expert import Expert
+        from app.entity.models.investor import Investor
+
+        try:
+            with get_session() as session:
+                matching_account = session.query(UserAccount).options(
+                    joinedload(UserAccount.profile)
+                ).filter(
+                    (func.binary(UserAccount.username) == username) &
+                    (UserAccount.password == password)
+                ).first()
+
+                if not matching_account:
+                    return {"success": False}
+
+                # Update last login and active status
+                matching_account.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+                matching_account.is_active = True
+                matching_account.account_status = "active"
+
+                # Keep everything inside the context scope while using the session
+                profile_name = matching_account.profile.profile_name if matching_account.profile else None
+
+                investor = session.query(Investor).filter(
+                    Investor.user_id == matching_account.user_id).first()
+                expert = session.query(Expert).filter(
+                    Expert.user_id == matching_account.user_id).first()
+
+                # Determine role
+                if investor:
+                    role = "investor"
+                elif expert:
+                    role = "expert"
+                elif profile_name == "admin":
+                    role = "admin"
+                else:
+                    role = profile_name or "unknown"
+
+                subscription_status = investor.investor_subscription_status if investor else "inactive"
+
+                user_payload = {
+                    "user_id": matching_account.user_id,
+                    "username": matching_account.username,
+                    "full_name": matching_account.full_name,
+                    "email": matching_account.email_address,
+                    "role": role,
+                    "subscription_status": subscription_status
+                }
+
+                # Explicitly commit login tracker adjustments
+                session.commit()
+
+                return {
+                    "success": True,
+                    "user": user_payload
+                }
+        except Exception as e:
+            print(f"LOGIN ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"success": False}
+
+    @staticmethod
+    def logout(user_id) -> bool:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return False
+            user.is_active = False
+            user.account_status = "inactive"
+            
+            session.commit()  # ADDED: Persist the logged-out state
+            return True
+
+    @staticmethod
+    def get_user_information(user_id) -> dict:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return None
+            return {
+                "user_id": user.user_id,
+                "username": user.username,
+                "full_name": user.full_name,
+                "email": user.email_address,
+                "phone_number": user.phone_number,
+                "address": user.address,
+                "join_date": user.join_date,
+                "account_status": user.account_status,
+                "password": user.password
+            }
+
+    @staticmethod
+    def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id).first()
+            if not user:
+                return False
+            if user_name:
+                user.username = user_name
+            if full_name:
+                user.full_name = full_name
+            if email_address:
+                user.email_address = email_address
+            if address:
+                user.address = address
+            if phone_number:
+                user.phone_number = str(phone_number)
+                
+            session.commit()  # ADDED: Save user edits to the database permanently
+            return True
+
+
+def seed_admin_account():
+    UserAccount.createAccount(
+        username="admin",
+        full_name="Admin User",
+        email_address="admin@gmail.com",
+        password="admin123",
+        phone_number="1234567890",  # Changed from integer to string
+        address="123 Admin Street",
+        profile_name="admin"
+    )
+
+
+if __name__ == "__main__":
+    seed_admin_account()
+
+    
+
+
+# === FILE: C:\Users\lanic\Documents\CSIT321 FYP\FYP-26-S2-27-main ( updated )\FYP-26-S2-27-main\backend\app\entity\models\userprofile.py ===
+
+from sqlalchemy import Column, String
+from app.entity.database.base import Base
+from sqlalchemy.orm import relationship
+from app.entity.database.session import get_session
+from uuid import uuid4
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    profile_id = Column(String(50), primary_key=True,
+                        default=lambda: f"profile_{uuid4().hex}")
+    profile_name = Column(String(100), unique=True, nullable=False)
+    status = Column(String(20), default="active")
+    description = Column(String(255), nullable=True)
+
+    users = relationship("UserAccount", back_populates="profile")
+
+    @staticmethod
+    def get_or_create(profile_name, description=None):
+        normalized_name = profile_name.strip().lower()
+
+        with get_session() as session:
+            profile = session.query(UserProfile).filter(
+                UserProfile.profile_name == normalized_name
+            ).first()
+
+            if profile:
+                return profile.profile_id
+
+            profile = UserProfile(
+                profile_name=normalized_name,
+                description=description
+            )
+
+            session.add(profile)
+            session.flush()
+
+            return profile.profile_id
+
+
+def seed_profiles():
+
+    profiles = [
+        ("admin", "System administrator"),
+        ("investor", "Investor account"),
+        ("expert", "Expert account")
+    ]
+
+    try:
+        for profile_name, description in profiles:
+            UserProfile.get_or_create(profile_name, description)
+        with get_session() as session:
+            session.commit()
+
+    except Exception as e:
+        with get_session() as session:
+            session.rollback()
+        print("Error generating profiles:", e)
+
+
+if __name__ == "__main__":
+    seed_profiles()
+
