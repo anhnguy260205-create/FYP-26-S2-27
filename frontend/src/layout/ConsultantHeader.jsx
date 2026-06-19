@@ -105,12 +105,12 @@ function ConsultantHeader() {
         {
             label: "Questions",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("#")
+            onClick: () => navigate("/expert/questions")
         },
         {
-            label: "My Porfolio",
+            label: "My Portfolio",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("#")
+            onClick: () => navigate("/expert/portfolio")
         },
         {
             label: "Community Forum",
@@ -134,7 +134,7 @@ function ConsultantHeader() {
                             href="#"
                             className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap hover:opacity-70 transition-opacity"
                             style={{ backgroundImage: link.gradient }}
-                            onClick={link.onClick}
+                            onClick={(event) => { event.preventDefault(); link.onClick?.(); }}
                         >
                             {link.label}
                         </a>

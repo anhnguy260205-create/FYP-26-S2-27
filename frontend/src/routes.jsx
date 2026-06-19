@@ -31,6 +31,10 @@ import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
 import ExpertKnowledgeHub from "./pages/expert/ExpertKnowledgeHub.jsx";
+import ExpertPortfolioPage from "./pages/expert/ExpertPortfolioPage.jsx";
+import CreateExpertPortfolioPage from "./pages/expert/CreateExpertPortfolioPage.jsx";
+import ExpertQuestionsPage from "./pages/expert/ExpertQuestionsPage.jsx";
+import ExpertQuestionDetailPage from "./pages/expert/ExpertQuestionDetailPage.jsx";
 import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
 import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
@@ -177,6 +181,23 @@ export const router = createBrowserRouter([
     {
         path: "/expert/knowledge-hub",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertKnowledgeHub /></ProtectedRoute>
+    },
+
+    {
+        path: "/expert/portfolio",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertPortfolioPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/create-portfolio",
+        element: <ProtectedRoute allowedRoles={["expert"]}><CreateExpertPortfolioPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/questions",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionsPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/question/:questionId",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionDetailPage /></ProtectedRoute>
     },
 
 
