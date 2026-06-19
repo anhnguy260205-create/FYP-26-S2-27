@@ -1,0 +1,9 @@
+fastapi
+python-dotenv
+sqlalchemy
+pymysql
+cryptography
+websockets
+yfinance
+xgboost
+vaderSentiment
