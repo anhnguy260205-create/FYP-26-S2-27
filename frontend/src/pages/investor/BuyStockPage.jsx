@@ -167,7 +167,25 @@ function BuyStockPage() {
               </span>
             </div>
 
-            {/* Price */}
+            {!isMarketOpen && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                borderRadius: "10px", padding: "12px 14px", marginBottom: "20px",
+              }}>
+                <span style={{ fontSize: "16px" }}>🔒</span>
+                <div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#fca5a5" }}>
+                    Market closed — trading unavailable
+                  </div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+                    US markets are open Mon–Fri, 9:30am–4:00pm ET (about 9:30pm–4:00am Singapore time).
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
               padding: "16px 0", borderTop: "1px solid rgba(99,179,237,0.1)",

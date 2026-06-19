@@ -112,6 +112,7 @@ seed_profiles()
 seed_admin_account()
 seed_investor_account()
 seed_expert_account()
+seed_articles()
 
 app.include_router(user_router)
 app.include_router(admin_router)
