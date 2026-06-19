@@ -11,20 +11,34 @@ load_dotenv(BASE_DIR / ".env")
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
-# ── shared SMTP helper (Mailtrap sandbox) ─────────────────────────────────────
+# ── shared SMTP helper (Gmail) ─────────────────────────────────────────────────
+
+GMAIL_SMTP_HOST = "smtp.gmail.com"
+GMAIL_SMTP_PORT = 587
+
 
 def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
-    """Send via Mailtrap sandbox SMTP. Swap host/port for production."""
+    """Send via Gmail's SMTP server, authenticated with a Gmail App Password.
+
+    GMAIL_USER must be a real Gmail address, and GMAIL_APP_PASSWORD must be a
+    16-character App Password generated from the Google Account's Security
+    settings (this requires 2-Step Verification to be turned on). A normal
+    Gmail login password will NOT work here.
+    """
     if not GMAIL_USER or not GMAIL_APP_PASSWORD:
         print(f"[EMAIL] Credentials not set — skipping {label}")
         return False
     try:
-        with smtplib.SMTP("smtp-relay.brevo.com", 587) as server:
+        with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT) as server:
             server.starttls()
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_USER, to_email, msg.as_string())
         print(f"[EMAIL] {label} sent to {to_email}")
         return True
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EMAIL] Gmail auth failed for {label}: {e}. "
+              f"Check that GMAIL_APP_PASSWORD is a 16-char App Password, not your normal Gmail password.")
+        return False
     except Exception as e:
         print(f"[EMAIL] Failed to send {label}: {e}")
         return False
