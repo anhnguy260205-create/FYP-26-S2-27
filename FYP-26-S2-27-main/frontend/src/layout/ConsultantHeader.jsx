@@ -48,7 +48,7 @@ function DropDownMenu() {
     return (
         <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
                      group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-            <button onClick={() => navigate("#")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+            <button onClick={() => navigate("/expert/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
                 Profile
             </button>
 
@@ -105,17 +105,17 @@ function ConsultantHeader() {
         {
             label: "Questions",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("#")
+            onClick: () => navigate("/expert/questions")
         },
         {
-            label: "My Porfolio",
+            label: "My Portfolio",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("#")
+            onClick: () => navigate("/expert/portfolio")
         },
         {
             label: "Community Forum",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("#")
+            onClick: () => navigate("/forum")
         },
 
 

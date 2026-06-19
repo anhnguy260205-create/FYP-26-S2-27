@@ -6,3 +6,4 @@ cryptography
 websockets
 yfinance
 xgboost
+vaderSentiment

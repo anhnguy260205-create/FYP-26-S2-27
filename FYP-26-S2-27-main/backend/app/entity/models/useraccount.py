@@ -4,10 +4,7 @@ from app.entity.database.base import Base
 from datetime import datetime
 from uuid import uuid4
 
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo
 
 from app.entity.database.session import get_session
 from app.entity.models.userprofile import UserProfile
@@ -68,23 +65,22 @@ class UserAccount(Base):
         from app.entity.models.expert import Expert
         from app.entity.models.investor import Investor
 
-        try:
-            with get_session() as session:
-                matching_account = session.query(UserAccount).options(
-                    joinedload(UserAccount.profile)
-                ).filter(
-                    (func.binary(UserAccount.username) == username) &
-                    (UserAccount.password == password)
-                ).first()
+        with get_session() as session:
+            matching_account = session.query(UserAccount).options(
+                joinedload(UserAccount.profile)
+            ).filter(
+                (func.binary(UserAccount.username) == username) &
+                (UserAccount.password == password)
+            ).first()
 
-                if not matching_account:
-                    return {"success": False}
+            if not matching_account:
+                return {"success": False}
 
-                # Update last login and active status
-                matching_account.last_login = datetime.now(
-                    ZoneInfo("Asia/Singapore"))
-                matching_account.is_active = True
-                matching_account.account_status = "active"
+            # Update last login and active status
+            matching_account.last_login = datetime.now(
+                ZoneInfo("Asia/Singapore"))
+            matching_account.is_active = True
+            matching_account.account_status = "active"
 
             profile_name = matching_account.profile.profile_name if matching_account.profile else None
 
@@ -114,11 +110,6 @@ class UserAccount(Base):
                     "subscription_status": investor.investor_subscription_status if investor else "inactive"
                 }
             }
-        except Exception as e:
-            print(f"LOGIN ERROR: {e}")
-            import traceback
-            traceback.print_exc()
-            return {"success": False}
 
     @staticmethod
     def logout(user_id) -> bool:
@@ -149,6 +140,23 @@ class UserAccount(Base):
                 "account_status": user.account_status,
                 "password": user.password
             }
+
+    @staticmethod
+    def emailExists(email_address) -> bool:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == email_address).first()
+            return user is not None
+
+    @staticmethod
+    def resetPasswordByEmail(email_address, new_password) -> bool:
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == email_address).first()
+            if not user:
+                return False
+            user.password = new_password
+            return True
 
     @staticmethod
     def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
