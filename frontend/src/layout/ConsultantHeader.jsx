@@ -105,12 +105,12 @@ function ConsultantHeader() {
         {
             label: "Questions",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("/expert/questions")
+            onClick: () => navigate("#")
         },
         {
-            label: "My Portfolio",
+            label: "My Porfolio",
             gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-            onClick: () => navigate("/expert/portfolio")
+            onClick: () => navigate("#")
         },
         {
             label: "Community Forum",
@@ -158,6 +158,3 @@ function ConsultantHeader() {
 }
 
 export default ConsultantHeader;
-
-
-
