@@ -34,8 +34,8 @@ alpaca_task: Optional[asyncio.Task] = None
 previous_close_cache: Dict[str, float] = {}
 
 stock_pool = [
-    "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
-    "AMZN", "META", "AMD",  "NFLX", "INTC"
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "AVGO",  "ORCL", "AMD",
 ]
 
 # Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
@@ -61,12 +61,28 @@ def alpaca_headers() -> dict:
     }
 
 
-# getting market status
+# NYSE holidays (fixed dates + observed rules) — update yearly
+_NYSE_HOLIDAYS_2025 = {
+    "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18",
+    "2025-05-26", "2025-06-19", "2025-07-04", "2025-09-01",
+    "2025-11-27", "2025-12-25",
+}
+_NYSE_HOLIDAYS_2026 = {
+    "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03",
+    "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07",
+    "2026-11-26", "2026-12-25",
+}
+_NYSE_HOLIDAYS = _NYSE_HOLIDAYS_2025 | _NYSE_HOLIDAYS_2026
+
+
 def get_market_status() -> str:
     eastern = ZoneInfo("America/New_York")
     now = datetime.now(eastern)
+    today_str = now.strftime("%Y-%m-%d")
+    if today_str in _NYSE_HOLIDAYS:
+        return "CLOSED"
     current_time = now.time()
-    market_open = current_time >= datetime.strptime("09:30", "%H:%M").time()
+    market_open  = current_time >= datetime.strptime("09:30", "%H:%M").time()
     market_close = current_time <= datetime.strptime("16:00", "%H:%M").time()
     weekday = now.weekday() < 5
     if weekday and market_open and market_close:
@@ -525,6 +541,36 @@ async def ensure_alpaca_connection():
             alpaca_task = asyncio.create_task(run_alpaca_connection())
 
 
+async def periodic_snapshot_broadcast(interval: int = 60):
+    """Broadcast fresh snapshots to all clients every `interval` seconds.
+    Runs regardless of market status so prices always refresh."""
+    while True:
+        await asyncio.sleep(interval)
+        async with clients_lock:
+            clients = list(connected_clients.keys())
+        if not clients:
+            return
+        try:
+            results = await asyncio.gather(
+                *[asyncio.to_thread(get_snapshot, s) for s in stock_pool],
+                return_exceptions=True,
+            )
+            quotes = [r for r in results if isinstance(r, dict)]
+            if quotes:
+                msg = json.dumps(clean_json_value({
+                    "type": "snapshot",
+                    "data": quotes,
+                    "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+                }))
+                for ws in clients:
+                    try:
+                        await send_to_client(ws, msg)
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"Periodic snapshot broadcast error: {e}")
+
+
 # ── WebSocket endpoint ─────────────────────────────────────────────────────────
 
 @router.websocket("/ws/stocks")
@@ -556,11 +602,14 @@ async def websocket_endpoint(websocket: WebSocket):
             "status": market,
         })
 
-        # 4. Only start live WebSocket stream when market is open
+        # 4. Live WebSocket stream when market is open
         if market == "OPEN":
             await ensure_alpaca_connection()
         else:
-            print("Market closed — skipping Alpaca WebSocket, using yfinance data only")
+            print("Market closed — using yfinance snapshots with periodic refresh")
+
+        # 5. Periodic snapshot refresh (every 60s) — works whether open or closed
+        asyncio.create_task(periodic_snapshot_broadcast(interval=60))
 
         while True:
             raw_message = await websocket.receive_text()
