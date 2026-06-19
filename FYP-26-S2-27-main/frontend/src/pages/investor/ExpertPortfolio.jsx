@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Search,
     Users,
@@ -75,6 +76,7 @@ const STATS = [
 ];
 
 export default function ExpertPortfolio() {
+    const navigate = useNavigate();
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
 
@@ -328,6 +330,7 @@ export default function ExpertPortfolio() {
 
                             <div className="flex gap-2">
                                 <button
+                                    onClick={() => navigate("/investor/expertdetails")}
                                     style={{
                                         padding:
                                             "8px 14px",
@@ -348,6 +351,7 @@ export default function ExpertPortfolio() {
                                 </button>
 
                                 <button
+                                    onClick={() => navigate("/investor/expertadvice")}
                                     style={{
                                         padding:
                                             "8px 14px",

@@ -5,6 +5,7 @@ import json
 import asyncio
 import os
 import math
+import time
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -36,6 +37,11 @@ stock_pool = [
     "AAPL", "TSLA", "NVDA", "MSFT", "GOOGL",
     "AMZN", "META", "AMD",  "NFLX", "INTC"
 ]
+
+# Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
+_snapshot_cache: Dict[str, dict] = {}
+_snapshot_cache_ts: Dict[str, float] = {}
+SNAPSHOT_TTL = 30.0  # seconds
 
 
 def clean_json_value(value):
@@ -71,54 +77,38 @@ def get_market_status() -> str:
 # ── yfinance helpers ───────────────────────────────────────────────────────────
 
 def get_snapshot_yfinance(symbol: str) -> dict:
-    try:
-        ticker = yf.Ticker(symbol)
+    ticker = yf.Ticker(symbol)
 
-        # One call: last 2 daily bars → today + yesterday
-        hist = ticker.history(period="5d", interval="1d")
-        hist = hist.dropna(subset=["Close"])  # drops the partial June 10 row
+    # One call: last 2 daily bars → today + yesterday
+    hist = ticker.history(period="5d", interval="1d")
+    hist = hist.dropna(subset=["Close"])  # drops the partial June 10 row
 
-        today = None
-        yesterday = None
+    today = None
+    yesterday = None
 
-        if not hist.empty:
-            # hist is sorted oldest→newest
-            today = hist.iloc[-1]
-            yesterday = hist.iloc[-2] if len(hist) >= 2 else None
+    if not hist.empty:
+        # hist is sorted oldest→newest
+        today = hist.iloc[-1]
+        yesterday = hist.iloc[-2] if len(hist) >= 2 else None
 
-        # avg volume: three_month_average_volume from fast_info is reliable
-        # (it's pre-computed by Yahoo, not derived from tick data)
-        avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
+    # avg volume: three_month_average_volume from fast_info is reliable
+    # (it's pre-computed by Yahoo, not derived from tick data)
+    avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
 
-        return {
-            "s":             symbol,
-            # Use today's close as the current price (market closed → last close)
-            "p":             float(today["Close"]) if today is not None else None,
-            "close":         float(today["Close"]) if today is not None else None,
-            "previousClose": float(yesterday["Close"]) if yesterday is not None else None,
-            "open":          float(today["Open"]) if today is not None else None,
-            "high":          float(today["High"]) if today is not None else None,
-            "low":           float(today["Low"]) if today is not None else None,
-            # today's total volume — matches Google Finance
-            "volume":        int(today["Volume"]) if today is not None else None,
-            # 3-month average daily volume — matches Google Finance
-            "avgVolume":     int(avg_volume) if avg_volume is not None else None,
-        }
-    except Exception as e:
-        # yfinance can raise internal KeyError when Yahoo response is missing fields
-        # Return a safe snapshot so callers don't crash; log concise message.
-        print(f"yfinance snapshot error for {symbol}: {e.__class__.__name__}: {e}")
-        return {
-            "s": symbol,
-            "p": None,
-            "close": None,
-            "previousClose": None,
-            "open": None,
-            "high": None,
-            "low": None,
-            "volume": None,
-            "avgVolume": None,
-        }
+    return {
+        "s":             symbol,
+        # Use today's close as the current price (market closed → last close)
+        "p":             float(today["Close"]) if today is not None else None,
+        "close":         float(today["Close"]) if today is not None else None,
+        "previousClose": float(yesterday["Close"]) if yesterday is not None else None,
+        "open":          float(today["Open"]) if today is not None else None,
+        "high":          float(today["High"]) if today is not None else None,
+        "low":           float(today["Low"]) if today is not None else None,
+        # today's total volume — matches Google Finance
+        "volume":        int(today["Volume"]) if today is not None else None,
+        # 3-month average daily volume — matches Google Finance
+        "avgVolume":     int(avg_volume) if avg_volume is not None else None,
+    }
 
 
 def get_historical_bars_yfinance(symbol: str, range: str = "1D",  limit: int = 1800) -> list:
@@ -287,20 +277,26 @@ def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800
 # ── Unified fetchers (auto-switch by market status) ────────────────────────────
 
 def get_snapshot(symbol: str) -> dict:
+    now = time.monotonic()
+    if symbol in _snapshot_cache and now - _snapshot_cache_ts.get(symbol, 0) < SNAPSHOT_TTL:
+        return _snapshot_cache[symbol]
+
     if get_market_status() == "OPEN":
         try:
-            return get_snapshot_alpaca(symbol)
+            result = get_snapshot_alpaca(symbol)
         except Exception as e:
-            print(
-                f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
-            return get_snapshot_yfinance(symbol)
+            print(f"Alpaca snapshot failed for {symbol}, falling back to yfinance: {e}")
+            result = get_snapshot_yfinance(symbol)
     else:
         try:
-            return get_snapshot_yfinance(symbol)
+            result = get_snapshot_yfinance(symbol)
         except Exception as e:
-            print(
-                f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
-            return get_snapshot_alpaca(symbol)
+            print(f"yfinance snapshot failed for {symbol}, falling back to Alpaca: {e}")
+            result = get_snapshot_alpaca(symbol)
+
+    _snapshot_cache[symbol] = result
+    _snapshot_cache_ts[symbol] = now
+    return result
 
 
 def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> list:
@@ -551,8 +547,8 @@ async def websocket_endpoint(websocket: WebSocket):
         # 1. Latest prices (Alpaca if open, yfinance if closed)
         await send_snapshot_prices(websocket)
 
-        # 2. Historical bars to seed sparklines
-        await send_historical_candles(websocket)
+        # 2. 1D historical candles for all stocks (needed for sparklines)
+        await send_historical_candles(websocket, symbols=stock_pool, range="1D")
 
         # 3. Market status banner
         await send_json_to_client(websocket, {

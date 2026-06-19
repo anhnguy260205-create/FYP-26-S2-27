@@ -1,5 +1,6 @@
 from app.entity.models.investor import Investor
 from app.entity.models.subscription import Subscription
+from app.entity.models.watchlist import Watchlist
 
 
 class CreateInvestorController:
@@ -17,3 +18,18 @@ class GetInvestorController:
 class UpdateStockLevel:
     def updateStockLevel(self, user_id, stock_level):
         return Investor.update_investor_stock_level(user_id, stock_level)
+
+
+class AddStockToWatchlist:
+    def addStockToWatchlist(self, user_id, stock_symbol):
+        return Watchlist.add_stock(user_id, stock_symbol)
+
+
+class RemoveStockFromWatchlist:
+    def removeStockFromWatchlist(self, user_id, stock_symbol):
+        return Watchlist.remove_stock(user_id, stock_symbol)
+
+
+class GetWatchlist:
+    def getWatchlist(self, user_id):
+        return Watchlist.get_watchlist(user_id)

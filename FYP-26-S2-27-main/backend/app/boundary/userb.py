@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter
 
 from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
-from app.control.controller.investorc import UpdateStockLevel
+from app.control.controller.investorc import UpdateStockLevel, AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -134,8 +134,6 @@ def logout(data: LogoutRequest):
 
 
 # Display user information (for both investor and expert)
-
-
 class InvestorInformationPage:
     def __init__(self):
         self.controller = InvestorInformationController()
@@ -282,3 +280,47 @@ def update_stock_level(data: UpdateStockLevelRequest):
         "success": True,
         "message": "The stock level is successfully updated"
     }
+
+
+################ Watchlist######################
+class AddStockToWatchlistRequest(BaseModel):
+    user_id: str
+    stock_symbol: str
+
+
+class AddStockToWatchlistPage:
+    def __init__(self):
+        self.controller = AddStockToWatchlist()
+
+    def add_stock_symbol(self, user_id, stock_symbol):
+        return self.controller.addStockToWatchlist(user_id, stock_symbol)
+
+
+@router.post("/investor-watchlist/{user_id}")
+def add_stock_symbol(user_id, data: AddStockToWatchlistRequest):
+    boundary = AddStockToWatchlistPage()
+
+    result = boundary.add_stock_symbol(user_id, data.stock_symbol)
+    if not result:
+        return {
+            "success": False,
+            "message": "The stock is fail to add to watchlist"
+        }
+    return {
+        "success": True,
+        "message": "The stock is success to be added into watchlist"
+    }
+
+
+@router.get("/investor-watchlist/{user_id}")
+def get_watchlist(user_id: str):
+    result = GetWatchlist().getWatchlist(user_id)
+    return {"success": True, "watchlist": result}
+
+
+@router.delete("/investor-watchlist/{user_id}/{stock_symbol}")
+def remove_stock_symbol(user_id: str, stock_symbol: str):
+    result = RemoveStockFromWatchlist().removeStockFromWatchlist(user_id, stock_symbol)
+    if not result.get("success"):
+        return {"success": False, "message": result.get("message", "Failed to remove stock")}
+    return {"success": True, "message": "Stock removed from watchlist"}

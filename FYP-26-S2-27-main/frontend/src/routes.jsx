@@ -8,6 +8,12 @@ import ForumPage from "./pages/shared/ForumPage.jsx";
 import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
 import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
 import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
+import UserAccountDetailsPage from "./pages/administrator/UserAccountDetailsPage.jsx";
+import UserProfilesPage from "./pages/administrator/UserProfilesPage.jsx";
+import CommunityPostsPage from "./pages/administrator/CommunityPostsPage.jsx";
+import CommunityPostDetailsPage from "./pages/administrator/CommunityPostDetailsPage.jsx";
+import TradeManagementPage from "./pages/administrator/TradeManagementPage.jsx";
+import InvestmentGuidanceArticlesPage from "./pages/administrator/InvestmentGuidanceArticlesPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -24,15 +30,46 @@ import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
+import ExpertKnowledgeHub from "./pages/expert/ExpertKnowledgeHub.jsx";
+import ExpertPortfolioPage from "./pages/expert/ExpertPortfolioPage.jsx";
+import CreateExpertPortfolioPage from "./pages/expert/CreateExpertPortfolioPage.jsx";
+import ExpertQuestionsPage from "./pages/expert/ExpertQuestionsPage.jsx";
+import ExpertQuestionDetailPage from "./pages/expert/ExpertQuestionDetailPage.jsx";
+import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
+import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
+import SellStockPage from "./pages/investor/SellStockPage.jsx";
+import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
+import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
+import VerifyDocumnetationPage from "./pages/administrator/VerifyDocument.jsx";
 
 
 export const router = createBrowserRouter([
     { path: "/", Component: HomePage },
     { path: "/register", Component: RegistrationPage },
     { path: "/login", Component: LoginPage },
+    { path: "/forgot-password", Component: ForgotPasswordPage },
+    { path: "/reset-password", Component: ResetPasswordPage },
 
     {
-        path: "/investor/loggedhome",
+        path: "/buy/:symbol",
+        element: <ProtectedRoute allowedRoles={["investor"]}><BuyStockPage /></ProtectedRoute>
+    },
+    {
+        path: "/sell/:symbol",
+        element: <ProtectedRoute allowedRoles={["investor"]}><SellStockPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-history",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionHistoryPage /></ProtectedRoute>
+    },
+    {
+        path: "/investor/transaction-portal",
+        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionPortalPage /></ProtectedRoute>
+    },
+
+    {
+        path: "/investor",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
     },
     {
@@ -104,6 +141,34 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
     },
 
+    {
+        path: "/adminpanel/useraccounts/:userId",
+        element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountDetailsPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/profiles",
+        element: <ProtectedRoute allowedRoles={["admin"]}><UserProfilesPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/posts",
+        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostsPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/posts/:postId",
+        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostDetailsPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/trade",
+        element: <ProtectedRoute allowedRoles={["admin"]}><TradeManagementPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/articles",
+        element: <ProtectedRoute allowedRoles={["admin"]}><InvestmentGuidanceArticlesPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/verifydocumentation",
+        element: <ProtectedRoute allowedRoles={["admin"]}><VerifyDocumnetationPage /></ProtectedRoute>
+    },
 
     {
         path: "/expert/edit-profile",
@@ -113,6 +178,27 @@ export const router = createBrowserRouter([
         path: "/expert",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
     },
+    {
+        path: "/expert/knowledge-hub",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertKnowledgeHub /></ProtectedRoute>
+    },
+    {
+        path: "/expert/portfolio",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertPortfolioPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/create-portfolio",
+        element: <ProtectedRoute allowedRoles={["expert"]}><CreateExpertPortfolioPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/questions",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionsPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/question/:questionId",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionDetailPage /></ProtectedRoute>
+    },
+
 
 ]);
 

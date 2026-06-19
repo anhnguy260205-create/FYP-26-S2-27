@@ -7,6 +7,7 @@ import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { createAlert } from "../../api/alertApi.js";
+import { addStockToWatchlist } from "../../api/userApi.js";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -28,12 +29,12 @@ function companyName(symbol) {
 }
 
 /* ─── Trade Buttons ────────────────────────────────────────── */
-function Button({ marketStatus }) {
+function Button({ marketStatus, symbol }) {
   const navigate = useNavigate();
   const isOpen = marketStatus === "OPEN";
   const handleTrade = (type) => {
     if (!isOpen) { alert("Market is closed. Cannot make any transactions."); return; }
-    navigate(`/${type}`);
+    navigate(`/${type}/${symbol}`);
   };
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -83,10 +84,21 @@ function Button({ marketStatus }) {
   );
 }
 /* Watchlist Feature */
-function WatchlistButton() {
+function WatchlistButton({ stock_symbol, currentUser }) {
+  const user_id = currentUser?.user_id
   const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("The feature is coming soon!!")
+    try {
+      const result = await addStockToWatchlist(user_id, stock_symbol);
+      if (result.success) {
+        alert("Stock is updated to watchlist");
+      } else {
+        alert("Stock is already in the watchlist");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Fail to add to watchlist")
+    }
   }
   return (
     <button onClick={handleSubmit}
@@ -102,7 +114,7 @@ function WatchlistButton() {
 }
 /* ─── First Level ──────────────────────────────────────────── */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
-function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated }) {
+function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, currentUser }) {
   //Price data lives in `stock` (passed from stocks[selectedStock] in the page).
   const chg = stock?.price != null && stock?.previousClose != null
     ? (stock.price - stock.previousClose).toFixed(3)
@@ -113,6 +125,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated })
   const isUp = chg === null ? true : Number(chg) >= 0;
   const changeColor = isUp ? "#34d399" : "#f87171";
   const isMarketOpen = marketStatus === "OPEN";
+
 
   return (
     <motion.div
@@ -180,8 +193,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated })
           {pctChg !== null ? `(${isUp ? "+" : ""}${pctChg}%)` : ""}
         </span>
       </div>
-      <WatchlistButton />
-      <Button marketStatus={marketStatus} />
+      <WatchlistButton stock_symbol={selectedStock} currentUser={currentUser} />
+      <Button marketStatus={marketStatus} symbol={selectedStock} />
 
     </motion.div>
   );
@@ -398,7 +411,7 @@ function AlertBoard({ symbol }) {
             opacity: loading ? 0.7 : 1,
             boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
           }}
-          onMouseEnter={e => { if (!loading) { e.currentTarget.style.boxShadow = "0 6px 24px rgba(37,99,235,0.5)"; e.currentTarget.style.transform = "translateY(-1px)"; }}}
+          onMouseEnter={e => { if (!loading) { e.currentTarget.style.boxShadow = "0 6px 24px rgba(37,99,235,0.5)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
           onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
           {loading ? "Saving..." : "Turn On Alerts"}
@@ -446,7 +459,7 @@ function PremiumLockCard() {
         Upgrade to get notified when prices hit your targets.
       </p>
       <button
-        onClick={() => navigate("/investor-profile")}
+        onClick={() => navigate("/investor/subscription")}
         style={{
           marginTop: "4px", padding: "10px 24px", borderRadius: "8px",
           background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
@@ -569,6 +582,7 @@ function AStockDashBoardPage() {
             stock={stock}
             marketStatus={marketStatus}
             lastUpdated={lastUpdated}
+            currentUser={currentUser}
           />
           <SecondAndThirdLevel
             symbol={symbol}
