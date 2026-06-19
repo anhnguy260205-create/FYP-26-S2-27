@@ -581,25 +581,6 @@ function ModelSignalPanel({ signal }) {
         </div>
       </div>
 
-      <div style={{ borderTop: "1px solid rgba(99,179,237,0.1)", paddingTop: 10 }}>
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
-          The XGBoost classifier outputs <b style={{ color: "#cbd5e1" }}>P(up)</b> — the
-          probability the stock closes higher next session, based on 26
-          technical &amp; sentiment features (RSI, MACD, Bollinger Bands,
-          moving averages, volume, and news sentiment).{" "}
-          <b style={{ color: "#cbd5e1" }}>Statistical confidence</b> measures
-          how far P(up) sits from a 50/50 coin-flip, scaled against the
-          model's validated accuracy (~69% AUC on historical test data) — so
-          a stronger signal (e.g. P(up)=85%) yields a higher confidence tier
-          (e.g. "High", ~69%) than a weak one (e.g. P(up)=52% → "Low", ~51%).{" "}
-          <b style={{ color: "#cbd5e1" }}>Expected profit margin</b> is the
-          probability-weighted average outcome: it multiplies the stock's
-          typical daily price swing by the directional edge
-          (2×P(up) − 1), so a confident bullish call on a volatile stock
-          projects a larger margin (e.g. +10–15%) than a low-confidence call
-          on a calm stock (e.g. +1–2%).
-        </p>
-      </div>
     </motion.div>
   );
 }
@@ -810,21 +791,10 @@ function GoalSummaryCard({ result }) {
         ))}
       </div>
 
-      <div style={{ borderTop: "1px solid rgba(99,179,237,0.1)", paddingTop: 10 }}>
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
-          With <b style={{ color: "#cbd5e1" }}>${budget.toFixed(2)}</b>, the model
-          projects a portfolio value of{" "}
-          <b style={{ color }}>${projected_value.toFixed(2)}</b> ({isPositive ? "+" : ""}
-          {projected_return_pct.toFixed(2)}%) after {timeline_days} trading days —
-          compounding today's directional edge daily. Hitting the{" "}
-          <b style={{ color: "#34d399" }}>+{target_return_pct}%</b> target is
-          estimated at a{" "}
-          <b style={{ color: "#63b3ed" }}>{(probability_reach_goal * 100).toFixed(0)}%</b>{" "}
-          probability, based on the model's confidence and how far the
-          projection sits from the goal. This is a projection, not a
-          guarantee — actual market conditions can change daily.
-        </p>
-      </div>
+      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "#94a3b8", margin: 0 }}>
+        Estimated <b style={{ color: "#63b3ed" }}>{(probability_reach_goal * 100).toFixed(0)}%</b> chance
+        of reaching this target. Projection only — not a guarantee.
+      </p>
     </motion.div>
   );
 }
@@ -1205,20 +1175,6 @@ function AIPredictionPage() {
                 <ModelSignalPanel signal={result.model_signal} />
 
                 <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                      Day traders need a same-session or next-session call,
-                      not a multi-week forecast. This view scales the model's
-                      directional edge (P(up) = {(result.model_signal.prob_up * 100).toFixed(1)}%)
-                      down to a <b style={{ color: "#cbd5e1" }}>{result.horizon_hours}-hour</b> window:
-                      a 12h call covers roughly the remainder of today's
-                      session, while a 24h call projects through the next
-                      full session. The confidence band is intentionally
-                      tighter than the multi-day forecast since short
-                      horizons carry less compounding uncertainty — but also
-                      less room for the signal to "play out".
-                    </p>
-                  </div>
                   <SentimentPanel sentiment={result.sentiment} />
                 </div>
 
