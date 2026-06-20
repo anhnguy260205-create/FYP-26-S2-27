@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, Eye, Heart, MessageCircle, Plus, Search, Send, X, ArrowLeft, Trash2, Pencil, Check } from "lucide-react";
+import { Bookmark, Eye, Heart, MessageCircle, Search, Send, X, ArrowLeft, Trash2, Pencil, Check } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -369,7 +369,6 @@ export default function ForumPage() {
             <>
               <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div><p className="text-sm font-semibold text-cyan-300">RocketTrade Community</p><h1 className="text-3xl font-bold">Forum Community</h1><p className="mt-1 text-sm text-slate-300">Discuss strategies, AI predictions, market news and portfolio ideas.</p></div>
-                <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-400"><Plus size={17} /> Create Post</button>
               </div>
 
               <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur">
