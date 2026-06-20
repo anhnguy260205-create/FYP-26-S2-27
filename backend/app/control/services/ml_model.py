@@ -35,6 +35,33 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 _vader = SentimentIntensityAnalyzer()
 _sentiment_cache: dict = {}  # (symbol, "YYYY-MM-DD") -> feature dict
+_spy_cache: dict = {}        # "YYYY-MM-DD" -> spy feature dict
+
+
+def _get_spy_features() -> dict:
+    """Fetch SPY daily history and compute market-relative features, cached per day."""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    if today in _spy_cache:
+        return _spy_cache[today]
+    try:
+        spy = yf.Ticker("SPY").history(period="3mo", interval="1d")
+        if spy.empty or len(spy) < 25:
+            raise ValueError("Insufficient SPY history")
+        close = spy["Close"]
+        ret_1d = float(close.pct_change(1).iloc[-1])
+        ret_5d = float(close.pct_change(5).iloc[-1])
+        ma20   = float(close.rolling(20).mean().iloc[-1])
+        ratio  = float(close.iloc[-1] / ma20 - 1) if ma20 else 0.0
+        result = {
+            "spy_return_1d": ret_1d  if math.isfinite(ret_1d)  else 0.0,
+            "spy_return_5d": ret_5d  if math.isfinite(ret_5d)  else 0.0,
+            "spy_ma_ratio":  ratio   if math.isfinite(ratio)   else 0.0,
+        }
+    except Exception as e:
+        print(f"SPY feature fetch failed: {e}")
+        result = {"spy_return_1d": 0.0, "spy_return_5d": 0.0, "spy_ma_ratio": 0.0}
+    _spy_cache[today] = result
+    return result
 
 
 def _safe_float(val, fallback: float = 0.0) -> float:
@@ -45,10 +72,10 @@ def _safe_float(val, fallback: float = 0.0) -> float:
     except (TypeError, ValueError):
         return fallback
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ml_models", "xgb_stock_model.json")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "ml_models", "xgb_all_auc0.5386_20260618_2159.json")
 
 # Validation AUC reported by the model's training run (attributes.best_score)
-MODEL_VALIDATION_AUC = 0.6920174504161174
+MODEL_VALIDATION_AUC = 0.5386
 
 _booster = None
 
@@ -231,24 +258,21 @@ def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
     df["rsi_lag3"] = df["rsi"].shift(3)
 
     sentiment = _get_sentiment_features(symbol)
+    spy = _get_spy_features()
 
     latest = df.iloc[-1]
 
-    feature_order = [
-        "return_1d", "return_2d", "return_5d", "price_to_ma5", "price_to_ma20",
-        "ma5_to_ma20", "rsi", "macd_diff", "stoch_k", "stoch_d", "bb_width",
-        "bb_pct", "atr_pct", "volume_ratio", "return_lag1", "return_lag2",
-        "return_lag3", "rsi_lag1", "rsi_lag2", "rsi_lag3",
-        "finbert_score_mean", "finbert_pos_mean", "finbert_neg_mean",
-        "news_count", "sentiment_lag1", "sentiment_lag2",
-    ]
+    # Build a flat lookup: technical indicators + sentiment + SPY features
+    all_sources = {**spy, **sentiment}
 
+    # Let booster.feature_names drive selection — compute everything available
     features = {}
-    for name in feature_order:
-        if name in sentiment:
-            features[name] = sentiment[name]
-        else:
-            features[name] = _safe_float(latest[name])
+    for col in df.columns:
+        try:
+            features[col] = _safe_float(latest[col])
+        except Exception:
+            pass
+    features.update(all_sources)
 
     return features
 
