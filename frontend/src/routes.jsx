@@ -42,6 +42,7 @@ import SellStockPage from "./pages/investor/SellStockPage.jsx";
 import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
 import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
 import VerifyDocumnetationPage from "./pages/administrator/VerifyDocument.jsx";
+import ExpertNotificationPage from "./pages/expert/ExpertNotificationPage.jsx";
 
 
 export const router = createBrowserRouter([
@@ -198,6 +199,10 @@ export const router = createBrowserRouter([
     {
         path: "/expert/question/:questionId",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionDetailPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/notifications",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertNotificationPage /></ProtectedRoute>
     },
 
 

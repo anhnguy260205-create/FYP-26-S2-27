@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean, func
+from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean
 from sqlalchemy.orm import relationship, joinedload
 from app.entity.database.base import Base
 from datetime import datetime
@@ -69,7 +69,7 @@ class UserAccount(Base):
             matching_account = session.query(UserAccount).options(
                 joinedload(UserAccount.profile)
             ).filter(
-                (func.binary(UserAccount.username) == username) &
+                (UserAccount.username == username) &
                 (UserAccount.password == password)
             ).first()
 

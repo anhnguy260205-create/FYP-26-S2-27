@@ -47,7 +47,9 @@ class Expert(Base):
             return user_id
         except Exception as e:
             with get_session() as session:
-                session.rollback()
+                orphan = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+                if orphan:
+                    session.delete(orphan)
             print("EXPERT ERROR:", e)
             return False
 
@@ -89,5 +91,17 @@ def seed_expert_account():
         address="123 Kim Street",
         experience_year=3,
         linked_in_url="@anh"
+    )
 
+
+def seed_jordan_account():
+    Expert.createAccount(
+        username="jordan",
+        full_name="Jordan Expert",
+        email_address="jordan@gmail.com",
+        password="password123",
+        phone_number="60123456789",
+        address="123 Jordan Street",
+        experience_year=5,
+        linked_in_url="https://linkedin.com/in/jordan"
     )
