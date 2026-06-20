@@ -145,7 +145,7 @@ function ConsultantHeader() {
 
             <div className="flex items-center gap-8">
                 <button
-                    onClick={() => navigate("#")}
+                    onClick={() => navigate("/expert/notifications")}
                     className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
                 >
                     <BellRing size={18} />

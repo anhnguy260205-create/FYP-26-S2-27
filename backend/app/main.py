@@ -10,7 +10,7 @@ from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
 from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
-from app.entity.models.expert import seed_expert_account
+from app.entity.models.expert import seed_expert_account, seed_jordan_account
 from app.entity.models.subscription import Subscription
 from app.entity.models.investmentarticle import InvestmentArticle
 from app.boundary.stock_ws import router as stock_ws_router
@@ -78,6 +78,7 @@ seed_profiles()
 seed_admin_account()
 seed_investor_account()
 seed_expert_account()
+seed_jordan_account()
 seed_articles()
 
 app.include_router(user_router)
