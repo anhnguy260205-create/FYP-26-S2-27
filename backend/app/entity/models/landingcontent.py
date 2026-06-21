@@ -98,6 +98,16 @@ def seed_landing_content():
             LandingContent(content_id="prem_feat_4", section="premium_investor", title="Priority Customer Support",         order_index=4),
         ]
 
+        # Remove old auto-generated feature entries (content_id starts with "content_"
+        # and section is "feature") — these are duplicates from the original seed
+        known_ids = {e.content_id for e in entries}
+        old_features = session.query(LandingContent).filter(
+            LandingContent.section == "feature",
+            LandingContent.content_id.notin_(known_ids)
+        ).all()
+        for row in old_features:
+            session.delete(row)
+
         to_add = [e for e in entries if e.content_id not in existing_ids]
         if to_add:
             session.add_all(to_add)

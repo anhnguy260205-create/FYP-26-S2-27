@@ -65,8 +65,8 @@ function ContentManagementPage() {
 
   const activeHint = TABS.find((t) => t.key === activeTab)?.hint;
 
-  // Only hero and expert sections have a subtitle/description field
-  const showDescription = (section) => ["hero", "expert"].includes(section);
+  // hero, expert and feature sections have a subtitle/description field
+  const showDescription = (section) => ["hero", "expert", "feature"].includes(section);
 
   const renderRow = (item) => {
     const isEditing = editing === item.content_id;

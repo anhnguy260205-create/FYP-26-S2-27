@@ -170,7 +170,6 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
       transition={{ duration: 0.5, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
-        display: "flex",
         flexDirection: "column",
         border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
         borderRadius: "24px",
@@ -196,7 +195,7 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
         disabled={isPremium}
         style={{
           width: "100%",
-          marginTop: "auto",
+          marginTop: "90px",
           paddingTop: "16px",
           padding: "11px 0",
           borderRadius: "12px",
