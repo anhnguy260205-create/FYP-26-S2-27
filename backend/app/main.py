@@ -30,6 +30,8 @@ from app.boundary.tradingb import router as trading_router
 from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
+from app.boundary.contentb import router as content_router
+from app.entity.models.landingcontent import ContentManagement, seed_landing_content
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError
@@ -80,6 +82,7 @@ seed_investor_account()
 seed_expert_account()
 seed_jordan_account()
 seed_articles()
+seed_landing_content()
 
 app.include_router(user_router)
 app.include_router(admin_router)
@@ -92,6 +95,7 @@ app.include_router(trading_router)
 app.include_router(knowledge_router)
 app.include_router(expert_router)
 app.include_router(consultant_forum_router)
+app.include_router(content_router)
 
 
 @app.get("/")

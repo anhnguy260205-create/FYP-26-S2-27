@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Edit, Trash2, Plus, ArrowLeft } from "lucide-react";
+import { Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import AdminPage from "../../layout/AdminPage.jsx";
 
 const API_URL = "http://127.0.0.1:8000/admin/articles";
@@ -19,31 +19,16 @@ function InvestmentGuidanceArticlesPage() {
   const fetchArticles = async () => {
     const res = await fetch(API_URL);
     const data = await res.json();
-
-    if (data.success) {
-      setArticles(data.articles);
-    }
+    if (data.success) setArticles(data.articles);
   };
 
   useEffect(() => {
     fetchArticles();
   }, []);
 
-  const openCreate = () => {
-    setForm({
-      title: "",
-      category: "",
-      content: "",
-      status: "draft",
-    });
-    setSelectedArticle(null);
-    setMode("create");
-  };
-
   const openView = async (articleId) => {
     const res = await fetch(`${API_URL}/${articleId}`);
     const data = await res.json();
-
     if (data.success) {
       setSelectedArticle(data.article);
       setMode("view");
@@ -55,7 +40,6 @@ function InvestmentGuidanceArticlesPage() {
   const openEdit = async (articleId) => {
     const res = await fetch(`${API_URL}/${articleId}`);
     const data = await res.json();
-
     if (data.success) {
       setSelectedArticle(data.article);
       setForm({
@@ -72,52 +56,32 @@ function InvestmentGuidanceArticlesPage() {
 
   const handleDelete = async (articleId) => {
     if (!window.confirm("Delete this article?")) return;
-
-    const res = await fetch(`${API_URL}/${articleId}`, {
-      method: "DELETE",
-    });
-
+    const res = await fetch(`${API_URL}/${articleId}`, { method: "DELETE" });
     const data = await res.json();
     alert(data.message || "Done");
-
     fetchArticles();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const url =
-      mode === "edit"
-        ? `${API_URL}/${selectedArticle.article_id}`
-        : API_URL;
-
-    const method = mode === "edit" ? "PUT" : "POST";
-
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
+    const res = await fetch(`${API_URL}/${selectedArticle.article_id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
     const data = await res.json();
-
     if (data.success) {
-      alert(data.message || "Saved successfully");
+      alert(data.message || "Article updated successfully");
       setMode("list");
       fetchArticles();
     } else {
-      alert(data.message || "Failed to save article");
+      alert(data.message || "Failed to update article");
     }
   };
 
   if (mode === "view" && selectedArticle) {
     return (
-      <AdminPage
-        title="Article Details"
-        subtitle="View investment guidance article details."
-      >
+      <AdminPage title="Article Details" subtitle="View investment guidance article details.">
         <button
           onClick={() => setMode("list")}
           className="mb-6 bg-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
@@ -128,7 +92,6 @@ function InvestmentGuidanceArticlesPage() {
         <div className="bg-white rounded-lg p-8 max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">{selectedArticle.title}</h1>
-
             <span
               className={`px-3 py-1 rounded text-xs font-semibold ${
                 selectedArticle.status === "published"
@@ -147,21 +110,16 @@ function InvestmentGuidanceArticlesPage() {
               <p className="text-xs font-bold text-slate-400 mb-2">ARTICLE ID</p>
               <p>{selectedArticle.article_id}</p>
             </div>
-
             <div>
               <p className="text-xs font-bold text-slate-400 mb-2">CATEGORY</p>
               <p>{selectedArticle.category}</p>
             </div>
-
             <div>
               <p className="text-xs font-bold text-slate-400 mb-2">AUTHOR</p>
               <p>{selectedArticle.author}</p>
             </div>
-
             <div>
-              <p className="text-xs font-bold text-slate-400 mb-2">
-                DATE PUBLISHED
-              </p>
+              <p className="text-xs font-bold text-slate-400 mb-2">DATE PUBLISHED</p>
               <p>{selectedArticle.date_published}</p>
             </div>
           </div>
@@ -177,12 +135,9 @@ function InvestmentGuidanceArticlesPage() {
     );
   }
 
-  if (mode === "create" || mode === "edit") {
+  if (mode === "edit" && selectedArticle) {
     return (
-      <AdminPage
-        title={mode === "edit" ? "Edit Article" : "Create Article"}
-        subtitle="Write and publish investment guidance content."
-      >
+      <AdminPage title="Edit Article" subtitle="Update investment guidance content.">
         <button
           onClick={() => setMode("list")}
           className="mb-6 bg-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
@@ -198,9 +153,7 @@ function InvestmentGuidanceArticlesPage() {
             <label className="block text-sm font-semibold mb-2">Title</label>
             <input
               value={form.title}
-              onChange={(e) =>
-                setForm({ ...form, title: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
               className="w-full border rounded-lg px-4 py-3"
               placeholder="Enter article title"
@@ -211,9 +164,7 @@ function InvestmentGuidanceArticlesPage() {
             <label className="block text-sm font-semibold mb-2">Category</label>
             <input
               value={form.category}
-              onChange={(e) =>
-                setForm({ ...form, category: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
               required
               className="w-full border rounded-lg px-4 py-3"
               placeholder="Beginner, Education, Strategy..."
@@ -224,9 +175,7 @@ function InvestmentGuidanceArticlesPage() {
             <label className="block text-sm font-semibold mb-2">Status</label>
             <select
               value={form.status}
-              onChange={(e) =>
-                setForm({ ...form, status: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
               className="w-full border rounded-lg px-4 py-3"
             >
               <option value="draft">Draft</option>
@@ -238,9 +187,7 @@ function InvestmentGuidanceArticlesPage() {
             <label className="block text-sm font-semibold mb-2">Content</label>
             <textarea
               value={form.content}
-              onChange={(e) =>
-                setForm({ ...form, content: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
               required
               rows={8}
               className="w-full border rounded-lg px-4 py-3"
@@ -252,7 +199,7 @@ function InvestmentGuidanceArticlesPage() {
             type="submit"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-semibold"
           >
-            {mode === "edit" ? "Update Article" : "Create Article"}
+            Update Article
           </button>
         </form>
       </AdminPage>
@@ -264,18 +211,9 @@ function InvestmentGuidanceArticlesPage() {
       title="Investment Guidance Articles"
       subtitle="Manage and publish investment education content."
     >
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-lg text-sm font-semibold"
-        >
-          <Plus size={18} /> Create Article
-        </button>
-      </div>
-
       <div className="bg-white rounded-lg overflow-hidden">
         <div className="p-5 border-b">
-          <h3 className="text-lg font-bold">Recent Articles</h3>
+          <h3 className="text-lg font-bold">All Articles</h3>
         </div>
 
         <table className="w-full text-sm">
@@ -340,7 +278,7 @@ function InvestmentGuidanceArticlesPage() {
             {articles.length === 0 && (
               <tr>
                 <td colSpan="7" className="p-6 text-center text-slate-500">
-                  No articles found. Create your first article.
+                  No articles found.
                 </td>
               </tr>
             )}
