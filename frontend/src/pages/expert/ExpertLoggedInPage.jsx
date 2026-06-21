@@ -1,8 +1,25 @@
+import { useEffect, useState } from "react";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 
 function ExpertLoggedInPage() {
+  const [hero, setHero] = useState({
+    title: "Lead the Future of Wealth Management",
+    description: "Provide trusted investment expertise and data-driven strategies to help clients achieve their goals.",
+  });
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/content/landing")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const expertHero = data.content.find((c) => c.section === "expert");
+        if (expertHero) setHero(expertHero);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -68,7 +85,6 @@ function ExpertLoggedInPage() {
                 margin: 0,
               }}
             >
-              Lead the Future of
               <span
                 style={{
                   display: "block",
@@ -78,7 +94,7 @@ function ExpertLoggedInPage() {
                   backgroundClip: "text",
                 }}
               >
-                Wealth Management
+                {hero.title}
               </span>
             </h1>
 
@@ -89,7 +105,8 @@ function ExpertLoggedInPage() {
                 fontSize: "1rem",
               }}
             >
-              Provide trusted investment expertise and data-driven strategies to help clients achieve their goals.            </p>
+              {hero.description}
+            </p>
           </div>
         </div>
       </main>
