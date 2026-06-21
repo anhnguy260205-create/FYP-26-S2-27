@@ -16,11 +16,18 @@ const profiles = [
       "Can provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
   },
   {
-    profile_type: "Investor",
+    profile_type: "Premium Investor",
+    access_level: "Premium Access",
+    status: "Active",
+    description:
+      "Paid subscription tier. Can access AI stock predictions, expert consultations, advanced portfolio management, and all free investor features.",
+  },
+  {
+    profile_type: "Free Investor",
     access_level: "Basic Access",
     status: "Active",
     description:
-      "Can view stock information, manage watchlist, paper trade, and access investment services. Premium subscription unlocks additional features.",
+      "Free tier. Can view stock information, manage watchlist, paper trade, and access basic investment services. Upgrade to Premium to unlock full features.",
   },
 ];
 
