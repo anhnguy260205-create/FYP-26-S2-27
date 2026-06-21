@@ -6,7 +6,6 @@ const menuItems = [
   { name: "User Accounts", path: "/adminpanel/useraccounts" },
   { name: "User Profiles", path: "/adminpanel/profiles" },
   { name: "Community Post", path: "/adminpanel/posts" },
-  { name: "Trade", path: "/adminpanel/trade" },
   { name: "Investment Guidance Articles", path: "/adminpanel/articles" },
   { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" }
 ];
