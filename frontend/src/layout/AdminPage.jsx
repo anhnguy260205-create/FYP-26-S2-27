@@ -19,22 +19,15 @@ function AdminLayout({ title, subtitle, children }) {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
-    if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
-      navigate("/");
-      return;
-    }
-
     try {
-      const data = await logoutAccount(currentUser.user_id);
-      if (data.success) {
-        localStorage.removeItem("currentUser");
-        navigate("/");
-      } else {
-        console.error("Logout failed:", data.message || data);
+      if (currentUser?.user_id) {
+        await logoutAccount(currentUser.user_id);
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout API error:", error);
+    } finally {
+      localStorage.removeItem("currentUser");
+      navigate("/");
     }
   };
   return (
