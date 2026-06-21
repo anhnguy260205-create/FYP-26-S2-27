@@ -3,12 +3,14 @@ import { logoutAccount } from "../api/userApi";
 
 const menuItems = [
   { name: "Dashboard", path: "/adminpanel" },
-  { name: "User Accounts", path: "/adminpanel/useraccounts" },
   { name: "User Profiles", path: "/adminpanel/profiles" },
-  { name: "Community Post", path: "/adminpanel/posts" },
-  { name: "Trade", path: "/adminpanel/trade" },
-  { name: "Investment Guidance Articles", path: "/adminpanel/articles" },
-  { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" }
+  { name: "User Account Management", path: "/adminpanel/useraccounts" },
+  { name: "Community Management", path: "/adminpanel/posts" },
+  { name: "Article Management", path: "/adminpanel/articles" },
+  { name: "Subscription Management", path: "/adminpanel/subscriptions" },
+  { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" },
+  { name: "Content Managment", path: "/adminpanel/contentmanagement" }
+
 ];
 
 function AdminLayout({ title, subtitle, children }) {
@@ -17,22 +19,15 @@ function AdminLayout({ title, subtitle, children }) {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
-    if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
-      navigate("/");
-      return;
-    }
-
     try {
-      const data = await logoutAccount(currentUser.user_id);
-      if (data.success) {
-        localStorage.removeItem("currentUser");
-        navigate("/");
-      } else {
-        console.error("Logout failed:", data.message || data);
+      if (currentUser?.user_id) {
+        await logoutAccount(currentUser.user_id);
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout API error:", error);
+    } finally {
+      localStorage.removeItem("currentUser");
+      navigate("/");
     }
   };
   return (

@@ -218,3 +218,15 @@ def delete_investment_article(article_id: str):
         "success": True,
         "message": "Article deleted successfully",
     }
+
+
+@router.get("/dashboard-stats")
+def get_dashboard_stats():
+    stats = AdminUserAccountPage().controller.getDashboardStats()
+    return {"success": True, **stats}
+
+
+@router.get("/subscriptions")
+def get_subscriptions():
+    subs = AdminUserAccountPage().controller.getSubscriptions()
+    return {"success": True, "count": len(subs), "subscriptions": subs}

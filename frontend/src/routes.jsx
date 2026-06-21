@@ -12,7 +12,6 @@ import UserAccountDetailsPage from "./pages/administrator/UserAccountDetailsPage
 import UserProfilesPage from "./pages/administrator/UserProfilesPage.jsx";
 import CommunityPostsPage from "./pages/administrator/CommunityPostsPage.jsx";
 import CommunityPostDetailsPage from "./pages/administrator/CommunityPostDetailsPage.jsx";
-import TradeManagementPage from "./pages/administrator/TradeManagementPage.jsx";
 import InvestmentGuidanceArticlesPage from "./pages/administrator/InvestmentGuidanceArticlesPage.jsx";
 import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
 import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
@@ -42,7 +41,10 @@ import SellStockPage from "./pages/investor/SellStockPage.jsx";
 import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
 import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
 import VerifyDocumnetationPage from "./pages/administrator/VerifyDocument.jsx";
+import SubscriptionManagementPage from "./pages/administrator/SubscriptionManagementPage.jsx";
+import ContentManagementPage from "./pages/administrator/ContentManagementPage.jsx";
 import ExpertNotificationPage from "./pages/expert/ExpertNotificationPage.jsx";
+
 
 
 export const router = createBrowserRouter([
@@ -159,16 +161,20 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostDetailsPage /></ProtectedRoute>
     },
     {
-        path: "/adminpanel/trade",
-        element: <ProtectedRoute allowedRoles={["admin"]}><TradeManagementPage /></ProtectedRoute>
-    },
-    {
         path: "/adminpanel/articles",
         element: <ProtectedRoute allowedRoles={["admin"]}><InvestmentGuidanceArticlesPage /></ProtectedRoute>
     },
     {
         path: "/adminpanel/verifydocumentation",
         element: <ProtectedRoute allowedRoles={["admin"]}><VerifyDocumnetationPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/subscriptions",
+        element: <ProtectedRoute allowedRoles={["admin"]}><SubscriptionManagementPage /></ProtectedRoute>
+    },
+    {
+        path: "/adminpanel/contentmanagement",
+        element: <ProtectedRoute allowedRoles={["admin"]}><ContentManagementPage /></ProtectedRoute>
     },
 
     {
