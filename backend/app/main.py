@@ -31,7 +31,7 @@ from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
-from app.entity.models.landingcontent import LandingContent, seed_landing_content
+from app.entity.models.landingcontent import ContentManagement, seed_landing_content
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError

@@ -5,10 +5,11 @@ import AdminLayout from "../../layout/AdminPage.jsx";
 const API = "http://127.0.0.1:8000/admin/content";
 
 const TABS = [
-  { key: "hero", label: "Landing Page", hint: "Hero title and subtitle shown to guests on the home page." },
-  { key: "feature", label: "Feature Bubbles", hint: "Floating feature cards on the landing and investor home pages." },
+  { key: "hero",       label: "Landing Page",    hint: "Hero title and subtitle shown to guests on the home page." },
+  { key: "feature",    label: "Feature Bubbles", hint: "Floating feature cards on the landing and investor home pages." },
   { key: "membership", label: "Membership Plans", hint: "Feature lists shown on the Free and Premium plan cards in the Subscription page." },
-  { key: "expert", label: "Expert", hint: "Hero title and subtitle shown on the Expert home page after login." },
+  { key: "expert",     label: "Expert",           hint: "Hero title and subtitle shown on the Expert home page after login." },
+  { key: "footer",     label: "Footer",           hint: "Brand name, tagline, and all footer links (Product, Company, Contact)." },
 ];
 
 function ContentManagementPage() {
@@ -59,14 +60,18 @@ function ContentManagementPage() {
   const premiumPlanInfo = content.filter((c) => c.section === "premium_plan");
   const freeItems       = content.filter((c) => c.section === "free_investor");
   const premiumItems    = content.filter((c) => c.section === "premium_investor");
-  const activeItems = activeTab === "membership"
+  const footerBrand     = content.filter((c) => c.section === "footer_brand");
+  const footerProduct   = content.filter((c) => c.section === "footer_product");
+  const footerCompany   = content.filter((c) => c.section === "footer_company");
+  const footerContact   = content.filter((c) => c.section === "footer_contact");
+  const activeItems = ["membership", "footer"].includes(activeTab)
     ? []
     : content.filter((c) => c.section === activeTab);
 
   const activeHint = TABS.find((t) => t.key === activeTab)?.hint;
 
-  // hero, expert and feature sections have a subtitle/description field
-  const showDescription = (section) => ["hero", "expert", "feature"].includes(section);
+  // sections that show the description/subtitle field when editing
+  const showDescription = (section) => ["hero", "expert", "feature", "footer_brand", "footer_product", "footer_company", "footer_contact"].includes(section);
 
   const renderRow = (item) => {
     const isEditing = editing === item.content_id;
@@ -85,7 +90,7 @@ function ContentManagementPage() {
             {showDescription(item.section) && (
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
-                  {item.section === "hero" ? "SUBTITLE" : "DESCRIPTION"}
+                  {item.section === "hero" ? "SUBTITLE" : ["footer_product", "footer_company", "footer_contact"].includes(item.section) ? "URL" : "DESCRIPTION"}
                 </label>
                 <input
                   value={form.description}
@@ -304,8 +309,48 @@ function ContentManagementPage() {
         </div>
       )}
 
+      {/* Footer tab */}
+      {activeTab === "footer" && (
+        <div className="space-y-8">
+          {/* Brand */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Brand</p>
+            <div className="space-y-3">
+              {footerBrand.map(renderRow)}
+            </div>
+          </div>
+
+          {/* Product links */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
+            <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
+            <div className="space-y-3">
+              {footerProduct.map(renderRow)}
+            </div>
+          </div>
+
+          {/* Company links */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
+            <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
+            <div className="space-y-3">
+              {footerCompany.map(renderRow)}
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
+            <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
+            <div className="space-y-3">
+              {footerContact.map(renderRow)}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* All other tabs */}
-      {activeTab !== "membership" && (
+      {!["membership", "footer"].includes(activeTab) && (
         <div className="space-y-4">
           {activeItems.length === 0
             ? <p className="text-slate-400 text-sm">No content found for this section.</p>
