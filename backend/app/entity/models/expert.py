@@ -22,14 +22,10 @@ class Expert(Base):
     approved_date = Column(DateTime, nullable=True)
 
     @staticmethod
-    def createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url) -> bool:
+    def createAccount(username, email_address, experience_year=None, linked_in_url=None) -> bool:
         user_id = UserAccount.createAccount(
             username=username,
-            full_name=full_name,
             email_address=email_address,
-            password=password,
-            phone_number=phone_number,
-            address=address,
             profile_name="expert"
         )
         if user_id == False:
@@ -47,7 +43,8 @@ class Expert(Base):
             return user_id
         except Exception as e:
             with get_session() as session:
-                orphan = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
+                orphan = session.query(UserAccount).filter(
+                    UserAccount.user_id == user_id).first()
                 if orphan:
                     session.delete(orphan)
             print("EXPERT ERROR:", e)
@@ -84,11 +81,7 @@ class Expert(Base):
 def seed_expert_account():
     Expert.createAccount(
         username="Anh",
-        full_name="Nguy Anh",
         email_address="kimhi@gmail.com",
-        password="password",
-        phone_number=12433243,
-        address="123 Kim Street",
         experience_year=3,
         linked_in_url="@anh"
     )
@@ -97,11 +90,7 @@ def seed_expert_account():
 def seed_jordan_account():
     Expert.createAccount(
         username="jordan",
-        full_name="Jordan Expert",
         email_address="jordan@gmail.com",
-        password="password123",
-        phone_number="60123456789",
-        address="123 Jordan Street",
         experience_year=5,
         linked_in_url="https://linkedin.com/in/jordan"
     )

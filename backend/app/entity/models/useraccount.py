@@ -16,37 +16,36 @@ class UserAccount(Base):
                      default=lambda: f"user_{uuid4()}")
     profile_id = Column(String(50), ForeignKey(
         "user_profiles.profile_id"), nullable=True)
-    username = Column(String(50), unique=True, nullable=False)
-    full_name = Column(String(100), nullable=False)
-    phone_number = Column(String(20), unique=True, nullable=False)
-    address = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=True)
+    full_name = Column(String(100), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    address = Column(String(255), nullable=True)
     email_address = Column(String(255), unique=True, nullable=False)
-    account_status = Column(String(20), default="active")
+    account_status = Column(String(20), default="deactive")
     join_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
     last_login = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
-    password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
 
     @staticmethod
-    def createAccount(username, full_name, email_address, password, phone_number, address, profile_name):
+    def createAccount(email_address, profile_name, username=None, full_name=None, phone_number=None, address=None):
         with get_session() as session:
             existing_user = session.query(UserAccount).filter(
-                (UserAccount.username == username) |
-                (UserAccount.email_address == email_address)
+                UserAccount.email_address == email_address
             ).first()
             if existing_user:
                 return False
 
             try:
                 profile_id = UserProfile.get_or_create(profile_name)
+                # auto-generate username from email if not provided
+                derived_username = username or email_address
                 new_user = UserAccount(
-                    username=username,
+                    username=derived_username,
                     full_name=full_name,
                     email_address=email_address,
-                    password=password,
                     phone_number=phone_number,
                     address=address,
                     profile_id=profile_id,
@@ -59,57 +58,6 @@ class UserAccount(Base):
             except Exception as e:
                 print("USER ACCOUNT ERROR:", e)
                 raise
-
-    @staticmethod
-    def login(username, password) -> dict:
-        from app.entity.models.expert import Expert
-        from app.entity.models.investor import Investor
-
-        with get_session() as session:
-            matching_account = session.query(UserAccount).options(
-                joinedload(UserAccount.profile)
-            ).filter(
-                (UserAccount.username == username) &
-                (UserAccount.password == password)
-            ).first()
-
-            if not matching_account:
-                return {"success": False}
-
-            # Update last login and active status
-            matching_account.last_login = datetime.now(
-                ZoneInfo("Asia/Singapore"))
-            matching_account.is_active = True
-            matching_account.account_status = "active"
-
-            profile_name = matching_account.profile.profile_name if matching_account.profile else None
-
-            investor = session.query(Investor).filter(
-                Investor.user_id == matching_account.user_id).first()
-            expert = session.query(Expert).filter(
-                Expert.user_id == matching_account.user_id).first()
-
-            # Determine role
-            if investor:
-                role = "investor"
-            elif expert:
-                role = "expert"
-            elif profile_name == "admin":
-                role = "admin"
-            else:
-                role = profile_name or "unknown"
-
-            return {
-                "success": True,
-                "user": {
-                    "user_id": matching_account.user_id,
-                    "username": matching_account.username,
-                    "full_name": matching_account.full_name,
-                    "email": matching_account.email_address,
-                    "role": role,
-                    "subscription_status": investor.investor_subscription_status if investor else "inactive"
-                }
-            }
 
     @staticmethod
     def logout(user_id) -> bool:
@@ -138,7 +86,47 @@ class UserAccount(Base):
                 "address": user.address,
                 "join_date": user.join_date,
                 "account_status": user.account_status,
-                "password": user.password
+            }
+
+    @staticmethod
+    def getProfileByEmail(email_address: str) -> dict:
+        from app.entity.models.expert import Expert
+        from app.entity.models.investor import Investor
+
+        with get_session() as session:
+            user = session.query(UserAccount).options(
+                joinedload(UserAccount.profile)
+            ).filter(UserAccount.email_address == email_address).first()
+
+            if not user:
+                return None
+
+            user.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
+            user.is_active = True
+            user.account_status = "active"
+
+            profile_name = user.profile.profile_name if user.profile else None
+            investor = session.query(Investor).filter(
+                Investor.user_id == user.user_id).first()
+            expert = session.query(Expert).filter(
+                Expert.user_id == user.user_id).first()
+
+            if investor:
+                role = "investor"
+            elif expert:
+                role = "expert"
+            elif profile_name == "admin":
+                role = "admin"
+            else:
+                role = profile_name or "unknown"
+
+            return {
+                "user_id": user.user_id,
+                "username": user.username,
+                "full_name": user.full_name,
+                "email_address": user.email_address,
+                "role": role,
+                "subscription_status": investor.investor_subscription_status if investor else "inactive"
             }
 
     @staticmethod
@@ -147,16 +135,6 @@ class UserAccount(Base):
             user = session.query(UserAccount).filter(
                 UserAccount.email_address == email_address).first()
             return user is not None
-
-    @staticmethod
-    def resetPasswordByEmail(email_address, new_password) -> bool:
-        with get_session() as session:
-            user = session.query(UserAccount).filter(
-                UserAccount.email_address == email_address).first()
-            if not user:
-                return False
-            user.password = new_password
-            return True
 
     @staticmethod
     def updateInformation(user_id, user_name, full_name, email_address, phone_number, address):
@@ -180,13 +158,12 @@ class UserAccount(Base):
 
 def seed_admin_account():
     UserAccount.createAccount(
+        email_address="admin@gmail.com",
+        profile_name="admin",
         username="admin",
         full_name="Admin User",
-        email_address="admin@gmail.com",
-        password="admin123",
-        phone_number=1234567890,
-        address="123 Admin Street",
-        profile_name="admin"
+        phone_number="1234567890",
+        address="123 Admin Street"
     )
 
 

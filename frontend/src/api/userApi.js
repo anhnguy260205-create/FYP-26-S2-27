@@ -194,3 +194,12 @@ export const resetPassword = async (emailAddress, otpCode, newPassword) => {
   });
   return await response.json();
 };
+
+export const firebaseLogin = async (email) => {
+  const response = await fetch(`${BASE_URL}/firebase-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return await response.json();
+};

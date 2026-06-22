@@ -19,14 +19,10 @@ class Investor(Base):
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
-    def createAccount(username, full_name, email_address, password, phone_number, address, stock_level) -> bool:
+    def createAccount(username, email_address, stock_level="beginner") -> bool:
         user_id = UserAccount.createAccount(
             username=username,
-            full_name=full_name,
             email_address=email_address,
-            password=password,
-            phone_number=phone_number,
-            address=address,
             profile_name="investor"
         )
         if user_id == False:
@@ -247,10 +243,6 @@ class Investor(Base):
 def seed_investor_account():
     Investor.createAccount(
         username="Kim",
-        full_name="Nguy Kim Anh",
         email_address="kim@gmail.com",
-        password="password",
-        phone_number=12343243,
-        address="123 Kim Street",
         stock_level="Basic"
     )
