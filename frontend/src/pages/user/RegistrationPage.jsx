@@ -50,7 +50,6 @@ function RegistrationPage() {
 
   });
 
-  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -67,6 +66,11 @@ function RegistrationPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.username.trim()) {
+      alert("Username cannot be empty.");
+      return;
+    }
 
     if (!formData.accountType) {
       alert("Please select an account type (Investor or Expert).");
@@ -85,23 +89,24 @@ function RegistrationPage() {
 
     try {
       // 1. Firebase creates the auth account and secures the password
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const cleanEmail = formData.email.trim().toLowerCase();
+      const firebaseUser = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
 
       // 2. Backend creates the profile
       const payload = {
         role: formData.accountType,
         username: formData.username.trim(),
-        email_address: formData.email,
+        email_address: cleanEmail,
       };
 
       const result = await createAccount(payload);
       if (!result.success) {
+        await firebaseUser.user.delete();// rollback Firebase if the backend is failed
         alert(result.message || "Account already exists");
         return;
       }
 
       navigate("/login");
-      setSubmitted(true);
 
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {

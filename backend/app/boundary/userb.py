@@ -36,11 +36,12 @@ def create_account(data: CreateAccountRequest):
         data.email_address,
     )
 
-    if result == False:
-        return {
-            "success": False,
-            "message": "Account already exists"
-        }
+    if result == "duplicate_email":
+        return {"success": False, "message": "This email is already registered."}
+    if result == "duplicate_username":
+        return {"success": False, "message": "This username is already taken. Please choose another."}
+    if not result:
+        return {"success": False, "message": "Account already exists"}
 
     return {
         "success": True,

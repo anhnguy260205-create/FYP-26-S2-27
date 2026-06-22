@@ -25,8 +25,8 @@ class Investor(Base):
             email_address=email_address,
             profile_name="investor"
         )
-        if user_id == False:
-            return False
+        if not user_id or isinstance(user_id, str) and user_id.startswith("duplicate"):
+            return user_id
         try:
             with get_session() as session:
                 investor = Investor(

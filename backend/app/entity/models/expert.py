@@ -14,7 +14,7 @@ class Expert(Base):
         "user_account.user_id"), nullable=False)
     expert_status = Column(String(20), default="active")
     rating = Column(Float, default=0)
-    experience_years = Column(Integer, nullable=False)
+    experience_years = Column(Integer, nullable=True)
     linked_in_url = Column(String(255), nullable=True)
     verification_status = Column(String(20), default="pending")
     verification_score = Column(Integer, default=0)
@@ -28,8 +28,8 @@ class Expert(Base):
             email_address=email_address,
             profile_name="expert"
         )
-        if user_id == False:
-            return False
+        if not user_id or isinstance(user_id, str) and user_id.startswith("duplicate"):
+            return user_id
         try:
             expert = Expert(
                 user_id=user_id,

@@ -64,12 +64,9 @@ function Profile() {
     const currentUser = JSON.parse(
         localStorage.getItem("currentUser")
     );
-    const initials = currentUser?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
+    const initials = (currentUser?.username || currentUser?.full_name || "??")
         .slice(0, 2)
-        .toUpperCase() || "??";
+        .toUpperCase();
 
     return (
         <button

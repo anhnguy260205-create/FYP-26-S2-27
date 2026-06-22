@@ -16,12 +16,12 @@ class UserAccount(Base):
                      default=lambda: f"user_{uuid4()}")
     profile_id = Column(String(50), ForeignKey(
         "user_profiles.profile_id"), nullable=True)
-    username = Column(String(255), nullable=True)
+    username = Column(String(255), unique=True, nullable=True)
     full_name = Column(String(100), nullable=True)
     phone_number = Column(String(20), nullable=True)
     address = Column(String(255), nullable=True)
     email_address = Column(String(255), unique=True, nullable=False)
-    account_status = Column(String(20), default="deactive")
+    account_status = Column(String(20), default="inactive")
     join_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
     last_login = Column(DateTime, default=lambda: datetime.now(
@@ -32,11 +32,14 @@ class UserAccount(Base):
     @staticmethod
     def createAccount(email_address, profile_name, username=None, full_name=None, phone_number=None, address=None):
         with get_session() as session:
-            existing_user = session.query(UserAccount).filter(
-                UserAccount.email_address == email_address
+            duplicate = session.query(UserAccount).filter(
+                (UserAccount.email_address == email_address) |
+                (UserAccount.username == (username or email_address))
             ).first()
-            if existing_user:
-                return False
+            if duplicate:
+                if duplicate.email_address == email_address:
+                    return "duplicate_email"
+                return "duplicate_username"
 
             try:
                 profile_id = UserProfile.get_or_create(profile_name)
