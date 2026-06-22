@@ -117,12 +117,8 @@ function MenuButton({ children, active, onClick }) {
 // LeftSection is now a proper React component with destructured props
 function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
     const navigate = useNavigate();
-    const initials = investorInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    const initials = investorInfo?.username.slice(0, 2).toUpperCase();
+
 
     const subscriptionStatus = investorInfo?.investor_subscription_status?.toLowerCase();
 
@@ -292,11 +288,8 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
-    // Generate initials from full name
-    const initials = investorInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
+    // Generate initials from username
+    const initials = investorInfo?.username
         .slice(0, 2)
         .toUpperCase() || "??";
 
