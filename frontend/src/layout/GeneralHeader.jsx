@@ -67,7 +67,7 @@ function Profile() {
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser")
   );
-  const initials = (currentUser?.username || currentUser?.full_name || "??")
+  const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
     .slice(0, 2)
     .toUpperCase();
 
@@ -84,7 +84,7 @@ function Profile() {
       </div>
 
       {/* Dynamic username */}
-      {currentUser?.username || "Guest"}
+      {currentUser?.username || currentUser?.user_name || "Guest"}
     </button>
   );
 }

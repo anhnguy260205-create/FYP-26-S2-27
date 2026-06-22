@@ -4,30 +4,8 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { verifyPasswordResetOtp, resetPassword, requestPasswordResetOtp } from "../../api/userApi";
-import image1 from "../../images/image1.png";
 
-function ImageStockMarketTradingCharts() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div
-        className="relative w-125 h-100 overflow-hidden"
-        data-name="Image (Stock market trading charts)"
-      >
-        <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]" />
-        <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
-        <div className="absolute bottom-10 left-10 right-10 text-white z-10">
-          <h1 className="text-4 font-bold leading-tight mb-4">
-            Reset Your Password
-          </h1>
-          <p className="text-2 text-gray-200 leading-relaxed">
-            Enter the verification code we sent to your email, then choose a
-            new password for your Deskstock account.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 const inputStyle = {
   height: "40px",
@@ -44,6 +22,33 @@ function blurStyle(e) {
   e.target.style.boxShadow = "none";
 }
 
+function Stepper({ current }) {
+  const steps = ["Email", "Verify", "Password"];
+  return (
+    <div className="flex items-center mb-8">
+      {steps.map((label, i) => (
+        <div key={label} className="flex items-center flex-1 last:flex-none">
+          <div className="flex flex-col items-center">
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${i + 1 <= current
+                ? "bg-orange-500 border-orange-500 text-white"
+                : "bg-white border-gray-300 text-gray-400"
+                }`}
+            >
+              {i + 1}
+            </div>
+            <span className="text-[11px] mt-1 text-gray-500">{label}</span>
+          </div>
+          {i < steps.length - 1 && (
+            <div className={`flex-1 border-t-2 border-dashed mb-4 mx-1 transition-all ${current > i + 1 ? "border-orange-500" : "border-white"}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +59,8 @@ function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [step, setStep] = useState(location.state?.email ? "otp" : "email");
   const [loading, setLoading] = useState(false);
+
+  const stepIndex = { email: 1, otp: 2, password: 3 };
 
   // Step 0: if user lands here directly without email, ask for it first
   const handleRequestOtp = async (e) => {
@@ -143,13 +150,14 @@ function ResetPasswordPage() {
       transition={{ duration: 0.6 }}>
 
       <Header />
-      <main className="flex-1 p-7.5">
+      <main className="flex justify-center p-7.5">
         <div className="flex items-center justify-center min-h-screen px-24" style={{ marginTop: "-80px", paddingBottom: "-80px" }}>
           <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
             {/* Form Card */}
             <div
               className="bg-[rgba(255,255,255,0.82)] w-175 shrink-0 flex flex-col justify-center"
               style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)", }}>
+
 
               <div className="text-center">
                 <h1
@@ -166,8 +174,10 @@ function ResetPasswordPage() {
                 </p>
               </div>
 
+              <Stepper current={stepIndex[step]} />
               {step === "email" && (
                 <form onSubmit={handleRequestOtp} className="flex flex-col gap-5">
+
                   <div className="flex flex-col gap-1">
                     <label className="font-semibold text-[14px] text-gray-700 pl-1">Email Address</label>
                     <input
@@ -289,9 +299,7 @@ function ResetPasswordPage() {
                 Back to Login
               </button>
             </div>
-            <div className="flex-1 flex justify-end">
-              <ImageStockMarketTradingCharts />
-            </div>
+
           </div>
         </div>
       </main>
