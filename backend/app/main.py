@@ -33,6 +33,7 @@ from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
 from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.control.controller.alertc import CheckAndTriggerAlertsController
+from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -84,6 +85,7 @@ seed_expert_account()
 seed_jordan_account()
 seed_articles()
 seed_landing_content()
+seed_all_firebase_accounts()
 
 app.include_router(user_router)
 app.include_router(admin_router)

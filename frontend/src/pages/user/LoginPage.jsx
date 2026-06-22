@@ -1,9 +1,10 @@
-import Footer from "../../layout/Footer.jsx";
 import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { loginAccount } from "../../api/userApi";
+import { firebaseLogin } from "../../api/userApi";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
 import image1 from "../../images/image1.png";
 
 function ImageStockMarketTradingCharts() {
@@ -78,7 +79,7 @@ function LoginPage() {
   const navigate = useNavigate();
   // Store form data in React state 
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
 
@@ -89,21 +90,18 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        username: formData.username.trim(),
-        password: formData.password,
-      };
+      // Step 1 — Firebase verifies the email + password
+      await signInWithEmailAndPassword(auth, formData.email.trim(), formData.password);
 
-      const result = await loginAccount(payload);
-
+      // Step 2 — get profile and role from your backend
+      const result = await firebaseLogin(formData.email.trim());
       if (!result.success) {
-        alert(result.message || "Invalid username or password");
+        alert(result.message || "Failed to load user profile");
         return;
       }
 
       localStorage.setItem("currentUser", JSON.stringify(result.user));
 
-      //  Redirect based on role
       const role = result.user.role;
       if (role === "investor") navigate("/investor");
       else if (role === "expert") navigate("/expert");
@@ -111,8 +109,16 @@ function LoginPage() {
       else alert("Unknown role: " + role);
 
     } catch (error) {
-      console.error(error);
-      alert("Failed to login");
+      if (error.code === "auth/invalid-credential") {
+        alert("Incorrect email or password.");
+      } else if (error.code === "auth/user-not-found") {
+        alert("No account found with this email.");
+      } else if (error.code === "auth/too-many-requests") {
+        alert("Too many failed attempts. Try again later.");
+      } else {
+        console.error(error);
+        alert("Failed to login");
+      }
     }
   };
   return (
@@ -147,14 +153,14 @@ function LoginPage() {
 
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                {/* Username */}
+                {/* Email */}
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Username</label>
+                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Email</label>
                   <input
-                    type="text"
-                    placeholder="Enter your username"
-                    value={formData.username}
-                    onChange={(e) => handleChange("username", e.target.value)}
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
                     required
                     className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
                     style={{

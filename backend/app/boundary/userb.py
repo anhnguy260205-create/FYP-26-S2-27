@@ -1,8 +1,8 @@
-from typing import Optional, Union
+from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
+from app.control.controller.userc import CreateAccountController, InvestorInformationController, LogoutController, ExpertInformationController, UpdateInformationController, DeleteInvestorController, FirebaseLoginController
 from app.control.controller.investorc import UpdateStockLevel, AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -12,14 +12,7 @@ router = APIRouter(prefix="/user", tags=["User"])
 class CreateAccountRequest(BaseModel):
     role: str
     username: str
-    full_name: str
     email_address: str
-    password: str
-    phone_number: str
-    address: str
-    stock_level: Optional[str] = "beginner"
-    experience_year: Optional[Union[int, str]] = None
-    linked_in_url: Optional[str] = None
 
 # Create user account
 
@@ -28,9 +21,8 @@ class CreateAccountPage:
     def __init__(self):
         self.controller = CreateAccountController()
 
-    def clickCreateAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url):
-
-        return self.controller.createAccount(role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url)
+    def clickCreateAccount(self, role, username, email_address):
+        return self.controller.createAccount(role, username, email_address)
 
 
 @router.post("/create-account")
@@ -41,64 +33,20 @@ def create_account(data: CreateAccountRequest):
     result = boundary.clickCreateAccount(
         data.role,
         data.username,
-        data.full_name,
         data.email_address,
-        data.password,
-        data.phone_number,
-        data.address,
-        data.stock_level,
-        data.experience_year,
-        data.linked_in_url
     )
 
-    if result == False:
-        return {
-            "success": False,
-            "message": "Account already exists"
-        }
+    if result == "duplicate_email":
+        return {"success": False, "message": "This email is already registered."}
+    if result == "duplicate_username":
+        return {"success": False, "message": "This username is already taken. Please choose another."}
+    if not result:
+        return {"success": False, "message": "Account already exists"}
 
     return {
         "success": True,
         "message": "Account created successfully",
         "user_id": result
-    }
-
-# Login
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class LoginPage:
-    def __init__(self):
-        self.controller = LoginController()
-
-    def login(self, username, password):
-        return self.controller.login(username, password)
-
-
-@router.post("/login")
-def login(data: LoginRequest):
-
-    boundary = LoginPage()
-
-    result = boundary.login(
-        data.username,
-        data.password
-    )
-
-    if not result.get("success"):
-        return {
-            "success": False,
-            "message": "Invalid username or password"
-        }
-
-    return {
-        "success": True,
-        "message": "Login successful",
-        "user": result.get("user")
     }
 
 # Logout
@@ -324,3 +272,15 @@ def remove_stock_symbol(user_id: str, stock_symbol: str):
     if not result.get("success"):
         return {"success": False, "message": result.get("message", "Failed to remove stock")}
     return {"success": True, "message": "Stock removed from watchlist"}
+
+
+class FirebaseLoginRequest(BaseModel):
+    email: str
+
+
+@router.post("/firebase-login")
+def firebase_login(data: FirebaseLoginRequest):
+    profile = FirebaseLoginController().login(data.email)
+    if not profile:
+        return {"success": False, "message": "User not found"}
+    return {"success": True, "user": profile}
