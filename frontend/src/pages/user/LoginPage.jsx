@@ -103,8 +103,8 @@ function LoginPage() {
       localStorage.setItem("currentUser", JSON.stringify(result.user));
 
       const role = result.user.role;
-      if (role === "investor") navigate("/investor");
-      else if (role === "expert") navigate("/expert");
+      if (role === "investor") navigate("/investor/edit-profile");
+      else if (role === "expert") navigate("/expert/edit-profile");
       else if (role === "admin") navigate("/adminpanel");
       else alert("Unknown role: " + role);
 
@@ -183,7 +183,7 @@ function LoginPage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between">
                     <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
-                    <label className="text-blue-700 text-[14px] cursor-pointer" onClick={() => navigate("/forgot-password")}> Forget password?</label>
+                    <label className="text-blue-700 text-[14px] cursor-pointer" onClick={() => navigate("/reset-password")}> Forget password?</label>
                   </div>
                   <input
                     type="password"

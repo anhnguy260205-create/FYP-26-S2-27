@@ -108,12 +108,8 @@ function MenuButton({ children, active, onClick }) {
 }
 
 function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
-    const initials = expertInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+
 
     const expertStatus = expertInfo?.verification_status?.toLowerCase();
 
@@ -213,12 +209,8 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
 
-    const initials = expertInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+
 
     useEffect(() => {
         setDraftFull(expertInfo?.full_name || "");
