@@ -31,7 +31,7 @@ from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
-from app.entity.models.landingcontent import ContentManagement, seed_landing_content
+from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError
@@ -50,7 +50,8 @@ async def yfinance_alert_poller():
                 if price is not None:
                     await asyncio.to_thread(
                         CheckAndTriggerAlertsController().check,
-                        symbol, float(price), float(prev_close) if prev_close else None
+                        symbol, float(price), float(
+                            prev_close) if prev_close else None
                     )
             except Exception as e:
                 print(f"[ALERT-POLL] Error checking {symbol}: {e}")
