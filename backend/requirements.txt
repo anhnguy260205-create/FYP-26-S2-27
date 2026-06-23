@@ -10,4 +10,3 @@ xgboost
 vaderSentiment
 firebase-admin
 stripe
-alpaca-trade-api
