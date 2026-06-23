@@ -17,3 +17,11 @@
   + Username: Anh
   + Password: password
 - Check api: http://127.0.0.1:8000/docs#/
+- Deployment:
+ Frontend:
+  cd "C:/Users/kim anh/OneDrive/Documents/GitHub/FYP-26-S2-27/frontend"
+  npm run build
+  firebase deploy
+ Backend:
+  git push
+  That's it — Render auto-deploys when you push to main.
