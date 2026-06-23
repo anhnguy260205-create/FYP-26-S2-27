@@ -18,7 +18,7 @@ function DynamicFeatureBubbleHero() {
   const [features, setFeatures] = useState([]);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/content/landing")
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
       .then((r) => r.json())
       .then((data) => {
         if (!data.success) return;

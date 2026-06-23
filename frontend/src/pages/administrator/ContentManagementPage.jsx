@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Edit, Check, X } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 
-const API = "http://127.0.0.1:8000/admin/content";
+const API = `${import.meta.env.VITE_API_URL}/admin/content`;
 
 const TABS = [
   { key: "hero",       label: "Landing Page",    hint: "Hero title and subtitle shown to guests on the home page." },

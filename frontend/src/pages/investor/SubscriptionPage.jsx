@@ -11,7 +11,7 @@ function usePlanContent() {
   const [premiumPlan, setPremiumPlan] = useState({ name: "Pro", price: "$20.99", priceSubtitle: "per month, billed annually" });
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/content/landing")
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
       .then((r) => r.json())
       .then((data) => {
         if (!data.success) return;
