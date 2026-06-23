@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 
-const API = "http://127.0.0.1:8000/admin/subscriptions";
+const API = `${import.meta.env.VITE_API_URL}/admin/subscriptions`;
 
 function SubscriptionManagementPage() {
   const [subscriptions, setSubscriptions] = useState([]);
