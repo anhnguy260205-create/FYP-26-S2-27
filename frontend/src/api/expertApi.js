@@ -1,6 +1,6 @@
 
-const EXPERT_BASE_URL = "http://127.0.0.1:8000/expert";
-const FORUM_BASE_URL = "http://127.0.0.1:8000/consultant-forum";
+const EXPERT_BASE_URL = `${import.meta.env.VITE_API_URL}/expert`;
+const FORUM_BASE_URL = `${import.meta.env.VITE_API_URL}/consultant-forum`;
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, {

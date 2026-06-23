@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Users, Star, BookOpen } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 
-const API = "http://127.0.0.1:8000/admin";
+const API = `${import.meta.env.VITE_API_URL}/admin`;
 
 function AdminPanelPage() {
   const [stats, setStats] = useState({ total_users: 0, total_premium: 0, total_experts: 0 });

@@ -16,8 +16,8 @@ function UserAccountsPage() {
       setLoading(true);
 
       const url = searchKeyword
-        ? `http://127.0.0.1:8000/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
-        : "http://127.0.0.1:8000/admin/useraccounts";
+        ? `${import.meta.env.VITE_API_URL}/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
+        : "${import.meta.env.VITE_API_URL}/admin/useraccounts";
 
       const response = await fetch(url);
       const data = await response.json();
@@ -48,7 +48,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/suspend`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/suspend`, {
         method: "PUT",
       });
 
@@ -71,7 +71,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/activate`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/activate`, {
         method: "PUT",
       });
 

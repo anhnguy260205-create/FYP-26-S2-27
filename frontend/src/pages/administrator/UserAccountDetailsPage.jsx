@@ -15,7 +15,7 @@ function UserAccountDetailsPage() {
   const fetchUserDetails = async () => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/admin/useraccounts/${userId}`
+        `${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}`
       );
       const data = await response.json();
 
