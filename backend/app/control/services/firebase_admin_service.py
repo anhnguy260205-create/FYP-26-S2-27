@@ -1,14 +1,19 @@
 import firebase_admin
 from firebase_admin import credentials, auth
 import os
+import json
 
 _initialized = False
 
 def _init():
     global _initialized
     if not _initialized:
-        key_path = os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
-        cred = credentials.Certificate(os.path.abspath(key_path))
+        service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if service_account_json:
+            cred = credentials.Certificate(json.loads(service_account_json))
+        else:
+            key_path = os.path.join(os.path.dirname(__file__), "../../../serviceAccountKey.json")
+            cred = credentials.Certificate(os.path.abspath(key_path))
         firebase_admin.initialize_app(cred)
         _initialized = True
 

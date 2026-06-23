@@ -162,7 +162,7 @@ export function StocksProvider({ children }) {
     }, [flushLiveUpdates]);
 
     useEffect(() => {
-        const socket = new WebSocket("ws://127.0.0.1:8000/ws/stocks");
+        const socket = new WebSocket(`${import.meta.env.VITE_WS_URL}/ws/stocks`);
         socketRef.current = socket;
 
         socket.onopen = () => {

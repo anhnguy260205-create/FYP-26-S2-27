@@ -23,7 +23,7 @@ function Footer() {
   const [contact, setContact] = useState(DEFAULT.contact);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/content/landing")
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
       .then((r) => r.json())
       .then((data) => {
         if (!data.success) return;
