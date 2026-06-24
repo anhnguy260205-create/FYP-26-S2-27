@@ -39,7 +39,7 @@ function SearchBar({ onSearch }) {
 
 function MarketStatus({ marketStatus, lastUpdated }) {
   return (
-    <div className="flex items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className={marketStatus === "OPEN" ? "text-green-400" : "text-gray-400"}>
         {marketStatus === "OPEN" ? "🟢 Market Open" : "⚪ Market Closed"}
       </span>
@@ -115,33 +115,36 @@ function StockTable({ stocks, candles }) {
   }, [navigate]);
 
   return (
-    <div className="w-full mt-6 rounded-xl overflow-hidden border border-white/20">
+    <div className="w-full mt-6 overflow-x-auto rounded-xl border border-white/20">
+      <div className="min-w-[560px]">
 
-      {/* Header — 5 columns, added Trend */}
-      <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
-        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }}>
-        <span>Symbol</span>
-        <span className="text-right">Price</span>
-        <span className="text-right">Change</span>
-        <span className="text-right">% Change</span>
-        <span className="text-center">Trend (1D)</span>
-      </div>
-
-      {/* Rows */}
-      {stockList.length === 0 ? (
-        <div className="px-6 py-8 text-center text-gray-500 text-sm">
-          Waiting for data...
+        {/* Header — 5 columns */}
+        <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
+          style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }}>
+          <span>Symbol</span>
+          <span className="text-right">Price</span>
+          <span className="text-right">Change</span>
+          <span className="text-right">% Change</span>
+          <span className="text-center">Trend (1D)</span>
         </div>
-      ) : (
-        stockList.map((stock) => (
-          <StockRow
-            key={stock.symbol}
-            stock={stock}
-            candles={candles?.[stock.symbol]}
-            onSelect={handleSelect}
-          />
-        ))
-      )}
+
+        {/* Rows */}
+        {stockList.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500 text-sm">
+            Waiting for data...
+          </div>
+        ) : (
+          stockList.map((stock) => (
+            <StockRow
+              key={stock.symbol}
+              stock={stock}
+              candles={candles?.[stock.symbol]}
+              onSelect={handleSelect}
+            />
+          ))
+        )}
+
+      </div>
     </div>
   );
 }
@@ -162,7 +165,7 @@ function RealTimeDashBoardPage() {
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
       <GeneralHeader />
-      <main className="flex-1 p-7">
+      <main className="flex-1 p-4 md:p-7">
         <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
           Real-Time Dashboard</h1>
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />

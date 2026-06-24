@@ -29,19 +29,32 @@ function ExpertLoggedInPage() {
     >
       <ConsultantHeader />
 
-      <main className="flex-1 p-7.5">
+      <main className="flex-1 p-4 sm:p-7.5">
+        <style>{`
+          .expert-hero {
+            height: 130vh;
+            margin-top: -25vh;
+            margin-bottom: -20vh;
+          }
+          @media (max-width: 640px) {
+            .expert-hero {
+              height: auto;
+              min-height: 70vh;
+              margin-top: 0;
+              margin-bottom: 0;
+            }
+          }
+        `}</style>
         <div
+          className="expert-hero"
           style={{
             position: "relative",
-            height: "130vh",
             width: "100%",
             overflow: "hidden",
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            marginTop: "-25vh",
-            marginBottom: "-20vh",
           }}
         >
           {/* Background glow */}

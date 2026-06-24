@@ -49,7 +49,7 @@ function AdminPanelPage() {
         </section>
 
         {/* Recent Subscriptions */}
-        <section className="bg-white rounded-lg shadow overflow-hidden">
+        <section className="bg-white rounded-lg shadow overflow-x-auto">
           <div className="flex items-center justify-between px-6 py-5">
             <h3 className="font-bold text-lg">Recent Subscriptions</h3>
             <a href="/adminpanel/subscriptions" className="text-blue-600 text-sm font-medium">View All</a>

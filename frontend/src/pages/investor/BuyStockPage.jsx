@@ -111,7 +111,7 @@ function BuyStockPage() {
 
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px", display: "flex", justifyContent: "center" }}>
+        <main className="flex-1 p-4 md:p-7 flex justify-center">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}

@@ -52,7 +52,7 @@ function UserProfilesPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
               <div>
                 <p className="text-xs font-bold text-slate-400 mb-1">PROFILE TYPE</p>
                 <p className="text-sm text-slate-700">{profile.profile_type}</p>

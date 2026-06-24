@@ -67,17 +67,15 @@ function DynamicFeatureBubbleHero() {
 
   return (
     <div
+      className="hero-section"
       style={{
         position: "relative",
-        height: "130vh",
         width: "100%",
         overflow: "hidden",
         color: "white",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        marginTop: "-25vh",
-        marginBottom: "-20vh",
       }}
     >
       {/* Background glow */}
@@ -186,6 +184,7 @@ function DynamicFeatureBubbleHero() {
         return (
           <div
             key={feature.content_id}
+            className="feature-bubble"
             style={{
               position: "absolute",
               top: "50%",
@@ -235,6 +234,20 @@ function DynamicFeatureBubbleHero() {
       })}
 
       <style>{`
+        .hero-section {
+          height: 130vh;
+          margin-top: -25vh;
+          margin-bottom: -20vh;
+        }
+        @media (max-width: 640px) {
+          .hero-section {
+            height: auto;
+            min-height: 70vh;
+            margin-top: 0;
+            margin-bottom: 0;
+          }
+          .feature-bubble { display: none; }
+        }
         ${features.map((f, i) => buildKeyframes(i, f.size, f.target)).join("")}
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -258,7 +271,7 @@ function HomePage() {
       transition={{ duration: 0.6 }}
     >
       <Header />
-      <main className="flex-1 p-7.5">
+      <main className="flex-1 p-4 sm:p-7.5">
 
         <DynamicFeatureBubbleHero />
       </main>

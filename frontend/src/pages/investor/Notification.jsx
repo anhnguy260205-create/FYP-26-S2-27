@@ -82,7 +82,7 @@ function Notification() {
             transition={{ duration: 0.6 }}
         >
             <GeneralHeader />
-            <main className="flex-1 p-7">
+            <main className="flex-1 p-4 md:p-7">
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">

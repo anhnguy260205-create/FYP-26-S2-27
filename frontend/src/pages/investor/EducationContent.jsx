@@ -98,7 +98,7 @@ function EducationContent() {
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
         <GeneralHeader />
-        <main style={{ flex: 1, padding: "28px 32px" }}>
+        <main className="flex-1 p-4 md:p-7">
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24 }}>

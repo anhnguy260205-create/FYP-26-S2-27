@@ -67,7 +67,7 @@ function UserAccountDetailsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-32 gap-y-10 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-32 gap-y-10 mt-8">
           <div>
             <p className="text-sm font-bold text-slate-400 uppercase">Full Name</p>
             <p className="text-lg text-slate-900 mt-1">{user.full_name}</p>

@@ -137,7 +137,7 @@ function ExpertNotificationPage() {
     >
       <ConsultantHeader />
 
-      <main className="flex-1 p-7 max-w-4xl mx-auto w-full">
+      <main className="flex-1 p-4 md:p-7 max-w-4xl mx-auto w-full">
         <div className="flex justify-between items-center mb-8">
           <div>
             <div className="flex items-center gap-3">

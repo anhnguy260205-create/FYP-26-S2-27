@@ -147,7 +147,7 @@ function UserAccountsPage() {
         </section>
 
         {/* Table */}
-        <section className="bg-white rounded-lg overflow-hidden">
+        <section className="bg-white rounded-lg overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">

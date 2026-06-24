@@ -94,7 +94,7 @@ export default function ExpertPortfolio() {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
             <GeneralHeader />
 
-            <main className="flex-1 p-7">
+            <main className="flex-1 p-4 md:p-7">
                 {/* Header */}
                 <div className="mb-6">
                     <h1

@@ -770,7 +770,7 @@ function ModelSignalPanel({ signal }) {
         Model Signal Breakdown
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.4fr 1fr", gap: 20 }}>
+      <div className="ai-model-signal-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.4fr 1fr", gap: 20 }}>
 
         {/* Direction badge */}
         <div style={{ background: `${color}18`, border: `1px solid ${color}40`, borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
@@ -1012,6 +1012,15 @@ function AIPredictionPage() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @media (max-width: 640px) {
+          .ai-page-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .ai-tomorrows-call { grid-template-columns: repeat(2, 1fr) !important; }
+          .ai-model-signal-grid { grid-template-columns: 1fr !important; }
+          .ai-stats-strip { overflow-x: auto; }
+          .ai-stats-strip > div { min-width: 520px; }
+          .ai-chart-wrap { overflow-x: auto; }
+          .ai-analyst-row { flex-direction: column !important; gap: 16px !important; }
+        }
       `}</style>
 
       <motion.div
@@ -1020,11 +1029,12 @@ function AIPredictionPage() {
       >
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px", position: "relative", zIndex: 1 }}>
+        <main className="flex-1 p-4 md:p-7" style={{ position: "relative", zIndex: 1 }}>
 
           {/* ── Page title (mirrors AStockDashBoardPage style) ── */}
           <motion.div
             initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className="ai-page-header"
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}
           >
             <div>
@@ -1131,7 +1141,7 @@ function AIPredictionPage() {
                     const up = ret >= 0;
                     const accentColor = up ? "#34d399" : "#f87171";
                     return (
-                      <div style={{
+                      <div className="ai-tomorrows-call" style={{
                         display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12,
                       }}>
                         {[
@@ -1163,11 +1173,15 @@ function AIPredictionPage() {
                 {/* ── Section: Market snapshot ── */}
                 <section>
                   <SectionLabel icon="📊" text="Market Snapshot" />
-                  <StatsStrip
-                    lastClose={result.last_close}
-                    predictions={result.predictions}
-                    livePrice={liveStock?.price}
-                  />
+                  <div className="ai-stats-strip overflow-x-auto">
+                    <div style={{ minWidth: 520 }}>
+                      <StatsStrip
+                        lastClose={result.last_close}
+                        predictions={result.predictions}
+                        livePrice={liveStock?.price}
+                      />
+                    </div>
+                  </div>
                 </section>
 
                 {/* ── Section: AI model signal ── */}
@@ -1179,8 +1193,8 @@ function AIPredictionPage() {
                 {/* ── Section: Price chart + side panels ── */}
                 <section>
                   <SectionLabel icon="📈" text={`Price Chart & ${result.days}-Day Forecast`} />
-                  <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="ai-analyst-row" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                    <div className="ai-chart-wrap overflow-x-auto" style={{ flex: 1, minWidth: 0 }}>
                       <PredictionChart
                         lastClose={result.last_close}
                         predictions={result.predictions}

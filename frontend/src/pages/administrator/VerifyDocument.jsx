@@ -150,7 +150,7 @@ function DetailView({ application, onBack, onApprove, onReject }) {
           <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
             <User size={14} /> Personal Information
           </h3>
-          <div className="grid grid-cols-2 gap-x-20 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-6">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase">Email Address</p>
               <p className="text-slate-800 mt-1">{application.email_address}</p>
@@ -182,7 +182,7 @@ function DetailView({ application, onBack, onApprove, onReject }) {
           <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
             <Briefcase size={14} /> Professional Background
           </h3>
-          <div className="grid grid-cols-2 gap-x-20 gap-y-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-6 mb-6">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase">Years of Experience</p>
               <p className="text-slate-800 mt-1">{application.experience_years} years</p>
@@ -312,7 +312,7 @@ function VerifyDocumentationPage() {
     <AdminLayout title="Expert Application Review" subtitle="Review and approve expert account applications">
       <div className="space-y-5">
         {/* Summary Cards */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { key: "all", label: "Total Applications", color: "border-blue-200 bg-blue-50 text-blue-700" },
             { key: "pending", label: "Pending Review", color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
@@ -331,7 +331,7 @@ function VerifyDocumentationPage() {
         </div>
 
         {/* Applications Table */}
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="bg-white rounded-lg overflow-x-auto">
           <div className="px-6 py-4 border-b border-gray-100">
             <p className="text-sm font-semibold text-slate-700">
               {filter === "all" ? "All Applications" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Applications`}

@@ -164,7 +164,7 @@ function ContentManagementPage() {
 
       {/* Membership Plans — two columns */}
       {activeTab === "membership" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Free Plan */}
           <div>
             <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Free Plan</p>

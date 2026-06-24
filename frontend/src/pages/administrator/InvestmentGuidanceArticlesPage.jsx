@@ -105,7 +105,7 @@ function InvestmentGuidanceArticlesPage() {
 
           <hr className="mb-6" />
 
-          <div className="grid grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
               <p className="text-xs font-bold text-slate-400 mb-2">ARTICLE ID</p>
               <p>{selectedArticle.article_id}</p>
@@ -211,7 +211,7 @@ function InvestmentGuidanceArticlesPage() {
       title="Investment Guidance Articles"
       subtitle="Manage and publish investment education content."
     >
-      <div className="bg-white rounded-lg overflow-hidden">
+      <div className="bg-white rounded-lg overflow-x-auto">
         <div className="p-5 border-b">
           <h3 className="text-lg font-bold">All Articles</h3>
         </div>
