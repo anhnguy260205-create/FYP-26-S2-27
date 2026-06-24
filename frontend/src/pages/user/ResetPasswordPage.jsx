@@ -150,13 +150,12 @@ function ResetPasswordPage() {
       transition={{ duration: 0.6 }}>
 
       <Header />
-      <main className="flex justify-center p-7.5">
-        <div className="flex items-center justify-center min-h-screen px-24" style={{ marginTop: "-80px", paddingBottom: "-80px" }}>
-          <div className="flex flex-row items-center gap-30 max-w-7xl w-full">
+      <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
+        <div className="w-full max-w-[460px]">
             {/* Form Card */}
             <div
-              className="bg-[rgba(255,255,255,0.82)] w-175 shrink-0 flex flex-col justify-center"
-              style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)", }}>
+              className="bg-[rgba(255,255,255,0.82)] w-full flex flex-col justify-center"
+              style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)" }}>
 
 
               <div className="text-center">
@@ -299,8 +298,6 @@ function ResetPasswordPage() {
                 Back to Login
               </button>
             </div>
-
-          </div>
         </div>
       </main>
     </motion.div>

@@ -13,7 +13,7 @@ function PaymentFail() {
             transition={{ duration: 0.6 }}
         >
             <GeneralHeader />
-            <main className="flex-1 p-7.5">
+            <main className="flex-1 p-4 sm:p-7.5">
                 <div>
                     Payment Failed. Please try again.
                 </div>

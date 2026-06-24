@@ -259,7 +259,7 @@ function SubscriptionPage() {
       transition={{ duration: 0.6 }}
     >
       <GeneralHeader />
-      <main className="flex-1 p-7.5">
+      <main className="flex-1 p-4 sm:p-7.5">
         <div
           className="flex gap-50"
           style={{ justifyContent: "center", alignItems: "center", paddingTop: "90px", paddingBottom: "90px" }}

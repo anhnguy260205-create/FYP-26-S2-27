@@ -133,15 +133,22 @@ function TransactionHistoryPage() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @media (max-width: 640px) {
+          .tx-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .tx-page-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+        }
+      `}</style>
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px" }}>
+        <main className="flex-1 p-4 md:p-7">
 
           {/* Page header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
+            className="tx-page-header"
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>
@@ -164,7 +171,7 @@ function TransactionHistoryPage() {
 
           {/* Quick stats */}
           {!loading && transactions.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+            <div className="tx-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total Trades", value: filtered.length, color: "#e2e8f0" },
                 { label: "Buy Volume", value: fmt$(totalBuy), color: "#34d399" },

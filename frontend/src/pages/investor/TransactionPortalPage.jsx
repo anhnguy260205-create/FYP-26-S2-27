@@ -295,7 +295,7 @@ function TransactionPortalPage() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px" }}>
+        <main className="flex-1 p-4 md:p-7">
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}

@@ -574,7 +574,7 @@ function AStockDashBoardPage() {
 
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px", position: "relative", zIndex: 1 }}>
+        <main className="flex-1 p-4 md:p-7" style={{ position: "relative", zIndex: 1 }}>
 
           <FirstLevel
             symbol={symbol}

@@ -39,7 +39,7 @@ function AIChatbot() {
             transition={{ duration: 0.6 }}
         >
             <GeneralHeader />
-            <main className="flex-1 p-7">
+            <main className="flex-1 p-4 md:p-7">
 
                 <div
                     className="grid"
