@@ -56,3 +56,32 @@ class ExpertArticlesController:
         if not expert_id:
             return []
         return Article.getByExpert(expert_id)
+
+
+# ── Admin controllers (no expert_id needed) ────────────────────────────────────
+
+class AdminListArticlesController:
+    def list(self, category=None):
+        return Article.getAll_admin(category=category)
+
+
+class AdminCreateArticleController:
+    def create(self, title, summary, content, category, tags="", status="published"):
+        article_id = Article.admin_create(title, summary, content, category, tags, status)
+        return {"success": True, "article_id": article_id}
+
+
+class AdminUpdateArticleController:
+    def update(self, article_id, **kwargs):
+        ok = Article.admin_update(article_id, **kwargs)
+        if not ok:
+            return {"success": False, "message": "Article not found"}
+        return {"success": True, "message": "Article updated"}
+
+
+class AdminDeleteArticleController:
+    def delete(self, article_id):
+        ok = Article.admin_delete(article_id)
+        if not ok:
+            return {"success": False, "message": "Article not found"}
+        return {"success": True, "message": "Article deleted"}

@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.boundary.userb import router as user_router
@@ -12,8 +12,6 @@ from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account, seed_jordan_account
 from app.entity.models.subscription import Subscription
-from app.entity.models.investmentarticle import InvestmentArticle
-from app.boundary.stock_ws import router as stock_ws_router
 from app.entity.models.watchlist import Watchlist
 from app.entity.models.holding import Holding
 from app.entity.models.transaction import Transaction
@@ -21,7 +19,15 @@ from app.entity.models.password_reset import PasswordReset
 from app.entity.models.article import Article, seed_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
 from app.entity.models.forumquestion import ForumPost, ForumReply, ForumPostLike, ForumPostSave, ExpertQuestion
-from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
+from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
+from app.entity.models.emailalert import StockAlert
+from app.boundary.stock_ws import (
+    router as stock_ws_router,
+    stock_pool,
+    get_snapshot_yfinance,
+    get_market_status,
+    _snapshot_cache,
+)
 from app.boundary.predictionb import router as prediction_router
 from app.boundary.payment_service import router as payment_router
 from app.boundary.alertb import router as alertb
@@ -31,7 +37,6 @@ from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
-from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 
