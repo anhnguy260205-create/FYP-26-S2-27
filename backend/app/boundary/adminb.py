@@ -2,14 +2,22 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.control.controller.adminc import AdminUserAccountController
+from app.control.controller.knowledgehub_c import (
+    AdminListArticlesController,
+    AdminUpdateArticleController,
+    AdminDeleteArticleController,
+    GetArticleController,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-class InvestmentArticleRequest(BaseModel):
+class AdminArticleRequest(BaseModel):
     title: str
+    summary: Optional[str] = ""
     category: str
     content: str
-    status: str = "draft"
+    tags: Optional[str] = ""
+    status: str = "published"
 
 class AdminUserAccountPage:
     def __init__(self):
@@ -146,74 +154,36 @@ def activate_user_account(user_id: str):
     }
 
 @router.get("/articles")
-def get_investment_articles():
-    boundary = AdminUserAccountPage()
-    articles = boundary.getInvestmentArticles()
-
-    return {
-        "success": True,
-        "count": len(articles),
-        "articles": articles,
-    }
+def get_admin_articles():
+    articles = AdminListArticlesController().list()
+    return {"success": True, "count": len(articles), "articles": articles}
 
 
 @router.get("/articles/{article_id}")
-def get_investment_article(article_id: str):
-    boundary = AdminUserAccountPage()
-    article = boundary.getInvestmentArticleById(article_id)
-
+def get_admin_article(article_id: str):
+    article = GetArticleController().get(article_id)
     if not article:
-        return {
-            "success": False,
-            "message": "Article not found",
-        }
-
-    return {
-        "success": True,
-        "article": article,
-    }
-
-
-@router.post("/articles")
-def create_investment_article(data: InvestmentArticleRequest):
-    boundary = AdminUserAccountPage()
-    article_id = boundary.createInvestmentArticle(data)
-
-    return {
-        "success": True,
-        "message": "Article created successfully",
-        "article_id": article_id,
-    }
+        return {"success": False, "message": "Article not found"}
+    return {"success": True, "article": article}
 
 
 @router.put("/articles/{article_id}")
-def update_investment_article(article_id: str, data: InvestmentArticleRequest):
-    boundary = AdminUserAccountPage()
-    success = boundary.updateInvestmentArticle(article_id, data)
-
-    if not success:
-        return {
-            "success": False,
-            "message": "Article not found",
-        }
-
-    return {
-        "success": True,
-        "message": "Article updated successfully",
-    }
+def update_admin_article(article_id: str, data: AdminArticleRequest):
+    result = AdminUpdateArticleController().update(
+        article_id,
+        title=data.title,
+        summary=data.summary,
+        content=data.content,
+        category=data.category,
+        tags=data.tags,
+        status=data.status,
+    )
+    return result
 
 
 @router.delete("/articles/{article_id}")
-def delete_investment_article(article_id: str):
-    boundary = AdminUserAccountPage()
-    success = boundary.deleteInvestmentArticle(article_id)
-
-    if not success:
-        return {
-            "success": False,
-            "message": "Article not found",
-        }
-
+def delete_admin_article(article_id: str):
+    result = AdminDeleteArticleController().delete(article_id)
     return {
         "success": True,
         "message": "Article deleted successfully",
