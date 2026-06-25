@@ -103,6 +103,7 @@ function RegistrationPage() {
       }
 
       navigate("/login");
+
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
         alert("This email is already registered.");
@@ -136,7 +137,7 @@ function RegistrationPage() {
           <div
             className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
-            >
+          >
             <div className="text-center">
               <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">
                 Open an account

@@ -5,7 +5,8 @@ import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation } from "../../api/userApi.js";
-import { Shield, User, ChartNoAxesColumn, SquarePen, Star, Briefcase, Verified, BadgeCheck } from "lucide-react";
+import { Shield, User, ChartNoAxesColumn, SquarePen, Star, Briefcase, Verified, BadgeCheck, FileText, Plus, Trash2 } from "lucide-react";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 /* ─── Shared UI components ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
@@ -521,20 +522,55 @@ function DeleteAccountButton() {
     );
 }
 
-function VerifiedCard({ expertInfo }) {
+function VerifiedCard({ expertInfo, onUpdate }) {
     const status = expertInfo?.verification_status?.toLowerCase();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
+    // ── Verification form state ──
     const [linkedIn, setLinkedIn] = useState(expertInfo?.linked_in_url || "");
     const [experience, setExperience] = useState(expertInfo?.experience_years != null ? String(expertInfo.experience_years) : "");
     const [specialization, setSpecialization] = useState("");
     const [bio, setBio] = useState("");
-    const [docName, setDocName] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
-    const handleFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (file) setDocName(file.name);
+    // ── Documents state ──
+    const [docs, setDocs] = useState(() => expertInfo?.documents?.length ? expertInfo.documents : []);
+    const [docForm, setDocForm] = useState({ name: "", url: "", type: "certification" });
+    const [savingDocs, setSavingDocs] = useState(false);
+    const [docMsg, setDocMsg] = useState("");
+
+    useEffect(() => {
+        if (expertInfo?.documents) setDocs(expertInfo.documents);
+    }, [expertInfo]);
+
+    const addDoc = () => {
+        if (!docForm.name.trim() || !docForm.url.trim()) return;
+        setDocs(prev => [...prev, { ...docForm }]);
+        setDocForm({ name: "", url: "", type: "certification" });
+    };
+    const removeDoc = (i) => setDocs(prev => prev.filter((_, idx) => idx !== i));
+
+    const saveDocs = async () => {
+        setSavingDocs(true); setDocMsg("");
+        try {
+            const res = await fetch(`${API_BASE}/expert/documents`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: currentUser.user_id, documents: docs }),
+            });
+            const data = await res.json();
+            if (data.success) { setDocMsg("Saved!"); onUpdate?.(); }
+            else setDocMsg(data.message || "Failed to save");
+        } catch { setDocMsg("Could not reach backend"); }
+        finally { setSavingDocs(false); }
+    };
+
+    const docTypeColor = (type) => {
+        if (type === "certification") return { color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" };
+        if (type === "degree")        return { color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" };
+        if (type === "employment")    return { color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" };
+        return { color: "#94a3b8", bg: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)" };
     };
 
     const handleSubmit = async (e) => {
@@ -574,10 +610,12 @@ function VerifiedCard({ expertInfo }) {
 
                 <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "28px 0" }} />
 
-                <div className="grid grid-cols-2" style={{ gap: "24px 32px" }}>
+                <div className="grid grid-cols-2" style={{ gap: "24px 32px", marginBottom: "28px" }}>
                     <InfoRow label="LinkedIn" value={expertInfo?.linked_in_url || "—"} />
                     <InfoRow label="Experience" value={expertInfo?.experience_years != null ? `${expertInfo.experience_years} year${expertInfo.experience_years !== 1 ? "s" : ""}` : "—"} />
                 </div>
+
+                {DocumentsSection()}
             </GlassCard>
         );
     }
@@ -627,6 +665,8 @@ function VerifiedCard({ expertInfo }) {
                         </div>
                     ))}
                 </div>
+
+                {DocumentsSection()}
             </GlassCard>
         );
     }
@@ -691,30 +731,6 @@ function VerifiedCard({ expertInfo }) {
                         />
                     </FormField>
 
-                    {/* Document upload */}
-                    <FormField label="Supporting Document (Certificate / CV)" hint="PDF, JPG, or PNG — max 10 MB">
-                        <label
-                            htmlFor="v-doc"
-                            style={{
-                                display: "flex", alignItems: "center", gap: "12px",
-                                height: "44px", borderRadius: "10px",
-                                border: "0.667px dashed rgba(255,255,255,0.2)",
-                                padding: "0 14px", fontSize: "14px",
-                                color: docName ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
-                                background: "rgba(255,255,255,0.05)",
-                                cursor: "pointer", transition: "all 0.15s",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.border = "0.667px dashed rgba(0,211,243,0.4)"; e.currentTarget.style.background = "rgba(0,211,243,0.05)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.border = "0.667px dashed rgba(255,255,255,0.2)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={docName ? "#00D3F2" : "rgba(255,255,255,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            {docName || "Click to upload document"}
-                            <input id="v-doc" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: "none" }} onChange={handleFileChange} />
-                        </label>
-                    </FormField>
-
                     {/* Submit */}
                     <div className="flex items-center justify-between" style={{ marginTop: "8px" }}>
                         <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
@@ -754,9 +770,87 @@ function VerifiedCard({ expertInfo }) {
             </form>
 
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+            {DocumentsSection()}
         </GlassCard>
     );
+
+    // ── Documents section (shared across all states) ────────────────────────────
+    function DocumentsSection() {
+        return (
+            <>
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "28px 0" }} />
+                <div style={{ marginBottom: "16px" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <FileText size={14} /> Supporting Documents
+                    </p>
+                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
+                        Add links to your certificates, degrees, and employment letters. The admin will review these during verification.
+                    </p>
+                </div>
+
+                {/* Existing docs */}
+                {docs.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+                        {docs.map((doc, i) => {
+                            const c = docTypeColor(doc.type);
+                            return (
+                                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.667px solid rgba(255,255,255,0.1)" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                                        <FileText size={14} color={c.color} style={{ flexShrink: 0 }} />
+                                        <div style={{ minWidth: 0 }}>
+                                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>{doc.name}</p>
+                                            <a href={doc.url} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#00D3F2", textDecoration: "underline" }}>
+                                                {doc.url.length > 45 ? doc.url.slice(0, 45) + "…" : doc.url}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                                        <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "999px", background: c.bg, border: `1px solid ${c.border}`, color: c.color, textTransform: "uppercase" }}>{doc.type}</span>
+                                        <button onClick={() => removeDoc(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(248,113,113,0.7)", padding: 0 }}><Trash2 size={13} /></button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Add doc form */}
+                <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(0,211,243,0.04)", border: "1px solid rgba(0,211,243,0.12)", marginBottom: "14px" }}>
+                    <div className="grid grid-cols-2" style={{ gap: "10px", marginBottom: "10px" }}>
+                        <TextInput value={docForm.name} onChange={v => setDocForm(f => ({ ...f, name: v }))} placeholder="Document name (e.g. CFA Certificate)" />
+                        <select value={docForm.type} onChange={e => setDocForm(f => ({ ...f, type: e.target.value }))}
+                            className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3 text-white text-sm">
+                            <option value="certification">Certification</option>
+                            <option value="degree">Degree</option>
+                            <option value="employment">Employment Letter</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                        <div style={{ flex: 1 }}>
+                            <TextInput value={docForm.url} onChange={v => setDocForm(f => ({ ...f, url: v }))} placeholder="Document URL (Google Drive, Dropbox…)" />
+                        </div>
+                        <button type="button" onClick={addDoc} disabled={!docForm.name.trim() || !docForm.url.trim()}
+                            style={{ display: "flex", alignItems: "center", gap: "4px", padding: "0 14px", borderRadius: "10px", background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.3)", color: "#00D3F2", fontSize: "13px", fontWeight: 600, cursor: "pointer", flexShrink: 0, opacity: (!docForm.name.trim() || !docForm.url.trim()) ? 0.4 : 1 }}>
+                            <Plus size={13} /> Add
+                        </button>
+                    </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <button onClick={saveDocs} disabled={savingDocs}
+                        className="font-semibold text-white hover:opacity-90 active:scale-[0.98] transition-all"
+                        style={{ height: "38px", padding: "0 22px", borderRadius: "10px", backgroundImage: "linear-gradient(90deg,#0092b8,#155dfc)", border: "none", fontSize: "13px", cursor: savingDocs ? "not-allowed" : "pointer", opacity: savingDocs ? 0.6 : 1 }}>
+                        {savingDocs ? "Saving…" : "Save Documents"}
+                    </button>
+                    {docMsg && <span style={{ fontSize: "12px", color: docMsg === "Saved!" ? "#22c55e" : "#f87171" }}>{docMsg}</span>}
+                </div>
+            </>
+        );
+    }
 }
+
 
 function ExpertProfilePage() {
     const [activeTab, setActiveTab] = useState("personal");
@@ -809,7 +903,7 @@ function ExpertProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard expertInfo={expertInfo} onUpdate={fetchExpertInfo} />}
                     {activeTab === "account" && <AccountSettingsCard expertInfo={expertInfo} />}
                     {activeTab === "security" && <SecurityCard expertInfo={expertInfo} />}
-                    {activeTab === "verified" && <VerifiedCard expertInfo={expertInfo} />}
+                    {activeTab === "verified" && <VerifiedCard expertInfo={expertInfo} onUpdate={fetchExpertInfo} />}
                 </div>
             </main>
             <Footer />

@@ -1,8 +1,11 @@
-from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime
+import json
+from datetime import datetime
+from sqlalchemy import Float, Column, ForeignKey, Integer, String, DateTime, Text
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from uuid import uuid4
 from app.entity.database.session import get_session
+from zoneinfo import ZoneInfo
 
 
 class Expert(Base):
@@ -18,8 +21,8 @@ class Expert(Base):
     linked_in_url = Column(String(255), nullable=True)
     verification_status = Column(String(20), default="pending")
     verification_score = Column(Integer, default=0)
-    # This will define later
     approved_date = Column(DateTime, nullable=True)
+    documents = Column(Text, nullable=True)  # JSON array of {name, url, type}
 
     @staticmethod
     def createAccount(username, email_address, experience_year=None, linked_in_url=None) -> bool:
@@ -51,6 +54,86 @@ class Expert(Base):
             return False
 
     @staticmethod
+    def update_profile(user_id, experience_years=None, linked_in_url=None):
+        with get_session() as session:
+            expert = session.query(Expert).filter(Expert.user_id == user_id).first()
+            if not expert:
+                return False
+            if experience_years is not None:
+                expert.experience_years = experience_years
+            if linked_in_url is not None:
+                expert.linked_in_url = linked_in_url
+            return True
+
+    @staticmethod
+    def update_documents(user_id, documents: list):
+        with get_session() as session:
+            expert = session.query(Expert).filter(Expert.user_id == user_id).first()
+            if not expert:
+                return False
+            expert.documents = json.dumps(documents)
+            return True
+
+    @staticmethod
+    def set_verification_status(expert_id, status):
+        with get_session() as session:
+            expert = session.query(Expert).filter(Expert.expert_id == expert_id).first()
+            if not expert:
+                return False
+            expert.verification_status = status
+            if status == "approved":
+                expert.approved_date = datetime.now(ZoneInfo("Asia/Singapore"))
+            return True
+
+    @staticmethod
+    def get_all_pending():
+        with get_session() as session:
+            experts = session.query(Expert).filter(
+                Expert.verification_status == "pending"
+            ).all()
+            result = []
+            for e in experts:
+                user = session.query(UserAccount).filter(UserAccount.user_id == e.user_id).first()
+                result.append({
+                    "expert_id": e.expert_id,
+                    "user_id": e.user_id,
+                    "full_name": user.full_name if user else "",
+                    "email_address": user.email_address if user else "",
+                    "phone_number": user.phone_number if user else "",
+                    "address": user.address if user else "",
+                    "experience_years": e.experience_years,
+                    "linked_in_url": e.linked_in_url,
+                    "verification_status": e.verification_status,
+                    "verification_score": e.verification_score,
+                    "documents": json.loads(e.documents) if e.documents else [],
+                    "approved_date": e.approved_date.isoformat() if e.approved_date else None,
+                })
+            return result
+
+    @staticmethod
+    def get_all_for_admin():
+        with get_session() as session:
+            experts = session.query(Expert).all()
+            result = []
+            for e in experts:
+                user = session.query(UserAccount).filter(UserAccount.user_id == e.user_id).first()
+                result.append({
+                    "expert_id": e.expert_id,
+                    "user_id": e.user_id,
+                    "full_name": user.full_name or (user.username if user else ""),
+                    "email_address": user.email_address if user else "",
+                    "phone_number": user.phone_number if user else "",
+                    "address": user.address if user else "",
+                    "experience_years": e.experience_years,
+                    "linked_in_url": e.linked_in_url,
+                    "verification_status": e.verification_status,
+                    "verification_score": e.verification_score,
+                    "documents": json.loads(e.documents) if e.documents else [],
+                    "approved_date": e.approved_date.isoformat() if e.approved_date else None,
+                })
+            return result
+
+    @staticmethod
     def get_expert_information(user_id):
         user = UserAccount.get_user_information(user_id)
         with get_session() as session:
@@ -76,6 +159,7 @@ class Expert(Base):
                 "rating": expert.rating,
                 "experience_years": expert.experience_years,
                 "linked_in_url": expert.linked_in_url,
+                "documents": json.loads(expert.documents) if expert.documents else [],
             }
 
 

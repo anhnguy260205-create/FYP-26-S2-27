@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import UpdateParticularPage from "./pages/investor/UpdateParticularPage.jsx";
 import RegistrationPage from "./pages/user/RegistrationPage.jsx";
 import LoginPage from "./pages/user/LoginPage.jsx";
 import HomePage from "./pages/user/HomePage.jsx";
@@ -26,7 +27,8 @@ import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
 import EducationContent from "./pages/investor/EducationContent.jsx";
 import AIChatbot from "./pages/investor/AIChatbot.jsx";
 import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
-
+import UpdateExpertParticularPage from "./pages/expert/UpdateParticular.jsx"
+import ExpertDocumentPage from "./pages/expert/ExpertDocumentPage.jsx";
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
 import ExpertKnowledgeHub from "./pages/expert/ExpertKnowledgeHub.jsx";
@@ -69,6 +71,10 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["investor"]}><TransactionPortalPage /></ProtectedRoute>
     },
 
+    {
+        path: "/investor/update-particular",
+        element: <ProtectedRoute allowedRoles={["investor"]}><UpdateParticularPage /></ProtectedRoute>
+    },
     {
         path: "/investor",
         element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
@@ -209,6 +215,14 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertNotificationPage /></ProtectedRoute>
     },
 
+    {
+        path: "/expert/updateparticular",
+        element: <ProtectedRoute allowedRoles={["expert"]}><UpdateExpertParticularPage /></ProtectedRoute>
+    },
+    {
+        path: "/expert/documents",
+        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertDocumentPage /></ProtectedRoute>
+    },
 
 
 ]);

@@ -451,14 +451,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                             label="Email Address"
                             value={investorInfo?.email_address}
                         />
-                        <InfoRow
-                            label="Balance"
-                            value={
-                                investorInfo?.balance
-                                    ? `$${investorInfo.balance.toLocaleString()}`
-                                    : null
-                            }
-                        />
+
                     </div>
                 </>
             ) : (
