@@ -108,7 +108,7 @@ function MenuButton({ children, active, onClick }) {
 }
 
 function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
-    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+    const initials = expertInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
 
 
     const expertStatus = expertInfo?.verification_status?.toLowerCase();
@@ -209,7 +209,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
 
-    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+    const initials = expertInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
 
 
     useEffect(() => {

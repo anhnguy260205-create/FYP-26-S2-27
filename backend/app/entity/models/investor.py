@@ -29,7 +29,10 @@ class Investor(Base):
             return user_id
         try:
             with get_session() as session:
-                investor = Investor(user_id=user_id)
+                investor = Investor(
+                    user_id=user_id,
+
+                )
                 session.add(investor)
                 # get_session() handles commit automatically
             print("INVESTOR CREATED")
@@ -244,6 +247,17 @@ class Investor(Base):
                 return {"success": False, "message": f"Balance cannot exceed ${MAX_BALANCE:,.0f}"}
             investor.paper_money = new_balance
             return {"success": True, "paper_money": new_balance}
+
+    @staticmethod
+    def update_investor_stock_level(user_id, stock_level):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.stock_interest = stock_level
+            return True
 
     @staticmethod
     def updateInterests(user_id, interests: str):

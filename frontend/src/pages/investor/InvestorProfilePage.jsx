@@ -127,7 +127,7 @@ function MenuButton({ children, active, onClick }) {
 // LeftSection is now a proper React component with destructured props
 function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
     const navigate = useNavigate();
-    const initials = investorInfo?.username.slice(0, 2).toUpperCase();
+    const initials = investorInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
 
 
     const subscriptionStatus = investorInfo?.investor_subscription_status?.toLowerCase();
@@ -291,9 +291,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
     // Generate initials from username
-    const initials = investorInfo?.username
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    const initials = investorInfo?.username?.slice(0, 2)?.toUpperCase() ?? "??";
 
     useEffect(() => {
         setDraftFull(investorInfo?.full_name || "");
