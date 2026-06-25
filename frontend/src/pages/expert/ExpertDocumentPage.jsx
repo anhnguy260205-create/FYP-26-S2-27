@@ -8,8 +8,8 @@ const DOC_TYPES = ["certification", "degree", "employment", "other"];
 
 const docTypeStyle = (type) => {
   if (type === "certification") return { color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" };
-  if (type === "degree")        return { color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" };
-  if (type === "employment")    return { color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" };
+  if (type === "degree") return { color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.3)" };
+  if (type === "employment") return { color: "#f97316", bg: "rgba(249,115,22,0.12)", border: "rgba(249,115,22,0.3)" };
   return { color: "#94a3b8", bg: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)" };
 };
 
@@ -17,10 +17,10 @@ function ExpertDocumentPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
 
-  const [docs,    setDocs]    = useState([]);
-  const [form,    setForm]    = useState({ name: "", url: "", type: "certification" });
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState("");
+  const [docs, setDocs] = useState([]);
+  const [form, setForm] = useState({ name: "", url: "", type: "certification" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const addDoc = () => {
     if (!form.name.trim() || !form.url.trim()) return;
@@ -61,7 +61,7 @@ function ExpertDocumentPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <div className="bg-[rgba(255,255,255,0.92)] w-full max-w-[520px] flex flex-col" style={{ borderRadius: "30px", padding: "36px 28px" }}>
+      <div className="bg-[rgba(255,255,255,0.92)] w-full max-w-130 flex flex-col" style={{ borderRadius: "30px", padding: "36px 28px" }}>
 
         {/* Header */}
         <div className="text-center mb-8">
@@ -112,7 +112,7 @@ function ExpertDocumentPage() {
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Document name"
                 className={inputCls} style={inputStyle} />
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                className="w-full h-[42px] rounded-[10px] bg-white border border-gray-300 px-3 text-gray-800 text-sm">
+                className="w-full h-10.5 rounded-[10px] bg-white border border-gray-300 px-3 text-gray-800 text-sm">
                 {DOC_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
               </select>
             </div>
