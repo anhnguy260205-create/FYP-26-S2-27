@@ -2,9 +2,9 @@ from app.entity.database.session import get_session
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
-from app.entity.models.investmentarticle import InvestmentArticle
 from app.entity.models.emailalert import StockAlert
 from app.entity.models.subscription import Subscription
+
 
 class AdminUserAccountController:
     def getUserAccounts(self, keyword=None, role=None, status=None):
@@ -77,7 +77,7 @@ class AdminUserAccountController:
             return parts[0][:2].upper()
 
         return (parts[0][0] + parts[-1][0]).upper()
-    
+
     def getUserAccountById(self, user_id):
         with get_session() as session:
             result = (
@@ -165,7 +165,7 @@ class AdminUserAccountController:
 
             session.delete(user)
             return True
-        
+
     def activateUserAccount(self, user_id):
         with get_session() as session:
             user = session.query(UserAccount).filter(
@@ -179,87 +179,6 @@ class AdminUserAccountController:
             user.is_active = True
 
             session.commit()
-            return True
-        
-    def getInvestmentArticles(self):
-        with get_session() as session:
-            articles = session.query(InvestmentArticle).order_by(
-                InvestmentArticle.date_published.desc()
-            ).all()
-
-            return [
-                {
-                    "article_id": article.article_id,
-                    "title": article.title,
-                    "category": article.category,
-                    "content": article.content,
-                    "status": article.status,
-                    "author": article.author,
-                    "date_published": article.date_published.strftime("%Y-%m-%d") if article.date_published else None,
-                }
-                for article in articles
-            ]
-
-    def getInvestmentArticleById(self, article_id):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return None
-
-            return {
-                "article_id": article.article_id,
-                "title": article.title,
-                "category": article.category,
-                "content": article.content,
-                "status": article.status,
-                "author": article.author,
-                "date_published": article.date_published.strftime("%Y-%m-%d") if article.date_published else None,
-            }
-
-    def createInvestmentArticle(self, title, category, content, status):
-        with get_session() as session:
-            article = InvestmentArticle(
-                title=title,
-                category=category,
-                content=content,
-                status=status,
-                author="Admin",
-            )
-
-            session.add(article)
-            session.flush()
-
-            return article.article_id
-
-    def updateInvestmentArticle(self, article_id, title, category, content, status):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return False
-
-            article.title = title
-            article.category = category
-            article.content = content
-            article.status = status
-
-            return True
-
-    def deleteInvestmentArticle(self, article_id):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return False
-
-            session.delete(article)
             return True
 
     def getDashboardStats(self):

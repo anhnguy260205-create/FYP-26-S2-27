@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.control.controller.expertc import ExpertPortfolioController, ExpertQuestionsController
+from app.entity.models.expert import Expert
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
 
@@ -67,3 +68,36 @@ def reply_question(question_id: str, data: ReplyQuestionRequest):
 @router.delete("/questions/{question_id}/reply")
 def delete_question_reply(question_id: str):
     return ExpertQuestionsController().delete_reply(question_id)
+
+
+# ── Expert document submission ─────────────────────────────────────────────────
+
+class DocumentItem(BaseModel):
+    name: str
+    url: str
+    type: str  # "certification" | "degree" | "employment" | "other"
+
+class UpdateExpertProfileRequest(BaseModel):
+    user_id: str
+    experience_years: Optional[int] = None
+    linked_in_url: Optional[str] = None
+
+@router.post("/update-profile")
+def update_expert_profile(data: UpdateExpertProfileRequest):
+    ok = Expert.update_profile(data.user_id, data.experience_years, data.linked_in_url)
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Profile updated"}
+
+
+class UpdateDocumentsRequest(BaseModel):
+    user_id: str
+    documents: List[DocumentItem]
+
+@router.post("/documents")
+def update_documents(data: UpdateDocumentsRequest):
+    docs = [d.dict() for d in data.documents]
+    ok = Expert.update_documents(data.user_id, docs)
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Documents updated successfully"}
