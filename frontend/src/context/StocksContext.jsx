@@ -161,14 +161,20 @@ export function StocksProvider({ children }) {
         flushTimerRef.current = window.setTimeout(flushLiveUpdates, LIVE_UPDATE_FLUSH_MS);
     }, [flushLiveUpdates]);
 
-    useEffect(() => {
-        const socket = new WebSocket(`${import.meta.env.VITE_WS_URL}/ws/stocks`);
-        socketRef.current = socket;
+    const reconnectTimerRef = useRef(null);
 
-        socket.onopen = () => {
-            setConnectionStatus("Connected");
-            setError("");
-        };
+    useEffect(() => {
+        let destroyed = false;
+
+        function connect() {
+            if (destroyed) return;
+            const socket = new WebSocket(`${import.meta.env.VITE_WS_URL}/ws/stocks`);
+            socketRef.current = socket;
+
+            socket.onopen = () => {
+                setConnectionStatus("Connected");
+                setError("");
+            };
 
         socket.onmessage = (event) => {
             let response;
@@ -266,16 +272,27 @@ export function StocksProvider({ children }) {
             }
         };
 
-        socket.onerror = () => {
-            setError("Could not connect to stock websocket");
-            setConnectionStatus("Error");
-        };
+            socket.onerror = () => {
+                setError("Could not connect to stock data. Retrying…");
+                setConnectionStatus("Error");
+            };
 
-        socket.onclose = () => setConnectionStatus("Disconnected");
+            socket.onclose = () => {
+                setConnectionStatus("Disconnected");
+                // Auto-reconnect after 3 seconds if not intentionally destroyed
+                if (!destroyed) {
+                    reconnectTimerRef.current = window.setTimeout(connect, 3000);
+                }
+            };
+        }
+
+        connect();
 
         return () => {
+            destroyed = true;
             if (flushTimerRef.current) window.clearTimeout(flushTimerRef.current);
-            socket.close();
+            if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+            socketRef.current?.close();
         };
     }, [scheduleLiveFlush]);
 
