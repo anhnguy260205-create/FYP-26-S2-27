@@ -71,6 +71,7 @@ class Expert(Base):
             ).first()
             return {
                 **user,
+                "role": "expert",
                 "verification_status": expert.verification_status,
                 "rating": expert.rating,
                 "experience_years": expert.experience_years,

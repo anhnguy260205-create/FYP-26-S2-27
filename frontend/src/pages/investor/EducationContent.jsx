@@ -44,8 +44,7 @@ function ArticleReader({ article, onClose }) {
           maxWidth: 760, margin: "0 auto",
           background: "linear-gradient(145deg,rgba(10,18,38,0.98),rgba(20,30,58,0.98))",
           border: "1px solid rgba(99,179,237,0.2)", borderRadius: 16,
-          padding: "36px 40px", backdropFilter: "blur(20px)",
-        }}
+          padding: "36px 40px",        }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <CategoryBadge cat={article.category} />
@@ -96,7 +95,7 @@ function EducationContent() {
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <GeneralHeader />
         <main className="flex-1 p-4 md:p-7">
 
@@ -142,8 +141,7 @@ function EducationContent() {
                   style={{
                     background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                     border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                    padding: "20px 22px", cursor: "pointer", backdropFilter: "blur(12px)",
-                  }}
+                    padding: "20px 22px", cursor: "pointer",                  }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <CategoryBadge cat={a.category} />

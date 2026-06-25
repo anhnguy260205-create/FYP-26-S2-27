@@ -10,14 +10,14 @@ function FooterLink({ href, children }) {
 }
 
 const DEFAULT = {
-  brand:   { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
-  product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "#" }],
+  brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
+  product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "/investor/subscription" }],
   company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }],
   contact: [{ title: "support@deskstock.ai", description: "" }, { title: "Help Center", description: "#" }, { title: "Terms of Service", description: "#" }, { title: "Privacy Policy", description: "#" }],
 };
 
 function Footer() {
-  const [brand,   setBrand]   = useState(DEFAULT.brand);
+  const [brand, setBrand] = useState(DEFAULT.brand);
   const [product, setProduct] = useState(DEFAULT.product);
   const [company, setCompany] = useState(DEFAULT.company);
   const [contact, setContact] = useState(DEFAULT.contact);
@@ -37,7 +37,7 @@ function Footer() {
         const contactItems = c.filter((x) => x.section === "footer_contact");
         if (contactItems.length) setContact(contactItems);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (

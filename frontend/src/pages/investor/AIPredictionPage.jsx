@@ -165,7 +165,6 @@ function PredictionChart({ lastClose, predictions, symbol, todayCandles = [] }) 
       background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
       border: "1px solid rgba(99,179,237,0.15)",
       borderRadius: 12,
-      backdropFilter: "blur(12px)",
       overflow: "hidden",
     }}>
       {/* header */}
@@ -401,7 +400,7 @@ function AnalystPanel({ symbol }) {
   if (loading) return (
     <div style={{ width: 280, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", height: 300,
       background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
-      border: "1px solid rgba(99,179,237,0.15)", borderRadius: 12, backdropFilter: "blur(12px)" }}>
+      border: "1px solid rgba(99,179,237,0.15)", borderRadius: 12, }}>
       <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#64748b" }}>Loading…</span>
     </div>
   );
@@ -425,7 +424,7 @@ function AnalystPanel({ symbol }) {
       <div style={{ flex: 1, height: 5, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
         <motion.div
           initial={{ width: 0 }} animate={{ width: `${(count / barMax) * 100}%` }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
           style={{ height: "100%", background: barColor, borderRadius: 99 }}
         />
       </div>
@@ -445,13 +444,12 @@ function AnalystPanel({ symbol }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, delay: 0.1 }}
       style={{
         width: 280, flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)",
         borderRadius: 12, padding: "20px 22px",
-        backdropFilter: "blur(12px)",
       }}
     >
       <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 14px" }}>
@@ -530,13 +528,12 @@ function SentimentPanel({ sentiment }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.15 }}
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, delay: 0.15 }}
       style={{
         width: 288, flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)",
         borderRadius: 12, padding: "20px 22px",
-        backdropFilter: "blur(12px)",
       }}
     >
       <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px" }}>
@@ -605,7 +602,7 @@ function SentBar({ label, value, color }) {
       <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 3, height: 5, overflow: "hidden" }}>
         <motion.div
           initial={{ width: 0 }} animate={{ width: `${value * 100}%` }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
           style={{ height: "100%", background: color, borderRadius: 3, opacity: 0.75 }}
         />
       </div>
@@ -643,8 +640,7 @@ function StatsStrip({ lastClose, predictions, livePrice }) {
         display: "flex",
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
         border: "1px solid rgba(99,179,237,0.15)",
-        borderRadius: 12, backdropFilter: "blur(12px)", overflow: "hidden",
-        marginBottom: 16,
+        borderRadius: 12,        marginBottom: 16,
       }}
     >
       {stats.map(({ label, value, color }, i) => (
@@ -686,7 +682,6 @@ function StockSelector({ selected, onChange, stocks }) {
               color: active ? "#e2e8f0" : "#94a3b8",
               cursor: "pointer", transition: "all 0.2s",
               fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: active ? 600 : 400,
-              backdropFilter: "blur(8px)",
             }}>
               <span>{sym}</span>
               {pct && (
@@ -750,7 +745,7 @@ function ModelSignalPanel({ signal }) {
     <div style={{ height: 5, borderRadius: 99, background: bg, overflow: "hidden", marginTop: 8 }}>
       <motion.div
         initial={{ width: 0 }} animate={{ width: `${Math.min(100, Math.max(0, fill))}%` }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
         style={{ height: "100%", background: c, borderRadius: 99 }}
       />
     </div>
@@ -762,8 +757,7 @@ function ModelSignalPanel({ signal }) {
       style={{
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
         border: "1px solid rgba(99,179,237,0.15)",
-        borderRadius: 12, backdropFilter: "blur(12px)",
-        padding: "20px 24px", marginBottom: 16,
+        borderRadius: 12,        padding: "20px 24px", marginBottom: 16,
       }}
     >
       <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 18px" }}>
@@ -801,7 +795,7 @@ function ModelSignalPanel({ signal }) {
             <motion.div
               initial={{ left: "50%" }}
               animate={{ left: `${probPct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               style={{ position: "absolute", top: -3, width: 12, height: 12, borderRadius: "50%", background: probPct >= 50 ? "#34d399" : "#f87171", border: "2px solid #0f172a", transform: "translateX(-50%)", marginTop: 0 }}
             />
           </div>
@@ -880,8 +874,7 @@ function MilestoneAlertCard({ symbol, suggestedPrice, userId, userEmail, label }
       style={{
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
         border: "1px solid rgba(99,179,237,0.15)",
-        borderRadius: 12, backdropFilter: "blur(12px)",
-        padding: "18px 20px", marginBottom: 16,
+        borderRadius: 12,        padding: "18px 20px", marginBottom: 16,
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
       }}
     >
@@ -1025,7 +1018,7 @@ function AIPredictionPage() {
 
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
       >
         <GeneralHeader />
 
@@ -1033,7 +1026,7 @@ function AIPredictionPage() {
 
           {/* ── Page title (mirrors AStockDashBoardPage style) ── */}
           <motion.div
-            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
             className="ai-page-header"
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}
           >
@@ -1077,12 +1070,11 @@ function AIPredictionPage() {
 
           {/* ── Controls card ── */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.05 }}
             style={{
               background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
               border: "1px solid rgba(99,179,237,0.15)",
-              borderRadius: 12, backdropFilter: "blur(12px)",
-              padding: "22px 24px", marginBottom: 20,
+              borderRadius: 12,              padding: "22px 24px", marginBottom: 20,
               display: "flex", flexDirection: "column", gap: 20,
             }}
           >
