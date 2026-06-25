@@ -49,18 +49,23 @@ function ImageStockMarketTradingCharts() {
 function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
+    setError("");
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, formData.email.trim(), formData.password);
       const result = await firebaseLogin(formData.email.trim());
       if (!result.success) {
-        alert(result.message || "Failed to load user profile");
+        setError(result.message || "Failed to load user profile");
         return;
       }
       localStorage.setItem("currentUser", JSON.stringify(result.user));
@@ -68,18 +73,19 @@ function LoginPage() {
       if (role === "investor") navigate("/investor/edit-profile");
       else if (role === "expert") navigate("/expert/edit-profile");
       else if (role === "admin") navigate("/adminpanel");
-      else alert("Unknown role: " + role);
+      else setError("Unknown role: " + role);
     } catch (error) {
       if (error.code === "auth/invalid-credential") {
-        alert("Incorrect email or password.");
+        setError("Incorrect email or password.");
       } else if (error.code === "auth/user-not-found") {
-        alert("No account found with this email.");
+        setError("No account found with this email.");
       } else if (error.code === "auth/too-many-requests") {
-        alert("Too many failed attempts. Try again later.");
+        setError("Too many failed attempts. Please try again later.");
       } else {
-        console.error(error);
-        alert("Failed to login");
+        setError("Login failed. Please check your connection and try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,7 +118,7 @@ function LoginPage() {
           <div
             className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
-            >
+          >
             <div className="text-center">
               <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">
                 Welcome Back
@@ -156,20 +162,32 @@ function LoginPage() {
                   value={formData.password}
                   onChange={(e) => handleChange("password", e.target.value)}
                   required
-                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                  style={inputStyle}
+                  className="w-full rounded-[14px] bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                  style={{
+                    ...inputStyle,
+                    border: error ? "1.5px solid #ef4444" : "1px solid #d1d5db",
+                  }}
                   onFocus={focusStyle}
                   onBlur={blurStyle}
                 />
+                {error && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <p className="text-[13px] font-medium" style={{ color: "#ef4444" }}>{error}</p>
+                  </div>
+                )}
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer"
+                disabled={loading}
+                className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
               >
-                Sign In
+                {loading ? "Signing in…" : "Sign In"}
               </button>
             </form>
 
