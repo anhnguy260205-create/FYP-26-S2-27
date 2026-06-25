@@ -179,7 +179,6 @@ function DynamicFeatureBubbleHero() {
               borderRadius: "50%",
               background: "rgba(59,130,246,0.22)",
               border: "1px solid rgba(59,130,246,0.22)",
-              backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               overflow: "hidden",
               display: "flex",
@@ -244,7 +243,7 @@ function LoggedInHomePage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <GeneralHeader />
       <main className="flex-1 p-4 sm:p-7.5">

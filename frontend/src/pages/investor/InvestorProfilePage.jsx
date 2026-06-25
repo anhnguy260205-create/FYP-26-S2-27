@@ -66,8 +66,7 @@ function GlassCard({ children }) {
         <div
             style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(20px)",
+                background: "rgba(255,255,255,0.06)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: "24px",
                 padding: "32px",
@@ -151,7 +150,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                     {[0, 32, 64, 96, 128, 160, 192, 224, 256].map(x => <line key={x} x1={x} y1="0" x2={x} y2="78" stroke="white" strokeWidth="0.5" />)}
                     {[0, 20, 40, 60, 78].map(y => <line key={y} x1="0" y1={y} x2="256" y2={y} stroke="white" strokeWidth="0.5" />)}
                 </svg>
-                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", backdropFilter: "blur(8px)", ...subscriptionStyle }}>
+                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", ...subscriptionStyle }}>
                     ★ {subscriptionStatus === "premium" ? "Premium" : "Basic"}
                 </div>
             </div>
@@ -253,7 +252,7 @@ function DeleteAccountButton() {
             </div>
 
             {showConfirm && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "12px" }}>Delete Account</h2>
                         <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
@@ -590,6 +589,11 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
         try {
             const result = await updateInvestorInterests(userId, selectedInterests.join(","));
             if (result.success) {
+                // Patch localStorage so dashboard reads fresh interests without an API call
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.interests = selectedInterests.join(",");
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
                 alert("Account settings updated");
                 setEditingSection(null);
                 onUpdate();
@@ -928,7 +932,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Add Money Modal ── */}
             {showModal === "add" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "6px" }}>Add Paper Money</h2>
                         <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "24px" }}>
@@ -976,7 +980,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Upgrade Prompt Modal ── */}
             {showModal === "upgrade" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
                         <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                             <Lock size={20} color="#fbbf24" />
@@ -1001,7 +1005,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Balance Capped Modal ── */}
             {showModal === "capped" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(99,179,237,0.2)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Balance at Maximum</h2>
                         <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
@@ -1050,16 +1054,16 @@ function InvestorProfilePage() {
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.3 }}
         >
             <GeneralHeader />
             <main className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-10">
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", }}>
                         <LeftSection activeTab={activeTab} setActiveTab={setActiveTab} investorInfo={investorInfo} currentUser={currentUser} />
                     </div>
-                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", }}>
                         <DeleteAccountButton />
                     </div>
                 </div>
