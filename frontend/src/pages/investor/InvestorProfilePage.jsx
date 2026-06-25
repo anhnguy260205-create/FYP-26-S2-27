@@ -5,6 +5,8 @@ import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests } from "../../api/userApi.js";
+import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
+import { addPaperMoney } from "../../api/tradingApi.js";
 
 const SPECIALTIES = [
     "AI & Chips",
@@ -14,8 +16,6 @@ const SPECIALTIES = [
     "E-commerce",
     "Electric Vehicles",
 ];
-import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
-import { addPaperMoney } from "../../api/tradingApi.js";
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
     return (
@@ -191,7 +191,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                         <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.06em" }}>MEMBER SINCE</span>
                     </div>
                     <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
-                        {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "N/A"}
+                        {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "—"}
                     </p>
                 </div>
             </div>
