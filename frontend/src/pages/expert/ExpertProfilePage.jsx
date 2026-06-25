@@ -202,7 +202,7 @@ function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
 
 function PersonalInformationCard({ expertInfo, onUpdate }) {
     const [draftFull, setDraftFull] = useState(expertInfo?.full_name || "");
-    const [draftEmail, setDraftEmail] = useState(expertInfo?.email || "");
+    const [draftEmail, setDraftEmail] = useState(expertInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(expertInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
     const [draftLoc, setDraftLoc] = useState(expertInfo?.address || "");
@@ -214,7 +214,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
 
     useEffect(() => {
         setDraftFull(expertInfo?.full_name || "");
-        setDraftEmail(expertInfo?.email || "");
+        setDraftEmail(expertInfo?.email_address || "");
         setDraftUser(expertInfo?.username || "");
         setDraftPhone(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
         setDraftLoc(expertInfo?.address || "");
@@ -222,7 +222,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
 
     const cancelEdit = () => {
         setDraftFull(expertInfo?.full_name || "");
-        setDraftEmail(expertInfo?.email || "");
+        setDraftEmail(expertInfo?.email_address || "");
         setDraftUser(expertInfo?.username || "");
         setDraftPhone(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
         setDraftLoc(expertInfo?.address || "");
@@ -240,6 +240,13 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
                 draftLoc
             );
             if (result.success) {
+                // Patch localStorage so header/other components reflect the change immediately
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.full_name = draftFull;
+                stored.username = draftUser;
+                stored.email_address = draftEmail;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
                 alert("Profile updated");
                 setEditingSection(null);
                 onUpdate();
@@ -291,7 +298,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
                         <InfoRow label="Full Name" value={expertInfo?.full_name} />
                         <InfoRow label="Phone Number" value={expertInfo?.phone_number} />
                         <InfoRow label="Location" value={expertInfo?.address} />
-                        <InfoRow label="Email Address" value={expertInfo?.email} />
+                        <InfoRow label="Email Address" value={expertInfo?.email_address} />
                         <InfoRow label="Expert Status" value={expertInfo?.expert_status} />
                         <InfoRow label="Rating" value={expertInfo?.rating != null ? `${expertInfo.rating} / 5` : null} />
                     </div>

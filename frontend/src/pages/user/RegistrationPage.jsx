@@ -12,7 +12,7 @@ function ImageStockMarketTradingCharts() {
     <div className="flex flex-col gap-6 w-full">
 
       {/* Image */}
-      <div className="relative w-full h-64 lg:h-[400px] overflow-hidden">
+      <div className="relative w-full h-64 lg:h-100 overflow-hidden">
         <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]" />
         <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
         <div className="absolute bottom-8 left-8 right-8 text-white z-10">
@@ -135,7 +135,7 @@ function RegistrationPage() {
 
           {/* Form Card */}
           <div
-            className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-[460px] md:shrink-0 flex flex-col justify-center"
+            className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)" }}
           >
             <div className="text-center">
@@ -294,7 +294,7 @@ function RegistrationPage() {
 
           {/* Image — hidden on mobile */}
           <div className="hidden md:flex flex-1 justify-center lg:justify-end">
-            <div className="w-full max-w-[500px]">
+            <div className="w-full max-w-125">
               <ImageStockMarketTradingCharts />
             </div>
           </div>

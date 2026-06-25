@@ -68,6 +68,7 @@ class Investor(Base):
             return None
         return {
             **user,
+            "role": "investor",
             "investor_id": investor["investor_id"],
             "stock_level": investor["stock_level"],
             "paper_money": investor["paper_money"],
@@ -227,6 +228,25 @@ class Investor(Base):
             if user:
                 session.delete(user)
             return True
+
+    @staticmethod
+    def addPaperMoney(user_id, amount):
+        MAX_BALANCE = 10000.0
+        if amount <= 0:
+            return {"success": False, "message": "Amount must be greater than 0"}
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return {"success": False, "message": "Investor not found"}
+            if investor.investor_subscription_status != "premium":
+                return {"success": False, "message": "Premium subscription required"}
+            new_balance = round(investor.paper_money + amount, 2)
+            if new_balance > MAX_BALANCE:
+                return {"success": False, "message": f"Balance cannot exceed ${MAX_BALANCE:,.0f}"}
+            investor.paper_money = new_balance
+            return {"success": True, "paper_money": new_balance}
 
     @staticmethod
     def update_investor_stock_level(user_id, stock_level):

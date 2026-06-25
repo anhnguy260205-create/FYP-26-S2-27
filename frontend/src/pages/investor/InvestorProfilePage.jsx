@@ -5,7 +5,8 @@ import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateStockLevel } from "../../api/userApi.js";
-import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank } from "lucide-react";
+import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
+import { addPaperMoney } from "../../api/tradingApi.js";
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
     return (
@@ -282,7 +283,7 @@ function DeleteAccountButton() {
 
 function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftFull, setDraftFull] = useState(investorInfo?.full_name || "");
-    const [draftEmail, setDraftEmail] = useState(investorInfo?.email || "");
+    const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
     const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
@@ -295,7 +296,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 
     useEffect(() => {
         setDraftFull(investorInfo?.full_name || "");
-        setDraftEmail(investorInfo?.email || "");
+        setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
         setDraftLoc(investorInfo?.address || "");
@@ -303,7 +304,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 
     const cancelEdit = () => {
         setDraftFull(investorInfo?.full_name || "");
-        setDraftEmail(investorInfo?.email || "");
+        setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
         setDraftLoc(investorInfo?.address || "");
@@ -311,7 +312,6 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     };
     const handleChange = async () => {
         try {
-
             const result = await updateUserInformation(
                 investorInfo.user_id,
                 draftUser,
@@ -322,6 +322,13 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
             );
 
             if (result.success) {
+                // Patch localStorage so header/other components reflect the change immediately
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.full_name = draftFull;
+                stored.username = draftUser;
+                stored.email_address = draftEmail;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
                 alert("Profile updated");
                 setEditingSection(null);
                 onUpdate();
@@ -444,7 +451,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                         />
                         <InfoRow
                             label="Email Address"
-                            value={investorInfo?.email}
+                            value={investorInfo?.email_address}
                         />
                         <InfoRow
                             label="Balance"
@@ -768,7 +775,6 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
 function SecurityCard({ investorInfo }) {
     const navigate = useNavigate();
 
-
     return (
         <GlassCard>
             <div className="flex items-center justify-between">
@@ -876,148 +882,224 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function PaperMoneyCard({ investorInfo }) {
+function PaperMoneyCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
-    return (
-        <GlassCard>
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold">
-                        Paper Money
-                    </h1>
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
-                    <p
-                        style={{
-                            fontSize: "13px",
-                            color: "rgba(255,255,255,0.5)",
-                            marginTop: "4px",
-                        }}
-                    >
-                        Manage your virtual trading funds
-                    </p>
+    const MAX_BALANCE = 10000;
+    const paperMoney = investorInfo?.paper_money ?? 0;
+    const usedAmount = investorInfo?.used_amount ?? 0;
+    const progressPct = Math.min(100, (paperMoney / MAX_BALANCE) * 100);
+    const maxAddable = Math.max(0, MAX_BALANCE - paperMoney);
+
+    const [showModal, setShowModal] = useState(false);
+    const [selectedAmount, setSelectedAmount] = useState(1000);
+    const [adding, setAdding] = useState(false);
+
+    const presets = [500, 1000, 2000, 5000];
+
+    const handleAddClick = () => {
+        if (!isPremium) {
+            setShowModal("upgrade");
+        } else if (maxAddable <= 0) {
+            setShowModal("capped");
+        } else {
+            setSelectedAmount(Math.min(1000, maxAddable));
+            setShowModal("add");
+        }
+    };
+
+    const handleConfirmAdd = async () => {
+        setAdding(true);
+        try {
+            const result = await addPaperMoney(currentUser.user_id, selectedAmount);
+            if (result.success) {
+                setShowModal(false);
+                onUpdate();
+            } else {
+                // result.message = our custom message
+                // result.detail  = FastAPI validation / 404 / 500 format
+                const msg = result.message
+                    || (Array.isArray(result.detail) ? result.detail[0]?.msg : result.detail)
+                    || "Failed to add money";
+                alert(msg);
+            }
+        } catch {
+            alert("Could not reach backend");
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    return (
+        <>
+            <GlassCard>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold">Paper Money</h1>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                            Manage your virtual trading funds
+                        </p>
+                    </div>
                 </div>
 
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "32px 0" }} />
 
-            </div>
-            <div
-                style={{
-                    height: "1px",
-                    background:
-                        "rgba(255,255,255,0.06)",
-                    margin: "32px 0",
-                }}
-            />
+                <div style={{ marginTop: "32px" }}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <PiggyBank size={18} color="yellow" />
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: "16px" }}>
+                                    Available Balance: ${paperMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
+                                    Use paper money to practice stock trading without risking real capital.
+                                </div>
+                            </div>
+                        </div>
 
-            <div style={{ marginTop: "32px" }}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div
+                        <button
+                            onClick={handleAddClick}
                             style={{
-                                width: "42px",
-                                height: "42px",
-                                borderRadius: "12px",
-                                background:
-                                    "rgba(34,197,94,0.08)",
-                                border:
-                                    "1px solid rgba(34,197,94,0.25)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "6px 14px", borderRadius: "999px",
+                                background: isPremium ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
+                                border: isPremium ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(255,255,255,0.12)",
+                                color: isPremium ? "#22c55e" : "rgba(255,255,255,0.35)",
+                                fontSize: "13px", fontWeight: 600, cursor: "pointer",
                             }}
                         >
-                            <PiggyBank
-                                size={18}
-                                color="yellow"
-                            />
-                        </div>
+                            {!isPremium && <Lock size={12} />}
+                            Add Money
+                        </button>
+                    </div>
 
-                        <div>
-                            <div
-                                style={{
-                                    fontWeight: 700,
-                                    fontSize: "16px",
-                                }}
+                    {/* Non-premium hint */}
+                    {!isPremium && (
+                        <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                            <p style={{ fontSize: "12px", color: "rgba(251,191,36,0.85)", margin: 0 }}>
+                                Adding paper money is a <strong>Premium</strong> feature.
+                            </p>
+                            <button
+                                onClick={() => navigate("/investor/subscription")}
+                                style={{ padding: "4px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
                             >
-                                Available Balance : $ {investorInfo?.paper_money}.00
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: "13px",
-                                    color:
-                                        "rgba(255,255,255,0.4)",
-                                    marginTop: "2px",
-                                }}
-                            >
-                                Use paper money to practice stock trading
-                                without risking real capital.
-                            </div>
+                                Upgrade →
+                            </button>
                         </div>
-                    </div>
+                    )}
 
-                    <button
-                        style={{
-                            padding: "6px 14px",
-                            borderRadius: "999px",
-                            background:
-                                "rgba(34,197,94,0.12)",
-                            border:
-                                "1px solid rgba(34,197,94,0.25)",
-                            color: "#22c55e",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            cursor: "pointer"
-                        }}
-                    >
-                        Add Money
-                    </button>
-                </div>
-                <div style={{ marginTop: "24px" }}>
-                    <div
-                        className="flex justify-between"
-                        style={{
-                            fontSize: "13px",
-                            marginBottom: "8px",
-                            color: "rgba(255,255,255,0.7)"
-                        }}
-                    >
-                        <span>Paper Trading Capital</span>
-                        <span>$2,000 / $10,000</span>
-                    </div>
-
-                    <div
-                        style={{
-                            width: "100%",
-                            height: "10px",
-                            borderRadius: "999px",
-                            background: "rgba(255,255,255,0.08)",
-                            overflow: "hidden"
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "20%", // hardcoded
-                                height: "100%",
-                                background:
-                                    "linear-gradient(90deg,#22c55e,#00D3F2)",
-                                borderRadius: "999px"
-                            }}
-                        />
-                    </div>
-
-                    <div
-                        className="flex justify-between"
-                        style={{
-                            marginTop: "8px",
-                            fontSize: "12px",
-                            color: "rgba(255,255,255,0.4)"
-                        }}
-                    >
-                        <span>Used: $8,000</span>
-                        <span>Remaining: $2,000</span>
+                    {/* Progress bar */}
+                    <div style={{ marginTop: "24px" }}>
+                        <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(255,255,255,0.7)" }}>
+                            <span>Paper Trading Capital</span>
+                            <span>${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
+                        </div>
+                        <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                            <div style={{ width: `${progressPct}%`, height: "100%", background: "linear-gradient(90deg,#22c55e,#00D3F2)", borderRadius: "999px", transition: "width 0.4s ease" }} />
+                        </div>
+                        <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
+                            <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span>Cash: ${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </GlassCard>);
+            </GlassCard>
+
+            {/* ── Add Money Modal ── */}
+            {showModal === "add" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "6px" }}>Add Paper Money</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "24px" }}>
+                            Max you can add: <strong style={{ color: "#22c55e" }}>${maxAddable.toLocaleString()}</strong>
+                        </p>
+
+                        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Select amount</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+                            {presets.map(p => {
+                                const disabled = p > maxAddable;
+                                return (
+                                    <button key={p} disabled={disabled} onClick={() => setSelectedAmount(p)}
+                                        style={{
+                                            padding: "10px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
+                                            border: selectedAmount === p ? "1px solid rgba(34,197,94,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                                            background: selectedAmount === p ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
+                                            color: disabled ? "rgba(255,255,255,0.2)" : selectedAmount === p ? "#22c55e" : "rgba(255,255,255,0.7)",
+                                        }}>
+                                        ${p.toLocaleString()}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>New balance after top-up</p>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: "#22c55e", margin: 0 }}>
+                                ${(paperMoney + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowModal(false)} disabled={adding}
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                Cancel
+                            </button>
+                            <button onClick={handleConfirmAdd} disabled={adding || selectedAmount > maxAddable}
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "linear-gradient(90deg,rgba(34,197,94,0.3),rgba(0,211,242,0.2))", border: "1px solid rgba(34,197,94,0.4)", color: "#22c55e", fontSize: "14px", fontWeight: 700, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.6 : 1 }}>
+                                {adding ? "Adding…" : `Add $${selectedAmount.toLocaleString()}`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Upgrade Prompt Modal ── */}
+            {showModal === "upgrade" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
+                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                            <Lock size={20} color="#fbbf24" />
+                        </div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Premium Feature</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                            Adding paper money is only available to <strong style={{ color: "#fbbf24" }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
+                        </p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowModal(false)}
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                Cancel
+                            </button>
+                            <button onClick={() => navigate("/investor/subscription")}
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                                Upgrade to Premium
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Balance Capped Modal ── */}
+            {showModal === "capped" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(99,179,237,0.2)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Balance at Maximum</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                            Your paper money balance has reached the <strong style={{ color: "#63b3ed" }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
+                        </p>
+                        <button onClick={() => setShowModal(false)}
+                            style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.3)", color: "#63b3ed", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
 }
 function SubscriptionCard() { return <div />; }
 
@@ -1071,7 +1153,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} />}
+                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard />}
                 </div>
             </main>

@@ -84,7 +84,7 @@ class UserAccount(Base):
                 "user_id": user.user_id,
                 "username": user.username,
                 "full_name": user.full_name,
-                "email": user.email_address,
+                "email_address": user.email_address,
                 "phone_number": user.phone_number,
                 "address": user.address,
                 "join_date": user.join_date,
