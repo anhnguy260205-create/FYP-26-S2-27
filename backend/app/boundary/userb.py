@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter
 
 from app.control.controller.userc import CreateAccountController, InvestorInformationController, LogoutController, ExpertInformationController, UpdateInformationController, DeleteInvestorController, FirebaseLoginController
-from app.control.controller.investorc import UpdateStockLevel, AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist
+from app.control.controller.investorc import AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist, UpdateInvestorInterestsController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -201,35 +201,6 @@ def delete_account(user_id: str):
     }
 
 
-class UpdateStockLevelRequest(BaseModel):
-    user_id: str
-    stock_level: Optional[str] = None
-
-
-class UpdateInvestorStockLevel:
-    def __init__(self):
-        self.controller = UpdateStockLevel()
-
-    def update_stock_level(self, user_id, stock_level):
-        return self.controller.updateStockLevel(user_id, stock_level)
-
-
-@router.post("/update_stock_level")
-def update_stock_level(data: UpdateStockLevelRequest):
-    boundary = UpdateInvestorStockLevel()
-
-    result = boundary.update_stock_level(data.user_id, data.stock_level)
-    if not result:
-        return {
-            "success": False,
-            "message": "The stock level is not updated"
-        }
-    return {
-        "success": True,
-        "message": "The stock level is successfully updated"
-    }
-
-
 ################ Watchlist######################
 class AddStockToWatchlistRequest(BaseModel):
     user_id: str
@@ -272,6 +243,19 @@ def remove_stock_symbol(user_id: str, stock_symbol: str):
     if not result.get("success"):
         return {"success": False, "message": result.get("message", "Failed to remove stock")}
     return {"success": True, "message": "Stock removed from watchlist"}
+
+
+class UpdateInterestsRequest(BaseModel):
+    user_id: str
+    interests: str
+
+
+@router.post("/update-interests")
+def update_interests(data: UpdateInterestsRequest):
+    result = UpdateInvestorInterestsController().update(data.user_id, data.interests)
+    if not result:
+        return {"success": False, "message": "Failed to update interests"}
+    return {"success": True, "message": "Interests updated successfully"}
 
 
 class FirebaseLoginRequest(BaseModel):

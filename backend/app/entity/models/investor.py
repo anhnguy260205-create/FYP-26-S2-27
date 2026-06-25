@@ -13,13 +13,13 @@ class Investor(Base):
         "user_account.user_id"), nullable=False)
     investor_id = Column(String(50), primary_key=True,
                          default=lambda: f"investor_{uuid4()}")
-    stock_level = Column(String(20), default="beginner")
+    interests = Column(String(255), nullable=True)
     paper_money = Column(Float, default=2000)
     used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
-    def createAccount(username, email_address, stock_level="beginner") -> bool:
+    def createAccount(username, email_address) -> bool:
         user_id = UserAccount.createAccount(
             username=username,
             email_address=email_address,
@@ -29,10 +29,7 @@ class Investor(Base):
             return user_id
         try:
             with get_session() as session:
-                investor = Investor(
-                    user_id=user_id,
-                    stock_level=stock_level,
-                )
+                investor = Investor(user_id=user_id)
                 session.add(investor)
                 # get_session() handles commit automatically
             print("INVESTOR CREATED")
@@ -52,7 +49,7 @@ class Investor(Base):
             return {
                 "investor_id": investor.investor_id,
                 "user_id": investor.user_id,
-                "stock_level": investor.stock_level,
+                "interests": investor.interests,
                 "paper_money": investor.paper_money,
                 "used_amount": investor.used_amount,
                 "investor_subscription_status": investor.investor_subscription_status
@@ -70,7 +67,7 @@ class Investor(Base):
             **user,
             "role": "investor",
             "investor_id": investor["investor_id"],
-            "stock_level": investor["stock_level"],
+            "interests": investor["interests"],
             "paper_money": investor["paper_money"],
             "used_amount": investor["used_amount"],
             "investor_subscription_status": investor["investor_subscription_status"]
@@ -249,14 +246,14 @@ class Investor(Base):
             return {"success": True, "paper_money": new_balance}
 
     @staticmethod
-    def update_investor_stock_level(user_id, stock_level):
+    def updateInterests(user_id, interests: str):
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
             if not investor:
                 return False
-            investor.stock_level = stock_level
+            investor.interests = interests
             return True
 
 
@@ -264,5 +261,4 @@ def seed_investor_account():
     Investor.createAccount(
         username="Kim",
         email_address="kim@gmail.com",
-        stock_level="Basic"
     )

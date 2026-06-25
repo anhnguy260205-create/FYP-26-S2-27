@@ -2,9 +2,21 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import MiniChart from "../../components/MiniChart.jsx";
 import { useNavigate } from "react-router-dom";
+import { getInvestorInformation } from "../../api/userApi.js";
+
+// Specialty → stock symbol mapping
+const STOCK_SPECIALTIES = {
+  "AI & Chips":        ["NVDA", "AMD", "AVGO"],
+  "Cloud & Software":  ["MSFT", "ORCL", "GOOGL"],
+  "Consumer Tech":     ["AAPL"],
+  "Social & Ads":      ["META", "GOOGL"],
+  "E-commerce":        ["AMZN"],
+  "Electric Vehicles": ["TSLA"],
+};
+
 function SearchBar({ onSearch }) {
   const [inputValue, setInputValue] = useState("");
   const handleSearch = () => onSearch(inputValue);
@@ -57,29 +69,46 @@ function companyName(symbol) {
   const names = {
     AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA",
     MSFT: "Microsoft", GOOGL: "Alphabet", AMZN: "Amazon",
-    META: "Meta", AMD: "AMD", NFLX: "Netflix", INTC: "Intel",
+    META: "Meta", AMD: "AMD", AVGO: "Broadcom", ORCL: "Oracle",
   };
   return names[symbol] ?? "";
 }
 
-const StockRow = memo(function StockRow({ stock, candles, onSelect }) {
+const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommended }) {
   const chg = stock.price && stock.previousClose
     ? (stock.price - stock.previousClose).toFixed(3)
     : null;
-  const pctChg =
-    stock.price && stock.previousClose
-      ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
-      : null;
+  const pctChg = stock.price && stock.previousClose
+    ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
+    : null;
   const isUp = chg === null ? true : Number(chg) >= 0;
   const color = isUp ? "text-green-400" : "text-red-400";
 
   return (
-    <div onClick={() => onSelect(stock.symbol)}
+    <div
+      onClick={() => onSelect(stock.symbol)}
       className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
-      style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }} >
+      style={{
+        gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr",
+        background: isRecommended ? "rgba(0,211,243,0.04)" : undefined,
+        borderLeft: isRecommended ? "3px solid rgba(0,211,243,0.5)" : "3px solid transparent",
+        cursor: "pointer",
+      }}
+    >
       {/* Symbol */}
-      <div className="flex flex-col">
-        <span className="text-white font-semibold text-sm">{stock.symbol}</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-white font-semibold text-sm">{stock.symbol}</span>
+          {isRecommended && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "2px 7px", borderRadius: 20,
+              color: "#00D3F2", background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.3)",
+            }}>
+              For You
+            </span>
+          )}
+        </div>
         <span className="text-gray-500 text-xs">{companyName(stock.symbol)}</span>
       </div>
 
@@ -106,19 +135,25 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect }) {
   );
 });
 
-// ── StockTable now accepts candles too ──────────────────────────────────────
-function StockTable({ stocks, candles }) {
+function StockTable({ stocks, candles, recommendedSymbols }) {
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
   const handleSelect = useCallback((symbol) => {
     navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
   }, [navigate]);
 
+  // Recommended stocks float to the top
+  const sorted = useMemo(() => {
+    if (!recommendedSymbols?.length) return stockList;
+    return [
+      ...stockList.filter(s => recommendedSymbols.includes(s.symbol)),
+      ...stockList.filter(s => !recommendedSymbols.includes(s.symbol)),
+    ];
+  }, [stockList, recommendedSymbols]);
+
   return (
     <div className="w-full mt-6 overflow-x-auto rounded-xl border border-white/20">
       <div className="min-w-[560px]">
-
-        {/* Header — 5 columns */}
         <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
           style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }}>
           <span>Symbol</span>
@@ -128,22 +163,21 @@ function StockTable({ stocks, candles }) {
           <span className="text-center">Trend (1D)</span>
         </div>
 
-        {/* Rows */}
-        {stockList.length === 0 ? (
+        {sorted.length === 0 ? (
           <div className="px-6 py-8 text-center text-gray-500 text-sm">
             Waiting for data...
           </div>
         ) : (
-          stockList.map((stock) => (
+          sorted.map((stock) => (
             <StockRow
               key={stock.symbol}
               stock={stock}
               candles={candles?.[stock.symbol]}
               onSelect={handleSelect}
+              isRecommended={recommendedSymbols?.includes(stock.symbol)}
             />
           ))
         )}
-
       </div>
     </div>
   );
@@ -152,28 +186,96 @@ function StockTable({ stocks, candles }) {
 function RealTimeDashBoardPage() {
   const { stocks, candles, marketStatus, lastUpdated, error } = useLiveStocks();
   const [searchQuery, setSearchQuery] = useState("");
+  const [interests, setInterests] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    if (!currentUser?.user_id) return;
+    getInvestorInformation(currentUser.user_id).then(res => {
+      if (res.success && res.investor_information?.interests) {
+        const parsed = res.investor_information.interests
+          .split(",")
+          .map(s => s.trim())
+          .filter(Boolean);
+        setInterests(parsed);
+      }
+    });
+  }, []);
+
+  // Derive recommended symbols from selected interests (deduplicated)
+  const recommendedSymbols = useMemo(() => {
+    if (!interests.length) return [];
+    const symbols = new Set();
+    interests.forEach(interest => {
+      (STOCK_SPECIALTIES[interest] || []).forEach(s => symbols.add(s));
+    });
+    return [...symbols];
+  }, [interests]);
 
   const filtered = useMemo(() => {
     const query = searchQuery.toLowerCase();
-
     return Object.values(stocks ?? {}).filter((s) =>
       s.symbol.toLowerCase().includes(query)
     );
   }, [stocks, searchQuery]);
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
+    <motion.div
+      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+    >
       <GeneralHeader />
       <main className="flex-1 p-4 md:p-7">
-        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
-          Real-Time Dashboard</h1>
+
+        {/* Title row */}
+        <div className="flex items-baseline gap-4 flex-wrap">
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
+            Real-Time Dashboard
+          </h1>
+        </div>
+
         <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
         {error && <div className="mt-3 text-red-400 text-sm">{error}</div>}
 
+        {/* Active interest chips */}
+        {interests.length > 0 && (
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Your interests:
+            </span>
+            {interests.map(s => (
+              <span key={s} style={{
+                padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600,
+                color: "#00D3F2", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.3)",
+              }}>
+                {s}
+              </span>
+            ))}
+            <button
+              onClick={() => navigate("/investor/edit-profile")}
+              style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+            >
+              Edit
+            </button>
+          </div>
+        )}
+
+        {interests.length === 0 && (
+          <p style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+            No interests set —{" "}
+            <span
+              onClick={() => navigate("/investor/edit-profile")}
+              style={{ color: "#00D3F2", cursor: "pointer", textDecoration: "underline" }}
+            >
+              set your sector interests
+            </span>
+            {" "}to see personalised recommendations.
+          </p>
+        )}
+
         <SearchBar onSearch={setSearchQuery} />
-        {/* Pass candles so each row can render its sparkline */}
-        <StockTable stocks={filtered} candles={candles} />
+        <StockTable stocks={filtered} candles={candles} recommendedSymbols={recommendedSymbols} />
       </main>
       <Footer />
     </motion.div>

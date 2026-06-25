@@ -92,20 +92,6 @@ export const updateUserInformation = async (userId, user_name, fullName, emailAd
   return await response.json();
 };
 
-export const updateStockLevel = async (useId, stock_level) => {
-  const response = await fetch(`${BASE_URL}/update_stock_level`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(
-      {
-        user_id: useId,
-        stock_level: stock_level
-      }
-    )
-
-  })
-  return await response.json();
-}
 
 export const verifySession = async (sessionId) => {
   let response;
@@ -191,6 +177,15 @@ export const resetPassword = async (emailAddress, otpCode, newPassword) => {
       otp_code: otpCode,
       new_password: newPassword,
     }),
+  });
+  return await response.json();
+};
+
+export const updateInvestorInterests = async (userId, interests) => {
+  const response = await fetch(`${BASE_URL}/update-interests`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, interests }),
   });
   return await response.json();
 };
