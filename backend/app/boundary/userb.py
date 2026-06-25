@@ -258,6 +258,13 @@ def update_interests(data: UpdateInterestsRequest):
     return {"success": True, "message": "Interests updated successfully"}
 
 
+@router.get("/check-email")
+def check_email(email: str):
+    from app.entity.models.useraccount import UserAccount
+    exists = UserAccount.emailExists(email.strip().lower())
+    return {"exists": exists}
+
+
 class FirebaseLoginRequest(BaseModel):
     email: str
 

@@ -8,6 +8,7 @@ from app.control.controller.knowledgehub_c import (
     AdminDeleteArticleController,
     GetArticleController,
 )
+from app.entity.models.expert import Expert
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -34,35 +35,9 @@ class AdminUserAccountPage:
 
     def deleteUserAccount(self, user_id, requesting_user_id=None):
         return self.controller.deleteUserAccount(user_id, requesting_user_id)
-    
+
     def activateUserAccount(self, user_id):
         return self.controller.activateUserAccount(user_id)
-    
-    def getInvestmentArticles(self):
-        return self.controller.getInvestmentArticles()
-
-    def getInvestmentArticleById(self, article_id):
-        return self.controller.getInvestmentArticleById(article_id)
-
-    def createInvestmentArticle(self, data):
-        return self.controller.createInvestmentArticle(
-            data.title,
-            data.category,
-            data.content,
-            data.status,
-        )
-
-    def updateInvestmentArticle(self, article_id, data):
-        return self.controller.updateInvestmentArticle(
-            article_id,
-            data.title,
-            data.category,
-            data.content,
-            data.status,
-        )
-
-    def deleteInvestmentArticle(self, article_id):
-        return self.controller.deleteInvestmentArticle(article_id)
 
 
 @router.get("/useraccounts")
@@ -200,3 +175,27 @@ def get_dashboard_stats():
 def get_subscriptions():
     subs = AdminUserAccountPage().controller.getSubscriptions()
     return {"success": True, "count": len(subs), "subscriptions": subs}
+
+
+# ── Expert verification ────────────────────────────────────────────────────────
+
+@router.get("/experts")
+def get_all_experts():
+    experts = Expert.get_all_for_admin()
+    return {"success": True, "experts": experts}
+
+
+@router.post("/experts/{expert_id}/approve")
+def approve_expert(expert_id: str):
+    ok = Expert.set_verification_status(expert_id, "approved")
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Expert approved"}
+
+
+@router.post("/experts/{expert_id}/reject")
+def reject_expert(expert_id: str):
+    ok = Expert.set_verification_status(expert_id, "rejected")
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Expert rejected"}

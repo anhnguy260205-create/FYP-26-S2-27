@@ -12,7 +12,6 @@ from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account, seed_jordan_account
 from app.entity.models.subscription import Subscription
-from app.entity.models.investmentarticle import InvestmentArticle
 from app.boundary.stock_ws import router as stock_ws_router
 from app.entity.models.watchlist import Watchlist
 from app.entity.models.holding import Holding

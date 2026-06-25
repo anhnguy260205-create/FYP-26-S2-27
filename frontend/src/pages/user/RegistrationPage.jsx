@@ -61,7 +61,6 @@ function RegistrationPage() {
     length: (p) => p.length >= 8 && p.length <= 24,
     letter: (p) => /[a-zA-Z]/.test(p),
     number: (p) => /[0-9]/.test(p),
-    special: (p) => /[^a-zA-Z0-9]/.test(p),
   };
 
   const passwordValid = Object.values(passwordRules).every((fn) => fn(formData.password));
@@ -104,6 +103,7 @@ function RegistrationPage() {
       }
 
       navigate("/login");
+
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
         alert("This email is already registered.");
@@ -137,7 +137,7 @@ function RegistrationPage() {
           <div
             className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
-            >
+          >
             <div className="text-center">
               <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">
                 Open an account
@@ -201,7 +201,6 @@ function RegistrationPage() {
                       { key: "length", label: "8–24 characters" },
                       { key: "letter", label: "At least one letter" },
                       { key: "number", label: "At least one number" },
-                      { key: "special", label: "At least one special character" },
                     ].map(({ key, label }) => {
                       const passed = passwordRules[key](formData.password);
                       return (
