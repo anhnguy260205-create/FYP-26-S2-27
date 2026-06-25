@@ -101,7 +101,7 @@ function FreeTier({ userId, currentSubscriptionStatus, features, plan }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.25, delay: 0.2 }}
       style={{
         background: "#0B1D4F",
         border: hovered ? "1.5px solid #60A5FA" : "1.5px solid #2563EB",
@@ -167,7 +167,7 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.35 }}
+      transition={{ duration: 0.25, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
         flexDirection: "column",
@@ -256,7 +256,7 @@ function SubscriptionPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <GeneralHeader />
       <main className="flex-1 p-4 sm:p-7.5">

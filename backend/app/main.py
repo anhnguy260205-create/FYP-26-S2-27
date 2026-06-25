@@ -40,12 +40,16 @@ from fastapi.responses import JSONResponse
 
 
 async def yfinance_alert_poller():
-    """Check alerts every 60 s using yfinance prices — works even when no browser tab is open."""
+    """Check alerts using cached snapshots — avoids duplicate yfinance calls.
+    Polls every 60s when market is open, every 300s when closed."""
     await asyncio.sleep(10)  # wait for server to fully start
     while True:
+        market_open = get_market_status() == "OPEN"
         for symbol in stock_pool:
             try:
-                snapshot = await asyncio.to_thread(get_snapshot_yfinance, symbol)
+                # Read from snapshot cache first to avoid redundant yfinance calls.
+                # Falls back to a fresh fetch only if the cache is empty.
+                snapshot = _snapshot_cache.get(symbol) or await asyncio.to_thread(get_snapshot_yfinance, symbol)
                 price = snapshot.get("p")
                 prev_close = snapshot.get("previousClose")
                 if price is not None:
@@ -56,7 +60,8 @@ async def yfinance_alert_poller():
                     )
             except Exception as e:
                 print(f"[ALERT-POLL] Error checking {symbol}: {e}")
-        await asyncio.sleep(60)
+        # Poll every 60s when market is open, every 300s when closed
+        await asyncio.sleep(60 if market_open else 300)
 
 
 @asynccontextmanager
