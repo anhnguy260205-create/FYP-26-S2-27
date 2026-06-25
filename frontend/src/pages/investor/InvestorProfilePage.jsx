@@ -4,7 +4,16 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { updateUserInformation, updateStockLevel } from "../../api/userApi.js";
+import { updateUserInformation, updateInvestorInterests } from "../../api/userApi.js";
+
+const SPECIALTIES = [
+    "AI & Chips",
+    "Cloud & Software",
+    "Consumer Tech",
+    "Social & Ads",
+    "E-commerce",
+    "Electric Vehicles",
+];
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
 import { addPaperMoney } from "../../api/tradingApi.js";
 /* ─── Editable field ──────────────────────────────────────── */
@@ -184,14 +193,6 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                     </div>
                     <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
                         {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "N/A"}
-                    </p>
-                </div>
-                <div style={{ borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.667px solid rgba(255,255,255,0.08)", padding: "8px 10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "3px" }}>
-                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.06em" }}>RISK LEVEL</span>
-                    </div>
-                    <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
-                        {investorInfo?.stock_level || "N/A"}
                     </p>
                 </div>
             </div>
@@ -559,28 +560,43 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 }
 function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
-    const [riskLevel, setRiskLevel] = useState(investorInfo?.stock_level);
+    const [selectedInterests, setSelectedInterests] = useState(
+        () => investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+    );
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     const role = currentUser?.role;
-    const userId = currentUser?.user_id
+    const userId = currentUser?.user_id;
     const isEditing = (section) => editingSection === section;
 
+    useEffect(() => {
+        setSelectedInterests(
+            investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+        );
+    }, [investorInfo]);
+
+    const toggleInterest = (specialty) => {
+        setSelectedInterests(prev =>
+            prev.includes(specialty) ? prev.filter(s => s !== specialty) : [...prev, specialty]
+        );
+    };
 
     const cancelEdit = () => {
+        setSelectedInterests(
+            investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+        );
         setEditingSection(null);
     };
 
     const handleClick = async (e) => {
         e.preventDefault();
-
         try {
-            const result = await updateStockLevel(userId, riskLevel);
+            const result = await updateInvestorInterests(userId, selectedInterests.join(","));
             if (result.success) {
-                alert("Risk level updated");
+                alert("Account settings updated");
                 setEditingSection(null);
                 onUpdate();
             } else {
-                alert(result.message || "Failed to update risk level");
+                alert(result.message || "Failed to update settings");
             }
         } catch (error) {
             console.error(error);
@@ -594,178 +610,80 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                 <>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold">
-                                Account Settings
-                            </h1>
-
-                            <p
-                                style={{
-                                    fontSize: "13px",
-                                    color: "rgba(255,255,255,0.5)",
-                                    marginTop: "4px",
-                                }}
-                            >
-                                Trading preferences and account type
+                            <h1 className="text-xl font-bold">Account Settings</h1>
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                                Stock interests and account type
                             </p>
                         </div>
-
-                        <button
-                            onClick={() =>
-                                setEditingSection("account")
-                            }
+                        <button onClick={() => setEditingSection("account")}
                             className="flex items-center gap-2"
-                            style={{
-                                height: "38px",
-                                padding: "0 18px",
-                                borderRadius: "100px",
-                                background:
-                                    "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
-                                border:
-                                    "0.667px solid rgba(0,211,243,0.35)",
-                                color: "#00D3F2",
-                                cursor: "pointer",
-                            }}
-                        >
+                            style={{ height: "38px", padding: "0 18px", borderRadius: "100px", background: "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))", border: "0.667px solid rgba(0,211,243,0.35)", color: "#00D3F2", cursor: "pointer" }}>
                             <SquarePen size={14} />
                             Edit
                         </button>
                     </div>
 
+                    {/* Stock Interests */}
                     <div style={{ marginTop: "32px" }}>
-                        <p
-                            style={{
-                                fontSize: "12px",
-                                color: "rgba(255,255,255,0.4)",
-                                marginBottom: "16px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            RISK LEVEL
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                            STOCK INTERESTS
                         </p>
-
-                        <div className="flex items-center gap-3">
-                            <div
-                                style={{
-                                    width: "10px",
-                                    height: "10px",
-                                    borderRadius: "50%",
-                                    background: "#3B82F6",
-                                }}
-                            />
-
-                            <span
-                                style={{
-                                    fontSize: "18px",
-                                    fontWeight: 700,
-                                }}
-                            >
-                                {riskLevel}
-                            </span>
-
-                            <span
-                                style={{
-                                    color:
-                                        "rgba(255,255,255,0.4)",
-                                }}
-                            >
-                                · Balanced risk & reward
-                            </span>
-                        </div>
+                        {selectedInterests.length === 0 ? (
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>No interests selected — edit to pick sectors you care about.</p>
+                        ) : (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {selectedInterests.map(s => (
+                                    <span key={s} style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.35)", color: "#00D3F2" }}>
+                                        {s}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div
-                        style={{
-                            height: "1px",
-                            background:
-                                "rgba(255,255,255,0.06)",
-                            margin: "32px 0",
-                        }}
-                    />
+                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
 
+                    {/* Account Type */}
                     <div>
-                        <p
-                            style={{
-                                fontSize: "12px",
-                                color: "rgba(255,255,255,0.4)",
-                                marginBottom: "16px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            ACCOUNT TYPE
-                        </p>
-
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "16px", fontWeight: 600 }}>ACCOUNT TYPE</p>
                         <div className="flex items-center gap-4">
-                            <div
-                                style={{
-                                    width: "36px",
-                                    height: "36px",
-                                    borderRadius: "10px",
-                                    background:
-                                        "rgba(0,211,242,0.1)",
-                                    border:
-                                        "1px solid rgba(0,211,242,0.3)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                $
-                            </div>
-
+                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>$</div>
                             <div>
-                                <div
-                                    style={{
-                                        fontWeight: 700,
-                                        fontSize: "18px",
-                                    }}
-                                >
-                                    {role}
-                                </div>
-
-                                <div
-                                    style={{
-                                        color:
-                                            "rgba(255,255,255,0.45)",
-                                    }}
-                                >
-                                    Trade & track your portfolio
-                                </div>
+                                <div style={{ fontWeight: 700, fontSize: "18px" }}>{role}</div>
+                                <div style={{ color: "rgba(255,255,255,0.45)" }}>Trade & track your portfolio</div>
                             </div>
                         </div>
                     </div>
                 </>
             ) : (
                 <>
-                    <h1 className="text-xl font-bold">
-                        Edit Account Settings
-                    </h1>
+                    <h1 className="text-xl font-bold">Edit Account Settings</h1>
+                    <div className="flex flex-col" style={{ gap: "24px", marginTop: "24px" }}>
 
-                    <div
-                        className="flex flex-col"
-                        style={{
-                            gap: "20px",
-                            marginTop: "24px",
-                        }}
-                    >
-                        <FormField label="Risk Level" htmlFor="field-risk-level">
-                            <select
-                                id="field-risk-level"
-                                value={riskLevel}
-                                onChange={(e) =>
-                                    setRiskLevel(e.target.value)
-                                }
-                                className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
-                            >
-                                <option>Basic</option>
-                                <option>Intermediate</option>
-                                <option>Advanced</option>
-                            </select>
-                        </FormField>
+                        {/* Stock Interests */}
+                        <div>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Stock Interests <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select all that apply)</span>
+                            </label>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {SPECIALTIES.map(s => {
+                                    const active = selectedInterests.includes(s);
+                                    return (
+                                        <button key={s} type="button" onClick={() => toggleInterest(s)}
+                                            style={{
+                                                padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                            }}>
+                                            {active ? "✓ " : ""}{s}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                        <SaveRow
-                            onSave={handleClick}
-                            onCancel={cancelEdit}
-                        />
+                        <SaveRow onSave={handleClick} onCancel={cancelEdit} />
                     </div>
                 </>
             )}
