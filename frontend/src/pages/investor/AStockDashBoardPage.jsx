@@ -5,9 +5,12 @@ import { useParams } from "react-router-dom";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
+import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
+
+const STOCK_POOL = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","AVGO","ORCL","AMD"];
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -46,7 +49,7 @@ function Button({ marketStatus, symbol }) {
           background: "linear-gradient(135deg, rgba(6,78,59,0.8), rgba(16,185,129,0.25))",
           color: "#6ee7b7", fontFamily: "'DM Mono', monospace", fontWeight: 600,
           fontSize: "13px", letterSpacing: "0.08em", cursor: "pointer",
-          backdropFilter: "blur(8px)", transition: "all 0.2s ease", textTransform: "uppercase",
+          transition: "all 0.2s ease", textTransform: "uppercase",
         }}
         onMouseEnter={e => {
           e.currentTarget.style.background = "linear-gradient(135deg, rgba(6,78,59,0.95), rgba(16,185,129,0.5))";
@@ -67,7 +70,7 @@ function Button({ marketStatus, symbol }) {
           background: "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(239,68,68,0.25))",
           color: "#fca5a5", fontFamily: "'DM Mono', monospace", fontWeight: 600,
           fontSize: "13px", letterSpacing: "0.08em", cursor: "pointer",
-          backdropFilter: "blur(8px)", transition: "all 0.2s ease", textTransform: "uppercase",
+          transition: "all 0.2s ease", textTransform: "uppercase",
         }}
         onMouseEnter={e => {
           e.currentTarget.style.background = "linear-gradient(135deg, rgba(127,29,29,0.95), rgba(239,68,68,0.5))";
@@ -131,7 +134,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.25 }}
       style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         paddingBottom: "20px", borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: "24px",
@@ -297,13 +300,12 @@ function AlertBoard({ symbol }) {
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.25 }}
       style={{
         width: "300px", flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
-        padding: "20px", backdropFilter: "blur(12px)",
-      }}
+        padding: "20px",       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
         <span style={{ fontSize: "16px" }}>🔔</span>
@@ -428,13 +430,12 @@ function PremiumLockCard() {
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.25 }}
       style={{
         width: "300px", flexShrink: 0,
         background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
         border: "1px solid rgba(255,215,0,0.2)", borderRadius: "12px",
-        padding: "20px", backdropFilter: "blur(12px)",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "20px",         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         gap: "12px", textAlign: "center",
       }}
     >
@@ -478,7 +479,7 @@ function PremiumLockCard() {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
+const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -486,7 +487,7 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
+      transition={{ duration: 0.25 }}
       style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexShrink: 0 }}
     >
       {/* LEFT COLUMN: stats strip + chart stacked */}
@@ -496,7 +497,6 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
           display: "flex",
           background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
           border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
-          backdropFilter: "blur(12px)", overflow: "hidden",
         }}>
           {[
             // Ensure the system work smoothly even if some data points are missing by showing "N/A"
@@ -519,12 +519,11 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.25 }}
           style={{
             background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
             border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
-            padding: "20px", backdropFilter: "blur(12px)",
-          }}
+            padding: "20px",           }}
         >
           <p style={{
             fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
@@ -547,29 +546,53 @@ function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, st
       {isPremium ? <AlertBoard symbol={symbol} /> : <PremiumLockCard />}
     </motion.div>
   );
-}
+});
 
 /* ─── Page ─────────────────────────────────────────────────── */
 function AStockDashBoardPage() {
   const { symbol } = useParams();
-  const selectedStock = symbol?.toUpperCase();     // string, e.g. "NVDA"
+  const selectedStock = symbol?.toUpperCase();
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
-  const stock = stocks[selectedStock];             // the live data object for this symbol
-  const stockCandles = candles?.[selectedStock] ?? [];
-  const stockList = Object.values(stocks ?? {});
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+
+  const isPoolStock = STOCK_POOL.includes(selectedStock);
+
+  // For non-pool stocks, fetch snapshot + candles via REST
+  const [externalStock, setExternalStock] = useState(null);
+  const [externalCandles, setExternalCandles] = useState([]);
+
+  useEffect(() => {
+    if (isPoolStock) return;
+    setExternalStock(null);
+    setExternalCandles([]);
+    Promise.all([
+      fetchStockSnapshot(selectedStock),
+      fetchStockCandles(selectedStock, "1D"),
+    ]).then(([snapRes, candlesRes]) => {
+      if (snapRes.success) {
+        const d = snapRes.data;
+        setExternalStock({
+          symbol: d.s, price: d.p, open: d.open, high: d.high,
+          low: d.low, close: d.close, previousClose: d.previousClose,
+          volume: d.volume, avgVolume: d.avgVolume,
+        });
+      }
+      if (candlesRes.success) setExternalCandles(candlesRes.candles);
+    });
+  }, [selectedStock, isPoolStock]);
+
+  // Use pool data or external REST data
+  const stock = isPoolStock ? stocks[selectedStock] : externalStock;
+  const stockCandles = isPoolStock ? (candles?.[selectedStock] ?? []) : externalCandles;
+  const stockList = useMemo(() => Object.values(stocks ?? {}), [stocks]);
 
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
-      `}</style>
-
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
         <GeneralHeader />

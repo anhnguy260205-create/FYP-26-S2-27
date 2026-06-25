@@ -59,7 +59,6 @@ function GlassCard({ children }) {
         <div style={{
             width: "100%",
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(20px)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: "24px",
             padding: "32px",
@@ -108,7 +107,7 @@ function MenuButton({ children, active, onClick }) {
 }
 
 function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
-    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+    const initials = expertInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
 
 
     const expertStatus = expertInfo?.verification_status?.toLowerCase();
@@ -130,7 +129,7 @@ function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
                     {[0, 32, 64, 96, 128, 160, 192, 224, 256].map(x => <line key={x} x1={x} y1="0" x2={x} y2="78" stroke="white" strokeWidth="0.5" />)}
                     {[0, 20, 40, 60, 78].map(y => <line key={y} x1="0" y1={y} x2="256" y2={y} stroke="white" strokeWidth="0.5" />)}
                 </svg>
-                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", fontSize: "10px", fontWeight: 700, backdropFilter: "blur(8px)", ...statusStyle }}>
+                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", ...statusStyle }}>
                     ★ {expertInfo?.verification_status || "Verified"}
                 </div>
             </div>
@@ -202,19 +201,19 @@ function LeftSection({ activeTab, setActiveTab, expertInfo, currentUser }) {
 
 function PersonalInformationCard({ expertInfo, onUpdate }) {
     const [draftFull, setDraftFull] = useState(expertInfo?.full_name || "");
-    const [draftEmail, setDraftEmail] = useState(expertInfo?.email || "");
+    const [draftEmail, setDraftEmail] = useState(expertInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(expertInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
     const [draftLoc, setDraftLoc] = useState(expertInfo?.address || "");
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
 
-    const initials = expertInfo?.username.slice(0, 2).toUpperCase();
+    const initials = expertInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
 
 
     useEffect(() => {
         setDraftFull(expertInfo?.full_name || "");
-        setDraftEmail(expertInfo?.email || "");
+        setDraftEmail(expertInfo?.email_address || "");
         setDraftUser(expertInfo?.username || "");
         setDraftPhone(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
         setDraftLoc(expertInfo?.address || "");
@@ -222,7 +221,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
 
     const cancelEdit = () => {
         setDraftFull(expertInfo?.full_name || "");
-        setDraftEmail(expertInfo?.email || "");
+        setDraftEmail(expertInfo?.email_address || "");
         setDraftUser(expertInfo?.username || "");
         setDraftPhone(expertInfo?.phone_number != null ? String(expertInfo.phone_number) : "");
         setDraftLoc(expertInfo?.address || "");
@@ -240,6 +239,13 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
                 draftLoc
             );
             if (result.success) {
+                // Patch localStorage so header/other components reflect the change immediately
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.full_name = draftFull;
+                stored.username = draftUser;
+                stored.email_address = draftEmail;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
                 alert("Profile updated");
                 setEditingSection(null);
                 onUpdate();
@@ -291,7 +297,7 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
                         <InfoRow label="Full Name" value={expertInfo?.full_name} />
                         <InfoRow label="Phone Number" value={expertInfo?.phone_number} />
                         <InfoRow label="Location" value={expertInfo?.address} />
-                        <InfoRow label="Email Address" value={expertInfo?.email} />
+                        <InfoRow label="Email Address" value={expertInfo?.email_address} />
                         <InfoRow label="Expert Status" value={expertInfo?.expert_status} />
                         <InfoRow label="Rating" value={expertInfo?.rating != null ? `${expertInfo.rating} / 5` : null} />
                     </div>
@@ -486,7 +492,7 @@ function DeleteAccountButton() {
             </div>
 
             {showConfirm && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "12px" }}>Delete Account</h2>
                         <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
@@ -783,17 +789,17 @@ function ExpertProfilePage() {
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.25 }}
         >
             <ConsultantHeader />
             <main className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-10">
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)" }}>
                         <LeftSection activeTab={activeTab} setActiveTab={setActiveTab} expertInfo={expertInfo} currentUser={currentUser} />
                     </div>
 
-                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
                         <DeleteAccountButton />
                     </div>
                 </div>

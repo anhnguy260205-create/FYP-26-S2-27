@@ -79,7 +79,7 @@ function applyBarCandleUpdate(list, bar) {
     return next;
 }
 
-const LIVE_UPDATE_FLUSH_MS = 300;
+const LIVE_UPDATE_FLUSH_MS = 500;
 
 /* ── Provider ── */
 
@@ -186,8 +186,22 @@ export function StocksProvider({ children }) {
             if (response.type === "snapshot") {
                 setLastUpdated(new Date().toLocaleTimeString());
                 setStocks((prev) => {
+                    let changed = false;
                     const updated = { ...prev };
                     response.data.forEach((stock) => {
+                        const cur = prev[stock.s];
+                        // Skip update if all key values are identical — keeps same object
+                        // reference so memo()'d StockRow components don't re-render
+                        if (
+                            cur &&
+                            cur.price         === stock.p &&
+                            cur.previousClose === stock.previousClose &&
+                            cur.open          === stock.open &&
+                            cur.high          === stock.high &&
+                            cur.low           === stock.low &&
+                            cur.volume        === stock.volume
+                        ) return;
+                        changed = true;
                         updated[stock.s] = {
                             symbol:        stock.s,
                             price:         stock.p,
@@ -200,7 +214,7 @@ export function StocksProvider({ children }) {
                             avgVolume:     stock.avgVolume,
                         };
                     });
-                    return updated;
+                    return changed ? updated : prev;
                 });
                 return;
             }

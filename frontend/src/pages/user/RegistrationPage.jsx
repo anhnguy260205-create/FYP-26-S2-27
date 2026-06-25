@@ -12,7 +12,7 @@ function ImageStockMarketTradingCharts() {
     <div className="flex flex-col gap-6 w-full">
 
       {/* Image */}
-      <div className="relative w-full h-64 lg:h-[400px] overflow-hidden">
+      <div className="relative w-full h-64 lg:h-100 overflow-hidden">
         <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]" />
         <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
         <div className="absolute bottom-8 left-8 right-8 text-white z-10">
@@ -126,7 +126,7 @@ function RegistrationPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
@@ -134,9 +134,9 @@ function RegistrationPage() {
 
           {/* Form Card */}
           <div
-            className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-[460px] md:shrink-0 flex flex-col justify-center"
-            style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)" }}
-          >
+            className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
+            style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
+            >
             <div className="text-center">
               <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">
                 Open an account
@@ -292,7 +292,7 @@ function RegistrationPage() {
 
           {/* Image — hidden on mobile */}
           <div className="hidden md:flex flex-1 justify-center lg:justify-end">
-            <div className="w-full max-w-[500px]">
+            <div className="w-full max-w-125">
               <ImageStockMarketTradingCharts />
             </div>
           </div>
