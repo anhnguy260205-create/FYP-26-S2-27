@@ -9,6 +9,7 @@ from app.control.controller.tradingc import (
     GetTransactionHistoryController,
     GetPortalTransactionsController,
     GetPortalSummaryController,
+    AddPaperMoneyController,
 )
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
@@ -52,6 +53,16 @@ def get_portfolio(user_id: str):
 def get_transaction_history(investor_id: str, limit: int = 50):
     result = GetTransactionHistoryController().get_transactions(investor_id, limit)
     return {"success": True, "transactions": result}
+
+
+class AddPaperMoneyRequest(BaseModel):
+    user_id: str
+    amount: float
+
+
+@router.post("/add-paper-money")
+def add_paper_money(data: AddPaperMoneyRequest):
+    return AddPaperMoneyController().add(data.user_id, data.amount)
 
 
 @router.get("/portal/{user_id}/summary")

@@ -30,3 +30,8 @@ class GetPortalTransactionsController:
 class GetPortalSummaryController:
     def get_summary(self, user_id):
         return Transaction.getSummaryStats(user_id)
+
+
+class AddPaperMoneyController:
+    def add(self, user_id, amount):
+        return Investor.addPaperMoney(user_id, amount)

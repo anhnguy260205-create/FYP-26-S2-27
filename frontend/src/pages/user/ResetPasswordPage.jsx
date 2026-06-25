@@ -147,7 +147,7 @@ function ResetPasswordPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}>
+      transition={{ duration: 0.25 }}>
 
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
@@ -155,8 +155,8 @@ function ResetPasswordPage() {
             {/* Form Card */}
             <div
               className="bg-[rgba(255,255,255,0.82)] w-full flex flex-col justify-center"
-              style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px", backdropFilter: "blur(16px)" }}>
-
+              style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
+            >
 
               <div className="text-center">
                 <h1

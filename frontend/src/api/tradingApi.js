@@ -52,3 +52,12 @@ export const getPortalSummary = async (userId) => {
   const response = await fetch(`${BASE_URL}/portal/${userId}/summary`);
   return await response.json();
 };
+
+export const addPaperMoney = async (userId, amount) => {
+  const response = await fetch(`${BASE_URL}/add-paper-money`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, amount }),
+  });
+  return await response.json();
+};
