@@ -61,7 +61,6 @@ function RegistrationPage() {
     length: (p) => p.length >= 8 && p.length <= 24,
     letter: (p) => /[a-zA-Z]/.test(p),
     number: (p) => /[0-9]/.test(p),
-    special: (p) => /[^a-zA-Z0-9]/.test(p),
   };
 
   const passwordValid = Object.values(passwordRules).every((fn) => fn(formData.password));
@@ -201,7 +200,6 @@ function RegistrationPage() {
                       { key: "length", label: "8–24 characters" },
                       { key: "letter", label: "At least one letter" },
                       { key: "number", label: "At least one number" },
-                      { key: "special", label: "At least one special character" },
                     ].map(({ key, label }) => {
                       const passed = passwordRules[key](formData.password);
                       return (
