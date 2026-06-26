@@ -19,4 +19,23 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime — loaded on every page
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Animation library
+          'vendor-motion': ['framer-motion'],
+          // Firebase SDK
+          'vendor-firebase': ['firebase/app', 'firebase/auth'],
+          // Charting / data-vis
+          'vendor-charts': ['lightweight-charts'],
+          // Icon set
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+  },
 })
