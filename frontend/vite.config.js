@@ -23,17 +23,22 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React runtime — loaded on every page
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Animation library
-          'vendor-motion': ['framer-motion'],
-          // Firebase SDK
-          'vendor-firebase': ['firebase/app', 'firebase/auth'],
-          // Charting / data-vis
-          'vendor-charts': ['lightweight-charts'],
-          // Icon set
-          'vendor-icons': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion';
+          }
+          if (id.includes('node_modules/firebase')) {
+            return 'vendor-firebase';
+          }
+          if (id.includes('node_modules/lightweight-charts')) {
+            return 'vendor-charts';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
         },
       },
     },
