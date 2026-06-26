@@ -67,25 +67,25 @@ function UpdateParticularPage() {
   };
 
   const inputCls = "w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition";
-  const inputStyle = { height: "44px" };
+  const inputStyle = { height: "48px" };
 
   return (
     <motion.div
-      className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 px-4 py-10"
+      className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 px-4 py-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       <div
         className="bg-[rgba(255,255,255,0.92)] w-full max-w-125 flex flex-col"
-        style={{ borderRadius: "30px", padding: "36px 28px" }}
+        style={{ borderRadius: "24px", padding: "clamp(20px, 5vw, 36px) clamp(18px, 5vw, 28px)" }}
       >
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="font-bold text-black text-3xl leading-tight mb-2">
+        <div className="text-center mb-6">
+          <h1 className="font-bold text-black leading-tight mb-2" style={{ fontSize: "clamp(22px, 6vw, 30px)" }}>
             Welcome, {currentUser.username}! 👋
           </h1>
-          <p className="text-gray-500 text-[15px]">
+          <p className="text-gray-500 text-[14px]">
             Let's set up your profile before you start trading.
           </p>
         </div>
@@ -136,9 +136,9 @@ function UpdateParticularPage() {
           {/* Interests */}
           <div className="flex flex-col gap-2">
             <label className="font-semibold text-[13px] text-gray-600 pl-1">
-              Stock Interests <span className="text-gray-400 font-normal">(optional — pick any that interest you)</span>
+              Stock Interests <span className="text-gray-400 font-normal">(optional)</span>
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {SPECIALTIES.map((s) => {
                 const active = interests.includes(s);
                 return (
@@ -146,11 +146,12 @@ function UpdateParticularPage() {
                     key={s}
                     type="button"
                     onClick={() => toggleInterest(s)}
-                    className="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all"
+                    className="px-3 py-2 rounded-[10px] text-[12px] font-semibold transition-all text-left"
                     style={{
                       background: active ? "rgba(0,146,184,0.12)" : "rgba(0,0,0,0.06)",
                       border: active ? "1.5px solid #0092b8" : "1.5px solid transparent",
                       color: active ? "#0092b8" : "#555",
+                      minHeight: "44px",
                     }}
                   >
                     {active ? "✓ " : ""}{s}
@@ -165,7 +166,7 @@ function UpdateParticularPage() {
             <label className="font-semibold text-[13px] text-gray-600 pl-1">
               Risk Tolerance <span className="text-gray-400 font-normal">(optional)</span>
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { value: "Conservative", desc: "Preserve capital, low risk" },
                 { value: "Moderate", desc: "Balanced growth and safety" },
@@ -175,25 +176,19 @@ function UpdateParticularPage() {
                   key={value}
                   type="button"
                   onClick={() => setRiskTolerance(riskTolerance === value ? "" : value)}
-                  title={desc}
-                  className="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all"
+                  className="flex flex-col items-center justify-center px-2 py-2 rounded-[10px] text-[12px] font-semibold transition-all text-center"
                   style={{
                     background: riskTolerance === value ? "rgba(0,146,184,0.12)" : "rgba(0,0,0,0.06)",
                     border: riskTolerance === value ? "1.5px solid #0092b8" : "1.5px solid transparent",
                     color: riskTolerance === value ? "#0092b8" : "#555",
+                    minHeight: "52px",
                   }}
                 >
-                  {riskTolerance === value ? "✓ " : ""}{value}
+                  <span>{riskTolerance === value ? "✓ " : ""}{value}</span>
+                  <span style={{ fontSize: 10, fontWeight: 400, color: riskTolerance === value ? "#0092b8" : "#999", marginTop: 2 }}>{desc}</span>
                 </button>
               ))}
             </div>
-            {riskTolerance && (
-              <p className="text-[12px] text-gray-400 pl-1">
-                {riskTolerance === "Conservative" && "Preserve capital, low risk"}
-                {riskTolerance === "Moderate" && "Balanced growth and safety"}
-                {riskTolerance === "Aggressive" && "High growth, higher risk"}
-              </p>
-            )}
           </div>
 
           {/* Error */}
