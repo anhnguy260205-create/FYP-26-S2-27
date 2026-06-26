@@ -93,6 +93,20 @@ app.add_middleware(
 
 # Create database tables based on the defined models
 Base.metadata.create_all(bind=engine)
+
+# Add new columns to existing tables (safe — no-ops if columns already exist)
+from sqlalchemy import text
+with engine.connect() as _conn:
+    for _sql in [
+        "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL",
+        "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL",
+    ]:
+        try:
+            _conn.execute(text(_sql))
+            _conn.commit()
+        except Exception:
+            pass  # column already exists
+
 seed_profiles()
 seed_admin_account()
 seed_investor_account()

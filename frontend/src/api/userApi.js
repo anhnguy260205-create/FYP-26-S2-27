@@ -190,6 +190,15 @@ export const updateInvestorInterests = async (userId, interests) => {
   return await response.json();
 };
 
+export const updateRiskTolerance = async (userId, riskTolerance) => {
+  const response = await fetch(`${BASE_URL}/update-risk-tolerance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, risk_tolerance: riskTolerance }),
+  });
+  return await response.json();
+};
+
 export const firebaseLogin = async (email) => {
   const response = await fetch(`${BASE_URL}/firebase-login`, {
     method: "POST",

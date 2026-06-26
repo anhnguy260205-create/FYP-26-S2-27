@@ -4,17 +4,17 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { updateUserInformation, updateInvestorInterests } from "../../api/userApi.js";
+import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
 import { addPaperMoney } from "../../api/tradingApi.js";
 
 const SPECIALTIES = [
-    "AI & Chips",
-    "Cloud & Software",
-    "Consumer Tech",
-    "Social & Ads",
-    "E-commerce",
-    "Electric Vehicles",
+    "Information Technology",
+    "Financials",
+    "Consumer Discretionary",
+    "Communication Services",
+    "Energy",
+    "Real Estate",
 ];
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
@@ -553,6 +553,9 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [selectedInterests, setSelectedInterests] = useState(
         () => investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
     );
+    const [selectedRisk, setSelectedRisk] = useState(
+        () => investorInfo?.risk_tolerance || ""
+    );
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     const role = currentUser?.role;
     const userId = currentUser?.user_id;
@@ -562,6 +565,7 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
         setSelectedInterests(
             investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
         );
+        setSelectedRisk(investorInfo?.risk_tolerance || "");
     }, [investorInfo]);
 
     const toggleInterest = (specialty) => {
@@ -574,24 +578,28 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
         setSelectedInterests(
             investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
         );
+        setSelectedRisk(investorInfo?.risk_tolerance || "");
         setEditingSection(null);
     };
 
     const handleClick = async (e) => {
         e.preventDefault();
         try {
-            const result = await updateInvestorInterests(userId, selectedInterests.join(","));
-            if (result.success) {
-                // Patch localStorage so dashboard reads fresh interests without an API call
+            const [interestResult, riskResult] = await Promise.all([
+                updateInvestorInterests(userId, selectedInterests.join(",")),
+                selectedRisk ? updateRiskTolerance(userId, selectedRisk) : Promise.resolve({ success: true }),
+            ]);
+            if (interestResult.success && riskResult.success) {
                 const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
                 stored.interests = selectedInterests.join(",");
+                stored.risk_tolerance = selectedRisk;
                 localStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Account settings updated");
                 setEditingSection(null);
                 onUpdate();
             } else {
-                alert(result.message || "Failed to update settings");
+                alert("Failed to update settings");
             }
         } catch (error) {
             console.error(error);
@@ -638,6 +646,22 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
 
                     <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
 
+                    {/* Risk Tolerance */}
+                    <div>
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                            RISK TOLERANCE
+                        </p>
+                        {selectedRisk ? (
+                            <span style={{ padding: "4px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.35)", color: "#00D3F2" }}>
+                                {selectedRisk}
+                            </span>
+                        ) : (
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>Not set — edit to choose your risk profile.</p>
+                        )}
+                    </div>
+
+                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
+
                     {/* Account Type */}
                     <div>
                         <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "16px", fontWeight: 600 }}>ACCOUNT TYPE</p>
@@ -672,6 +696,34 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                                                 color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
                                             }}>
                                             {active ? "✓ " : ""}{s}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Risk Tolerance */}
+                        <div>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Risk Tolerance <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select one)</span>
+                            </label>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {[
+                                    { value: "Conservative", desc: "Preserve capital, low risk" },
+                                    { value: "Moderate", desc: "Balanced growth and safety" },
+                                    { value: "Aggressive", desc: "High growth, higher risk" },
+                                ].map(({ value, desc }) => {
+                                    const active = selectedRisk === value;
+                                    return (
+                                        <button key={value} type="button" title={desc}
+                                            onClick={() => setSelectedRisk(active ? "" : value)}
+                                            style={{
+                                                padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                            }}>
+                                            {active ? "✓ " : ""}{value}
                                         </button>
                                     );
                                 })}

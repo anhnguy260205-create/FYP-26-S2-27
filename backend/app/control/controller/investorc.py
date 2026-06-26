@@ -33,3 +33,8 @@ class GetWatchlist:
 class UpdateInvestorInterestsController:
     def update(self, user_id, interests):
         return Investor.updateInterests(user_id, interests)
+
+
+class UpdateInvestorRiskToleranceController:
+    def update(self, user_id, risk_tolerance):
+        return Investor.updateRiskTolerance(user_id, risk_tolerance)

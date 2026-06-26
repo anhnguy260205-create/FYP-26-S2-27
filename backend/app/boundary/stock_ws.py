@@ -34,8 +34,18 @@ alpaca_task: Optional[asyncio.Task] = None
 previous_close_cache: Dict[str, float] = {}
 
 stock_pool = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "META", "TSLA", "AVGO",  "ORCL", "AMD",
+    # Information Technology
+    "AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "CRM", "QCOM", "ADBE",
+    # Communication Services
+    "GOOGL", "META", "NFLX", "DIS",
+    # Consumer Discretionary
+    "AMZN", "TSLA", "NKE", "MCD", "HD",
+    # Financials
+    "JPM", "BAC", "V", "MA",
+    # Energy
+    "XOM", "CVX", "COP",
+    # Real Estate
+    "AMT", "PLD", "O",
 ]
 
 # Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections

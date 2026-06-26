@@ -125,7 +125,7 @@ export default function ExpertPortfolioPage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-cyan-300">Consultant / Expert</p>
+              <p className="text-sm font-semibold text-cyan-300">Expert</p>
               <h1 className="text-3xl font-bold text-white">View My Portfolio</h1>
               <p className="mt-1 text-sm text-slate-300">Long-term growth portfolio focused on leading technology and innovation-driven companies</p>
             </div>
@@ -147,7 +147,7 @@ export default function ExpertPortfolioPage() {
                   <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700"><Briefcase size={28} /></div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-950">{portfolio.portfolio_name}</h2>
-                    <p className="text-sm text-slate-500">Consultant-created portfolio overview</p>
+                    <p className="text-sm text-slate-500">Expert-created portfolio overview</p>
                   </div>
                 </div>
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">{portfolio.description}</p>

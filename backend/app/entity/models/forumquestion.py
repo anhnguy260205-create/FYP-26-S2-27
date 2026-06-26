@@ -36,7 +36,7 @@ class ForumPost(Base):
     created_at = Column(DateTime, default=_now)
     updated_at = Column(DateTime, default=_now)
 
-    replies = relationship("ForumReply", cascade="all, delete-orphan", back_populates="post", lazy="joined")
+    replies = relationship("ForumReply", cascade="all, delete-orphan", back_populates="post", lazy="select")
 
 
 class ForumReply(Base):
@@ -145,13 +145,25 @@ def _serialise_reply(reply):
     }
 
 
-def _serialise_post(session, post, user_id=None, include_replies=True):
-    liked = False
-    saved = False
-    if user_id:
+def _serialise_post(session, post, user_id=None, include_replies=True,
+                    liked_ids=None, saved_ids=None):
+    # Use pre-fetched sets when available (batch mode) to avoid N+1 queries.
+    # Fall back to per-post queries only for single-post fetches.
+    if liked_ids is not None:
+        liked = post.post_id in liked_ids
+    elif user_id:
         liked = session.query(ForumPostLike).filter(ForumPostLike.post_id == post.post_id, ForumPostLike.user_id == user_id).first() is not None
+    else:
+        liked = False
+
+    if saved_ids is not None:
+        saved = post.post_id in saved_ids
+    elif user_id:
         saved = session.query(ForumPostSave).filter(ForumPostSave.post_id == post.post_id, ForumPostSave.user_id == user_id).first() is not None
-    replies = list(post.replies or [])
+    else:
+        saved = False
+
+    replies = list(post.replies or []) if include_replies else []
     return {
         "id": post.post_id,
         "post_id": post.post_id,
@@ -200,15 +212,29 @@ def _serialise_question(question):
 class ForumRepository:
     @staticmethod
     def seed_posts():
+        seed_ids = [
+            "post_demo_aapl", "post_demo_ai", "post_demo_portfolio",
+            "post_demo_ai_chips", "post_demo_cloud", "post_demo_consumer",
+            "post_demo_social", "post_demo_ecommerce", "post_demo_ev",
+        ]
         with get_session() as session:
-            if session.query(ForumPost).count() > 0:
+            existing_ids = {r.post_id for r in session.query(ForumPost.post_id).filter(ForumPost.post_id.in_(seed_ids)).all()}
+            if len(existing_ids) == len(seed_ids):
                 return True
             posts = [
                 ForumPost(post_id="post_demo_aapl", author_name="Miko Tanaka", author_role="expert", title="AAPL double-bottom setup — breakout watch", category="Technical Analysis", tags="AAPL,Technical Analysis,Breakout", likes_count=34, views_count=820, is_pinned=0, content="Apple has been forming a potential double-bottom near the recent support zone. I am watching for a confirmed close above neckline resistance with stronger volume before treating it as a valid bullish setup."),
                 ForumPost(post_id="post_demo_ai", author_name="Wei Zhang", author_role="premium", title="How should we use AI prediction signals responsibly?", category="AI Predictions", tags="AI,Signals,Risk Management", likes_count=58, views_count=1240, content="I have been comparing AI signals with my own technical analysis. My view is that the AI output is useful as a screening layer, but every trade still needs position sizing and risk controls."),
                 ForumPost(post_id="post_demo_portfolio", author_name="Dr. Raymond Lee", author_role="consultant", title="Building a balanced portfolio for volatile markets", category="Portfolio Strategy", tags="Portfolio,Risk,Defensive", likes_count=76, views_count=1680, content="In uncertain markets, I prefer combining quality growth, defensive sectors and some cash flexibility. The key is to avoid overconcentration in one theme even when momentum looks attractive."),
+                ForumPost(post_id="post_demo_ai_chips", author_name="David Kim", author_role="expert", title="NVDA vs AMD — which AI chip play for 2026?", category="AI & Chips", tags="NVDA,AMD,AI,Chips", likes_count=41, views_count=930, content="NVIDIA dominates the data centre GPU market but AMD is closing the gap with MI300X. NVDA still commands a software moat via CUDA, but AMD's open ecosystem and aggressive pricing are worth watching. Which do you prefer for the next leg of the AI trade?"),
+                ForumPost(post_id="post_demo_cloud", author_name="Priya Nair", author_role="premium", title="MSFT Azure vs GOOGL Cloud — enterprise cloud picks", category="Cloud & Software", tags="MSFT,GOOGL,Cloud", likes_count=29, views_count=640, content="Azure is winning enterprise deals on the back of Microsoft 365 integration and OpenAI exclusivity. Google Cloud is growing faster from a smaller base with strong AI tooling. Both are strong long-term holds — discuss your positioning."),
+                ForumPost(post_id="post_demo_consumer", author_name="Sarah Chen", author_role="investor", title="AAPL iPhone supercycle thesis — still valid in 2026?", category="Consumer Tech", tags="AAPL,iPhone,Services", likes_count=53, views_count=1100, content="Apple's installed base of 1.4 billion active devices and a growing services attach rate suggest a durable earnings floor. The question is whether a hardware supercycle driven by Apple Intelligence can re-accelerate revenue growth."),
+                ForumPost(post_id="post_demo_social", author_name="Wei Zhang", author_role="premium", title="META ad revenue resilience in a softening economy", category="Social & Ads", tags="META,Ads,AI", likes_count=37, views_count=820, content="Meta's Advantage+ AI ad platform is delivering measurable ROI improvements for advertisers. Even in softer macro conditions, direct-response advertising on Instagram and Reels tends to be sticky. Anyone tracking Q2 guidance closely?"),
+                ForumPost(post_id="post_demo_ecommerce", author_name="Marcus Rivera", author_role="investor", title="AMZN AWS margin expansion — the real story behind earnings", category="E-commerce", tags="AMZN,AWS,Advertising", likes_count=62, views_count=1350, content="Amazon's profit story in 2026 is really an AWS and advertising story. Retail margins remain thin but AWS operating income is expanding rapidly and advertising is a high-margin bolt-on. The sum-of-parts valuation case is compelling."),
+                ForumPost(post_id="post_demo_ev", author_name="Miko Tanaka", author_role="expert", title="TSLA delivery numbers and margin recovery — where do we stand?", category="Electric Vehicles", tags="TSLA,EV,FSD", likes_count=48, views_count=1090, content="Tesla's price cuts in 2025 compressed margins significantly but volume recovered. The key question for 2026 is whether FSD subscriptions and energy storage can offset ongoing ASP pressure in a more competitive EV market."),
             ]
             for post in posts:
+                if post.post_id in existing_ids:
+                    continue
                 post.replies = [ForumReply(reply_id=f"reply_{post.post_id}", author_name="Sarah Chen", author_role="premium", content="Helpful breakdown, thanks for sharing this with the community.", likes_count=5)]
                 session.add(post)
             return True
@@ -218,7 +244,16 @@ class ForumRepository:
         ForumRepository.seed_posts()
         with get_session() as session:
             posts = session.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
-            return [_serialise_post(session, p, user_id=user_id, include_replies=False) for p in posts]
+            liked_ids: set = set()
+            saved_ids: set = set()
+            if user_id and posts:
+                liked_ids = {r.post_id for r in session.query(ForumPostLike.post_id).filter(ForumPostLike.user_id == user_id).all()}
+                saved_ids = {r.post_id for r in session.query(ForumPostSave.post_id).filter(ForumPostSave.user_id == user_id).all()}
+            return [
+                _serialise_post(session, p, user_id=user_id, include_replies=False,
+                                liked_ids=liked_ids, saved_ids=saved_ids)
+                for p in posts
+            ]
 
     @staticmethod
     def get_post(post_id, user_id=None):

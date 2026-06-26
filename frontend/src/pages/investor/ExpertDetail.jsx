@@ -211,7 +211,7 @@ function ExpertDetails() {
                     }}
                 >
                     <h2 className="text-xl font-bold mb-4">
-                        About Consultant
+                        About Expert
                     </h2>
 
                     <p

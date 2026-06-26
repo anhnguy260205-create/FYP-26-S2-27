@@ -1,6 +1,33 @@
 import { useEffect, useState } from "react";
-import { Edit, Check, X } from "lucide-react";
+import { Edit, Check, X, Image } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import imgTechnical from "../../images/techinical analysis.jpg";
+import imgAI from "../../images/aiprediction.jpg";
+import imgStrategy from "../../images/strategy.jpg";
+import imgNews from "../../images/news.jpg";
+import imgBeginner from "../../images/beginner.jpg";
+import imgTrading from "../../images/trading tip.jpg";
+import imgIT from "../../images/information technology.jpg";
+import imgFinancials from "../../images/financials.jpg";
+import imgConsumer from "../../images/consumer discretionary.jpg";
+import imgComm from "../../images/communication services.jpg";
+import imgEnergy from "../../images/energy.jpeg";
+import imgRealEstate from "../../images/real estate.jpg";
+
+const ROOM_IMAGES = {
+  "Technical Analysis": imgTechnical,
+  "AI Predictions": imgAI,
+  "Portfolio Strategy": imgStrategy,
+  "Market News": imgNews,
+  "Beginners Corner": imgBeginner,
+  "Trading Tips": imgTrading,
+  "Information Technology": imgIT,
+  "Financials": imgFinancials,
+  "Consumer Discretionary": imgConsumer,
+  "Communication Services": imgComm,
+  "Energy": imgEnergy,
+  "Real Estate": imgRealEstate,
+};
 
 const API = `${import.meta.env.VITE_API_URL}/admin/content`;
 
@@ -10,6 +37,7 @@ const TABS = [
   { key: "membership", label: "Membership Plans", hint: "Feature lists shown on the Free and Premium plan cards in the Subscription page." },
   { key: "expert",     label: "Expert",           hint: "Hero title and subtitle shown on the Expert home page after login." },
   { key: "footer",     label: "Footer",           hint: "Brand name, tagline, and all footer links (Product, Company, Contact)." },
+  { key: "forum",      label: "Forum Rooms",      hint: "Cover images assigned to each forum room. Images are bundled with the app." },
 ];
 
 function ContentManagementPage() {
@@ -64,7 +92,7 @@ function ContentManagementPage() {
   const footerProduct   = content.filter((c) => c.section === "footer_product");
   const footerCompany   = content.filter((c) => c.section === "footer_company");
   const footerContact   = content.filter((c) => c.section === "footer_contact");
-  const activeItems = ["membership", "footer"].includes(activeTab)
+  const activeItems = ["membership", "footer", "forum"].includes(activeTab)
     ? []
     : content.filter((c) => c.section === activeTab);
 
@@ -349,8 +377,75 @@ function ContentManagementPage() {
         </div>
       )}
 
+      {/* Forum Rooms tab */}
+      {activeTab === "forum" && (
+        <div>
+          <p className="text-xs text-slate-400 mb-5">
+            Set a custom image URL for each forum room. Leave blank to use the built-in default image. Changes are live immediately after saving.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {content.filter((c) => c.section === "forum_room").map((item) => {
+              const isEditing = editing === item.content_id;
+              const previewSrc = isEditing
+                ? (form.description || ROOM_IMAGES[item.title])
+                : (item.description || ROOM_IMAGES[item.title]);
+              return (
+                <div key={item.content_id} className="rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                  <div className="w-full overflow-hidden" style={{ height: 120 }}>
+                    {previewSrc ? (
+                      <img src={previewSrc} alt={item.title} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <Image size={24} className="text-slate-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-semibold text-slate-700 mb-2">{item.title}</p>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 mb-1 block">IMAGE URL</label>
+                          <input
+                            value={form.description}
+                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                          />
+                          <p className="text-xs text-slate-400 mt-1">Leave blank to use the default bundled image.</p>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={() => saveEdit(item.content_id)} disabled={saving}
+                            className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
+                            <Check size={13} /> Save
+                          </button>
+                          <button onClick={cancelEdit}
+                            className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
+                            <X size={13} /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-400 truncate">
+                          {item.description ? item.description : <span className="italic">Using default image</span>}
+                        </p>
+                        <button onClick={() => startEdit(item)}
+                          className="flex items-center gap-1 border border-blue-500 text-blue-600 px-2 py-1 rounded text-xs shrink-0">
+                          <Edit size={12} /> Edit
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* All other tabs */}
-      {!["membership", "footer"].includes(activeTab) && (
+      {!["membership", "footer", "forum"].includes(activeTab) && (
         <div className="space-y-4">
           {activeItems.length === 0
             ? <p className="text-slate-400 text-sm">No content found for this section.</p>

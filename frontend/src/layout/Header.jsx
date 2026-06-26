@@ -28,7 +28,7 @@ function Header() {
           alt="logo"
           src={logo}
           onClick={() => navigate("/")}
-          className="cursor-pointer w-[70px] md:w-[100px] lg:w-[120px]"
+          className="cursor-pointer w-17.5 md:w-25 lg:w-30"
           style={{ height: "auto" }}
         />
 
@@ -58,7 +58,7 @@ function Header() {
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="sm:hidden fixed inset-x-0 top-[60px] z-40 bg-white border-t border-gray-200 shadow-lg">
+        <div className="sm:hidden fixed inset-x-0 top-15 z-40 bg-white border-t border-gray-200 shadow-lg">
           <div className="px-4 py-3 space-y-1">
             {LINKS.map((link) => (
               <a

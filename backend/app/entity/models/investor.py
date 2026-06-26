@@ -14,6 +14,7 @@ class Investor(Base):
     investor_id = Column(String(50), primary_key=True,
                          default=lambda: f"investor_{uuid4()}")
     interests = Column(String(255), nullable=True)
+    risk_tolerance = Column(String(30), nullable=True)
     paper_money = Column(Float, default=2000)
     used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
@@ -53,6 +54,7 @@ class Investor(Base):
                 "investor_id": investor.investor_id,
                 "user_id": investor.user_id,
                 "interests": investor.interests,
+                "risk_tolerance": investor.risk_tolerance,
                 "paper_money": investor.paper_money,
                 "used_amount": investor.used_amount,
                 "investor_subscription_status": investor.investor_subscription_status
@@ -71,6 +73,7 @@ class Investor(Base):
             "role": "investor",
             "investor_id": investor["investor_id"],
             "interests": investor["interests"],
+            "risk_tolerance": investor["risk_tolerance"],
             "paper_money": investor["paper_money"],
             "used_amount": investor["used_amount"],
             "investor_subscription_status": investor["investor_subscription_status"]
@@ -268,6 +271,17 @@ class Investor(Base):
             if not investor:
                 return False
             investor.interests = interests
+            return True
+
+    @staticmethod
+    def updateRiskTolerance(user_id, risk_tolerance: str):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.risk_tolerance = risk_tolerance
             return True
 
 

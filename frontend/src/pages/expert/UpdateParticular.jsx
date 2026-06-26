@@ -14,6 +14,7 @@ function UpdateParticularPage() {
     const [address, setAddress] = useState("");
     const [linkedIn, setLinkedIn] = useState("");
     const [experience, setExperience] = useState("");
+    const [riskTolerance, setRiskTolerance] = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -35,7 +36,7 @@ function UpdateParticularPage() {
             );
 
             // Save expert-specific fields
-            if (linkedIn || experience) {
+            if (linkedIn || experience || riskTolerance) {
                 await fetch(`${API_BASE}/expert/update-profile`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -43,6 +44,7 @@ function UpdateParticularPage() {
                         user_id: currentUser.user_id,
                         linked_in_url: linkedIn || null,
                         experience_years: experience ? parseInt(experience) : null,
+                        risk_tolerance: riskTolerance || null,
                     }),
                 });
             }
@@ -130,6 +132,42 @@ function UpdateParticularPage() {
                         <input type="number" placeholder="e.g. 8" min="0" max="60" value={experience}
                             onChange={(e) => setExperience(e.target.value)}
                             className={inputCls} style={inputStyle} />
+                    </div>
+
+                    {/* Risk Tolerance */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-semibold text-[13px] text-gray-600 pl-1">
+                            Risk Tolerance <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { value: "Conservative", desc: "Low-risk advisory style" },
+                                { value: "Moderate", desc: "Balanced approach" },
+                                { value: "Aggressive", desc: "High-growth focus" },
+                            ].map(({ value, desc }) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setRiskTolerance(riskTolerance === value ? "" : value)}
+                                    title={desc}
+                                    className="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all"
+                                    style={{
+                                        background: riskTolerance === value ? "rgba(0,146,184,0.12)" : "rgba(0,0,0,0.06)",
+                                        border: riskTolerance === value ? "1.5px solid #0092b8" : "1.5px solid transparent",
+                                        color: riskTolerance === value ? "#0092b8" : "#555",
+                                    }}
+                                >
+                                    {riskTolerance === value ? "✓ " : ""}{value}
+                                </button>
+                            ))}
+                        </div>
+                        {riskTolerance && (
+                            <p className="text-[12px] text-gray-400 pl-1">
+                                {riskTolerance === "Conservative" && "Low-risk advisory style"}
+                                {riskTolerance === "Moderate" && "Balanced approach"}
+                                {riskTolerance === "Aggressive" && "High-growth focus"}
+                            </p>
+                        )}
                     </div>
 
                     {error && <p className="text-red-500 text-[13px] font-medium">{error}</p>}
