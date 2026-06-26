@@ -81,10 +81,11 @@ class UpdateExpertProfileRequest(BaseModel):
     user_id: str
     experience_years: Optional[int] = None
     linked_in_url: Optional[str] = None
+    risk_tolerance: Optional[str] = None
 
 @router.post("/update-profile")
 def update_expert_profile(data: UpdateExpertProfileRequest):
-    ok = Expert.update_profile(data.user_id, data.experience_years, data.linked_in_url)
+    ok = Expert.update_profile(data.user_id, data.experience_years, data.linked_in_url, data.risk_tolerance)
     if not ok:
         return {"success": False, "message": "Expert not found"}
     return {"success": True, "message": "Profile updated"}

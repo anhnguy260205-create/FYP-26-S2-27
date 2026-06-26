@@ -129,7 +129,9 @@ class UserAccount(Base):
                 "full_name": user.full_name,
                 "email_address": user.email_address,
                 "role": role,
-                "subscription_status": investor.investor_subscription_status if investor else "inactive"
+                "subscription_status": investor.investor_subscription_status if investor else "inactive",
+                "interests": investor.interests if investor else None,
+                "risk_tolerance": investor.risk_tolerance if investor else None,
             }
 
     @staticmethod

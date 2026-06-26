@@ -19,6 +19,7 @@ class Expert(Base):
     rating = Column(Float, default=0)
     experience_years = Column(Integer, nullable=True)
     linked_in_url = Column(String(255), nullable=True)
+    risk_tolerance = Column(String(30), nullable=True)
     verification_status = Column(String(20), default="pending")
     verification_score = Column(Integer, default=0)
     approved_date = Column(DateTime, nullable=True)
@@ -54,7 +55,7 @@ class Expert(Base):
             return False
 
     @staticmethod
-    def update_profile(user_id, experience_years=None, linked_in_url=None):
+    def update_profile(user_id, experience_years=None, linked_in_url=None, risk_tolerance=None):
         with get_session() as session:
             expert = session.query(Expert).filter(Expert.user_id == user_id).first()
             if not expert:
@@ -63,6 +64,8 @@ class Expert(Base):
                 expert.experience_years = experience_years
             if linked_in_url is not None:
                 expert.linked_in_url = linked_in_url
+            if risk_tolerance is not None:
+                expert.risk_tolerance = risk_tolerance
             return True
 
     @staticmethod
@@ -103,6 +106,7 @@ class Expert(Base):
                     "address": user.address if user else "",
                     "experience_years": e.experience_years,
                     "linked_in_url": e.linked_in_url,
+                    "risk_tolerance": e.risk_tolerance,
                     "verification_status": e.verification_status,
                     "verification_score": e.verification_score,
                     "documents": json.loads(e.documents) if e.documents else [],
@@ -126,6 +130,7 @@ class Expert(Base):
                     "address": user.address if user else "",
                     "experience_years": e.experience_years,
                     "linked_in_url": e.linked_in_url,
+                    "risk_tolerance": e.risk_tolerance,
                     "verification_status": e.verification_status,
                     "verification_score": e.verification_score,
                     "documents": json.loads(e.documents) if e.documents else [],
@@ -159,6 +164,7 @@ class Expert(Base):
                 "rating": expert.rating,
                 "experience_years": expert.experience_years,
                 "linked_in_url": expert.linked_in_url,
+                "risk_tolerance": expert.risk_tolerance,
                 "documents": json.loads(expert.documents) if expert.documents else [],
             }
 

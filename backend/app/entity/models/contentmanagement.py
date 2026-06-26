@@ -111,6 +111,19 @@ def seed_landing_content():
             ContentManagement(content_id="prem_feat_2", section="premium_investor", title="Expert Consultation Access",        order_index=2),
             ContentManagement(content_id="prem_feat_3", section="premium_investor", title="Advanced Portfolio Analytics",      order_index=3),
             ContentManagement(content_id="prem_feat_4", section="premium_investor", title="Priority Customer Support",         order_index=4),
+            # Forum room image URLs (description = external image URL; empty = use bundled default)
+            ContentManagement(content_id="forum_room_technical",  section="forum_room", title="Technical Analysis",       description="", order_index=0),
+            ContentManagement(content_id="forum_room_ai",         section="forum_room", title="AI Predictions",           description="", order_index=1),
+            ContentManagement(content_id="forum_room_strategy",   section="forum_room", title="Portfolio Strategy",       description="", order_index=2),
+            ContentManagement(content_id="forum_room_news",       section="forum_room", title="Market News",              description="", order_index=3),
+            ContentManagement(content_id="forum_room_beginner",   section="forum_room", title="Beginners Corner",         description="", order_index=4),
+            ContentManagement(content_id="forum_room_trading",    section="forum_room", title="Trading Tips",             description="", order_index=5),
+            ContentManagement(content_id="forum_room_it",         section="forum_room", title="Information Technology",   description="", order_index=6),
+            ContentManagement(content_id="forum_room_financials", section="forum_room", title="Financials",               description="", order_index=7),
+            ContentManagement(content_id="forum_room_consumer",   section="forum_room", title="Consumer Discretionary",   description="", order_index=8),
+            ContentManagement(content_id="forum_room_comm",       section="forum_room", title="Communication Services",   description="", order_index=9),
+            ContentManagement(content_id="forum_room_energy",     section="forum_room", title="Energy",                   description="", order_index=10),
+            ContentManagement(content_id="forum_room_realestate", section="forum_room", title="Real Estate",              description="", order_index=11),
         ]
 
         # Remove old auto-generated feature entries (content_id starts with "content_"

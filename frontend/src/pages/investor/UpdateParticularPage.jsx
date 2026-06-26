@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { updateUserInformation, updateInvestorInterests } from "../../api/userApi.js";
+import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
 
 const SPECIALTIES = [
-  "AI & Chips",
-  "Cloud & Software",
-  "Consumer Tech",
-  "Social & Ads",
-  "E-commerce",
-  "Electric Vehicles",
+  "Information Technology",
+  "Financials",
+  "Consumer Discretionary",
+  "Communication Services",
+  "Energy",
+  "Real Estate",
 ];
 
 function UpdateParticularPage() {
@@ -20,6 +20,7 @@ function UpdateParticularPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [interests, setInterests] = useState([]);
+  const [riskTolerance, setRiskTolerance] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,9 +50,12 @@ function UpdateParticularPage() {
       if (interests.length > 0) {
         await updateInvestorInterests(currentUser.user_id, interests.join(","));
       }
+      if (riskTolerance) {
+        await updateRiskTolerance(currentUser.user_id, riskTolerance);
+      }
 
       // Patch localStorage so rest of the app sees updated values immediately
-      const updated = { ...currentUser, full_name: fullName.trim(), interests: interests.join(",") };
+      const updated = { ...currentUser, full_name: fullName.trim(), interests: interests.join(","), risk_tolerance: riskTolerance };
       localStorage.setItem("currentUser", JSON.stringify(updated));
 
       navigate("/investor");
@@ -154,6 +158,42 @@ function UpdateParticularPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Risk Tolerance */}
+          <div className="flex flex-col gap-2">
+            <label className="font-semibold text-[13px] text-gray-600 pl-1">
+              Risk Tolerance <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "Conservative", desc: "Preserve capital, low risk" },
+                { value: "Moderate", desc: "Balanced growth and safety" },
+                { value: "Aggressive", desc: "High growth, higher risk" },
+              ].map(({ value, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRiskTolerance(riskTolerance === value ? "" : value)}
+                  title={desc}
+                  className="px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all"
+                  style={{
+                    background: riskTolerance === value ? "rgba(0,146,184,0.12)" : "rgba(0,0,0,0.06)",
+                    border: riskTolerance === value ? "1.5px solid #0092b8" : "1.5px solid transparent",
+                    color: riskTolerance === value ? "#0092b8" : "#555",
+                  }}
+                >
+                  {riskTolerance === value ? "✓ " : ""}{value}
+                </button>
+              ))}
+            </div>
+            {riskTolerance && (
+              <p className="text-[12px] text-gray-400 pl-1">
+                {riskTolerance === "Conservative" && "Preserve capital, low risk"}
+                {riskTolerance === "Moderate" && "Balanced growth and safety"}
+                {riskTolerance === "Aggressive" && "High growth, higher risk"}
+              </p>
+            )}
           </div>
 
           {/* Error */}

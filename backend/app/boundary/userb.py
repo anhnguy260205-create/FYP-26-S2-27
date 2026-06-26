@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter
 
 from app.control.controller.userc import CreateAccountController, InvestorInformationController, LogoutController, ExpertInformationController, UpdateInformationController, DeleteInvestorController, FirebaseLoginController
-from app.control.controller.investorc import AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist, UpdateInvestorInterestsController
+from app.control.controller.investorc import AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist, UpdateInvestorInterestsController, UpdateInvestorRiskToleranceController
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -256,6 +256,19 @@ def update_interests(data: UpdateInterestsRequest):
     if not result:
         return {"success": False, "message": "Failed to update interests"}
     return {"success": True, "message": "Interests updated successfully"}
+
+
+class UpdateRiskToleranceRequest(BaseModel):
+    user_id: str
+    risk_tolerance: str
+
+
+@router.post("/update-risk-tolerance")
+def update_risk_tolerance(data: UpdateRiskToleranceRequest):
+    result = UpdateInvestorRiskToleranceController().update(data.user_id, data.risk_tolerance)
+    if not result:
+        return {"success": False, "message": "Failed to update risk tolerance"}
+    return {"success": True, "message": "Risk tolerance updated successfully"}
 
 
 @router.get("/check-email")

@@ -144,7 +144,7 @@ function ConsultantHeader() {
           alt="logo"
           src={logo}
           onClick={() => navigate("/expert")}
-          className="cursor-pointer w-[70px] md:w-[100px] lg:w-[120px]"
+          className="cursor-pointer w-17.5 md:w-25 lg:w-30"
           style={{ height: "auto" }}
         />
 
@@ -198,7 +198,7 @@ function ConsultantHeader() {
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 top-[60px] z-40 bg-white overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
           <div className="px-4 py-4">
             {navLinks.map((link) => (
               <div key={link.label} className="mb-1">
