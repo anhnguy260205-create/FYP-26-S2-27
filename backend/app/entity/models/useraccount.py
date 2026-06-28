@@ -96,6 +96,7 @@ class UserAccount(Base):
         from app.entity.models.expert import Expert
         from app.entity.models.investor import Investor
 
+        email_address = email_address.strip().lower()
         with get_session() as session:
             user = session.query(UserAccount).options(
                 joinedload(UserAccount.profile)
@@ -141,6 +142,7 @@ class UserAccount(Base):
         from app.entity.models.expert import Expert
         from sqlalchemy.orm import joinedload
 
+        email = email.strip().lower()
         with get_session() as session:
             user = session.query(UserAccount).options(
                 joinedload(UserAccount.profile)
