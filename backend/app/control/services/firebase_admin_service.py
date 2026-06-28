@@ -19,7 +19,11 @@ def _init():
 
 
 def verify_firebase_token(token: str):
-    _init()
+    try:
+        _init()
+    except Exception as e:
+        print(f"[FIREBASE AUTH] Init failed: {e}")
+        return None
     try:
         return auth.verify_id_token(token, clock_skew_seconds=10)
     except Exception as e:
