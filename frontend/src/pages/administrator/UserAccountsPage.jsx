@@ -4,6 +4,7 @@ import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 function UserAccountsPage() {
   const [users, setUsers] = useState([]);
@@ -19,7 +20,7 @@ function UserAccountsPage() {
         ? `${import.meta.env.VITE_API_URL}/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
         : "${import.meta.env.VITE_API_URL}/admin/useraccounts";
 
-      const response = await fetch(url);
+      const response = await authFetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -48,7 +49,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/suspend`, {
+      const response = await authFetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/suspend`, {
         method: "PUT",
       });
 
@@ -71,7 +72,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/activate`, {
+      const response = await authFetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/activate`, {
         method: "PUT",
       });
 

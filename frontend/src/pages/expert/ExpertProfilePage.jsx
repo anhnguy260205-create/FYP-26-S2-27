@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { getExpertInformation } from "../../api/userApi.js";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import { authFetch } from "../../api/apiClient.js";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -554,7 +555,7 @@ function VerifiedCard({ expertInfo, onUpdate }) {
     const saveDocs = async () => {
         setSavingDocs(true); setDocMsg("");
         try {
-            const res = await fetch(`${API_BASE}/expert/documents`, {
+            const res = await authFetch(`${API_BASE}/expert/documents`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_id: currentUser.user_id, documents: docs }),
