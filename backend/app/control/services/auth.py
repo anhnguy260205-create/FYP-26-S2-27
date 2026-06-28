@@ -17,12 +17,14 @@ def get_current_user(
             detail="Invalid or expired token",
         )
     email = decoded.get("email")
+    print(f"[AUTH] token email={email!r}")
     if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing email claim",
         )
     profile = UserAccount.get_auth_profile(email)
+    print(f"[AUTH] get_auth_profile({email!r}) => {profile}")
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
