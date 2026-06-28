@@ -1,3 +1,9 @@
+import os
+import certifi
+# Point Python's SSL stack at certifi's CA bundle (fixes Windows cert errors with Google APIs)
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -42,6 +48,9 @@ from app.control.services.firebase_admin_service import seed_all_firebase_accoun
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.control.services.rate_limit import limiter
 
 
 async def yfinance_alert_poller():
@@ -76,7 +85,9 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, redirect_slashes=False)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -114,7 +125,10 @@ seed_expert_account()
 seed_jordan_account()
 seed_articles()
 seed_landing_content()
-seed_all_firebase_accounts()
+try:
+    seed_all_firebase_accounts()
+except Exception as _e:
+    print(f"[SEED] Firebase seeding skipped (network/SSL issue): {_e}")
 
 app.include_router(user_router)
 app.include_router(admin_router)

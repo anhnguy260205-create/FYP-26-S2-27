@@ -1,11 +1,12 @@
 from pydantic import BaseModel
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.control.controller.passwordresetc import (
     ForgotPasswordController,
     VerifyOtpController,
     ResetPasswordController,
 )
+from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["Password Reset"])
 
@@ -24,7 +25,8 @@ class ForgotPasswordPage:
 
 
 @router.post("/forgot-password")
-def forgot_password(data: ForgotPasswordRequest):
+@limiter.limit("5/minute")
+def forgot_password(request: Request, data: ForgotPasswordRequest):
     boundary = ForgotPasswordPage()
     result = boundary.request_otp(data.email_address.strip().lower())
     return result
@@ -67,7 +69,8 @@ class ResetPasswordPage:
 
 
 @router.post("/reset-password")
-def reset_password(data: ResetPasswordRequest):
+@limiter.limit("5/minute")
+def reset_password(request: Request, data: ResetPasswordRequest):
     boundary = ResetPasswordPage()
 
     if len(data.new_password) < 6:

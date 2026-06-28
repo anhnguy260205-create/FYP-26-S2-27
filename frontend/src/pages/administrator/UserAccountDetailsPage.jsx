@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminPage from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 function UserAccountDetailsPage() {
   const { userId } = useParams();
@@ -14,7 +15,7 @@ function UserAccountDetailsPage() {
 
   const fetchUserDetails = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}`
       );
       const data = await response.json();

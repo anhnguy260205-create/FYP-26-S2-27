@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, Star, BookOpen } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 const API = `${import.meta.env.VITE_API_URL}/admin`;
 
@@ -9,11 +10,11 @@ function AdminPanelPage() {
   const [recentSubs, setRecentSubs] = useState([]);
 
   useEffect(() => {
-    fetch(`${API}/dashboard-stats`)
+    authFetch(`${API}/dashboard-stats`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setStats(d); });
 
-    fetch(`${API}/subscriptions`)
+    authFetch(`${API}/subscriptions`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setRecentSubs(d.subscriptions.slice(0, 5)); });
   }, []);

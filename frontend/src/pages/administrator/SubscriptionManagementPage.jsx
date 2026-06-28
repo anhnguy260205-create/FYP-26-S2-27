@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 const API = `${import.meta.env.VITE_API_URL}/admin/subscriptions`;
 
@@ -11,7 +12,7 @@ function SubscriptionManagementPage() {
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API);
+      const res = await authFetch(API);
       const data = await res.json();
       if (data.success) setSubscriptions(data.subscriptions);
     } catch (err) {

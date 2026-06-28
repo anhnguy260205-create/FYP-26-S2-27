@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Edit, Check, X, Image } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 import imgTechnical from "../../images/techinical analysis.jpg";
 import imgAI from "../../images/aiprediction.jpg";
 import imgStrategy from "../../images/strategy.jpg";
@@ -48,7 +49,7 @@ function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("hero");
 
   const fetchContent = async () => {
-    const res = await fetch(API);
+    const res = await authFetch(API);
     const data = await res.json();
     if (data.success) setContent(data.content);
   };
@@ -65,7 +66,7 @@ function ContentManagementPage() {
   const saveEdit = async (content_id) => {
     setSaving(true);
     try {
-      const res = await fetch(`${API}/${content_id}`, {
+      const res = await authFetch(`${API}/${content_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
