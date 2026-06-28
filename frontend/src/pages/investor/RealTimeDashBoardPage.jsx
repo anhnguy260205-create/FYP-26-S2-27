@@ -3,6 +3,7 @@ import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { authFetch } from "../../api/apiClient.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
@@ -295,7 +296,7 @@ function RealTimeDashBoardPage() {
     const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
     const userId = stored.user_id;
     if (!userId) return;
-    fetch(`${import.meta.env.VITE_API_URL}/investor-information/${userId}`)
+    authFetch(`${import.meta.env.VITE_API_URL}/user/investor-information/${userId}`)
       .then(r => r.json())
       .then(data => {
         if (!data?.investor_information) return;

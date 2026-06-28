@@ -68,8 +68,8 @@ function LoginPage() {
       // 2. Email confirmed — now authenticate password via Firebase
       await signInWithEmailAndPassword(auth, formData.email.trim().toLowerCase(), formData.password);
 
-      // 3. Load user profile
-      const result = await firebaseLogin(formData.email.trim().toLowerCase());
+      // 3. Load user profile (token set by Firebase; authFetch picks it up automatically)
+      const result = await firebaseLogin();
       if (!result.success) {
         setError(result.message || "Failed to load user profile");
         return;
@@ -83,12 +83,17 @@ function LoginPage() {
       else setError("Unknown role: " + role);
 
     } catch (err) {
+      console.error("[LOGIN ERROR]", err.code, err.message, err);
       if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
         setError("Incorrect password. Please try again.");
       } else if (err.code === "auth/too-many-requests") {
         setError("Too many failed attempts. Please try again later.");
+      } else if (err.code === "auth/user-not-found") {
+        setError("No Firebase account found. Please register first.");
+      } else if (err.code === "auth/network-request-failed") {
+        setError("Network error — check your internet connection and try again.");
       } else {
-        setError("Login failed. Please check your connection and try again.");
+        setError(`Login failed (${err.code || err.message || "unknown"}). See browser console for details.`);
       }
     } finally {
       setLoading(false);
@@ -125,8 +130,9 @@ function LoginPage() {
               <div className="flex flex-col gap-1">
                 <label className="font-semibold text-[14px] text-gray-700 pl-1">Email</label>
                 <input
+                  id="email" name="email"
                   type="email" placeholder="Enter your email"
-                  value={formData.email} required
+                  value={formData.email} required autoComplete="email"
                   onChange={(e) => handleChange("email", e.target.value)}
                   className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
                   style={inputStyle} onFocus={focusStyle} onBlur={blurStyle}
@@ -143,8 +149,9 @@ function LoginPage() {
                   </label>
                 </div>
                 <input
+                  id="password" name="password"
                   type="password" placeholder="Enter your password"
-                  value={formData.password} required
+                  value={formData.password} required autoComplete="current-password"
                   onChange={(e) => handleChange("password", e.target.value)}
                   className="w-full rounded-[14px] bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
                   style={{ ...inputStyle, border: error ? "1.5px solid #ef4444" : "1px solid #d1d5db" }}

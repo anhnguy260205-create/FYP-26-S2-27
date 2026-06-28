@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import AdminPage from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/admin/articles`;
 
@@ -113,7 +114,7 @@ function InvestmentGuidanceArticlesPage() {
   const [form, setForm] = useState(emptyForm);
 
   const fetchArticles = async () => {
-    const res = await fetch(API_URL);
+    const res = await authFetch(API_URL);
     const data = await res.json();
     if (data.success) setArticles(data.articles);
   };
@@ -121,14 +122,14 @@ function InvestmentGuidanceArticlesPage() {
   useEffect(() => { fetchArticles(); }, []);
 
   const openView = async (articleId) => {
-    const res = await fetch(`${API_URL}/${articleId}`);
+    const res = await authFetch(`${API_URL}/${articleId}`);
     const data = await res.json();
     if (data.success) { setSelectedArticle(data.article); setMode("view"); }
     else alert(data.message || "Article not found");
   };
 
   const openEdit = async (articleId) => {
-    const res = await fetch(`${API_URL}/${articleId}`);
+    const res = await authFetch(`${API_URL}/${articleId}`);
     const data = await res.json();
     if (data.success) {
       setSelectedArticle(data.article);
@@ -146,7 +147,7 @@ function InvestmentGuidanceArticlesPage() {
 
   const handleDelete = async (articleId) => {
     if (!window.confirm("Delete this article?")) return;
-    const res = await fetch(`${API_URL}/${articleId}`, { method: "DELETE" });
+    const res = await authFetch(`${API_URL}/${articleId}`, { method: "DELETE" });
     const data = await res.json();
     if (data.success) fetchArticles();
     else alert(data.message || "Failed to delete");
@@ -154,7 +155,7 @@ function InvestmentGuidanceArticlesPage() {
 
   const handleEdit = async (e) => {
     e.preventDefault();
-    const res = await fetch(`${API_URL}/${selectedArticle.article_id}`, {
+    const res = await authFetch(`${API_URL}/${selectedArticle.article_id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

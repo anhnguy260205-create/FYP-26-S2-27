@@ -54,6 +54,18 @@ _snapshot_cache_ts: Dict[str, float] = {}
 SNAPSHOT_TTL = 30.0  # seconds
 
 
+def get_live_price(symbol: str) -> float | None:
+    """Return the latest price from cache, falling back to a fresh yfinance fetch."""
+    snap = _snapshot_cache.get(symbol)
+    if snap and snap.get("p") is not None:
+        return float(snap["p"])
+    try:
+        fresh = get_snapshot_yfinance(symbol)
+        return float(fresh["p"]) if fresh and fresh.get("p") is not None else None
+    except Exception:
+        return None
+
+
 def clean_json_value(value):
     if isinstance(value, float) and not math.isfinite(value):
         return None

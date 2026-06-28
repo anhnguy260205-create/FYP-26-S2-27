@@ -10,3 +10,5 @@ xgboost
 vaderSentiment
 firebase-admin
 stripe
+slowapi
+pip-system-certs

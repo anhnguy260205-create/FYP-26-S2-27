@@ -15,7 +15,7 @@ router = APIRouter(prefix="/user", tags=["User"])
 
 PLAN_CONFIG = {
     "basic": {"name": "Basic Subscription", "amount": 0},
-    "premium": {"name": "Premium Subscription", "amount": 0},
+    "premium": {"name": "Premium Subscription", "amount": 0},  # S$9.90
 }
 
 

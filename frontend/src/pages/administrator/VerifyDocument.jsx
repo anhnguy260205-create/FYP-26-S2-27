@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 const API = `${import.meta.env.VITE_API_URL}/admin/experts`;
 
@@ -142,7 +143,7 @@ function VerifyDocumentationPage() {
   const fetchExperts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API);
+      const res = await authFetch(API);
       const data = await res.json();
       if (data.success) setExperts(data.experts);
     } catch { }
@@ -153,14 +154,14 @@ function VerifyDocumentationPage() {
 
   const handleApprove = async (expertId) => {
     if (!window.confirm("Approve this expert?")) return;
-    await fetch(`${API}/${expertId}/approve`, { method: "POST" });
+    await authFetch(`${API}/${expertId}/approve`, { method: "POST" });
     setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "approved" } : e));
     setSelected(prev => ({ ...prev, verification_status: "approved" }));
   };
 
   const handleReject = async (expertId) => {
     if (!window.confirm("Reject this expert?")) return;
-    await fetch(`${API}/${expertId}/reject`, { method: "POST" });
+    await authFetch(`${API}/${expertId}/reject`, { method: "POST" });
     setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "rejected" } : e));
     setSelected(prev => ({ ...prev, verification_status: "rejected" }));
   };

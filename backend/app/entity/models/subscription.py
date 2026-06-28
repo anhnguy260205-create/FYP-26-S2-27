@@ -24,6 +24,12 @@ class Subscription(Base):
     @staticmethod
     def createSubscription(transaction_id, plan_type, investor_id):
         with get_session() as session:
+            if session.query(Subscription).filter(
+                Subscription.transaction_id == transaction_id
+            ).first():
+                print("DUPLICATE TRANSACTION — already processed")
+                return False
+
             if plan_type == "basic":
                 if session.query(Subscription).filter(
                     Subscription.investor_id == investor_id,

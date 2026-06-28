@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { authFetch } from "../../api/apiClient.js";
 import { FileText, Plus, Trash2 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -36,7 +37,7 @@ function ExpertDocumentPage() {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/expert/documents`, {
+      const res = await authFetch(`${API_BASE}/expert/documents`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: currentUser.user_id, documents: docs }),
