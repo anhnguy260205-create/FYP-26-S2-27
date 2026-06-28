@@ -1,4 +1,8 @@
+import { authFetch } from "./apiClient";
+
 const BASE = `${import.meta.env.VITE_API_URL}/knowledge`;
+
+// ── Public reads ───────────────────────────────────────────────────────────────
 
 export const getArticles = async ({ category, tag, limit = 50 } = {}) => {
   const params = new URLSearchParams({ limit });
@@ -13,31 +17,31 @@ export const getArticle = async (articleId) => {
   return res.json();
 };
 
+// ── Auth required ──────────────────────────────────────────────────────────────
+
 export const getMyArticles = async (userId) => {
-  const res = await fetch(`${BASE}/my-articles/${userId}`);
+  const res = await authFetch(`${BASE}/my-articles/${userId}`);
   return res.json();
 };
 
 export const createArticle = async (data) => {
-  const res = await fetch(`${BASE}/articles`, {
+  const res = await authFetch(`${BASE}/articles`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   return res.json();
 };
 
 export const updateArticle = async (articleId, data) => {
-  const res = await fetch(`${BASE}/articles/${articleId}`, {
+  const res = await authFetch(`${BASE}/articles/${articleId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   return res.json();
 };
 
-export const deleteArticle = async (articleId, userId) => {
-  const res = await fetch(`${BASE}/articles/${articleId}?user_id=${userId}`, {
+export const deleteArticle = async (articleId) => {
+  const res = await authFetch(`${BASE}/articles/${articleId}`, {
     method: "DELETE",
   });
   return res.json();

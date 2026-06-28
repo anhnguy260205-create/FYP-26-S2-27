@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.control.controller.knowledgehub_c import (
@@ -10,21 +10,22 @@ from app.control.controller.knowledgehub_c import (
     DeleteArticleController,
     ExpertArticlesController,
 )
+from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/knowledge", tags=["Knowledge Hub"])
 
 
-# ── GET all published articles (investor view, filterable) ─────────────────────
+# ── Public reads ───────────────────────────────────────────────────────────────
 
 @router.get("/articles")
-def list_articles(category: Optional[str] = None,
-                  tag: Optional[str] = None,
-                  limit: int = 50):
+def list_articles(
+    category: Optional[str] = None,
+    tag: Optional[str] = None,
+    limit: int = 50,
+):
     articles = ListArticlesController().list(category=category, tag=tag, limit=limit)
     return {"success": True, "articles": articles}
 
-
-# ── GET single article ──────────────────────────────────────────────────────────
 
 @router.get("/articles/{article_id}")
 def get_article(article_id: str):
@@ -34,29 +35,31 @@ def get_article(article_id: str):
     return {"success": True, "article": article}
 
 
-# ── GET expert's own articles ───────────────────────────────────────────────────
+# ── Auth: expert-only writes ───────────────────────────────────────────────────
 
 @router.get("/my-articles/{user_id}")
-def get_my_articles(user_id: str):
+def get_my_articles(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
     articles = ExpertArticlesController().list(user_id)
     return {"success": True, "articles": articles}
 
 
-# ── POST create article (expert only) ──────────────────────────────────────────
-
 class CreateArticleRequest(BaseModel):
-    user_id:  str
-    title:    str
-    summary:  str
-    content:  str
+    title: str
+    summary: str
+    content: str
     category: str
-    tags:     Optional[str] = ""
+    tags: Optional[str] = ""
 
 
 @router.post("/articles")
-def create_article(data: CreateArticleRequest):
+def create_article(
+    data: CreateArticleRequest,
+    current_user: dict = Depends(get_current_user),
+):
     result = CreateArticleController().create(
-        user_id=data.user_id,
+        user_id=current_user["user_id"],
         title=data.title,
         summary=data.summary,
         content=data.content,
@@ -66,22 +69,23 @@ def create_article(data: CreateArticleRequest):
     return result
 
 
-# ── PUT update article (expert only) ───────────────────────────────────────────
-
 class UpdateArticleRequest(BaseModel):
-    user_id:  str
-    title:    Optional[str] = None
-    summary:  Optional[str] = None
-    content:  Optional[str] = None
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    content: Optional[str] = None
     category: Optional[str] = None
-    tags:     Optional[str] = None
-    status:   Optional[str] = None
+    tags: Optional[str] = None
+    status: Optional[str] = None
 
 
 @router.put("/articles/{article_id}")
-def update_article(article_id: str, data: UpdateArticleRequest):
+def update_article(
+    article_id: str,
+    data: UpdateArticleRequest,
+    current_user: dict = Depends(get_current_user),
+):
     result = UpdateArticleController().update(
-        user_id=data.user_id,
+        user_id=current_user["user_id"],
         article_id=article_id,
         title=data.title,
         summary=data.summary,
@@ -93,9 +97,10 @@ def update_article(article_id: str, data: UpdateArticleRequest):
     return result
 
 
-# ── DELETE article (expert only) ───────────────────────────────────────────────
-
 @router.delete("/articles/{article_id}")
-def delete_article(article_id: str, user_id: str):
-    result = DeleteArticleController().delete(user_id, article_id)
+def delete_article(
+    article_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    result = DeleteArticleController().delete(current_user["user_id"], article_id)
     return result

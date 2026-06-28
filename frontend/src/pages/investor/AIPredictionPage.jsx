@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { authFetch } from "../../api/apiClient.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -390,7 +391,7 @@ function AnalystPanel({ symbol }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE}/predict/analyst/${symbol}`)
+    authFetch(`${API_BASE}/predict/analyst/${symbol}`)
       .then(r => r.json())
       .then(d => { if (d.success) setData(d); })
       .catch(() => {})
@@ -980,7 +981,7 @@ function AIPredictionPage() {
     setResult(null);
     hasRun.current = true;
     try {
-      const res = await fetch(`${API_BASE}/predict`, {
+      const res = await authFetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol: sym, days: currentDays, mode: "standard" }),

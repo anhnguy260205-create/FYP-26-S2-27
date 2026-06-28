@@ -18,6 +18,15 @@ def _init():
         _initialized = True
 
 
+def verify_firebase_token(token: str):
+    _init()
+    try:
+        return auth.verify_id_token(token, clock_skew_seconds=10)
+    except Exception as e:
+        print(f"[FIREBASE AUTH] Token verification failed: {e}")
+        return None
+
+
 def update_password_by_email(email: str, new_password: str) -> bool:
     _init()
     try:
@@ -52,8 +61,8 @@ def seed_firebase_user(email: str, password: str, display_name: str = None) -> b
 
 
 def seed_all_firebase_accounts():
-    """Seed all default accounts into Firebase. Safe to call on every startup."""
-    seed_firebase_user("admin@gmail.com",   "admin123",    "Admin")
-    seed_firebase_user("kim@gmail.com",     "password",    "Kim")
-    seed_firebase_user("kimhi@gmail.com",   "password",    "Anh")
-    seed_firebase_user("jordan@gmail.com",  "password123", "Jordan")
+    """Seed default accounts. Passwords come from env vars; dev fallbacks are intentionally weak."""
+    seed_firebase_user("admin@gmail.com",  os.getenv("SEED_ADMIN_PASSWORD",   "admin123"),    "Admin")
+    seed_firebase_user("kim@gmail.com",    os.getenv("SEED_INVESTOR_PASSWORD", "password"),    "Kim")
+    seed_firebase_user("kimhi@gmail.com",  os.getenv("SEED_EXPERT_PASSWORD",   "password"),    "Anh")
+    seed_firebase_user("jordan@gmail.com", os.getenv("SEED_JORDAN_PASSWORD",   "password123"), "Jordan")

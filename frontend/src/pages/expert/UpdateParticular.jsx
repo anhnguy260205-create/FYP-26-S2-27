@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { updateUserInformation } from "../../api/userApi.js";
+import { authFetch } from "../../api/apiClient.js";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -37,7 +38,7 @@ function UpdateParticularPage() {
 
             // Save expert-specific fields
             if (linkedIn || experience || riskTolerance) {
-                await fetch(`${API_BASE}/expert/update-profile`, {
+                await authFetch(`${API_BASE}/expert/update-profile`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

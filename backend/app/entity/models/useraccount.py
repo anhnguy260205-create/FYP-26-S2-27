@@ -135,6 +135,40 @@ class UserAccount(Base):
             }
 
     @staticmethod
+    def get_auth_profile(email: str) -> dict | None:
+        """Lightweight lookup for auth middleware — no last_login side-effects."""
+        from app.entity.models.investor import Investor
+        from app.entity.models.expert import Expert
+        from sqlalchemy.orm import joinedload
+
+        with get_session() as session:
+            user = session.query(UserAccount).options(
+                joinedload(UserAccount.profile)
+            ).filter(UserAccount.email_address == email).first()
+
+            if not user:
+                return None
+
+            profile_name = user.profile.profile_name if user.profile else None
+            investor = session.query(Investor).filter(
+                Investor.user_id == user.user_id
+            ).first()
+            expert = session.query(Expert).filter(
+                Expert.user_id == user.user_id
+            ).first()
+
+            if investor:
+                role = "investor"
+            elif expert:
+                role = "expert"
+            elif profile_name == "admin":
+                role = "admin"
+            else:
+                role = profile_name or "unknown"
+
+            return {"user_id": user.user_id, "email": email, "role": role}
+
+    @staticmethod
     def emailExists(email_address) -> bool:
         with get_session() as session:
             user = session.query(UserAccount).filter(
