@@ -10,6 +10,9 @@ from app.control.controller.tradingc import (
     GetPortalTransactionsController,
     GetPortalSummaryController,
     AddPaperMoneyController,
+    SubmitOrderController,
+    GetOrdersController,
+    CancelOrderController,
 )
 from app.control.services.auth import get_current_user
 from app.boundary.stock_ws import get_live_price
@@ -79,6 +82,38 @@ def add_paper_money(
     current_user: dict = Depends(get_current_user),
 ):
     return AddPaperMoneyController().add(current_user["user_id"], data.amount)
+
+
+class OrderRequest(BaseModel):
+    symbol: str
+    order_type: str   # "buy" | "sell"
+    quantity: int
+    limit_price: float
+
+
+@router.post("/order")
+def submit_order(data: OrderRequest, current_user: dict = Depends(get_current_user)):
+    if data.quantity <= 0 or data.limit_price <= 0:
+        raise HTTPException(status_code=400, detail="quantity and limit_price must be positive")
+    return SubmitOrderController().submit(
+        current_user["user_id"], data.symbol, data.order_type, data.quantity, data.limit_price
+    )
+
+
+@router.get("/orders/{user_id}")
+def get_orders(
+    user_id: str,
+    symbol: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return {"success": True, "orders": GetOrdersController().get(user_id, symbol=symbol)}
+
+
+@router.delete("/orders/{order_id}")
+def cancel_order(order_id: str, current_user: dict = Depends(get_current_user)):
+    return CancelOrderController().cancel(order_id, current_user["user_id"])
 
 
 @router.get("/portal/{user_id}/summary")

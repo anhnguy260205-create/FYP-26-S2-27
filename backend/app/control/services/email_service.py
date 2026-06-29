@@ -264,6 +264,131 @@ def send_subscription_email(to_email: str, username: str, plan_type: str):
     return _send(msg, to_email, label=f"{plan_label} subscription email for {username}")
 
 
+# ── Subscription renewal reminder ────────────────────────────────────────────
+
+def send_renewal_reminder_email(to_email: str, username: str, renewal_date: str, days_remaining: int):
+    subject = f"Your DeskStock Premium expires in {days_remaining} day{'s' if days_remaining != 1 else ''}"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#b8860b,#FFD700);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f1b2d;">Premium Renewal Reminder</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(15,27,45,0.75);">Your plan is expiring soon</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:16px;color:#e2e8f0;">Hi <b>{username}</b>,</p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                Your <b style="color:#FFD700;">Premium</b> subscription will expire on
+                <b style="color:#e2e8f0;">{renewal_date}</b> — that's in
+                <b style="color:#f87171;">{days_remaining} day{'s' if days_remaining != 1 else ''}</b>.
+              </p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                Renew now to keep enjoying unlimited AI predictions, expert portfolios, and advanced analytics without interruption.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 28px;">
+              <div style="background:#1e2d5a;border-left:3px solid #FFD700;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#fbbf24;font-weight:600;">Don't lose access to Premium features</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                  After expiry, your account will revert to the free plan. Log in to DeskStock to renew your subscription.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your Premium subscription is expiring soon.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label=f"renewal reminder for {username}")
+
+
+# ── Subscription cancellation confirmation ────────────────────────────────────
+
+def send_cancellation_email(to_email: str, username: str, plan_type: str):
+    plan_label = plan_type.capitalize()
+    subject = f"Your DeskStock {plan_label} Subscription Has Been Cancelled"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#1e2d5a,#2d1a1a);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Subscription Cancelled</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.6);">Your {plan_label} plan has been deactivated</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:16px;color:#e2e8f0;">Hi <b>{username}</b>,</p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                Your <b style="color:#f87171;">{plan_label}</b> subscription has been successfully cancelled.
+                Your account has been reverted to the free plan.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 28px;">
+              <div style="background:#1e2d5a;border-left:3px solid #f59e0b;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#fbbf24;font-weight:600;">Changed your mind?</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                  You can re-subscribe at any time from your profile page to regain access to all {plan_label} features.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your subscription was cancelled.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label=f"cancellation email for {username}")
+
+
 # ── Price alert ───────────────────────────────────────────────────────────────
 
 def send_alert_email(to_email: str, stock_symbol: str, current_price: float,
