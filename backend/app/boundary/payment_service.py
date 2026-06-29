@@ -1,9 +1,26 @@
 import os
+import threading
 from uuid import uuid4
 from pydantic import BaseModel
 import stripe
 from fastapi import APIRouter, HTTPException, Request
 from app.control.controller.investorc import GetInvestorController, CreateInvestorController
+from app.entity.models.useraccount import UserAccount
+from app.control.services.email_service import send_subscription_email
+
+
+def _email_subscription(user_id: str, plan_type: str):
+    try:
+        info = UserAccount.get_user_information(user_id)
+        if info:
+            threading.Thread(
+                target=send_subscription_email,
+                args=(info["email_address"], info["username"], plan_type),
+                daemon=True
+            ).start()
+    except Exception as e:
+        print(f"[EMAIL] Failed to queue subscription email: {e}")
+
 
 # Set once at module load, not per-request
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -58,6 +75,7 @@ def create_checkout_session(request: SubscriptionRequest):
         if not result:
             raise HTTPException(
                 status_code=400, detail="Failed to activate basic subscription")
+        _email_subscription(request.user_id, "basic")
         return {
             "success": True,
             "message": "Basic subscription activated",
@@ -149,8 +167,7 @@ async def stripe_webhook(request: Request):
             print(
                 f"[WARN] Failed to record subscription for user_id={user_id}, session={transaction_id}")
         else:
-            print(
-                f"[INFO] Premium subscription activated for user_id={user_id}")
+            print(f"[INFO] Premium subscription activated for user_id={user_id}")
 
     return {"status": "ok"}
 
@@ -180,11 +197,13 @@ def verify_session(request: VerifySessionRequest):
     result = create_subscription_service.createSubscription(
         session.id, plan_type, user_id)
 
-    if result is False:
-        # Already activated (webhook may have fired first — that's fine)
-        return {"success": True, "already_active": True}
-    if not result:
+    if not result and result is not False:
         raise HTTPException(
             status_code=400, detail="Failed to activate subscription")
 
+    # Send email regardless of whether subscription was just created or already active
+    _email_subscription(user_id, plan_type)
+
+    if result is False:
+        return {"success": True, "already_active": True}
     return {"success": True}
