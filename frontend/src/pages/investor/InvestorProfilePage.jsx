@@ -760,7 +760,7 @@ function SecurityCard({ investorInfo }) {
                 </div>
 
                 <button
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => navigate("/change-password")}
                     className="flex items-center gap-2"
                     style={{
                         height: "38px",

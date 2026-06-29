@@ -1,7 +1,9 @@
+import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from app.control.services.email_service import send_welcome_email
 from app.control.controller.userc import (
     CreateAccountController,
     InvestorInformationController,
@@ -44,6 +46,11 @@ def create_account(request: Request, data: CreateAccountRequest):
         return {"success": False, "message": "This username is already taken."}
     if not result:
         return {"success": False, "message": "Account already exists"}
+    threading.Thread(
+        target=send_welcome_email,
+        args=(data.email_address, data.username, data.role),
+        daemon=True
+    ).start()
     return {"success": True, "message": "Account created successfully", "user_id": result}
 
 
