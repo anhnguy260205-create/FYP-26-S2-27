@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { getInvestorInformation, deleteInvestor } from "../../api/userApi.js";
+import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
@@ -1066,7 +1066,305 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
         </>
     );
 }
-function SubscriptionCard() { return <div />; }
+function SubscriptionCard({ investorInfo, onUpdate }) {
+    const navigate = useNavigate();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const userId = currentUser?.user_id;
+    const plan = investorInfo?.investor_subscription_status?.toLowerCase() || "inactive";
+
+    const [details, setDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
+
+    useEffect(() => {
+        if (!userId) return;
+        setLoading(true);
+        getSubscriptionDetails(userId)
+            .then(data => { if (data.success) setDetails(data); })
+            .finally(() => setLoading(false));
+    }, [userId, plan]);
+
+    const handleUpgrade = () => updateSubscriptionStatus(userId, "premium");
+
+    const handleCancel = async () => {
+        setCancelling(true);
+        try {
+            const result = await cancelSubscription(userId);
+            if (result.success) {
+                const newStatus = result.new_status || "basic";
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.subscription_status = newStatus;
+                stored.investor_subscription_status = newStatus;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+                setShowCancelConfirm(false);
+                onUpdate();
+            } else {
+                alert(result.message || "Failed to cancel subscription");
+            }
+        } catch {
+            alert("Could not reach backend");
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    const CancelModal = () => (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: "#0f1b2d", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
+                <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "10px" }}>Cancel Subscription?</p>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                    Your plan will be cancelled immediately and your account will revert to the free tier. This cannot be undone.
+                </p>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                    <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                        Keep Plan
+                    </button>
+                    <button onClick={handleCancel} disabled={cancelling} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                        {cancelling ? "Cancelling…" : "Yes, Cancel"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const history = details?.history || [];
+
+    /* ── Inactive ───────────────────────────────────────────── */
+    if (plan === "inactive") {
+        return (
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", padding: "16px 0", textAlign: "center" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
+                        💳
+                    </div>
+                    <div>
+                        <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>No Active Subscription</p>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", maxWidth: "340px", lineHeight: 1.6 }}>
+                            Choose a plan to unlock AI stock predictions, expert portfolios, and more.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate("/investor/subscription")}
+                        style={{ padding: "10px 28px", borderRadius: "10px", background: "linear-gradient(135deg,#0092b8,#155dfc)", border: "none", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                        View Plans
+                    </button>
+                </div>
+
+                {/* Past subscription history */}
+                {!loading && history.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                        {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.map((row, i) => (
+                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                    {row.sub_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+                </div>
+            </GlassCard>
+        );
+    }
+
+    /* ── Basic ──────────────────────────────────────────────── */
+    if (plan === "basic") {
+        const FEATURES = [
+            { label: "Real-Time Market Dashboard", included: true },
+            { label: "Paper Trading", included: true },
+            { label: "Knowledge Hub Access", included: true },
+            { label: "AI Investment Chatbot", included: true },
+            { label: "Limited AI Stock Predictions", included: true },
+            { label: "Limited Watchlist Management", included: true },
+            { label: "Unlimited AI Stock Predictions", included: false },
+            { label: "Expert Consultation Access", included: false },
+            { label: "Advanced Portfolio Analytics", included: false },
+            { label: "Top Up Paper Money", included: false },
+        ];
+        const startDate = details?.latest?.sub_date
+            ? new Date(details.latest.sub_date).toLocaleDateString()
+            : "—";
+        return (
+            <>
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Basic Plan</p>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                        </div>
+                        <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", fontSize: "12px", fontWeight: 700 }}>
+                            ● Basic
+                        </div>
+                    </div>
+
+                    {/* Feature list */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
+                        {FEATURES.map(f => (
+                            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ fontSize: "14px", color: f.included ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
+                                    {f.included ? "✓" : "✕"}
+                                </span>
+                                <span style={{ fontSize: "13px", color: f.included ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
+                                    {f.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Upgrade CTA */}
+                    <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "14px", fontWeight: 700, color: "#FFD700" }}>Upgrade to Premium</p>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
+                        </div>
+                        <button
+                            onClick={handleUpgrade}
+                            style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                            Upgrade Now
+                        </button>
+                    </div>
+
+                    {/* Cancel */}
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "16px" }}>
+                        <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                            Cancel plan
+                        </button>
+                    </div>
+                </div>
+            </GlassCard>
+            {showCancelConfirm && <CancelModal />}
+        </>
+        );
+    }
+
+    /* ── Premium ─────────────────────────────────────────────── */
+    const latest = details?.latest;
+
+    const startDate = latest?.sub_date ? new Date(latest.sub_date).toLocaleDateString() : "—";
+    const renewalDate = latest?.sub_renewal_date ? new Date(latest.sub_renewal_date).toLocaleDateString() : "—";
+
+    let daysRemaining = null;
+    let progressPct = 0;
+    if (latest?.sub_date && latest?.sub_renewal_date) {
+        const now = Date.now();
+        const start = new Date(latest.sub_date).getTime();
+        const end = new Date(latest.sub_renewal_date).getTime();
+        const total = end - start;
+        const elapsed = now - start;
+        daysRemaining = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+        progressPct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+    }
+
+    return (
+        <>
+        <GlassCard>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                    <div>
+                        <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Premium Plan</p>
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                    </div>
+                    <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.5)", color: "#FFD700", fontSize: "12px", fontWeight: 700 }}>
+                        ★ Premium
+                    </div>
+                </div>
+
+                {/* 30-day renewal tracker */}
+                {!loading && daysRemaining !== null && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>30-Day Renewal Period</p>
+                            <p style={{ fontSize: "12px", color: daysRemaining <= 5 ? "#f87171" : "#FFD700", fontWeight: 700 }}>
+                                {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+                            </p>
+                        </div>
+                        <div style={{ height: "8px", borderRadius: "100px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${progressPct}%`, borderRadius: "100px", background: daysRemaining <= 5 ? "linear-gradient(90deg,#f87171,#ef4444)" : "linear-gradient(90deg,#b8860b,#FFD700)", transition: "width 0.4s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{startDate}</span>
+                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>Renews {renewalDate}</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Renew + cancel row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                    <button
+                        onClick={handleUpgrade}
+                        style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                        Renew Premium
+                    </button>
+                    <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                        Cancel plan
+                    </button>
+                </div>
+
+                {/* Subscription history */}
+                {!loading && history.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subscription History</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                        {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.map((row, i) => (
+                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                    {row.sub_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </GlassCard>
+        {showCancelConfirm && <CancelModal />}
+    </>
+    );
+}
 
 function InvestorProfilePage() {
     const [activeTab, setActiveTab] = useState("personal");
@@ -1119,7 +1417,7 @@ function InvestorProfilePage() {
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
                     {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
-                    {activeTab === "subscription" && <SubscriptionCard />}
+                    {activeTab === "subscription" && <SubscriptionCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                 </div>
             </main>
             <Footer />

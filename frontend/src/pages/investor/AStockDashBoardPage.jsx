@@ -9,6 +9,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
+import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
 
 const STOCK_POOL = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","AVGO","ORCL","AMD"];
 
@@ -197,7 +198,6 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
         </span>
       </div>
       <WatchlistButton stock_symbol={selectedStock} currentUser={currentUser} />
-      <Button marketStatus={marketStatus} symbol={selectedStock} />
 
     </motion.div>
   );
@@ -548,6 +548,235 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
   );
 });
 
+/* ─── Paper Exchange Panel ──────────────────────────────────── */
+function PaperExchangePanel({ symbol, livePrice }) {
+  const userId = JSON.parse(localStorage.getItem("currentUser") || "{}").user_id;
+
+  const [quantity, setQuantity] = useState("");
+  const [limitPrice, setLimitPrice] = useState("");
+  const [portfolio, setPortfolio] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [tradeLoading, setTradeLoading] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [message, setMessage] = useState(null);
+
+  const qty = parseInt(quantity, 10);
+  const limitPriceNum = parseFloat(limitPrice);
+  const effectivePrice = limitPriceNum > 0 ? limitPriceNum : livePrice;
+  const estimatedTotal = effectivePrice && qty > 0 ? (effectivePrice * qty).toFixed(2) : null;
+  const currentHolding = (portfolio?.holdings || []).find(h => h.symbol === symbol);
+
+  async function refreshPortfolio() {
+    if (!userId) return;
+    try {
+      const data = await getPortfolio(userId);
+      if (data?.success !== false) setPortfolio(data);
+    } catch {}
+  }
+
+  async function refreshOrders() {
+    if (!userId) return;
+    try {
+      const data = await getOrders(userId, symbol);
+      setOrders(data?.orders || []);
+    } catch {}
+  }
+
+  useEffect(() => {
+    refreshPortfolio();
+    refreshOrders();
+    setQuantity("");
+    setLimitPrice("");
+    setMessage(null);
+  }, [symbol]);
+
+  // Keep limit price input in sync with live price when empty
+  useEffect(() => {
+    if (!limitPrice && livePrice) setLimitPrice(livePrice.toFixed(2));
+  }, [livePrice]);
+
+  async function handleTrade(action) {
+    if (!userId || !qty || qty <= 0) return;
+    const price = limitPriceNum > 0 ? limitPriceNum : livePrice;
+    if (!price) { setMessage({ type: "error", text: "No price available. Enter a limit price." }); return; }
+    setTradeLoading(action);
+    setMessage(null);
+    try {
+      const result = await submitOrder(userId, symbol, action, qty, price);
+      if (result.success) {
+        setMessage({ type: "success", text: result.message || `Order submitted.` });
+        setQuantity("");
+        await Promise.all([refreshPortfolio(), refreshOrders()]);
+      } else {
+        setMessage({ type: "error", text: result.message || result.detail || "Order failed." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error. Please try again." });
+    } finally {
+      setTradeLoading(null);
+    }
+  }
+
+  async function handleCancel(orderId) {
+    setCancellingId(orderId);
+    try {
+      const result = await cancelOrder(orderId);
+      if (result.success) {
+        setOrders(prev => prev.map(o => o.order_id === orderId ? { ...o, status: "cancelled" } : o));
+      } else {
+        setMessage({ type: "error", text: result.message || "Could not cancel order." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error cancelling order." });
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
+  const lbl = {
+    fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#475569",
+    letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 6px",
+  };
+  const inputStyle = {
+    height: "42px", padding: "0 14px", borderRadius: "8px",
+    background: "rgba(15,23,42,0.6)", border: "1px solid rgba(99,179,237,0.2)",
+    color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: "15px", fontWeight: 600, outline: "none",
+  };
+
+  const statusColor = { pending: "#fbbf24", partial: "#60a5fa", filled: "#34d399", cancelled: "#64748b" };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      style={{
+        marginTop: "16px",
+        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
+        border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px", padding: "20px 24px",
+      }}
+    >
+      {/* Header */}
+      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 4px" }}>
+        Hybrid Trading Engine
+      </p>
+      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#475569", margin: "0 0 20px", lineHeight: 1.5 }}>
+        Submit limit orders for <span style={{ color: "#60a5fa" }}>{symbol}</span>. Orders match between investors first; remainder fills at live market price.
+      </p>
+
+      {/* Info tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+        <div>
+          <p style={lbl}>Live Price</p>
+          <div style={{ background: "rgba(0,211,243,0.06)", border: "1px solid rgba(0,211,243,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: livePrice ? "#00D3F2" : "#475569" }}>
+              {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p style={lbl}>Paper Balance</p>
+          <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: "#34d399" }}>
+              {portfolio?.paper_money != null ? `$${Number(portfolio.paper_money).toFixed(2)}` : "—"}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p style={lbl}>You Own</p>
+          <div style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: currentHolding ? "#fbbf24" : "#475569" }}>
+              {currentHolding ? `${currentHolding.quantity} shares` : "0 shares"}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p style={lbl}>Order Value</p>
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: estimatedTotal ? "#e2e8f0" : "#475569" }}>
+              {estimatedTotal ? `$${estimatedTotal}` : "—"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Order form */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "12px" }}>
+        <div>
+          <p style={lbl}>Quantity</p>
+          <input
+            type="number" min={1} value={quantity}
+            onChange={e => setQuantity(e.target.value)}
+            placeholder="0"
+            style={{ ...inputStyle, width: "100px" }}
+            onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
+            onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"}
+          />
+        </div>
+        <div>
+          <p style={lbl}>Limit Price ($)</p>
+          <input
+            type="number" min={0.01} step="0.01" value={limitPrice}
+            onChange={e => setLimitPrice(e.target.value)}
+            placeholder={livePrice ? livePrice.toFixed(2) : "0.00"}
+            style={{ ...inputStyle, width: "120px" }}
+            onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
+            onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"}
+          />
+        </div>
+
+        <button
+          onClick={() => handleTrade("buy")}
+          disabled={!qty || qty <= 0 || tradeLoading !== null}
+          style={{
+            height: "42px", padding: "0 28px", borderRadius: "8px",
+            border: "1px solid rgba(52,211,153,0.4)",
+            background: "linear-gradient(135deg, rgba(6,78,59,0.8), rgba(16,185,129,0.25))",
+            color: "#6ee7b7", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+            fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
+            cursor: (!qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
+            opacity: (!qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
+            transition: "all 0.2s",
+          }}
+        >
+          {tradeLoading === "buy" ? "Submitting…" : "▲ Buy"}
+        </button>
+
+        <button
+          onClick={() => handleTrade("sell")}
+          disabled={!qty || qty <= 0 || tradeLoading !== null}
+          style={{
+            height: "42px", padding: "0 28px", borderRadius: "8px",
+            border: "1px solid rgba(239,68,68,0.4)",
+            background: "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(239,68,68,0.25))",
+            color: "#fca5a5", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+            fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
+            cursor: (!qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
+            opacity: (!qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
+            transition: "all 0.2s",
+          }}
+        >
+          {tradeLoading === "sell" ? "Submitting…" : "▼ Sell"}
+        </button>
+      </div>
+
+      {/* Feedback */}
+      {message && (
+        <div style={{
+          marginTop: "14px", padding: "11px 16px", borderRadius: "8px",
+          background: message.type === "success" ? "rgba(52,211,153,0.08)" : "rgba(248,113,113,0.08)",
+          border: `1px solid ${message.type === "success" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
+          color: message.type === "success" ? "#34d399" : "#f87171",
+          fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
+        }}>
+          {message.type === "success" ? "✓ " : "⚠ "}{message.text}
+        </div>
+      )}
+
+    </motion.div>
+  );
+}
+
 /* ─── Page ─────────────────────────────────────────────────── */
 function AStockDashBoardPage() {
   const { symbol } = useParams();
@@ -617,6 +846,8 @@ function AStockDashBoardPage() {
             candleRanges={candleRanges}
             isPremium={isPremium}
           />
+
+          <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} />
 
         </main>
 

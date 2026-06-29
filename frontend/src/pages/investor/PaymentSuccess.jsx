@@ -40,7 +40,7 @@ function PaymentSuccess() {
                         JSON.stringify({ ...user, subscription_status: result.subscription_status })
                     );
                 }
-            } catch (_) {}
+            } catch (_) { }
 
             setStatus("done");
         };
@@ -67,10 +67,10 @@ function PaymentSuccess() {
                         <div className="text-3xl font-semibold text-red-400">Something went wrong</div>
                         <p className="text-slate-400">{error}</p>
                         <button
-                            onClick={() => navigate("/investor/subscription")}
+                            onClick={() => navigate("/investor")}
                             className="mt-4 px-6 py-3 bg-slate-600 hover:bg-slate-500 rounded-xl text-white font-medium transition-colors"
                         >
-                            Back to Subscription
+                            Homepage
                         </button>
                     </>
                 ) : (
@@ -78,10 +78,10 @@ function PaymentSuccess() {
                         <div className="text-3xl font-semibold text-green-400">Payment Successful</div>
                         <p className="text-slate-400">Your subscription is now active.</p>
                         <button
-                            onClick={() => navigate("/investor/subscription")}
+                            onClick={() => navigate("/investor")}
                             className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-medium transition-colors"
                         >
-                            View Subscription
+                            Homepage
                         </button>
                     </>
                 )}
