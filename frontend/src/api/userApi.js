@@ -155,6 +155,18 @@ export const getSubscriptionStatus = async (userId) => {
   return response.json();
 };
 
+export const getSubscriptionDetails = async (userId) => {
+  const response = await authFetch(`${BASE_URL}/subscription-details/${userId}`);
+  return response.json();
+};
+
+export const cancelSubscription = async (userId) => {
+  const response = await authFetch(`${BASE_URL}/cancel-subscription/${userId}`, {
+    method: "POST",
+  });
+  return response.json();
+};
+
 export const updateSubscriptionStatus = async (userId, planType) => {
   const response = await authFetch(`${BASE_URL}/create-checkout-session`, {
     method: "POST",

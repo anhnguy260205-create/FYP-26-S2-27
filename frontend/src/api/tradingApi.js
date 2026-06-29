@@ -51,3 +51,31 @@ export const addPaperMoney = async (userId, amount) => {
   });
   return response.json();
 };
+
+export const submitOrder = async (userId, symbol, orderType, quantity, limitPrice) => {
+  const response = await authFetch(`${BASE_URL}/order`, {
+    method: "POST",
+    body: JSON.stringify({
+      symbol,
+      order_type: orderType,
+      quantity,
+      limit_price: limitPrice,
+    }),
+  });
+  return response.json();
+};
+
+export const getOrders = async (userId, symbol = null) => {
+  const params = new URLSearchParams();
+  if (symbol) params.append("symbol", symbol);
+  const qs = params.toString() ? `?${params}` : "";
+  const response = await authFetch(`${BASE_URL}/orders/${userId}${qs}`);
+  return response.json();
+};
+
+export const cancelOrder = async (orderId) => {
+  const response = await authFetch(`${BASE_URL}/orders/${orderId}`, {
+    method: "DELETE",
+  });
+  return response.json();
+};
