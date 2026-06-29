@@ -1,14 +1,28 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from app.control.controller.passwordresetc import (
+    LookupAccountController,
     ForgotPasswordController,
     VerifyOtpController,
     ResetPasswordController,
+    ChangePasswordController,
 )
+from app.control.services.auth import get_current_user
 from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["Password Reset"])
+
+
+# ---- Step 0: lookup account by email (no OTP sent) ----
+class LookupAccountRequest(BaseModel):
+    email_address: str
+
+
+@router.post("/lookup-account")
+@limiter.limit("10/minute")
+def lookup_account(request: Request, data: LookupAccountRequest):
+    return LookupAccountController().lookup(data.email_address.strip().lower())
 
 
 # ---- Step 1: request OTP ----
@@ -73,8 +87,8 @@ class ResetPasswordPage:
 def reset_password(request: Request, data: ResetPasswordRequest):
     boundary = ResetPasswordPage()
 
-    if len(data.new_password) < 6:
-        return {"success": False, "message": "Password must be at least 6 characters"}
+    if len(data.new_password) < 8:
+        return {"success": False, "message": "Password must be at least 8 characters"}
 
     result = boundary.reset_password(
         data.email_address.strip().lower(),
@@ -82,3 +96,24 @@ def reset_password(request: Request, data: ResetPasswordRequest):
         data.new_password
     )
     return result
+
+
+# ---- Change password (authenticated users) ----
+class ChangePasswordRequest(BaseModel):
+    new_password: str
+
+
+class ChangePasswordBoundary:
+    def __init__(self):
+        self.controller = ChangePasswordController()
+
+    def change_password(self, email, new_password):
+        return self.controller.change_password(email, new_password)
+
+
+@router.post("/change-password")
+def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+    if len(data.new_password) < 8:
+        return {"success": False, "message": "Password must be at least 8 characters"}
+    boundary = ChangePasswordBoundary()
+    return boundary.change_password(current_user["email"], data.new_password)

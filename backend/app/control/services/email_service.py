@@ -63,7 +63,65 @@ def send_password_reset_email(to_email: str, otp_code: str):
     _send(msg, to_email, label="password reset OTP")
 
 
-# ── Price alert ───────────────────────────────────────────────────────────────
+# ── Password changed confirmation ────────────────────────────────────────────
+
+def send_password_changed_email(to_email: str):
+    subject = "Your DeskStock Password Was Changed"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#0092b8,#155dfc);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Password Changed</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.75);">Your DeskStock account password was updated</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:15px;color:#e2e8f0;line-height:1.6;">
+                Your password has been successfully changed. You can now log in with your new password.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 28px;">
+              <div style="background:#1e2d5a;border-left:3px solid #f59e0b;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#fbbf24;font-weight:600;">Security Notice</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                  If you did not make this change, your account may be compromised. Please contact us immediately or reset your password again.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your password was changed.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label="password changed confirmation")
+
+
+# ── Welcome email ─────────────────────────────────────────────────────────────
 
 def send_welcome_email(to_email: str, username: str, role: str):
     role_label = role.capitalize()

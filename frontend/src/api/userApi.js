@@ -20,6 +20,15 @@ export const checkEmailExists = async (email) => {
   return response.json();
 };
 
+export const lookupAccount = async (emailAddress) => {
+  const response = await fetch(`${BASE_URL}/lookup-account`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email_address: emailAddress }),
+  });
+  return response.json();
+};
+
 export const requestPasswordResetOtp = async (emailAddress) => {
   const response = await fetch(`${BASE_URL}/forgot-password`, {
     method: "POST",
@@ -160,6 +169,14 @@ export const updateSubscriptionStatus = async (userId, planType) => {
     window.location.href = result.checkout_url;
   }
   return result;
+};
+
+export const changePassword = async (newPassword) => {
+  const response = await authFetch(`${BASE_URL}/change-password`, {
+    method: "POST",
+    body: JSON.stringify({ new_password: newPassword }),
+  });
+  return response.json();
 };
 
 export const verifySession = async (sessionId) => {
