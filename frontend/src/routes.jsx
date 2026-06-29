@@ -11,6 +11,7 @@ const ResetPasswordPage             = lazy(() => import("./pages/user/ResetPassw
 const RealTimeDashBoardPage         = lazy(() => import("./pages/investor/RealTimeDashBoardPage.jsx"));
 const AIPredictionPage              = lazy(() => import("./pages/investor/AIPredictionPage.jsx"));
 const ForumPage                     = lazy(() => import("./pages/shared/ForumPage.jsx"));
+const ChangePasswordPage            = lazy(() => import("./pages/shared/ChangePasswordPage.jsx"));
 const AStockDashBoardPage           = lazy(() => import("./pages/investor/AStockDashBoardPage.jsx"));
 const AdminPanelPage                = lazy(() => import("./pages/administrator/AdminPanelPage.jsx"));
 const UserAccountsPage              = lazy(() => import("./pages/administrator/UserAccountsPage.jsx"));
@@ -77,6 +78,7 @@ export const router = createBrowserRouter([
     { path: "/investor/realtimedashboard/astockdashboard/:symbol", element: protect(["investor"], AStockDashBoardPage) },
     { path: "/investor/aiprediction",        element: protect(["investor"], AIPredictionPage) },
     { path: "/forum",                        element: protect(["investor", "expert"], ForumPage) },
+    { path: "/change-password",              element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription",        element: protect(["investor"], SubscriptionPage) },
     { path: "/investor/payment-success",     element: protect(["investor"], PaymentSuccess) },
     { path: "/investor/payment-fail",        element: protect(["investor"], PaymentFail) },

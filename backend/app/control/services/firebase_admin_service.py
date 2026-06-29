@@ -2,6 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import os
 import json
+import requests
 
 _initialized = False
 
@@ -39,6 +40,23 @@ def update_password_by_email(email: str, new_password: str) -> bool:
         return True
     except Exception as e:
         print(f"[FIREBASE ADMIN] Failed to update password for {email}: {e}")
+        return False
+
+
+def verify_password_firebase(email: str, password: str) -> bool:
+    api_key = os.getenv("FIREBASE_WEB_API_KEY")
+    if not api_key:
+        print("[FIREBASE] FIREBASE_WEB_API_KEY not set — cannot verify current password")
+        return False
+    try:
+        resp = requests.post(
+            f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}",
+            json={"email": email, "password": password, "returnSecureToken": False},
+            timeout=5,
+        )
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"[FIREBASE] Password verification failed: {e}")
         return False
 
 

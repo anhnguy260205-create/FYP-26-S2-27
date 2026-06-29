@@ -423,7 +423,7 @@ function SecurityCard({ expertInfo }) {
                     </p>
                 </div>
                 <button
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => navigate("/change-password")}
                     className="flex items-center gap-2"
                     style={{ height: "38px", padding: "0 18px", borderRadius: "100px", background: "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))", border: "0.667px solid rgba(0,211,243,0.35)", color: "#00D3F2", cursor: "pointer" }}
                 >
