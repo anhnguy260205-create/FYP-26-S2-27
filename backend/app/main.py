@@ -27,6 +27,7 @@ from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHo
 from app.entity.models.forumquestion import ForumPost, ForumReply, ForumPostLike, ForumPostSave, ExpertQuestion
 from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.entity.models.emailalert import StockAlert
+from app.entity.models.order_book import OrderBook
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
@@ -45,6 +46,7 @@ from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
+from app.control.services.email_service import send_renewal_reminder_email
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -78,11 +80,41 @@ async def yfinance_alert_poller():
         await asyncio.sleep(60 if market_open else 300)
 
 
+async def renewal_reminder_poller():
+    """Check every hour for premium subscriptions expiring within 3 days and send reminder emails."""
+    await asyncio.sleep(30)  # short delay after server start
+    while True:
+        try:
+            expiring = await asyncio.to_thread(Subscription.getExpiringPremium, 3)
+            for record in expiring:
+                renewal_dt = record["sub_renewal_date"]
+                if renewal_dt:
+                    from datetime import datetime
+                    renewal_date_obj = datetime.fromisoformat(renewal_dt)
+                    days_remaining = max(0, (renewal_date_obj - datetime.now()).days)
+                    renewal_date_str = renewal_date_obj.strftime("%B %d, %Y")
+                    sent = await asyncio.to_thread(
+                        send_renewal_reminder_email,
+                        record["email_address"],
+                        record["username"],
+                        renewal_date_str,
+                        days_remaining,
+                    )
+                    if sent:
+                        await asyncio.to_thread(Subscription.markReminderSent, record["sub_id"])
+                        print(f"[RENEWAL] Reminder sent to {record['email_address']}")
+        except Exception as e:
+            print(f"[RENEWAL] Poller error: {e}")
+        await asyncio.sleep(3600)  # check every hour
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    task = asyncio.create_task(yfinance_alert_poller())
+    task1 = asyncio.create_task(yfinance_alert_poller())
+    task2 = asyncio.create_task(renewal_reminder_poller())
     yield
-    task.cancel()
+    task1.cancel()
+    task2.cancel()
 
 
 app = FastAPI(lifespan=lifespan, redirect_slashes=False)
@@ -111,6 +143,8 @@ with engine.connect() as _conn:
     for _sql in [
         "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL",
         "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL",
+        "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL",
     ]:
         try:
             _conn.execute(text(_sql))

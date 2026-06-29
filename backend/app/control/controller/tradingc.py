@@ -35,3 +35,26 @@ class GetPortalSummaryController:
 class AddPaperMoneyController:
     def add(self, user_id, amount):
         return Investor.addPaperMoney(user_id, amount)
+
+
+class SubmitOrderController:
+    def submit(self, user_id, symbol, order_type, quantity, limit_price):
+        from app.control.services.trading_engine import submit_order
+        return submit_order(user_id, symbol, order_type, quantity, limit_price)
+
+
+class GetOrdersController:
+    def get(self, user_id, symbol=None, limit=20):
+        from app.entity.models.order_book import OrderBook
+        return OrderBook.get_orders_by_user(user_id, symbol=symbol, limit=limit)
+
+
+class CancelOrderController:
+    def cancel(self, order_id, user_id):
+        from app.entity.models.investor import Investor
+        from app.entity.models.order_book import OrderBook
+        investor = Investor.getInvestorByUserId(user_id)
+        if not investor:
+            return {"success": False, "message": "Investor not found"}
+        ok = OrderBook.cancel(order_id, investor["investor_id"])
+        return {"success": ok, "message": "Order cancelled" if ok else "Order not found or already closed"}
