@@ -1,165 +1,224 @@
 from typing import Optional
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
-
 from app.control.controller.adminc import AdminUserAccountController
-from app.control.controller.knowledgehub_c import (
-    AdminListArticlesController,
-    AdminUpdateArticleController,
-    AdminDeleteArticleController,
-    GetArticleController,
-)
-from app.entity.models.expert import Expert
-from app.control.services.auth import require_admin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
-class AdminArticleRequest(BaseModel):
+class InvestmentArticleRequest(BaseModel):
     title: str
-    summary: Optional[str] = ""
     category: str
     content: str
-    tags: Optional[str] = ""
-    status: str = "published"
+    status: str = "draft"
 
 
-# ── User account management ────────────────────────────────────────────────────
+class AdminUserAccountPage:
+    def __init__(self):
+        self.controller = AdminUserAccountController()
+
+    def searchUserAccounts(self, keyword=None, role=None, status=None):
+        return self.controller.getUserAccounts(keyword, role, status)
+
+    def viewUserAccount(self, user_id):
+        return self.controller.getUserAccountById(user_id)
+
+    def suspendUserAccount(self, user_id):
+        return self.controller.suspendUserAccount(user_id)
+
+    def deleteUserAccount(self, user_id, requesting_user_id=None):
+        return self.controller.deleteUserAccount(user_id, requesting_user_id)
+
+    def activateUserAccount(self, user_id):
+        return self.controller.activateUserAccount(user_id)
+
+    def getInvestmentArticles(self):
+        return self.controller.getInvestmentArticles()
+
+    def getInvestmentArticleById(self, article_id):
+        return self.controller.getInvestmentArticleById(article_id)
+
+    def createInvestmentArticle(self, data):
+        return self.controller.createInvestmentArticle(
+            data.title,
+            data.category,
+            data.content,
+            data.status,
+        )
+
+    def updateInvestmentArticle(self, article_id, data):
+        return self.controller.updateInvestmentArticle(
+            article_id,
+            data.title,
+            data.category,
+            data.content,
+            data.status,
+        )
+
+    def deleteInvestmentArticle(self, article_id):
+        return self.controller.deleteInvestmentArticle(article_id)
+
 
 @router.get("/useraccounts")
 def get_user_accounts(
     keyword: Optional[str] = None,
     role: Optional[str] = None,
     status: Optional[str] = None,
-    _: dict = Depends(require_admin),
 ):
-    users = AdminUserAccountController().getUserAccounts(keyword, role, status)
-    return {"success": True, "count": len(users), "users": users}
+    boundary = AdminUserAccountPage()
+    users = boundary.searchUserAccounts(keyword, role, status)
+
+    return {
+        "success": True,
+        "count": len(users),
+        "users": users,
+    }
 
 
 @router.get("/useraccounts/{user_id}")
-def view_user_account(user_id: str, _: dict = Depends(require_admin)):
-    user = AdminUserAccountController().getUserAccountById(user_id)
+def view_user_account(user_id: str):
+    boundary = AdminUserAccountPage()
+    user = boundary.viewUserAccount(user_id)
+
     if not user:
-        return {"success": False, "message": "User not found"}
-    return {"success": True, "user": user}
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    return {
+        "success": True,
+        "user": user,
+    }
 
 
 @router.put("/useraccounts/{user_id}/suspend")
-def suspend_user_account(user_id: str, _: dict = Depends(require_admin)):
-    ok = AdminUserAccountController().suspendUserAccount(user_id)
-    if not ok:
-        return {"success": False, "message": "User not found"}
-    return {"success": True, "message": "User suspended successfully"}
+def suspend_user_account(user_id: str):
+    boundary = AdminUserAccountPage()
+    success = boundary.suspendUserAccount(user_id)
+
+    if not success:
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    return {
+        "success": True,
+        "message": "User suspended successfully",
+    }
 
 
 @router.delete("/useraccounts/{user_id}")
-def delete_user_account(
-    user_id: str,
-    current_user: dict = Depends(require_admin),
-):
-    result = AdminUserAccountController().deleteUserAccount(
-        user_id, current_user["user_id"]
-    )
+def delete_user_account(user_id: str, requesting_user_id: Optional[str] = None):
+    boundary = AdminUserAccountPage()
+    result = boundary.deleteUserAccount(user_id, requesting_user_id)
+
     if result == "self_delete":
-        return {"success": False, "message": "You cannot delete your own account"}
+        return {
+            "success": False,
+            "message": "You cannot delete your own account",
+        }
+
     if not result:
-        return {"success": False, "message": "User not found"}
-    return {"success": True, "message": "User account deleted successfully"}
+        return {
+            "success": False,
+            "message": "User not found",
+        }
+
+    return {
+        "success": True,
+        "message": "User account deleted successfully",
+    }
 
 
 @router.put("/useraccounts/{user_id}/activate")
-def activate_user_account(user_id: str, _: dict = Depends(require_admin)):
-    ok = AdminUserAccountController().activateUserAccount(user_id)
-    if not ok:
-        return {"success": False, "message": "User not found"}
-    return {"success": True, "message": "User activated successfully"}
+def activate_user_account(user_id: str):
+    boundary = AdminUserAccountPage()
+    success = boundary.activateUserAccount(user_id)
 
+    if not success:
+        return {
+            "success": False,
+            "message": "User not found",
+        }
 
-# ── Knowledge hub (admin) ──────────────────────────────────────────────────────
+    return {
+        "success": True,
+        "message": "User activated successfully",
+    }
+
 
 @router.get("/articles")
-def get_admin_articles(_: dict = Depends(require_admin)):
-    articles = AdminListArticlesController().list()
-    return {"success": True, "count": len(articles), "articles": articles}
+def get_investment_articles():
+    boundary = AdminUserAccountPage()
+    articles = boundary.getInvestmentArticles()
+
+    return {
+        "success": True,
+        "count": len(articles),
+        "articles": articles,
+    }
 
 
 @router.get("/articles/{article_id}")
-def get_admin_article(article_id: str, _: dict = Depends(require_admin)):
-    article = GetArticleController().get(article_id)
+def get_investment_article(article_id: str):
+    boundary = AdminUserAccountPage()
+    article = boundary.getInvestmentArticleById(article_id)
+
     if not article:
-        return {"success": False, "message": "Article not found"}
-    return {"success": True, "article": article}
+        return {
+            "success": False,
+            "message": "Article not found",
+        }
+
+    return {
+        "success": True,
+        "article": article,
+    }
+
+
+@router.post("/articles")
+def create_investment_article(data: InvestmentArticleRequest):
+    boundary = AdminUserAccountPage()
+    article_id = boundary.createInvestmentArticle(data)
+
+    return {
+        "success": True,
+        "message": "Article created successfully",
+        "article_id": article_id,
+    }
 
 
 @router.put("/articles/{article_id}")
-def update_admin_article(
-    article_id: str,
-    data: AdminArticleRequest,
-    _: dict = Depends(require_admin),
-):
-    return AdminUpdateArticleController().update(
-        article_id,
-        title=data.title,
-        summary=data.summary,
-        content=data.content,
-        category=data.category,
-        tags=data.tags,
-        status=data.status,
-    )
+def update_investment_article(article_id: str, data: InvestmentArticleRequest):
+    boundary = AdminUserAccountPage()
+    success = boundary.updateInvestmentArticle(article_id, data)
 
+    if not success:
+        return {
+            "success": False,
+            "message": "Article not found",
+        }
 
-@router.post("/articles/{article_id}/approve")
-def approve_article(article_id: str, _: dict = Depends(require_admin)):
-    result = AdminUpdateArticleController().update(article_id, status="published")
-    return result
-
-
-@router.post("/articles/{article_id}/reject")
-def reject_article(article_id: str, _: dict = Depends(require_admin)):
-    result = AdminUpdateArticleController().update(article_id, status="rejected")
-    return result
+    return {
+        "success": True,
+        "message": "Article updated successfully",
+    }
 
 
 @router.delete("/articles/{article_id}")
-def delete_admin_article(article_id: str, _: dict = Depends(require_admin)):
-    AdminDeleteArticleController().delete(article_id)
-    return {"success": True, "message": "Article deleted successfully"}
+def delete_investment_article(article_id: str):
+    boundary = AdminUserAccountPage()
+    success = boundary.deleteInvestmentArticle(article_id)
 
+    if not success:
+        return {
+            "success": False,
+            "message": "Article not found",
+        }
 
-# ── Dashboard / subscriptions ──────────────────────────────────────────────────
-
-@router.get("/dashboard-stats")
-def get_dashboard_stats(_: dict = Depends(require_admin)):
-    stats = AdminUserAccountController().getDashboardStats()
-    return {"success": True, **stats}
-
-
-@router.get("/subscriptions")
-def get_subscriptions(_: dict = Depends(require_admin)):
-    subs = AdminUserAccountController().getSubscriptions()
-    return {"success": True, "count": len(subs), "subscriptions": subs}
-
-
-# ── Expert verification ────────────────────────────────────────────────────────
-
-@router.get("/experts")
-def get_all_experts(_: dict = Depends(require_admin)):
-    experts = Expert.get_all_for_admin()
-    return {"success": True, "experts": experts}
-
-
-@router.post("/experts/{expert_id}/approve")
-def approve_expert(expert_id: str, _: dict = Depends(require_admin)):
-    ok = Expert.set_verification_status(expert_id, "approved")
-    if not ok:
-        return {"success": False, "message": "Expert not found"}
-    return {"success": True, "message": "Expert approved"}
-
-
-@router.post("/experts/{expert_id}/reject")
-def reject_expert(expert_id: str, _: dict = Depends(require_admin)):
-    ok = Expert.set_verification_status(expert_id, "rejected")
-    if not ok:
-        return {"success": False, "message": "Expert not found"}
-    return {"success": True, "message": "Expert rejected"}
+    return {
+        "success": True,
+        "message": "Article deleted successfully",
+    }
