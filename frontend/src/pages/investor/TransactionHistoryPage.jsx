@@ -133,15 +133,22 @@ function TransactionHistoryPage() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @media (max-width: 640px) {
+          .tx-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .tx-page-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+        }
+      `}</style>
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px" }}>
+        <main className="flex-1 p-4 md:p-7">
 
           {/* Page header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
+            className="tx-page-header"
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>
@@ -164,7 +171,7 @@ function TransactionHistoryPage() {
 
           {/* Quick stats */}
           {!loading && transactions.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+            <div className="tx-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Total Trades", value: filtered.length, color: "#e2e8f0" },
                 { label: "Buy Volume", value: fmt$(totalBuy), color: "#34d399" },
@@ -174,8 +181,7 @@ function TransactionHistoryPage() {
                 <div key={s.label} style={{
                   background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                   border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-                  padding: "14px 18px", backdropFilter: "blur(12px)",
-                }}>
+                  padding: "14px 18px",                }}>
                   <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 6px" }}>{s.label}</p>
                   <p style={{ fontFamily: mono, fontSize: 18, fontWeight: 700, color: s.color, margin: 0 }}>{s.value}</p>
                 </div>
@@ -187,8 +193,7 @@ function TransactionHistoryPage() {
           <div style={{
             background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
             border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-            padding: "14px 18px", marginBottom: 16, backdropFilter: "blur(12px)",
-            display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+            padding: "14px 18px", marginBottom: 16,            display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
           }}>
             {/* Search */}
             <input
@@ -238,7 +243,6 @@ function TransactionHistoryPage() {
           <div style={{
             background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
             border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-            backdropFilter: "blur(12px)", overflow: "hidden",
           }}>
             {loading ? (
               <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>

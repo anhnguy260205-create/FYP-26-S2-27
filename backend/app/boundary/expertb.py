@@ -1,10 +1,10 @@
-
 from typing import Any, Dict, List, Optional
-
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.control.controller.expertc import ExpertPortfolioController, ExpertQuestionsController
+from app.entity.models.expert import Expert
+from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
 
@@ -40,30 +40,93 @@ class ReplyQuestionRequest(BaseModel):
 
 
 @router.get("/portfolio/{user_id}")
-def get_portfolio(user_id: str):
+def get_portfolio(user_id: str, current_user: dict = Depends(get_current_user)):
     return ExpertPortfolioController().get_portfolio(user_id)
 
 
 @router.post("/portfolio/{user_id}")
-def save_portfolio(user_id: str, data: PortfolioRequest):
+def save_portfolio(
+    user_id: str,
+    data: PortfolioRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
     return ExpertPortfolioController().save_portfolio(user_id, data.dict())
 
 
 @router.get("/questions/{user_id}")
-def get_questions(user_id: str):
+def get_questions(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
     return ExpertQuestionsController().list_questions(user_id)
 
 
 @router.get("/questions/detail/{question_id}")
-def get_question_detail(question_id: str):
+def get_question_detail(question_id: str, current_user: dict = Depends(get_current_user)):
     return ExpertQuestionsController().get_question(question_id)
 
 
 @router.post("/questions/{question_id}/reply")
-def reply_question(question_id: str, data: ReplyQuestionRequest):
+def reply_question(
+    question_id: str,
+    data: ReplyQuestionRequest,
+    current_user: dict = Depends(get_current_user),
+):
     return ExpertQuestionsController().reply_question(question_id, data.reply_text)
 
 
 @router.delete("/questions/{question_id}/reply")
-def delete_question_reply(question_id: str):
+def delete_question_reply(
+    question_id: str,
+    current_user: dict = Depends(get_current_user),
+):
     return ExpertQuestionsController().delete_reply(question_id)
+
+
+# ── Expert profile & documents ─────────────────────────────────────────────────
+
+class DocumentItem(BaseModel):
+    name: str
+    url: str
+    type: str
+
+
+class UpdateExpertProfileRequest(BaseModel):
+    experience_years: Optional[int] = None
+    linked_in_url: Optional[str] = None
+    risk_tolerance: Optional[str] = None
+
+
+@router.post("/update-profile")
+def update_expert_profile(
+    data: UpdateExpertProfileRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    ok = Expert.update_profile(
+        current_user["user_id"],
+        data.experience_years,
+        data.linked_in_url,
+        data.risk_tolerance,
+    )
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Profile updated"}
+
+
+class UpdateDocumentsRequest(BaseModel):
+    documents: List[DocumentItem]
+
+
+@router.post("/documents")
+def update_documents(
+    data: UpdateDocumentsRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    ok = Expert.update_documents(
+        current_user["user_id"],
+        [d.dict() for d in data.documents],
+    )
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "message": "Documents updated"}

@@ -102,7 +102,7 @@ export default function ExpertPortfolioPage() {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(data.portfolio));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [currentUser?.user_id]);
 
   const holdings = Array.isArray(portfolio.holdings) ? portfolio.holdings : [];
@@ -119,13 +119,13 @@ export default function ExpertPortfolioPage() {
   }, [holdings]);
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
+    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
       <ConsultantHeader />
-      <main className="flex-1 px-6 py-8 lg:px-10">
-        <div className="mx-auto max-w-7xl">
+      <main className="flex-1 p-4 md:p-7">
+        <div className="mx-auto max-w">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-cyan-300">Consultant / Expert</p>
+
               <h1 className="text-3xl font-bold text-white">View My Portfolio</h1>
               <p className="mt-1 text-sm text-slate-300">Long-term growth portfolio focused on leading technology and innovation-driven companies</p>
             </div>
@@ -147,7 +147,7 @@ export default function ExpertPortfolioPage() {
                   <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700"><Briefcase size={28} /></div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-950">{portfolio.portfolio_name}</h2>
-                    <p className="text-sm text-slate-500">Consultant-created portfolio overview</p>
+                    <p className="text-sm text-slate-500">Expert-created portfolio overview</p>
                   </div>
                 </div>
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">{portfolio.description}</p>

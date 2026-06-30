@@ -113,27 +113,23 @@ function SellStockPage() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
-      `}</style>
 
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px", display: "flex", justifyContent: "center" }}>
+        <main className="flex-1 p-4 md:p-7 flex justify-center">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
             style={{
               width: "100%", maxWidth: "560px",
               background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
               border: "1px solid rgba(99,179,237,0.15)", borderRadius: "16px",
-              padding: "28px", backdropFilter: "blur(12px)",
-            }}
+              padding: "28px",            }}
           >
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>

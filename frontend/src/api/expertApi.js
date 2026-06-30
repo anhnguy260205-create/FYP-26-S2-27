@@ -1,15 +1,10 @@
+import { authFetch } from "./apiClient";
 
-const EXPERT_BASE_URL = "http://127.0.0.1:8000/expert";
-const FORUM_BASE_URL = "http://127.0.0.1:8000/consultant-forum";
+const EXPERT_BASE_URL = `${import.meta.env.VITE_API_URL}/expert`;
+const FORUM_BASE_URL = `${import.meta.env.VITE_API_URL}/consultant-forum`;
 
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+  const response = await authFetch(url, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data.message || `Request failed with status ${response.status}`);
@@ -17,68 +12,73 @@ async function requestJson(url, options = {}) {
   return data;
 }
 
-export const getExpertPortfolio = (userId) => requestJson(`${EXPERT_BASE_URL}/portfolio/${userId || "demo"}`);
+export const getExpertPortfolio = (userId) =>
+  requestJson(`${EXPERT_BASE_URL}/portfolio/${userId || "demo"}`);
 
-export const saveExpertPortfolio = (userId, portfolio) => requestJson(`${EXPERT_BASE_URL}/portfolio/${userId || "demo"}`, {
-  method: "POST",
-  body: JSON.stringify(portfolio),
-});
+export const saveExpertPortfolio = (userId, portfolio) =>
+  requestJson(`${EXPERT_BASE_URL}/portfolio/${userId || "demo"}`, {
+    method: "POST",
+    body: JSON.stringify(portfolio),
+  });
 
-export const getExpertQuestions = (userId) => requestJson(`${EXPERT_BASE_URL}/questions/${userId || "demo"}`);
+export const getExpertQuestions = (userId) =>
+  requestJson(`${EXPERT_BASE_URL}/questions/${userId || "demo"}`);
 
-export const getExpertQuestionDetail = (questionId) => requestJson(`${EXPERT_BASE_URL}/questions/detail/${questionId}`);
+export const getExpertQuestionDetail = (questionId) =>
+  requestJson(`${EXPERT_BASE_URL}/questions/detail/${questionId}`);
 
-export const replyExpertQuestion = (questionId, replyText) => requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
-  method: "POST",
-  body: JSON.stringify({ reply_text: replyText }),
-});
+export const replyExpertQuestion = (questionId, replyText) =>
+  requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
+    method: "POST",
+    body: JSON.stringify({ reply_text: replyText }),
+  });
 
-export const deleteExpertQuestionReply = (questionId) => requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
-  method: "DELETE",
-});
+export const deleteExpertQuestionReply = (questionId) =>
+  requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
+    method: "DELETE",
+  });
+
+// ── Forum (public reads use plain fetch; writes use authFetch via requestJson) ──
 
 export const getForumPosts = (userId) => {
   const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
-  return requestJson(`${FORUM_BASE_URL}/posts${query}`);
+  // Public read — no auth needed
+  return fetch(`${FORUM_BASE_URL}/posts${query}`).then((r) => r.json());
 };
 
 export const getForumPost = (postId, userId) => {
   const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
-  return requestJson(`${FORUM_BASE_URL}/posts/${postId}${query}`);
+  return fetch(`${FORUM_BASE_URL}/posts/${postId}${query}`).then((r) => r.json());
 };
 
-export const createForumPost = (payload) => requestJson(`${FORUM_BASE_URL}/posts`, {
-  method: "POST",
-  body: JSON.stringify(payload),
-});
+export const createForumPost = (payload) =>
+  requestJson(`${FORUM_BASE_URL}/posts`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
-export const replyForumPost = (postId, payload) => requestJson(`${FORUM_BASE_URL}/posts/${postId}/reply`, {
-  method: "POST",
-  body: JSON.stringify(payload),
-});
+export const replyForumPost = (postId, payload) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/reply`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
-export const toggleForumLike = (postId, userId) => requestJson(`${FORUM_BASE_URL}/posts/${postId}/like`, {
-  method: "POST",
-  body: JSON.stringify({ user_id: userId }),
-});
+export const toggleForumLike = (postId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/like`, { method: "POST" });
 
-export const toggleForumSave = (postId, userId) => requestJson(`${FORUM_BASE_URL}/posts/${postId}/save`, {
-  method: "POST",
-  body: JSON.stringify({ user_id: userId }),
-});
+export const toggleForumSave = (postId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/save`, { method: "POST" });
 
-export const deleteForumPost = (postId, userId) => requestJson(`${FORUM_BASE_URL}/posts/${postId}`, {
-  method: "DELETE",
-  body: JSON.stringify({ user_id: userId || "" }),
-});
+export const deleteForumPost = (postId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}`, { method: "DELETE" });
 
+export const updateForumReply = (postId, replyId, content) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  });
 
-export const updateForumReply = (postId, replyId, userId, content) => requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
-  method: "PUT",
-  body: JSON.stringify({ user_id: userId || "", content }),
-});
-
-export const deleteForumReply = (postId, replyId, userId) => requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
-  method: "DELETE",
-  body: JSON.stringify({ user_id: userId || "" }),
-});
+export const deleteForumReply = (postId, replyId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
+    method: "DELETE",
+  });

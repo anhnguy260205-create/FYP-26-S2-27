@@ -29,9 +29,9 @@ function normalise(q) {
     tickers: Array.isArray(q?.tickers)
       ? q.tickers
       : String(q?.tickers || "")
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
   };
 }
 
@@ -91,7 +91,7 @@ export default function ExpertQuestionDetailPage() {
           upsertLocalQuestion(q);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [questionId]);
 
   async function handleSubmit() {
@@ -162,7 +162,7 @@ export default function ExpertQuestionDetailPage() {
 
   if (!question) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      <div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900">
         <ConsultantHeader />
         <main className="flex-1 p-8">
           <button onClick={() => navigate("/expert/questions")} className="font-bold text-cyan-300 hover:text-cyan-100">
@@ -179,7 +179,7 @@ export default function ExpertQuestionDetailPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -304,13 +304,12 @@ export default function ExpertQuestionDetailPage() {
 
                 {message && (
                   <div
-                    className={`mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${
-                      message.type === "success"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                        : message.type === "warning"
-                          ? "border-amber-200 bg-amber-50 text-amber-800"
-                          : "border-red-200 bg-red-50 text-red-800"
-                    }`}
+                    className={`mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${message.type === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : message.type === "warning"
+                        ? "border-amber-200 bg-amber-50 text-amber-800"
+                        : "border-red-200 bg-red-50 text-red-800"
+                      }`}
                   >
                     <Database size={16} className="mt-0.5 shrink-0" />
                     <span>{message.text}</span>

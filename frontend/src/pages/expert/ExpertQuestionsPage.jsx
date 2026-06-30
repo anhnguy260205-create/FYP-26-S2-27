@@ -64,7 +64,7 @@ export default function ExpertQuestionsPage() {
         setQuestions(normalised);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(normalised));
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, [currentUser?.user_id]);
 
   const filteredQuestions = questions.filter((q) => {
@@ -82,12 +82,12 @@ export default function ExpertQuestionsPage() {
   }), [questions]);
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <ConsultantHeader />
       <main className="flex-1 px-6 py-8 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <div className="mb-6">
-            <p className="text-sm font-semibold text-cyan-300">Consultant / Expert</p>
+            <p className="text-sm font-semibold text-cyan-300">Expert</p>
             <h1 className="text-3xl font-bold text-white">Submitted Question Forms</h1>
             <p className="mt-1 text-sm text-slate-300">Track pending, answered and closed questions submitted by premium users.</p>
           </div>
