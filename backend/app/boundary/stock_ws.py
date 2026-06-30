@@ -34,14 +34,36 @@ alpaca_task: Optional[asyncio.Task] = None
 previous_close_cache: Dict[str, float] = {}
 
 stock_pool = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "META", "TSLA", "AVGO",  "ORCL", "AMD",
+    # Information Technology
+    "AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "CRM", "QCOM", "ADBE",
+    # Communication Services
+    "GOOGL", "META", "NFLX", "DIS",
+    # Consumer Discretionary
+    "AMZN", "TSLA", "NKE", "MCD", "HD",
+    # Financials
+    "JPM", "BAC", "V", "MA",
+    # Energy
+    "XOM", "CVX", "COP",
+    # Real Estate
+    "AMT", "PLD", "O",
 ]
 
 # Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
 _snapshot_cache: Dict[str, dict] = {}
 _snapshot_cache_ts: Dict[str, float] = {}
 SNAPSHOT_TTL = 30.0  # seconds
+
+
+def get_live_price(symbol: str) -> float | None:
+    """Return the latest price from cache, falling back to a fresh yfinance fetch."""
+    snap = _snapshot_cache.get(symbol)
+    if snap and snap.get("p") is not None:
+        return float(snap["p"])
+    try:
+        fresh = get_snapshot_yfinance(symbol)
+        return float(fresh["p"]) if fresh and fresh.get("p") is not None else None
+    except Exception:
+        return None
 
 
 def clean_json_value(value):
@@ -541,11 +563,13 @@ async def ensure_alpaca_connection():
             alpaca_task = asyncio.create_task(run_alpaca_connection())
 
 
-async def periodic_snapshot_broadcast(interval: int = 60):
-    """Broadcast fresh snapshots to all clients every `interval` seconds.
-    Runs regardless of market status so prices always refresh."""
+async def periodic_snapshot_broadcast():
+    """Broadcast fresh snapshots to all clients.
+    60s interval when market is open, 300s when closed — reduces yfinance calls by 5x overnight."""
     while True:
-        await asyncio.sleep(interval)
+        market_open = get_market_status() == "OPEN"
+        await asyncio.sleep(60 if market_open else 300)
+
         async with clients_lock:
             clients = list(connected_clients.keys())
         if not clients:
@@ -560,7 +584,7 @@ async def periodic_snapshot_broadcast(interval: int = 60):
                 msg = json.dumps(clean_json_value({
                     "type": "snapshot",
                     "data": quotes,
-                    "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+                    "source": "alpaca" if market_open else "yfinance",
                 }))
                 for ws in clients:
                     try:
@@ -572,6 +596,26 @@ async def periodic_snapshot_broadcast(interval: int = 60):
 
 
 # ── WebSocket endpoint ─────────────────────────────────────────────────────────
+
+@router.get("/stocks/snapshot/{symbol}")
+def rest_stock_snapshot(symbol: str):
+    try:
+        data = get_snapshot_yfinance(symbol.upper())
+        if data.get("p") is None:
+            return {"success": False, "message": f"No data found for {symbol.upper()}"}
+        return {"success": True, "data": clean_json_value(data)}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/stocks/candles/{symbol}")
+def rest_stock_candles(symbol: str, range: str = "1D"):
+    try:
+        bars = get_historical_bars_yfinance(symbol.upper(), range=range)
+        return {"success": True, "candles": bars}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
 
 @router.websocket("/ws/stocks")
 async def websocket_endpoint(websocket: WebSocket):
@@ -609,7 +653,7 @@ async def websocket_endpoint(websocket: WebSocket):
             print("Market closed — using yfinance snapshots with periodic refresh")
 
         # 5. Periodic snapshot refresh (every 60s) — works whether open or closed
-        asyncio.create_task(periodic_snapshot_broadcast(interval=60))
+        asyncio.create_task(periodic_snapshot_broadcast())
 
         while True:
             raw_message = await websocket.receive_text()

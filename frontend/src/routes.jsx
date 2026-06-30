@@ -1,206 +1,115 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import RegistrationPage from "./pages/user/RegistrationPage.jsx";
-import LoginPage from "./pages/user/LoginPage.jsx";
-import HomePage from "./pages/user/HomePage.jsx";
-import RealTimeDashBoardPage from "./pages/investor/RealTimeDashBoardPage.jsx"
-import AIPredictionPage from "./pages/investor/AIPredictionPage.jsx";
-import ForumPage from "./pages/shared/ForumPage.jsx";
-import AStockDashBoardPage from "./pages/investor/AStockDashBoardPage.jsx";
-import AdminPanelPage from "./pages/administrator/AdminPanelPage.jsx";
-import UserAccountsPage from "./pages/administrator/UserAccountsPage.jsx";
-import UserAccountDetailsPage from "./pages/administrator/UserAccountDetailsPage.jsx";
-import UserProfilesPage from "./pages/administrator/UserProfilesPage.jsx";
-import CommunityPostsPage from "./pages/administrator/CommunityPostsPage.jsx";
-import CommunityPostDetailsPage from "./pages/administrator/CommunityPostDetailsPage.jsx";
-import TradeManagementPage from "./pages/administrator/TradeManagementPage.jsx";
-import InvestmentGuidanceArticlesPage from "./pages/administrator/InvestmentGuidanceArticlesPage.jsx";
-import SubscriptionPage from "./pages/investor/SubscriptionPage.jsx";
-import LoggedInHomePage from "./pages/investor/LoggedInHomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import PaymentSuccess from "./pages/investor/PaymentSuccess.jsx";
-import PaymentFail from "./pages/investor/PaymentFail.jsx";
-import InvestorProfilePage from "./pages/investor/InvestorProfilePage.jsx";
-import Watchlist from "./pages/investor/Watchlist.jsx";
-import Notification from "./pages/investor/Notification.jsx";
-import ExpertAdvice from "./pages/investor/ExpertAdvice.jsx";
-import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
-import EducationContent from "./pages/investor/EducationContent.jsx";
-import AIChatbot from "./pages/investor/AIChatbot.jsx";
-import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
 
-import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
-import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
-import ExpertKnowledgeHub from "./pages/expert/ExpertKnowledgeHub.jsx";
-import ExpertPortfolioPage from "./pages/expert/ExpertPortfolioPage.jsx";
-import CreateExpertPortfolioPage from "./pages/expert/CreateExpertPortfolioPage.jsx";
-import ExpertQuestionsPage from "./pages/expert/ExpertQuestionsPage.jsx";
-import ExpertQuestionDetailPage from "./pages/expert/ExpertQuestionDetailPage.jsx";
-import ForgotPasswordPage from "./pages/user/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./pages/user/ResetPasswordPage.jsx";
-import BuyStockPage from "./pages/investor/BuyStockPage.jsx";
-import SellStockPage from "./pages/investor/SellStockPage.jsx";
-import TransactionHistoryPage from "./pages/investor/TransactionHistoryPage.jsx";
-import TransactionPortalPage from "./pages/investor/TransactionPortalPage.jsx";
-import VerifyDocumnetationPage from "./pages/administrator/VerifyDocument.jsx";
+// Lazy-loaded pages — each becomes its own chunk at build time
+const UpdateParticularPage          = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
+const RegistrationPage              = lazy(() => import("./pages/user/RegistrationPage.jsx"));
+const LoginPage                     = lazy(() => import("./pages/user/LoginPage.jsx"));
+const HomePage                      = lazy(() => import("./pages/user/HomePage.jsx"));
+const ResetPasswordPage             = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
+const RealTimeDashBoardPage         = lazy(() => import("./pages/investor/RealTimeDashBoardPage.jsx"));
+const AIPredictionPage              = lazy(() => import("./pages/investor/AIPredictionPage.jsx"));
+const ForumPage                     = lazy(() => import("./pages/shared/ForumPage.jsx"));
+const ChangePasswordPage            = lazy(() => import("./pages/shared/ChangePasswordPage.jsx"));
+const AStockDashBoardPage           = lazy(() => import("./pages/investor/AStockDashBoardPage.jsx"));
+const AdminPanelPage                = lazy(() => import("./pages/administrator/AdminPanelPage.jsx"));
+const UserAccountsPage              = lazy(() => import("./pages/administrator/UserAccountsPage.jsx"));
+const UserAccountDetailsPage        = lazy(() => import("./pages/administrator/UserAccountDetailsPage.jsx"));
+const UserProfilesPage              = lazy(() => import("./pages/administrator/UserProfilesPage.jsx"));
+const CommunityPostsPage            = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
+const CommunityPostDetailsPage      = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
+const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
+const SubscriptionPage              = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
+const LoggedInHomePage              = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
+const PaymentSuccess                = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
+const PaymentFail                   = lazy(() => import("./pages/investor/PaymentFail.jsx"));
+const InvestorProfilePage           = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
+const Watchlist                     = lazy(() => import("./pages/investor/Watchlist.jsx"));
+const Notification                  = lazy(() => import("./pages/investor/Notification.jsx"));
+const ExpertAdvice                  = lazy(() => import("./pages/investor/ExpertAdvice.jsx"));
+const ExpertPortfolio               = lazy(() => import("./pages/investor/ExpertPortfolio.jsx"));
+const EducationContent              = lazy(() => import("./pages/investor/EducationContent.jsx"));
+const AIChatbot                     = lazy(() => import("./pages/investor/AIChatbot.jsx"));
+const ExpertDetails                 = lazy(() => import("./pages/investor/ExpertDetail.jsx"));
+const BuyStockPage                  = lazy(() => import("./pages/investor/BuyStockPage.jsx"));
+const SellStockPage                 = lazy(() => import("./pages/investor/SellStockPage.jsx"));
+const TransactionHistoryPage        = lazy(() => import("./pages/investor/TransactionHistoryPage.jsx"));
+const TransactionPortalPage         = lazy(() => import("./pages/investor/TransactionPortalPage.jsx"));
+const UpdateExpertParticularPage    = lazy(() => import("./pages/expert/UpdateParticular.jsx"));
+const ExpertDocumentPage            = lazy(() => import("./pages/expert/ExpertDocumentPage.jsx"));
+const ExpertProfilePage             = lazy(() => import("./pages/expert/ExpertProfilePage.jsx"));
+const ExpertLoggedInPage            = lazy(() => import("./pages/expert/ExpertLoggedInPage.jsx"));
+const ExpertKnowledgeHub            = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
+const ExpertPortfolioPage           = lazy(() => import("./pages/expert/ExpertPortfolioPage.jsx"));
+const CreateExpertPortfolioPage     = lazy(() => import("./pages/expert/CreateExpertPortfolioPage.jsx"));
+const ExpertQuestionsPage           = lazy(() => import("./pages/expert/ExpertQuestionsPage.jsx"));
+const ExpertQuestionDetailPage      = lazy(() => import("./pages/expert/ExpertQuestionDetailPage.jsx"));
+const ExpertNotificationPage        = lazy(() => import("./pages/expert/ExpertNotificationPage.jsx"));
+const VerifyDocumnetationPage       = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
+const SubscriptionManagementPage    = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
+const ContentManagementPage         = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 
+function S({ children }) {
+    return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
+}
+
+function wrap(Component) {
+    return <S><Component /></S>;
+}
+
+function protect(roles, Component) {
+    return <ProtectedRoute allowedRoles={roles}><S><Component /></S></ProtectedRoute>;
+}
 
 export const router = createBrowserRouter([
-    { path: "/", Component: HomePage },
-    { path: "/register", Component: RegistrationPage },
-    { path: "/login", Component: LoginPage },
-    { path: "/forgot-password", Component: ForgotPasswordPage },
-    { path: "/reset-password", Component: ResetPasswordPage },
+    { path: "/",              element: wrap(HomePage) },
+    { path: "/register",      element: wrap(RegistrationPage) },
+    { path: "/login",         element: wrap(LoginPage) },
+    { path: "/reset-password", element: wrap(ResetPasswordPage) },
 
-    {
-        path: "/buy/:symbol",
-        element: <ProtectedRoute allowedRoles={["investor"]}><BuyStockPage /></ProtectedRoute>
-    },
-    {
-        path: "/sell/:symbol",
-        element: <ProtectedRoute allowedRoles={["investor"]}><SellStockPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/transaction-history",
-        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionHistoryPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/transaction-portal",
-        element: <ProtectedRoute allowedRoles={["investor"]}><TransactionPortalPage /></ProtectedRoute>
-    },
+    { path: "/buy/:symbol",                 element: protect(["investor"], BuyStockPage) },
+    { path: "/sell/:symbol",                element: protect(["investor"], SellStockPage) },
+    { path: "/investor/transaction-history", element: protect(["investor"], TransactionHistoryPage) },
+    { path: "/investor/transaction-portal",  element: protect(["investor"], TransactionPortalPage) },
+    { path: "/investor/update-particular",   element: protect(["investor"], UpdateParticularPage) },
+    { path: "/investor",                     element: protect(["investor"], LoggedInHomePage) },
+    { path: "/investor/realtimedashboard",   element: protect(["investor"], RealTimeDashBoardPage) },
+    { path: "/investor/realtimedashboard/astockdashboard/:symbol", element: protect(["investor"], AStockDashBoardPage) },
+    { path: "/investor/aiprediction",        element: protect(["investor"], AIPredictionPage) },
+    { path: "/forum",                        element: protect(["investor", "expert"], ForumPage) },
+    { path: "/change-password",              element: protect(["investor", "expert"], ChangePasswordPage) },
+    { path: "/investor/subscription",        element: protect(["investor"], SubscriptionPage) },
+    { path: "/investor/payment-success",     element: protect(["investor"], PaymentSuccess) },
+    { path: "/investor/payment-fail",        element: protect(["investor"], PaymentFail) },
+    { path: "/investor/edit-profile",        element: protect(["investor"], InvestorProfilePage) },
+    { path: "/investor/watchlist",           element: protect(["investor"], Watchlist) },
+    { path: "/investor/notification",        element: protect(["investor"], Notification) },
+    { path: "/investor/expertportfolio",     element: protect(["investor"], ExpertPortfolio) },
+    { path: "/investor/expertadvice",        element: protect(["investor"], ExpertAdvice) },
+    { path: "/investor/educationcontent",    element: protect(["investor"], EducationContent) },
+    { path: "/investor/aichatbot",           element: protect(["investor"], AIChatbot) },
+    { path: "/investor/expertdetails",       element: protect(["investor"], ExpertDetails) },
 
-    {
-        path: "/investor",
-        element: <ProtectedRoute allowedRoles={["investor"]}><LoggedInHomePage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/realtimedashboard",
-        element: <ProtectedRoute allowedRoles={["investor"]}><RealTimeDashBoardPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/realtimedashboard/astockdashboard/:symbol",
-        element: <ProtectedRoute allowedRoles={["investor"]}><AStockDashBoardPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/aiprediction",
-        element: <ProtectedRoute allowedRoles={["investor"]}><AIPredictionPage /></ProtectedRoute>
-    },
-    {
-        path: "/forum",
-        element: <ProtectedRoute allowedRoles={["investor", "expert"]}><ForumPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/subscription",
-        element: <ProtectedRoute allowedRoles={["investor"]}><SubscriptionPage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/payment-success",
-        element: <ProtectedRoute allowedRoles={["investor"]}><PaymentSuccess /></ProtectedRoute>
-    },
-    {
-        path: "/investor/payment-fail",
-        element: <ProtectedRoute allowedRoles={["investor"]}><PaymentFail /></ProtectedRoute>
-    },
-    {
-        path: "/investor/edit-profile",
-        element: <ProtectedRoute allowedRoles={["investor"]}><InvestorProfilePage /></ProtectedRoute>
-    },
-    {
-        path: "/investor/watchlist",
-        element: <ProtectedRoute allowedRoles={["investor"]}><Watchlist /></ProtectedRoute>
-    },
-    {
-        path: "/investor/notification",
-        element: <ProtectedRoute allowedRoles={["investor"]}><Notification /></ProtectedRoute>
-    },
-    {
-        path: "/investor/expertportfolio",
-        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertPortfolio /></ProtectedRoute>
-    },
-    {
-        path: "/investor/expertadvice",
-        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertAdvice /></ProtectedRoute>
-    },
-    {
-        path: "/investor/educationcontent",
-        element: <ProtectedRoute allowedRoles={["investor"]}><EducationContent /></ProtectedRoute>
-    },
-    {
-        path: "/investor/aichatbot",
-        element: <ProtectedRoute allowedRoles={["investor"]}><AIChatbot /></ProtectedRoute>
-    },
-    {
-        path: "/investor/expertdetails",
-        element: <ProtectedRoute allowedRoles={["investor"]}><ExpertDetails /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel",
-        element: <ProtectedRoute allowedRoles={["admin"]}><AdminPanelPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/useraccounts",
-        element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountsPage /></ProtectedRoute>
-    },
+    { path: "/adminpanel",                              element: protect(["admin"], AdminPanelPage) },
+    { path: "/adminpanel/useraccounts",                 element: protect(["admin"], UserAccountsPage) },
+    { path: "/adminpanel/useraccounts/:userId",         element: protect(["admin"], UserAccountDetailsPage) },
+    { path: "/adminpanel/profiles",                     element: protect(["admin"], UserProfilesPage) },
+    { path: "/adminpanel/posts",                        element: protect(["admin"], CommunityPostsPage) },
+    { path: "/adminpanel/posts/:postId",                element: protect(["admin"], CommunityPostDetailsPage) },
+    { path: "/adminpanel/articles",                     element: protect(["admin"], InvestmentGuidanceArticlesPage) },
+    { path: "/adminpanel/verifydocumentation",          element: protect(["admin"], VerifyDocumnetationPage) },
+    { path: "/adminpanel/subscriptions",                element: protect(["admin"], SubscriptionManagementPage) },
+    { path: "/adminpanel/contentmanagement",            element: protect(["admin"], ContentManagementPage) },
 
-    {
-        path: "/adminpanel/useraccounts/:userId",
-        element: <ProtectedRoute allowedRoles={["admin"]}><UserAccountDetailsPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/profiles",
-        element: <ProtectedRoute allowedRoles={["admin"]}><UserProfilesPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/posts",
-        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostsPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/posts/:postId",
-        element: <ProtectedRoute allowedRoles={["admin"]}><CommunityPostDetailsPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/trade",
-        element: <ProtectedRoute allowedRoles={["admin"]}><TradeManagementPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/articles",
-        element: <ProtectedRoute allowedRoles={["admin"]}><InvestmentGuidanceArticlesPage /></ProtectedRoute>
-    },
-    {
-        path: "/adminpanel/verifydocumentation",
-        element: <ProtectedRoute allowedRoles={["admin"]}><VerifyDocumnetationPage /></ProtectedRoute>
-    },
-
-    {
-        path: "/expert/edit-profile",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertProfilePage /></ProtectedRoute>
-    },
-    {
-        path: "/expert",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertLoggedInPage /></ProtectedRoute>
-    },
-    {
-        path: "/expert/knowledge-hub",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertKnowledgeHub /></ProtectedRoute>
-    },
-
-    {
-        path: "/expert/portfolio",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertPortfolioPage /></ProtectedRoute>
-    },
-    {
-        path: "/expert/create-portfolio",
-        element: <ProtectedRoute allowedRoles={["expert"]}><CreateExpertPortfolioPage /></ProtectedRoute>
-    },
-    {
-        path: "/expert/questions",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionsPage /></ProtectedRoute>
-    },
-    {
-        path: "/expert/question/:questionId",
-        element: <ProtectedRoute allowedRoles={["expert"]}><ExpertQuestionDetailPage /></ProtectedRoute>
-    },
-
-
-
+    { path: "/expert/edit-profile",      element: protect(["expert"], ExpertProfilePage) },
+    { path: "/expert",                   element: protect(["expert"], ExpertLoggedInPage) },
+    { path: "/expert/knowledge-hub",     element: protect(["expert"], ExpertKnowledgeHub) },
+    { path: "/expert/portfolio",         element: protect(["expert"], ExpertPortfolioPage) },
+    { path: "/expert/create-portfolio",  element: protect(["expert"], CreateExpertPortfolioPage) },
+    { path: "/expert/questions",         element: protect(["expert"], ExpertQuestionsPage) },
+    { path: "/expert/question/:questionId", element: protect(["expert"], ExpertQuestionDetailPage) },
+    { path: "/expert/notifications",     element: protect(["expert"], ExpertNotificationPage) },
+    { path: "/expert/updateparticular",  element: protect(["expert"], UpdateExpertParticularPage) },
+    { path: "/expert/documents",         element: protect(["expert"], ExpertDocumentPage) },
 ]);
-

@@ -4,6 +4,43 @@ import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import { getSubscriptionStatus, updateSubscriptionStatus } from "../../api/userApi.js";
 
+function usePlanContent() {
+  const [freeFeatures, setFreeFeatures] = useState([]);
+  const [premiumFeatures, setPremiumFeatures] = useState([]);
+  const [freePlan, setFreePlan] = useState({ name: "Starter", price: "$0.00", priceSubtitle: "forever, no card needed" });
+  const [premiumPlan, setPremiumPlan] = useState({ name: "Pro", price: "$20.99", priceSubtitle: "per month, billed annually" });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const c = data.content;
+        setFreeFeatures(c.filter((x) => x.section === "free_investor").map((x) => x.title));
+        setPremiumFeatures(c.filter((x) => x.section === "premium_investor").map((x) => x.title));
+
+        const freeName = c.find((x) => x.content_id === "free_plan_name");
+        const freePrice = c.find((x) => x.content_id === "free_plan_price");
+        if (freeName || freePrice) setFreePlan({
+          name: freeName?.title ?? "Starter",
+          price: freePrice?.title ?? "$0.00",
+          priceSubtitle: freePrice?.description ?? "forever, no card needed",
+        });
+
+        const premName = c.find((x) => x.content_id === "premium_plan_name");
+        const premPrice = c.find((x) => x.content_id === "premium_plan_price");
+        if (premName || premPrice) setPremiumPlan({
+          name: premName?.title ?? "Pro",
+          price: premPrice?.title ?? "$20.99",
+          priceSubtitle: premPrice?.description ?? "per month, billed annually",
+        });
+      })
+      .catch(() => { });
+  }, []);
+
+  return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
+}
+
 function Badge({ children, type }) {
   const s =
     type === "free"
@@ -56,7 +93,7 @@ function Feature({ children, type }) {
   );
 }
 
-function FreeTier({ userId, currentSubscriptionStatus }) {
+function FreeTier({ userId, currentSubscriptionStatus, features, plan }) {
   const [hovered, setHovered] = useState(false);
   const isSubscribed = currentSubscriptionStatus === "basic" || currentSubscriptionStatus === "premium";
 
@@ -64,7 +101,7 @@ function FreeTier({ userId, currentSubscriptionStatus }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      transition={{ duration: 0.25, delay: 0.2 }}
       style={{
         background: "#0B1D4F",
         border: hovered ? "1.5px solid #60A5FA" : "1.5px solid #2563EB",
@@ -82,18 +119,12 @@ function FreeTier({ userId, currentSubscriptionStatus }) {
       onMouseLeave={() => setHovered(false)}
     >
       <Badge type="free">Free</Badge>
-      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#E0EEFF" }}>Starter</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>$0.00</p>
-      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>forever, no card needed</p>
+      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#E0EEFF" }}>{plan.name}</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>{plan.price}</p>
+      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>{plan.priceSubtitle}</p>
       <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
 
-      <Feature type="free">Limited AI-Powered Stock Recommendations</Feature>
-      <Feature type="free">Limited Personal Watchlist Management</Feature>
-      <Feature type="free">Limited Expert Portfolio Access</Feature>
-      <Feature type="free">Real-Time Market Dashboard</Feature>
-      <Feature type="free">Knowledge Hub Access</Feature>
-      <Feature type="free">AI Investment Chatbot</Feature>
-      <Feature type="free">Paper Trading</Feature>
+      {features.map((f) => <Feature key={f} type="free">{f}</Feature>)}
 
       <button
         disabled={isSubscribed}
@@ -128,7 +159,7 @@ function FreeTier({ userId, currentSubscriptionStatus }) {
   );
 }
 
-function PremiumTier({ userId, currentSubscriptionStatus }) {
+function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
   const [hovered, setHovered] = useState(false);
   const isPremium = currentSubscriptionStatus === "premium";
 
@@ -136,10 +167,10 @@ function PremiumTier({ userId, currentSubscriptionStatus }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.35 }}
+      transition={{ duration: 0.25, delay: 0.35 }}
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
-        height: "515px",
+        flexDirection: "column",
         border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
         borderRadius: "24px",
         padding: "28px 32px",
@@ -155,18 +186,17 @@ function PremiumTier({ userId, currentSubscriptionStatus }) {
       onMouseLeave={() => setHovered(false)}
     >
       <Badge type="premium">⭐ Premium</Badge>
-      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#FFFBEB" }}>Pro</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>$20.99</p>
-      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>per month, billed annually</p>
+      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#FFFBEB" }}>{plan.name}</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>{plan.price}</p>
+      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>{plan.priceSubtitle}</p>
       <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
-      <Feature type="premium">Everything in Basic without Limitations</Feature>
-      <Feature type="premium">Expert Consultation Services</Feature>
-      <Feature type="premium">Advanced Charting & Technical Analysis Tools</Feature>
+      {features.map((f) => <Feature key={f} type="premium">{f}</Feature>)}
       <button
         disabled={isPremium}
         style={{
           width: "100%",
-          marginTop: "145px",
+          marginTop: "90px",
+          paddingTop: "16px",
           padding: "11px 0",
           borderRadius: "12px",
           fontSize: "14px",
@@ -201,6 +231,7 @@ function SubscriptionPage() {
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
     user?.subscription_status || "inactive"
   );
+  const { freeFeatures, premiumFeatures, freePlan, premiumPlan } = usePlanContent();
 
   useEffect(() => {
     if (!userId) return;
@@ -225,16 +256,16 @@ function SubscriptionPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <GeneralHeader />
-      <main className="flex-1 p-7.5">
+      <main className="flex-1 p-4 sm:p-7.5">
         <div
           className="flex gap-50"
           style={{ justifyContent: "center", alignItems: "center", paddingTop: "90px", paddingBottom: "90px" }}
         >
-          <FreeTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
-          <PremiumTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} />
+          <FreeTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} features={freeFeatures} plan={freePlan} />
+          <PremiumTier userId={userId} currentSubscriptionStatus={currentSubscriptionStatus} features={premiumFeatures} plan={premiumPlan} />
         </div>
       </main>
       <Footer />

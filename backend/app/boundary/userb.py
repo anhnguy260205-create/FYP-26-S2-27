@@ -1,193 +1,118 @@
-from typing import Optional, Union
+import threading
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from fastapi import APIRouter
 
-from app.control.controller.userc import CreateAccountController, InvestorInformationController, LoginController, LogoutController, InvestorInformationController, ExpertInformationController, UpdateInformationController, DeleteInvestorController
-from app.control.controller.investorc import UpdateStockLevel, AddStockToWatchlist, RemoveStockFromWatchlist, GetWatchlist
+from app.control.services.email_service import send_welcome_email
+from app.control.controller.userc import (
+    CreateAccountController,
+    InvestorInformationController,
+    LogoutController,
+    ExpertInformationController,
+    UpdateInformationController,
+    DeleteInvestorController,
+    FirebaseLoginController,
+)
+from app.control.controller.investorc import (
+    AddStockToWatchlist,
+    RemoveStockFromWatchlist,
+    GetWatchlist,
+    UpdateInvestorInterestsController,
+    UpdateInvestorRiskToleranceController,
+)
+from app.control.services.auth import get_current_user
+from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["User"])
 
 
-# Request body model
+# ── Public: registration ───────────────────────────────────────────────────────
+
 class CreateAccountRequest(BaseModel):
     role: str
     username: str
-    full_name: str
     email_address: str
-    password: str
-    phone_number: str
-    address: str
-    stock_level: Optional[str] = "beginner"
-    experience_year: Optional[Union[int, str]] = None
-    linked_in_url: Optional[str] = None
-
-# Create user account
-
-
-class CreateAccountPage:
-    def __init__(self):
-        self.controller = CreateAccountController()
-
-    def clickCreateAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url):
-
-        return self.controller.createAccount(role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url)
 
 
 @router.post("/create-account")
-def create_account(data: CreateAccountRequest):
-
-    boundary = CreateAccountPage()
-
-    result = boundary.clickCreateAccount(
-        data.role,
-        data.username,
-        data.full_name,
-        data.email_address,
-        data.password,
-        data.phone_number,
-        data.address,
-        data.stock_level,
-        data.experience_year,
-        data.linked_in_url
+@limiter.limit("5/minute")
+def create_account(request: Request, data: CreateAccountRequest):
+    result = CreateAccountController().createAccount(
+        data.role, data.username, data.email_address
     )
-
-    if result == False:
-        return {
-            "success": False,
-            "message": "Account already exists"
-        }
-
-    return {
-        "success": True,
-        "message": "Account created successfully",
-        "user_id": result
-    }
-
-# Login
+    if result == "duplicate_email":
+        return {"success": False, "message": "This email is already registered."}
+    if result == "duplicate_username":
+        return {"success": False, "message": "This username is already taken."}
+    if not result:
+        return {"success": False, "message": "Account already exists"}
+    threading.Thread(
+        target=send_welcome_email,
+        args=(data.email_address, data.username, data.role),
+        daemon=True
+    ).start()
+    return {"success": True, "message": "Account created successfully", "user_id": result}
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+@router.get("/check-email")
+@limiter.limit("20/minute")
+def check_email(request: Request, email: str):
+    from app.entity.models.useraccount import UserAccount
+    exists = UserAccount.emailExists(email.strip().lower())
+    return {"exists": exists}
 
 
-class LoginPage:
-    def __init__(self):
-        self.controller = LoginController()
+# ── Auth: login/logout ─────────────────────────────────────────────────────────
 
-    def login(self, username, password):
-        return self.controller.login(username, password)
-
-
-@router.post("/login")
-def login(data: LoginRequest):
-
-    boundary = LoginPage()
-
-    result = boundary.login(
-        data.username,
-        data.password
-    )
-
-    if not result.get("success"):
-        return {
-            "success": False,
-            "message": "Invalid username or password"
-        }
-
-    return {
-        "success": True,
-        "message": "Login successful",
-        "user": result.get("user")
-    }
-
-# Logout
+@router.post("/firebase-login")
+def firebase_login(current_user: dict = Depends(get_current_user)):
+    """Exchange a verified Firebase token for the full internal user profile."""
+    profile = FirebaseLoginController().login(current_user["email"])
+    if not profile:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"success": True, "user": profile}
 
 
 class LogoutRequest(BaseModel):
     user_id: str
 
 
-class LogoutPage:
-    def __init__(self):
-        self.controller = LogoutController()
-
-    def logout(self, user_id):
-        return self.controller.logout(user_id)
-
-
 @router.post("/logout")
-def logout(data: LogoutRequest):
-
-    boundary = LogoutPage()
-
-    result = boundary.logout(data.user_id)
+def logout(current_user: dict = Depends(get_current_user)):
+    from app.control.controller.userc import LogoutController
+    result = LogoutController().logout(current_user["user_id"])
     if not result:
-        return {
-            "success": False,
-            "message": "Logout failed"
-        }
-    return {
-        "success": True,
-        "message": "Logout successful"
-    }
+        return {"success": False, "message": "Logout failed"}
+    return {"success": True, "message": "Logout successful"}
 
 
-# Display user information (for both investor and expert)
-class InvestorInformationPage:
-    def __init__(self):
-        self.controller = InvestorInformationController()
-
-    def get_investor_information(self, user_id):
-        return self.controller.get_investor_information(user_id)
-
+# ── Auth: user information ─────────────────────────────────────────────────────
 
 @router.get("/investor-information/{user_id}")
-def get_investor_information(user_id: str):
-    boundary = InvestorInformationPage()
-
-    result = boundary.get_investor_information(user_id)
+def get_investor_information(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = InvestorInformationController().get_investor_information(user_id)
     if not result:
-        return {
-            "success": False,
-            "message": "Investor information not found"
-        }
-    return {
-        "success": True,
-        "message": "Investor information retrieved successfully",
-        "investor_information": result
-    }
-
-
-class ExpertInformationPage:
-    def __init__(self):
-        self.controller = ExpertInformationController()
-
-    def get_expert_information(self, user_id):
-        return self.controller.get_expert_information(user_id)
+        return {"success": False, "message": "Investor information not found"}
+    return {"success": True, "message": "Investor information retrieved successfully", "investor_information": result}
 
 
 @router.get("/expert-information/{user_id}")
-def get_expert_information(user_id: str):
-    boundary = ExpertInformationPage()
-
-    result = boundary.get_expert_information(user_id)
+def get_expert_information(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    result = ExpertInformationController().get_expert_information(user_id)
     if not result:
-        return {
-            "success": False,
-            "message": "Expert information not found"
-        }
-    return {
-        "success": True,
-        "message": "Expert information retrieved successfully",
-        "expert_information": result
-    }
+        return {"success": False, "message": "Expert information not found"}
+    return {"success": True, "message": "Expert information retrieved successfully", "expert_information": result}
 
-# Update user information
 
+# ── Auth: update/delete ────────────────────────────────────────────────────────
 
 class UpdateInformationRequest(BaseModel):
-    user_id: str
     user_name: Optional[str] = None
     full_name: Optional[str] = None
     email_address: Optional[str] = None
@@ -195,132 +120,108 @@ class UpdateInformationRequest(BaseModel):
     address: Optional[str] = None
 
 
-class UpdateInformationPage:
-    def __init__(self):
-        self.controller = UpdateInformationController()
-
-    def update_information(self, user_id, user_name, full_name, email_address, phone_number, address):
-        return self.controller.update_information(user_id, user_name, full_name, email_address, phone_number, address)
-
-
 @router.post("/update-information/{user_id}")
-def update_information(user_id: str, data: UpdateInformationRequest):
-    boundary = UpdateInformationPage()
-
-    result = boundary.update_information(
+def update_information(
+    user_id: str,
+    data: UpdateInformationRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = UpdateInformationController().update_information(
         user_id,
         data.user_name,
         data.full_name,
         data.email_address,
         data.phone_number,
-        data.address
+        data.address,
     )
-
     if not result:
-        return {
-            "success": False,
-            "message": "Failed to update information"
-        }
-    return {
-        "success": True,
-        "message": "Information updated successfully"
-    }
-
-
-# Delete Investor
-class DeleteInvestorPage:
-    def __init__(self):
-        self.controller = DeleteInvestorController()
-
-    def delete_account(self, user_id):
-        return self.controller.delete_account(user_id)
+        return {"success": False, "message": "Failed to update information"}
+    return {"success": True, "message": "Information updated successfully"}
 
 
 @router.delete("/delete-investor/{user_id}")
-def delete_account(user_id: str):
-    boundary = DeleteInvestorPage()
-
-    result = boundary.delete_account(user_id)
-
+def delete_account(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = DeleteInvestorController().delete_account(user_id)
     if not result:
-        return {
-            "success": False,
-            "message": "Account not found"
-        }
-    return {
-        "success": True,
-        "message": "Account deleted successfully"
-    }
+        return {"success": False, "message": "Account not found"}
+    return {"success": True, "message": "Account deleted successfully"}
 
 
-class UpdateStockLevelRequest(BaseModel):
-    user_id: str
-    stock_level: Optional[str] = None
+# ── Auth: watchlist ────────────────────────────────────────────────────────────
 
-
-class UpdateInvestorStockLevel:
-    def __init__(self):
-        self.controller = UpdateStockLevel()
-
-    def update_stock_level(self, user_id, stock_level):
-        return self.controller.updateStockLevel(user_id, stock_level)
-
-
-@router.post("/update_stock_level")
-def update_stock_level(data: UpdateStockLevelRequest):
-    boundary = UpdateInvestorStockLevel()
-
-    result = boundary.update_stock_level(data.user_id, data.stock_level)
-    if not result:
-        return {
-            "success": False,
-            "message": "The stock level is not updated"
-        }
-    return {
-        "success": True,
-        "message": "The stock level is successfully updated"
-    }
-
-
-################ Watchlist######################
 class AddStockToWatchlistRequest(BaseModel):
-    user_id: str
     stock_symbol: str
 
 
-class AddStockToWatchlistPage:
-    def __init__(self):
-        self.controller = AddStockToWatchlist()
-
-    def add_stock_symbol(self, user_id, stock_symbol):
-        return self.controller.addStockToWatchlist(user_id, stock_symbol)
-
-
 @router.post("/investor-watchlist/{user_id}")
-def add_stock_symbol(user_id, data: AddStockToWatchlistRequest):
-    boundary = AddStockToWatchlistPage()
-
-    result = boundary.add_stock_symbol(user_id, data.stock_symbol)
+def add_stock_symbol(
+    user_id: str,
+    data: AddStockToWatchlistRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = AddStockToWatchlist().addStockToWatchlist(user_id, data.stock_symbol)
     if not result:
-        return {
-            "success": False,
-            "message": "The stock is fail to add to watchlist"
-        }
-    return {
-        "success": True,
-        "message": "The stock is success to be added into watchlist"
-    }
+        return {"success": False, "message": "Failed to add stock to watchlist"}
+    return {"success": True, "message": "Stock added to watchlist"}
 
 
 @router.get("/investor-watchlist/{user_id}")
-def get_watchlist(user_id: str):
+def get_watchlist(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
     result = GetWatchlist().getWatchlist(user_id)
     return {"success": True, "watchlist": result}
 
 
 @router.delete("/investor-watchlist/{user_id}/{stock_symbol}")
-def remove_stock_symbol(user_id: str, stock_symbol: str):
+def remove_stock_symbol(
+    user_id: str,
+    stock_symbol: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
     result = RemoveStockFromWatchlist().removeStockFromWatchlist(user_id, stock_symbol)
     if not result.get("success"):
         return {"success": False, "message": result.get("message", "Failed to remove stock")}
     return {"success": True, "message": "Stock removed from watchlist"}
+
+
+# ── Auth: interests / risk tolerance ──────────────────────────────────────────
+
+class UpdateInterestsRequest(BaseModel):
+    interests: str
+
+
+@router.post("/update-interests")
+def update_interests(
+    data: UpdateInterestsRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    result = UpdateInvestorInterestsController().update(current_user["user_id"], data.interests)
+    if not result:
+        return {"success": False, "message": "Failed to update interests"}
+    return {"success": True, "message": "Interests updated successfully"}
+
+
+class UpdateRiskToleranceRequest(BaseModel):
+    risk_tolerance: str
+
+
+@router.post("/update-risk-tolerance")
+def update_risk_tolerance(
+    data: UpdateRiskToleranceRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    result = UpdateInvestorRiskToleranceController().update(current_user["user_id"], data.risk_tolerance)
+    if not result:
+        return {"success": False, "message": "Failed to update risk tolerance"}
+    return {"success": True, "message": "Risk tolerance updated successfully"}

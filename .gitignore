@@ -1,8 +1,7 @@
-.venv/ 
+.venv/
 backend/.env
+backend/serviceAccountKey.json
 __pycache__/
 *.pyc
 node_modules
-node_modules
-node_modules
-node_modules
+

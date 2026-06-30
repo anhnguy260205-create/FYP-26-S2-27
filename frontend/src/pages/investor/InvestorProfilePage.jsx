@@ -1,11 +1,21 @@
 import { motion } from "framer-motion";
-import { getInvestorInformation, deleteInvestor } from "../../api/userApi.js";
+import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { updateUserInformation, updateStockLevel } from "../../api/userApi.js";
-import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank } from "lucide-react";
+import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
+import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
+import { addPaperMoney } from "../../api/tradingApi.js";
+
+const SPECIALTIES = [
+    "Information Technology",
+    "Financials",
+    "Consumer Discretionary",
+    "Communication Services",
+    "Energy",
+    "Real Estate",
+];
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
     return (
@@ -56,8 +66,7 @@ function GlassCard({ children }) {
         <div
             style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.05)",
-                backdropFilter: "blur(20px)",
+                background: "rgba(255,255,255,0.06)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: "24px",
                 padding: "32px",
@@ -117,12 +126,8 @@ function MenuButton({ children, active, onClick }) {
 // LeftSection is now a proper React component with destructured props
 function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
     const navigate = useNavigate();
-    const initials = investorInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    const initials = investorInfo?.username?.slice(0, 2)?.toUpperCase() ?? "?";
+
 
     const subscriptionStatus = investorInfo?.investor_subscription_status?.toLowerCase();
 
@@ -145,7 +150,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                     {[0, 32, 64, 96, 128, 160, 192, 224, 256].map(x => <line key={x} x1={x} y1="0" x2={x} y2="78" stroke="white" strokeWidth="0.5" />)}
                     {[0, 20, 40, 60, 78].map(y => <line key={y} x1="0" y1={y} x2="256" y2={y} stroke="white" strokeWidth="0.5" />)}
                 </svg>
-                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", backdropFilter: "blur(8px)", ...subscriptionStyle }}>
+                <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", ...subscriptionStyle }}>
                     ★ {subscriptionStatus === "premium" ? "Premium" : "Basic"}
                 </div>
             </div>
@@ -186,15 +191,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                         <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.06em" }}>MEMBER SINCE</span>
                     </div>
                     <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
-                        {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "N/A"}
-                    </p>
-                </div>
-                <div style={{ borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.667px solid rgba(255,255,255,0.08)", padding: "8px 10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "3px" }}>
-                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.06em" }}>RISK LEVEL</span>
-                    </div>
-                    <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
-                        {investorInfo?.stock_level || "N/A"}
+                        {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "—"}
                     </p>
                 </div>
             </div>
@@ -255,7 +252,7 @@ function DeleteAccountButton() {
             </div>
 
             {showConfirm && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "12px" }}>Delete Account</h2>
                         <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
@@ -286,23 +283,18 @@ function DeleteAccountButton() {
 
 function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftFull, setDraftFull] = useState(investorInfo?.full_name || "");
-    const [draftEmail, setDraftEmail] = useState(investorInfo?.email || "");
+    const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
     const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
-    // Generate initials from full name
-    const initials = investorInfo?.full_name
-        ?.split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "??";
+    // Generate initials from username
+    const initials = investorInfo?.username?.slice(0, 2)?.toUpperCase() ?? "??";
 
     useEffect(() => {
         setDraftFull(investorInfo?.full_name || "");
-        setDraftEmail(investorInfo?.email || "");
+        setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
         setDraftLoc(investorInfo?.address || "");
@@ -310,7 +302,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 
     const cancelEdit = () => {
         setDraftFull(investorInfo?.full_name || "");
-        setDraftEmail(investorInfo?.email || "");
+        setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
         setDraftLoc(investorInfo?.address || "");
@@ -318,7 +310,6 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     };
     const handleChange = async () => {
         try {
-
             const result = await updateUserInformation(
                 investorInfo.user_id,
                 draftUser,
@@ -329,6 +320,13 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
             );
 
             if (result.success) {
+                // Patch localStorage so header/other components reflect the change immediately
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.full_name = draftFull;
+                stored.username = draftUser;
+                stored.email_address = draftEmail;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
                 alert("Profile updated");
                 setEditingSection(null);
                 onUpdate();
@@ -451,16 +449,9 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                         />
                         <InfoRow
                             label="Email Address"
-                            value={investorInfo?.email}
+                            value={investorInfo?.email_address}
                         />
-                        <InfoRow
-                            label="Balance"
-                            value={
-                                investorInfo?.balance
-                                    ? `$${investorInfo.balance.toLocaleString()}`
-                                    : null
-                            }
-                        />
+
                     </div>
                 </>
             ) : (
@@ -559,28 +550,56 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 }
 function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [editingSection, setEditingSection] = useState(null);
-    const [riskLevel, setRiskLevel] = useState(investorInfo?.stock_level);
+    const [selectedInterests, setSelectedInterests] = useState(
+        () => investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+    );
+    const [selectedRisk, setSelectedRisk] = useState(
+        () => investorInfo?.risk_tolerance || ""
+    );
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     const role = currentUser?.role;
-    const userId = currentUser?.user_id
+    const userId = currentUser?.user_id;
     const isEditing = (section) => editingSection === section;
 
+    useEffect(() => {
+        setSelectedInterests(
+            investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+        );
+        setSelectedRisk(investorInfo?.risk_tolerance || "");
+    }, [investorInfo]);
+
+    const toggleInterest = (specialty) => {
+        setSelectedInterests(prev =>
+            prev.includes(specialty) ? prev.filter(s => s !== specialty) : [...prev, specialty]
+        );
+    };
 
     const cancelEdit = () => {
+        setSelectedInterests(
+            investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
+        );
+        setSelectedRisk(investorInfo?.risk_tolerance || "");
         setEditingSection(null);
     };
 
     const handleClick = async (e) => {
         e.preventDefault();
-
         try {
-            const result = await updateStockLevel(userId, riskLevel);
-            if (result.success) {
-                alert("Risk level updated");
+            const [interestResult, riskResult] = await Promise.all([
+                updateInvestorInterests(userId, selectedInterests.join(",")),
+                selectedRisk ? updateRiskTolerance(userId, selectedRisk) : Promise.resolve({ success: true }),
+            ]);
+            if (interestResult.success && riskResult.success) {
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.interests = selectedInterests.join(",");
+                stored.risk_tolerance = selectedRisk;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+
+                alert("Account settings updated");
                 setEditingSection(null);
                 onUpdate();
             } else {
-                alert(result.message || "Failed to update risk level");
+                alert("Failed to update settings");
             }
         } catch (error) {
             console.error(error);
@@ -594,178 +613,124 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                 <>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold">
-                                Account Settings
-                            </h1>
-
-                            <p
-                                style={{
-                                    fontSize: "13px",
-                                    color: "rgba(255,255,255,0.5)",
-                                    marginTop: "4px",
-                                }}
-                            >
-                                Trading preferences and account type
+                            <h1 className="text-xl font-bold">Account Settings</h1>
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                                Stock interests and account type
                             </p>
                         </div>
-
-                        <button
-                            onClick={() =>
-                                setEditingSection("account")
-                            }
+                        <button onClick={() => setEditingSection("account")}
                             className="flex items-center gap-2"
-                            style={{
-                                height: "38px",
-                                padding: "0 18px",
-                                borderRadius: "100px",
-                                background:
-                                    "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
-                                border:
-                                    "0.667px solid rgba(0,211,243,0.35)",
-                                color: "#00D3F2",
-                                cursor: "pointer",
-                            }}
-                        >
+                            style={{ height: "38px", padding: "0 18px", borderRadius: "100px", background: "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))", border: "0.667px solid rgba(0,211,243,0.35)", color: "#00D3F2", cursor: "pointer" }}>
                             <SquarePen size={14} />
                             Edit
                         </button>
                     </div>
 
+                    {/* Stock Interests */}
                     <div style={{ marginTop: "32px" }}>
-                        <p
-                            style={{
-                                fontSize: "12px",
-                                color: "rgba(255,255,255,0.4)",
-                                marginBottom: "16px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            RISK LEVEL
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                            STOCK INTERESTS
                         </p>
-
-                        <div className="flex items-center gap-3">
-                            <div
-                                style={{
-                                    width: "10px",
-                                    height: "10px",
-                                    borderRadius: "50%",
-                                    background: "#3B82F6",
-                                }}
-                            />
-
-                            <span
-                                style={{
-                                    fontSize: "18px",
-                                    fontWeight: 700,
-                                }}
-                            >
-                                {riskLevel}
-                            </span>
-
-                            <span
-                                style={{
-                                    color:
-                                        "rgba(255,255,255,0.4)",
-                                }}
-                            >
-                                · Balanced risk & reward
-                            </span>
-                        </div>
+                        {selectedInterests.length === 0 ? (
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>No interests selected — edit to pick sectors you care about.</p>
+                        ) : (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {selectedInterests.map(s => (
+                                    <span key={s} style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.35)", color: "#00D3F2" }}>
+                                        {s}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div
-                        style={{
-                            height: "1px",
-                            background:
-                                "rgba(255,255,255,0.06)",
-                            margin: "32px 0",
-                        }}
-                    />
+                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
 
+                    {/* Risk Tolerance */}
                     <div>
-                        <p
-                            style={{
-                                fontSize: "12px",
-                                color: "rgba(255,255,255,0.4)",
-                                marginBottom: "16px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            ACCOUNT TYPE
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                            RISK TOLERANCE
                         </p>
+                        {selectedRisk ? (
+                            <span style={{ padding: "4px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, background: "rgba(0,211,243,0.12)", border: "1px solid rgba(0,211,243,0.35)", color: "#00D3F2" }}>
+                                {selectedRisk}
+                            </span>
+                        ) : (
+                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>Not set — edit to choose your risk profile.</p>
+                        )}
+                    </div>
 
+                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
+
+                    {/* Account Type */}
+                    <div>
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "16px", fontWeight: 600 }}>ACCOUNT TYPE</p>
                         <div className="flex items-center gap-4">
-                            <div
-                                style={{
-                                    width: "36px",
-                                    height: "36px",
-                                    borderRadius: "10px",
-                                    background:
-                                        "rgba(0,211,242,0.1)",
-                                    border:
-                                        "1px solid rgba(0,211,242,0.3)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                $
-                            </div>
-
+                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>$</div>
                             <div>
-                                <div
-                                    style={{
-                                        fontWeight: 700,
-                                        fontSize: "18px",
-                                    }}
-                                >
-                                    {role}
-                                </div>
-
-                                <div
-                                    style={{
-                                        color:
-                                            "rgba(255,255,255,0.45)",
-                                    }}
-                                >
-                                    Trade & track your portfolio
-                                </div>
+                                <div style={{ fontWeight: 700, fontSize: "18px" }}>{role}</div>
+                                <div style={{ color: "rgba(255,255,255,0.45)" }}>Trade & track your portfolio</div>
                             </div>
                         </div>
                     </div>
                 </>
             ) : (
                 <>
-                    <h1 className="text-xl font-bold">
-                        Edit Account Settings
-                    </h1>
+                    <h1 className="text-xl font-bold">Edit Account Settings</h1>
+                    <div className="flex flex-col" style={{ gap: "24px", marginTop: "24px" }}>
 
-                    <div
-                        className="flex flex-col"
-                        style={{
-                            gap: "20px",
-                            marginTop: "24px",
-                        }}
-                    >
-                        <FormField label="Risk Level" htmlFor="field-risk-level">
-                            <select
-                                id="field-risk-level"
-                                value={riskLevel}
-                                onChange={(e) =>
-                                    setRiskLevel(e.target.value)
-                                }
-                                className="w-full h-11 rounded-lg bg-slate-800 border border-slate-600 px-3"
-                            >
-                                <option>Basic</option>
-                                <option>Intermediate</option>
-                                <option>Advanced</option>
-                            </select>
-                        </FormField>
+                        {/* Stock Interests */}
+                        <div>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Stock Interests <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select all that apply)</span>
+                            </label>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {SPECIALTIES.map(s => {
+                                    const active = selectedInterests.includes(s);
+                                    return (
+                                        <button key={s} type="button" onClick={() => toggleInterest(s)}
+                                            style={{
+                                                padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                            }}>
+                                            {active ? "✓ " : ""}{s}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                        <SaveRow
-                            onSave={handleClick}
-                            onCancel={cancelEdit}
-                        />
+                        {/* Risk Tolerance */}
+                        <div>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Risk Tolerance <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select one)</span>
+                            </label>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                {[
+                                    { value: "Conservative", desc: "Preserve capital, low risk" },
+                                    { value: "Moderate", desc: "Balanced growth and safety" },
+                                    { value: "Aggressive", desc: "High growth, higher risk" },
+                                ].map(({ value, desc }) => {
+                                    const active = selectedRisk === value;
+                                    return (
+                                        <button key={value} type="button" title={desc}
+                                            onClick={() => setSelectedRisk(active ? "" : value)}
+                                            style={{
+                                                padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                            }}>
+                                            {active ? "✓ " : ""}{value}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <SaveRow onSave={handleClick} onCancel={cancelEdit} />
                     </div>
                 </>
             )}
@@ -774,7 +739,6 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
 }
 function SecurityCard({ investorInfo }) {
     const navigate = useNavigate();
-
 
     return (
         <GlassCard>
@@ -796,7 +760,7 @@ function SecurityCard({ investorInfo }) {
                 </div>
 
                 <button
-                    onClick={() => navigate("/reset-password")}
+                    onClick={() => navigate("/change-password")}
                     className="flex items-center gap-2"
                     style={{
                         height: "38px",
@@ -883,150 +847,524 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function PaperMoneyCard({ investorInfo }) {
+function PaperMoneyCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
-    return (
-        <GlassCard>
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-xl font-bold">
-                        Paper Money
-                    </h1>
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
-                    <p
-                        style={{
-                            fontSize: "13px",
-                            color: "rgba(255,255,255,0.5)",
-                            marginTop: "4px",
-                        }}
-                    >
-                        Manage your virtual trading funds
-                    </p>
+    const MAX_BALANCE = 10000;
+    const paperMoney = investorInfo?.paper_money ?? 0;
+    const usedAmount = investorInfo?.used_amount ?? 0;
+    const progressPct = Math.min(100, (paperMoney / MAX_BALANCE) * 100);
+    const maxAddable = Math.max(0, MAX_BALANCE - paperMoney);
+
+    const [showModal, setShowModal] = useState(false);
+    const [selectedAmount, setSelectedAmount] = useState(1000);
+    const [adding, setAdding] = useState(false);
+
+    const presets = [500, 1000, 2000, 5000];
+
+    const handleAddClick = () => {
+        if (!isPremium) {
+            setShowModal("upgrade");
+        } else if (maxAddable <= 0) {
+            setShowModal("capped");
+        } else {
+            setSelectedAmount(Math.min(1000, maxAddable));
+            setShowModal("add");
+        }
+    };
+
+    const handleConfirmAdd = async () => {
+        setAdding(true);
+        try {
+            const result = await addPaperMoney(currentUser.user_id, selectedAmount);
+            if (result.success) {
+                setShowModal(false);
+                onUpdate();
+            } else {
+                // result.message = our custom message
+                // result.detail  = FastAPI validation / 404 / 500 format
+                const msg = result.message
+                    || (Array.isArray(result.detail) ? result.detail[0]?.msg : result.detail)
+                    || "Failed to add money";
+                alert(msg);
+            }
+        } catch {
+            alert("Could not reach backend");
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    return (
+        <>
+            <GlassCard>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold">Paper Money</h1>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                            Manage your virtual trading funds
+                        </p>
+                    </div>
                 </div>
 
+                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "32px 0" }} />
 
-            </div>
-            <div
-                style={{
-                    height: "1px",
-                    background:
-                        "rgba(255,255,255,0.06)",
-                    margin: "32px 0",
-                }}
-            />
+                <div style={{ marginTop: "32px" }}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <PiggyBank size={18} color="yellow" />
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: "16px" }}>
+                                    Available Balance: ${paperMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
+                                    Use paper money to practice stock trading without risking real capital.
+                                </div>
+                            </div>
+                        </div>
 
-            <div style={{ marginTop: "32px" }}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div
+                        <button
+                            onClick={handleAddClick}
                             style={{
-                                width: "42px",
-                                height: "42px",
-                                borderRadius: "12px",
-                                background:
-                                    "rgba(34,197,94,0.08)",
-                                border:
-                                    "1px solid rgba(34,197,94,0.25)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "6px 14px", borderRadius: "999px",
+                                background: isPremium ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
+                                border: isPremium ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(255,255,255,0.12)",
+                                color: isPremium ? "#22c55e" : "rgba(255,255,255,0.35)",
+                                fontSize: "13px", fontWeight: 600, cursor: "pointer",
                             }}
                         >
-                            <PiggyBank
-                                size={18}
-                                color="yellow"
-                            />
-                        </div>
-
-                        <div>
-                            <div
-                                style={{
-                                    fontWeight: 700,
-                                    fontSize: "16px",
-                                }}
-                            >
-                                Available Balance : $ {investorInfo?.paper_money}.00
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: "13px",
-                                    color:
-                                        "rgba(255,255,255,0.4)",
-                                    marginTop: "2px",
-                                }}
-                            >
-                                Use paper money to practice stock trading
-                                without risking real capital.
-                            </div>
-                        </div>
+                            {!isPremium && <Lock size={12} />}
+                            Add Money
+                        </button>
                     </div>
 
-                    <button
-                        style={{
-                            padding: "6px 14px",
-                            borderRadius: "999px",
-                            background:
-                                "rgba(34,197,94,0.12)",
-                            border:
-                                "1px solid rgba(34,197,94,0.25)",
-                            color: "#22c55e",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            cursor: "pointer"
-                        }}
-                    >
-                        Add Money
+                    {/* Non-premium hint */}
+                    {!isPremium && (
+                        <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                            <p style={{ fontSize: "12px", color: "rgba(251,191,36,0.85)", margin: 0 }}>
+                                Adding paper money is a <strong>Premium</strong> feature.
+                            </p>
+                            <button
+                                onClick={() => navigate("/investor/subscription")}
+                                style={{ padding: "4px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                            >
+                                Upgrade →
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Progress bar */}
+                    <div style={{ marginTop: "24px" }}>
+                        <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(255,255,255,0.7)" }}>
+                            <span>Paper Trading Capital</span>
+                            <span>${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
+                        </div>
+                        <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                            <div style={{ width: `${progressPct}%`, height: "100%", background: "linear-gradient(90deg,#22c55e,#00D3F2)", borderRadius: "999px", transition: "width 0.4s ease" }} />
+                        </div>
+                        <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
+                            <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span>Cash: ${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+                </div>
+            </GlassCard>
+
+            {/* ── Add Money Modal ── */}
+            {showModal === "add" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "6px" }}>Add Paper Money</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "24px" }}>
+                            Max you can add: <strong style={{ color: "#22c55e" }}>${maxAddable.toLocaleString()}</strong>
+                        </p>
+
+                        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Select amount</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
+                            {presets.map(p => {
+                                const disabled = p > maxAddable;
+                                return (
+                                    <button key={p} disabled={disabled} onClick={() => setSelectedAmount(p)}
+                                        style={{
+                                            padding: "10px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
+                                            border: selectedAmount === p ? "1px solid rgba(34,197,94,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                                            background: selectedAmount === p ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
+                                            color: disabled ? "rgba(255,255,255,0.2)" : selectedAmount === p ? "#22c55e" : "rgba(255,255,255,0.7)",
+                                        }}>
+                                        ${p.toLocaleString()}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>New balance after top-up</p>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: "#22c55e", margin: 0 }}>
+                                ${(paperMoney + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowModal(false)} disabled={adding}
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                Cancel
+                            </button>
+                            <button onClick={handleConfirmAdd} disabled={adding || selectedAmount > maxAddable}
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "linear-gradient(90deg,rgba(34,197,94,0.3),rgba(0,211,242,0.2))", border: "1px solid rgba(34,197,94,0.4)", color: "#22c55e", fontSize: "14px", fontWeight: 700, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.6 : 1 }}>
+                                {adding ? "Adding…" : `Add $${selectedAmount.toLocaleString()}`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Upgrade Prompt Modal ── */}
+            {showModal === "upgrade" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
+                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                            <Lock size={20} color="#fbbf24" />
+                        </div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Premium Feature</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                            Adding paper money is only available to <strong style={{ color: "#fbbf24" }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
+                        </p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowModal(false)}
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                Cancel
+                            </button>
+                            <button onClick={() => navigate("/investor/subscription")}
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                                Upgrade to Premium
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Balance Capped Modal ── */}
+            {showModal === "capped" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(99,179,237,0.2)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center" }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Balance at Maximum</h2>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                            Your paper money balance has reached the <strong style={{ color: "#63b3ed" }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
+                        </p>
+                        <button onClick={() => setShowModal(false)}
+                            style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.3)", color: "#63b3ed", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+function SubscriptionCard({ investorInfo, onUpdate }) {
+    const navigate = useNavigate();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const userId = currentUser?.user_id;
+    const plan = investorInfo?.investor_subscription_status?.toLowerCase() || "inactive";
+
+    const [details, setDetails] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
+
+    useEffect(() => {
+        if (!userId) return;
+        setLoading(true);
+        getSubscriptionDetails(userId)
+            .then(data => { if (data.success) setDetails(data); })
+            .finally(() => setLoading(false));
+    }, [userId, plan]);
+
+    const handleUpgrade = () => updateSubscriptionStatus(userId, "premium");
+
+    const handleCancel = async () => {
+        setCancelling(true);
+        try {
+            const result = await cancelSubscription(userId);
+            if (result.success) {
+                const newStatus = result.new_status || "basic";
+                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                stored.subscription_status = newStatus;
+                stored.investor_subscription_status = newStatus;
+                localStorage.setItem("currentUser", JSON.stringify(stored));
+                setShowCancelConfirm(false);
+                onUpdate();
+            } else {
+                alert(result.message || "Failed to cancel subscription");
+            }
+        } catch {
+            alert("Could not reach backend");
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    const CancelModal = () => (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: "#0f1b2d", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
+                <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "10px" }}>Cancel Subscription?</p>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+                    Your plan will be cancelled immediately and your account will revert to the free tier. This cannot be undone.
+                </p>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                    <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                        Keep Plan
+                    </button>
+                    <button onClick={handleCancel} disabled={cancelling} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                        {cancelling ? "Cancelling…" : "Yes, Cancel"}
                     </button>
                 </div>
-                <div style={{ marginTop: "24px" }}>
-                    <div
-                        className="flex justify-between"
-                        style={{
-                            fontSize: "13px",
-                            marginBottom: "8px",
-                            color: "rgba(255,255,255,0.7)"
-                        }}
+            </div>
+        </div>
+    );
+
+    const history = details?.history || [];
+
+    /* ── Inactive ───────────────────────────────────────────── */
+    if (plan === "inactive") {
+        return (
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", padding: "16px 0", textAlign: "center" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
+                        💳
+                    </div>
+                    <div>
+                        <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>No Active Subscription</p>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", maxWidth: "340px", lineHeight: 1.6 }}>
+                            Choose a plan to unlock AI stock predictions, expert portfolios, and more.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate("/investor/subscription")}
+                        style={{ padding: "10px 28px", borderRadius: "10px", background: "linear-gradient(135deg,#0092b8,#155dfc)", border: "none", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}
                     >
-                        <span>Paper Trading Capital</span>
-                        <span>$2,000 / $10,000</span>
+                        View Plans
+                    </button>
+                </div>
+
+                {/* Past subscription history */}
+                {!loading && history.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                        {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.map((row, i) => (
+                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                    {row.sub_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+                </div>
+            </GlassCard>
+        );
+    }
+
+    /* ── Basic ──────────────────────────────────────────────── */
+    if (plan === "basic") {
+        const FEATURES = [
+            { label: "Real-Time Market Dashboard", included: true },
+            { label: "Paper Trading", included: true },
+            { label: "Knowledge Hub Access", included: true },
+            { label: "AI Investment Chatbot", included: true },
+            { label: "Limited AI Stock Predictions", included: true },
+            { label: "Limited Watchlist Management", included: true },
+            { label: "Unlimited AI Stock Predictions", included: false },
+            { label: "Expert Consultation Access", included: false },
+            { label: "Advanced Portfolio Analytics", included: false },
+            { label: "Top Up Paper Money", included: false },
+        ];
+        const startDate = details?.latest?.sub_date
+            ? new Date(details.latest.sub_date).toLocaleDateString()
+            : "—";
+        return (
+            <>
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Basic Plan</p>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                        </div>
+                        <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", fontSize: "12px", fontWeight: 700 }}>
+                            ● Basic
+                        </div>
                     </div>
 
-                    <div
-                        style={{
-                            width: "100%",
-                            height: "10px",
-                            borderRadius: "999px",
-                            background: "rgba(255,255,255,0.08)",
-                            overflow: "hidden"
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "20%", // hardcoded
-                                height: "100%",
-                                background:
-                                    "linear-gradient(90deg,#22c55e,#00D3F2)",
-                                borderRadius: "999px"
-                            }}
-                        />
+                    {/* Feature list */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
+                        {FEATURES.map(f => (
+                            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ fontSize: "14px", color: f.included ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
+                                    {f.included ? "✓" : "✕"}
+                                </span>
+                                <span style={{ fontSize: "13px", color: f.included ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
+                                    {f.label}
+                                </span>
+                            </div>
+                        ))}
                     </div>
 
-                    <div
-                        className="flex justify-between"
-                        style={{
-                            marginTop: "8px",
-                            fontSize: "12px",
-                            color: "rgba(255,255,255,0.4)"
-                        }}
-                    >
-                        <span>Used: $8,000</span>
-                        <span>Remaining: $2,000</span>
+                    {/* Upgrade CTA */}
+                    <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "14px", fontWeight: 700, color: "#FFD700" }}>Upgrade to Premium</p>
+                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
+                        </div>
+                        <button
+                            onClick={handleUpgrade}
+                            style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                        >
+                            Upgrade Now
+                        </button>
+                    </div>
+
+                    {/* Cancel */}
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "16px" }}>
+                        <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                            Cancel plan
+                        </button>
                     </div>
                 </div>
+            </GlassCard>
+            {showCancelConfirm && <CancelModal />}
+        </>
+        );
+    }
+
+    /* ── Premium ─────────────────────────────────────────────── */
+    const latest = details?.latest;
+
+    const startDate = latest?.sub_date ? new Date(latest.sub_date).toLocaleDateString() : "—";
+    const renewalDate = latest?.sub_renewal_date ? new Date(latest.sub_renewal_date).toLocaleDateString() : "—";
+
+    let daysRemaining = null;
+    let progressPct = 0;
+    if (latest?.sub_date && latest?.sub_renewal_date) {
+        const now = Date.now();
+        const start = new Date(latest.sub_date).getTime();
+        const end = new Date(latest.sub_renewal_date).getTime();
+        const total = end - start;
+        const elapsed = now - start;
+        daysRemaining = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+        progressPct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+    }
+
+    return (
+        <>
+        <GlassCard>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                    <div>
+                        <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Premium Plan</p>
+                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                    </div>
+                    <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.5)", color: "#FFD700", fontSize: "12px", fontWeight: 700 }}>
+                        ★ Premium
+                    </div>
+                </div>
+
+                {/* 30-day renewal tracker */}
+                {!loading && daysRemaining !== null && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>30-Day Renewal Period</p>
+                            <p style={{ fontSize: "12px", color: daysRemaining <= 5 ? "#f87171" : "#FFD700", fontWeight: 700 }}>
+                                {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+                            </p>
+                        </div>
+                        <div style={{ height: "8px", borderRadius: "100px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${progressPct}%`, borderRadius: "100px", background: daysRemaining <= 5 ? "linear-gradient(90deg,#f87171,#ef4444)" : "linear-gradient(90deg,#b8860b,#FFD700)", transition: "width 0.4s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{startDate}</span>
+                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>Renews {renewalDate}</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Renew + cancel row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                    <button
+                        onClick={handleUpgrade}
+                        style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                        Renew Premium
+                    </button>
+                    <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                        Cancel plan
+                    </button>
+                </div>
+
+                {/* Subscription history */}
+                {!loading && history.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subscription History</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                        {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.map((row, i) => (
+                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                    {row.sub_status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
-        </GlassCard>);
+        </GlassCard>
+        {showCancelConfirm && <CancelModal />}
+    </>
+    );
 }
-function SubscriptionCard() { return <div />; }
 
 function InvestorProfilePage() {
     const [activeTab, setActiveTab] = useState("personal");
@@ -1059,16 +1397,16 @@ function InvestorProfilePage() {
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.3 }}
         >
             <GeneralHeader />
             <main className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-10">
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", }}>
                         <LeftSection activeTab={activeTab} setActiveTab={setActiveTab} investorInfo={investorInfo} currentUser={currentUser} />
                     </div>
-                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", }}>
                         <DeleteAccountButton />
                     </div>
                 </div>
@@ -1078,8 +1416,8 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} />}
-                    {activeTab === "subscription" && <SubscriptionCard />}
+                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
+                    {activeTab === "subscription" && <SubscriptionCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                 </div>
             </main>
             <Footer />

@@ -2,8 +2,9 @@ from app.entity.database.session import get_session
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
-from app.entity.models.investmentarticle import InvestmentArticle
 from app.entity.models.emailalert import StockAlert
+from app.entity.models.subscription import Subscription
+
 
 class AdminUserAccountController:
     def getUserAccounts(self, keyword=None, role=None, status=None):
@@ -76,7 +77,7 @@ class AdminUserAccountController:
             return parts[0][:2].upper()
 
         return (parts[0][0] + parts[-1][0]).upper()
-    
+
     def getUserAccountById(self, user_id):
         with get_session() as session:
             result = (
@@ -164,7 +165,7 @@ class AdminUserAccountController:
 
             session.delete(user)
             return True
-        
+
     def activateUserAccount(self, user_id):
         with get_session() as session:
             user = session.query(UserAccount).filter(
@@ -179,84 +180,45 @@ class AdminUserAccountController:
 
             session.commit()
             return True
-        
-    def getInvestmentArticles(self):
+
+    def getDashboardStats(self):
         with get_session() as session:
-            articles = session.query(InvestmentArticle).order_by(
-                InvestmentArticle.date_published.desc()
-            ).all()
-
-            return [
-                {
-                    "article_id": article.article_id,
-                    "title": article.title,
-                    "category": article.category,
-                    "content": article.content,
-                    "status": article.status,
-                    "author": article.author,
-                    "date_published": article.date_published.strftime("%Y-%m-%d") if article.date_published else None,
-                }
-                for article in articles
-            ]
-
-    def getInvestmentArticleById(self, article_id):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return None
-
+            total_users = (
+                session.query(UserAccount)
+                .join(Investor, UserAccount.user_id == Investor.user_id, isouter=True)
+                .join(Expert, UserAccount.user_id == Expert.user_id, isouter=True)
+                .filter((Investor.investor_id != None) | (Expert.expert_id != None))
+                .count()
+            )
+            total_premium = session.query(Investor).filter(
+                Investor.investor_subscription_status == "premium"
+            ).count()
+            total_experts = session.query(Expert).count()
             return {
-                "article_id": article.article_id,
-                "title": article.title,
-                "category": article.category,
-                "content": article.content,
-                "status": article.status,
-                "author": article.author,
-                "date_published": article.date_published.strftime("%Y-%m-%d") if article.date_published else None,
+                "total_users": total_users,
+                "total_premium": total_premium,
+                "total_experts": total_experts,
             }
 
-    def createInvestmentArticle(self, title, category, content, status):
+    def getSubscriptions(self):
         with get_session() as session:
-            article = InvestmentArticle(
-                title=title,
-                category=category,
-                content=content,
-                status=status,
-                author="Admin",
+            rows = (
+                session.query(Subscription, Investor, UserAccount)
+                .join(Investor, Subscription.investor_id == Investor.investor_id)
+                .join(UserAccount, Investor.user_id == UserAccount.user_id)
+                .order_by(Subscription.sub_date.desc())
+                .all()
             )
-
-            session.add(article)
-            session.flush()
-
-            return article.article_id
-
-    def updateInvestmentArticle(self, article_id, title, category, content, status):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return False
-
-            article.title = title
-            article.category = category
-            article.content = content
-            article.status = status
-
-            return True
-
-    def deleteInvestmentArticle(self, article_id):
-        with get_session() as session:
-            article = session.query(InvestmentArticle).filter(
-                InvestmentArticle.article_id == article_id
-            ).first()
-
-            if not article:
-                return False
-
-            session.delete(article)
-            return True
+            return [
+                {
+                    "sub_id": sub.sub_id,
+                    "full_name": user.full_name,
+                    "email_address": user.email_address,
+                    "username": user.username,
+                    "plan_type": sub.plan_type,
+                    "sub_status": sub.sub_status,
+                    "sub_date": sub.sub_date.strftime("%Y-%m-%d") if sub.sub_date else None,
+                    "sub_renewal_date": sub.sub_renewal_date.strftime("%Y-%m-%d") if sub.sub_renewal_date else None,
+                }
+                for sub, investor, user in rows
+            ]

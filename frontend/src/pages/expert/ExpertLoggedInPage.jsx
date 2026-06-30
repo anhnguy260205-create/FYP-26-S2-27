@@ -1,30 +1,60 @@
+import { useEffect, useState } from "react";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 
 function ExpertLoggedInPage() {
+  const [hero, setHero] = useState({
+    title: "Lead the Future of Wealth Management",
+    description: "Provide trusted investment expertise and data-driven strategies to help clients achieve their goals.",
+  });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const expertHero = data.content.find((c) => c.section === "expert");
+        if (expertHero) setHero(expertHero);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <ConsultantHeader />
 
-      <main className="flex-1 p-7.5">
+      <main className="flex-1 p-4 sm:p-7.5">
+        <style>{`
+          .expert-hero {
+            height: 130vh;
+            margin-top: -25vh;
+            margin-bottom: -20vh;
+          }
+          @media (max-width: 640px) {
+            .expert-hero {
+              height: auto;
+              min-height: 70vh;
+              margin-top: 0;
+              margin-bottom: 0;
+            }
+          }
+        `}</style>
         <div
+          className="expert-hero"
           style={{
             position: "relative",
-            height: "130vh",
             width: "100%",
             overflow: "hidden",
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            marginTop: "-25vh",
-            marginBottom: "-20vh",
           }}
         >
           {/* Background glow */}
@@ -68,7 +98,6 @@ function ExpertLoggedInPage() {
                 margin: 0,
               }}
             >
-              Lead the Future of
               <span
                 style={{
                   display: "block",
@@ -78,7 +107,7 @@ function ExpertLoggedInPage() {
                   backgroundClip: "text",
                 }}
               >
-                Wealth Management
+                {hero.title}
               </span>
             </h1>
 
@@ -89,9 +118,11 @@ function ExpertLoggedInPage() {
                 fontSize: "1rem",
               }}
             >
-              Provide trusted investment expertise and data-driven strategies to help clients achieve their goals.            </p>
+              {hero.description}
+            </p>
           </div>
         </div>
+
       </main>
 
       <Footer />

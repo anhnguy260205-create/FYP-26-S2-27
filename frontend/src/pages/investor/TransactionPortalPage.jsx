@@ -33,8 +33,7 @@ function StatCard({ label, value, sub, color = "#e2e8f0", icon }) {
       style={{
         background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
         border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-        padding: "18px 20px", backdropFilter: "blur(12px)",
-      }}>
+        padding: "18px 20px",      }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 10px" }}>{label}</p>
         {icon && <span style={{ fontSize: 18, opacity: 0.4 }}>{icon}</span>}
@@ -61,8 +60,7 @@ function SymbolBreakdownChart({ transactions }) {
     <div style={{
       background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
       border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px", backdropFilter: "blur(12px)",
-    }}>
+      padding: "18px 20px",    }}>
       <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
         Trades by Symbol
       </p>
@@ -73,7 +71,7 @@ function SymbolBreakdownChart({ transactions }) {
             <div style={{ flex: 1, height: 6, background: "rgba(99,179,237,0.1)", borderRadius: 3 }}>
               <motion.div
                 initial={{ width: 0 }} animate={{ width: `${(count / max) * 100}%` }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: 0.25, delay: 0.1 }}
                 style={{ height: "100%", background: "linear-gradient(90deg,#3b82f6,#63b3ed)", borderRadius: 3 }}
               />
             </div>
@@ -109,8 +107,7 @@ function PnLBySymbolChart({ transactions }) {
     <div style={{
       background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
       border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px", backdropFilter: "blur(12px)",
-    }}>
+      padding: "18px 20px",    }}>
       <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
         Realised P&amp;L by Symbol
       </p>
@@ -124,7 +121,7 @@ function PnLBySymbolChart({ transactions }) {
               <div style={{ flex: 1, height: 6, background: "rgba(99,179,237,0.1)", borderRadius: 3, position: "relative" }}>
                 <motion.div
                   initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: 0.25, delay: 0.1 }}
                   style={{
                     height: "100%", borderRadius: 3,
                     background: pos ? "linear-gradient(90deg,rgba(52,211,153,0.6),#34d399)" : "linear-gradient(90deg,rgba(248,113,113,0.6),#f87171)",
@@ -173,8 +170,7 @@ function VolumeSparkline({ transactions }) {
     <div style={{
       background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
       border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px 10px", backdropFilter: "blur(12px)", overflow: "hidden",
-    }}>
+      padding: "18px 20px 10px",    }}>
       <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 4px" }}>
         Daily Trade Volume (Last 30 days)
       </p>
@@ -290,12 +286,12 @@ function TransactionPortalPage() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');`}</style>
+      
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px" }}>
+        <main className="flex-1 p-4 md:p-7">
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
@@ -389,8 +385,7 @@ function TransactionPortalPage() {
                   <div style={{
                     background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                     border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                    padding: "18px 20px", backdropFilter: "blur(12px)", marginTop: 16,
-                  }}>
+                    padding: "18px 20px",                  }}>
                     <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
                       Current Holdings
                     </p>
@@ -441,8 +436,7 @@ function TransactionPortalPage() {
                 <div style={{
                   background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                   border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-                  padding: "14px 18px", marginBottom: 14, backdropFilter: "blur(12px)",
-                  display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+                  padding: "14px 18px", marginBottom: 14,                  display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
                 }}>
                   <input placeholder="Search symbol…" value={search}
                     onChange={e => setSearch(e.target.value)}
@@ -479,7 +473,6 @@ function TransactionPortalPage() {
                 <div style={{
                   background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                   border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                  backdropFilter: "blur(12px)", overflow: "hidden",
                 }}>
                   {filtered.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "60px 0" }}>
