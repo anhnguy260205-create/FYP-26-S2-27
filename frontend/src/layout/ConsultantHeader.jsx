@@ -128,6 +128,11 @@ function ConsultantHeader() {
       onClick: () => navigate("/expert/portfolio"),
     },
     {
+      label: "Learning Content",
+      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      onClick: () => navigate("/expert/knowledge-hub"),
+    },
+    {
       label: "Community Forum",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       onClick: () => navigate("/forum"),
@@ -154,12 +159,13 @@ function ConsultantHeader() {
             <div key={link.label} className="relative group">
               <a
                 href="#"
-                className="font-bold text-[14px] lg:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap hover:opacity-70 transition-opacity"
+                className="font-bold text-[14px] lg:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
                 style={{ backgroundImage: link.gradient }}
                 onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
               >
                 {link.label}
               </a>
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
               {link.submenu && <NavDropdown items={link.submenu} />}
             </div>
           ))}

@@ -35,14 +35,16 @@ function Header() {
         {/* Desktop links */}
         <div className="hidden sm:flex items-center gap-8">
           {LINKS.map((link) => (
-            <a
-              key={link.label}
-              href="#"
-              className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap hover:opacity-70 transition-opacity"
-              style={{ backgroundImage: link.gradient }}
-            >
-              {link.label}
-            </a>
+            <div key={link.label} className="relative group">
+              <a
+                href="#"
+                className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
+                style={{ backgroundImage: link.gradient }}
+              >
+                {link.label}
+              </a>
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+            </div>
           ))}
         </div>
 

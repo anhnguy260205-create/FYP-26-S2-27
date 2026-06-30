@@ -9,6 +9,12 @@ def _get_expert_id(user_id):
         return exp.expert_id if exp else None
 
 
+def _get_expert(user_id):
+    """Return the Expert row for a user_id, or None."""
+    with __import__("app.entity.database.session", fromlist=["get_session"]).get_session() as s:
+        return s.query(Expert).filter(Expert.user_id == user_id).first()
+
+
 class ListArticlesController:
     def list(self, category=None, tag=None, limit=50):
         return Article.getAll(category=category, tag=tag, limit=limit)
@@ -21,10 +27,12 @@ class GetArticleController:
 
 class CreateArticleController:
     def create(self, user_id, title, summary, content, category, tags=""):
-        expert_id = _get_expert_id(user_id)
-        if not expert_id:
+        expert = _get_expert(user_id)
+        if not expert:
             return {"success": False, "message": "Expert account not found"}
-        article_id = Article.create(expert_id, title, summary, content, category, tags)
+        if expert.verification_status != "approved":
+            return {"success": False, "message": "Only verified experts can create articles", "unverified": True}
+        article_id = Article.create(expert.expert_id, title, summary, content, category, tags)
         return {"success": True, "article_id": article_id}
 
 

@@ -46,3 +46,23 @@ export const deleteArticle = async (articleId) => {
   });
   return res.json();
 };
+
+export const submitArticleForReview = async (articleId) => {
+  const res = await authFetch(`${BASE}/articles/${articleId}`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "pending" }),
+  });
+  return res.json();
+};
+
+const ADMIN_BASE = `${import.meta.env.VITE_API_URL}/admin`;
+
+export const approveArticle = async (articleId) => {
+  const res = await authFetch(`${ADMIN_BASE}/articles/${articleId}/approve`, { method: "POST" });
+  return res.json();
+};
+
+export const rejectArticle = async (articleId) => {
+  const res = await authFetch(`${ADMIN_BASE}/articles/${articleId}/reject`, { method: "POST" });
+  return res.json();
+};

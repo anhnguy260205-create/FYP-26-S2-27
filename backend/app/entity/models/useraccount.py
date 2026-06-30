@@ -133,6 +133,7 @@ class UserAccount(Base):
                 "subscription_status": investor.investor_subscription_status if investor else "inactive",
                 "interests": investor.interests if investor else None,
                 "risk_tolerance": investor.risk_tolerance if investor else None,
+                "verification_status": expert.verification_status if expert else None,
             }
 
     @staticmethod

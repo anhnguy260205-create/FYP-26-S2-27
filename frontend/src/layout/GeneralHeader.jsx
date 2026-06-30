@@ -167,7 +167,7 @@ function GeneralHeader() {
           alt="logo"
           src={logo}
           onClick={() => navigate("/investor")}
-          className="cursor-pointer w-[70px] md:w-[100px] lg:w-[120px]"
+          className="cursor-pointer w-17.5 md:w-25 lg:w-30"
           style={{ height: "auto" }}
         />
 
@@ -177,12 +177,13 @@ function GeneralHeader() {
             <div key={link.label} className="relative group">
               <a
                 href="#"
-                className="font-bold text-[13px] xl:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap hover:opacity-70 transition-opacity"
+                className="font-bold text-[13px] xl:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
                 style={{ backgroundImage: link.gradient }}
                 onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
               >
                 {link.label}
               </a>
+              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
               {link.submenu && <NavDropdown items={link.submenu} />}
             </div>
           ))}
@@ -221,7 +222,7 @@ function GeneralHeader() {
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-[60px] z-40 bg-white overflow-y-auto">
+        <div className="lg:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
           <div className="px-4 py-4">
             {navLinks.map((link) => (
               <div key={link.label} className="mb-1">

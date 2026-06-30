@@ -76,7 +76,7 @@ class Article(Base):
                 content=content.strip(),
                 category=category,
                 tags=tags.strip(),
-                status="published",
+                status="pending",
             )
             session.add(article)
             session.flush()
