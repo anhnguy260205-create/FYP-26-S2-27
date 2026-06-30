@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -950,6 +950,9 @@ function SectionLabel({ text }) {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 function AIPredictionPage() {
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
   const [symbol, setSymbol] = useState("AAPL");
   const [days, setDays] = useState(7);
 
@@ -957,6 +960,7 @@ function AIPredictionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const hasRun = useRef(false);
+  const hasHandledDeepLink = useRef(false);
 
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
   const liveStock = stocks[symbol];
@@ -996,9 +1000,22 @@ function AIPredictionPage() {
     }
   }
 
-  // Auto-run on mount
+  // Auto-run on mount. If the user comes from the chatbot with
+  // /investor/aiprediction?symbol=NVDA, open that exact stock instead of the default.
   useEffect(() => {
-    runPrediction("AAPL", 7);
+    if (hasHandledDeepLink.current) return;
+    hasHandledDeepLink.current = true;
+
+    const deepLinkSymbol = String(
+      searchParams.get("symbol") || location.state?.selectedSymbol || ""
+    ).toUpperCase();
+
+    if (SYMBOLS.includes(deepLinkSymbol)) {
+      setSymbol(deepLinkSymbol);
+      runPrediction(deepLinkSymbol, 7);
+    } else {
+      runPrediction("AAPL", 7);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
