@@ -12,3 +12,4 @@ firebase-admin
 stripe
 slowapi
 pip-system-certs
+firebase 
