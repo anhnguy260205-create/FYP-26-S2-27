@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, Eye, Ban, Mail, Phone } from "lucide-react";
+import { Search, Filter, Eye, Ban, Trash2, Mail, Phone } from "lucide-react";
 import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layout/AdminPage.jsx";
-import { authFetch } from "../../api/apiClient.js";
 
 function UserAccountsPage() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const fetchUsers = async (searchKeyword = "") => {
     try {
       setLoading(true);
 
       const url = searchKeyword
-        ? `${import.meta.env.VITE_API_URL}/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
-        : "${import.meta.env.VITE_API_URL}/admin/useraccounts";
+        ? `http://127.0.0.1:8000/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
+        : "http://127.0.0.1:8000/admin/useraccounts";
 
-      const response = await authFetch(url);
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -49,7 +49,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await authFetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/suspend`, {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/suspend`, {
         method: "PUT",
       });
 
@@ -72,7 +72,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await authFetch(`${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}/activate`, {
+      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/activate`, {
         method: "PUT",
       });
 
@@ -89,6 +89,40 @@ function UserAccountsPage() {
       alert("Failed to activate user");
     }
   };
+
+  const handleDelete = async (userId) => {
+    const confirmed = window.confirm("Are you sure you want to permanently delete this account?");
+    if (!confirmed) return;
+
+    try {
+      const requestingId = currentUser?.user_id ?? "";
+      const response = await fetch(
+        `http://127.0.0.1:8000/admin/useraccounts/${userId}?requesting_user_id=${encodeURIComponent(requestingId)}`,
+        { method: "DELETE" }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("User deleted successfully");
+        fetchUsers(keyword);
+      } else {
+        alert(data.message || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      alert("Failed to delete user");
+    }
+  };
+
+  const menuItems = [
+    { name: "Dashboard", path: "/adminpanel" },
+    { name: "User Accounts", path: "/adminpanel/useraccounts" },
+    { name: "User Profiles", path: "/adminpanel/profiles" },
+    { name: "Community Post", path: "/adminpanel/posts" },
+    { name: "Trade", path: "/adminpanel/trade" },
+    { name: "Investment Guidance Article", path: "/adminpanel/articles" },
+  ];
 
   const roleStyle = (role) => {
     if (role === "Premium") return "bg-purple-100 text-purple-700";
@@ -148,7 +182,7 @@ function UserAccountsPage() {
         </section>
 
         {/* Table */}
-        <section className="bg-white rounded-lg overflow-x-auto">
+        <section className="bg-white rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
@@ -225,6 +259,19 @@ function UserAccountsPage() {
                         />
                       )}
 
+                      {user.user_id === currentUser?.user_id ? (
+                        <Trash2
+                          size={18}
+                          className="text-gray-300 cursor-not-allowed"
+                          title="You cannot delete your own account"
+                        />
+                      ) : (
+                        <Trash2
+                          size={18}
+                          onClick={() => handleDelete(user.user_id)}
+                          className="text-red-600 cursor-pointer"
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>
