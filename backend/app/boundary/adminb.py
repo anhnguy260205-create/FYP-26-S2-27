@@ -109,6 +109,18 @@ def update_admin_article(
     )
 
 
+@router.post("/articles/{article_id}/approve")
+def approve_article(article_id: str, _: dict = Depends(require_admin)):
+    result = AdminUpdateArticleController().update(article_id, status="published")
+    return result
+
+
+@router.post("/articles/{article_id}/reject")
+def reject_article(article_id: str, _: dict = Depends(require_admin)):
+    result = AdminUpdateArticleController().update(article_id, status="rejected")
+    return result
+
+
 @router.delete("/articles/{article_id}")
 def delete_admin_article(article_id: str, _: dict = Depends(require_admin)):
     AdminDeleteArticleController().delete(article_id)
