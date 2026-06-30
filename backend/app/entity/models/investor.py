@@ -254,3 +254,76 @@ def seed_investor_account():
         address="123 Kim Street",
         stock_level="Basic"
     )
+
+
+def seed_premium_investor_account():
+    """Create/upgrade a demo Premium investor account for dashboard testing.
+
+    Login:
+      username: premium
+      password: premium123
+    """
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    from uuid import uuid4
+    from app.entity.models.subscription import Subscription
+    from app.entity.models.userprofile import UserProfile
+
+    with get_session() as session:
+        user = session.query(UserAccount).filter(
+            (UserAccount.username == "premium") |
+            (UserAccount.email_address == "premium@gmail.com")
+        ).first()
+
+        if not user:
+            profile_id = UserProfile.get_or_create("investor")
+            user = UserAccount(
+                username="premium",
+                full_name="Premium Investor",
+                email_address="premium@gmail.com",
+                password="premium123",
+                phone_number="99999999",
+                address="123 Premium Street",
+                profile_id=profile_id,
+                account_status="active",
+                is_active=False,
+            )
+            session.add(user)
+            session.flush()
+
+        investor = session.query(Investor).filter(Investor.user_id == user.user_id).first()
+        if not investor:
+            investor = Investor(
+                user_id=user.user_id,
+                stock_level="Advanced",
+                paper_money=100000,
+                used_amount=0,
+                investor_subscription_status="premium",
+            )
+            session.add(investor)
+            session.flush()
+        else:
+            investor.stock_level = investor.stock_level or "Advanced"
+            investor.investor_subscription_status = "premium"
+            investor.paper_money = max(float(investor.paper_money or 0), 100000)
+            session.flush()
+
+        active_sub = session.query(Subscription).filter(
+            Subscription.investor_id == investor.investor_id,
+            Subscription.sub_status == "active",
+        ).first()
+
+        if active_sub:
+            active_sub.plan_type = "premium"
+            active_sub.sub_renewal_date = datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=365)
+        else:
+            session.add(Subscription(
+                transaction_id=f"seed_premium_{uuid4()}",
+                plan_type="premium",
+                investor_id=investor.investor_id,
+                sub_status="active",
+                sub_renewal_date=datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=365),
+            ))
+
+        print("PREMIUM INVESTOR READY: username=premium password=premium123")
+        return user.user_id

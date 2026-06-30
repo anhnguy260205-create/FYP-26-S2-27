@@ -3,6 +3,14 @@ import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { BellRing } from "lucide-react";
 
+function clearRocketTradeAiChatSession() {
+  try {
+    Object.keys(sessionStorage)
+      .filter(key => key.startsWith("rocketTradeAiChat"))
+      .forEach(key => sessionStorage.removeItem(key));
+  } catch {}
+}
+
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -28,6 +36,7 @@ function DropDownMenu() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
+      clearRocketTradeAiChatSession();
       localStorage.removeItem("currentUser");
       navigate("/");
       return;
@@ -36,6 +45,7 @@ function DropDownMenu() {
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
+        clearRocketTradeAiChatSession();
         localStorage.removeItem("currentUser");
         navigate("/");
       } else {

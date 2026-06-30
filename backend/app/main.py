@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+import os
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
@@ -9,8 +13,13 @@ from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
 from app.entity.models.useraccount import seed_admin_account
+<<<<<<< Updated upstream
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account
+=======
+from app.entity.models.investor import seed_investor_account, seed_premium_investor_account
+from app.entity.models.expert import seed_expert_account, seed_jordan_account
+>>>>>>> Stashed changes
 from app.entity.models.subscription import Subscription
 from app.entity.models.investmentarticle import InvestmentArticle
 from app.boundary.stock_ws import router as stock_ws_router
@@ -20,7 +29,7 @@ from app.entity.models.transaction import Transaction
 from app.entity.models.password_reset import PasswordReset
 from app.entity.models.article import Article, seed_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
-from app.entity.models.forumquestion import ForumPost, ForumReply, ForumPostLike, ForumPostSave, ExpertQuestion
+from app.entity.models.forumquestion import ForumPost, ForumReply, ForumPostLike, ForumPostSave, ExpertQuestion, ForumReplyLike, ForumPostView, seed_forum_posts, ensure_forum_schema
 from app.boundary.stock_ws import router as stock_ws_router, stock_pool, get_snapshot_yfinance
 from app.boundary.predictionb import router as prediction_router
 from app.boundary.payment_service import router as payment_router
@@ -30,6 +39,7 @@ from app.boundary.tradingb import router as trading_router
 from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
+from app.boundary.chatbotb import router as chatbot_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 
 from fastapi.exceptions import RequestValidationError
@@ -74,11 +84,14 @@ app.add_middleware(
 
 # Create database tables based on the defined models
 Base.metadata.create_all(bind=engine)
+ensure_forum_schema(engine)
 seed_profiles()
 seed_admin_account()
 seed_investor_account()
+seed_premium_investor_account()
 seed_expert_account()
 seed_articles()
+seed_forum_posts()
 
 app.include_router(user_router)
 app.include_router(admin_router)
@@ -91,6 +104,7 @@ app.include_router(trading_router)
 app.include_router(knowledge_router)
 app.include_router(expert_router)
 app.include_router(consultant_forum_router)
+app.include_router(chatbot_router)
 
 
 @app.get("/")
