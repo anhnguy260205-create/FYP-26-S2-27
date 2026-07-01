@@ -36,6 +36,7 @@ from app.boundary.stock_ws import (
     _snapshot_cache,
 )
 from app.boundary.predictionb import router as prediction_router
+from app.boundary.ratingb import router as rating_router
 from app.boundary.payment_service import router as payment_router
 from app.boundary.alertb import router as alertb
 from app.boundary.passwordresetb import router as password_reset_router
@@ -168,6 +169,7 @@ app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(stock_ws_router)
 app.include_router(prediction_router)
+app.include_router(rating_router)
 app.include_router(payment_router)
 app.include_router(alertb)
 app.include_router(password_reset_router)
