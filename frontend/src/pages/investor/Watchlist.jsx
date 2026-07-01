@@ -6,6 +6,8 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import { useNavigate } from "react-router-dom";
 import { getWatchlist, addStockToWatchlist, removeStockFromWatchlist } from "../../api/userApi.js";
 
+const BASIC_WATCHLIST_LIMIT = 3;
+
 function Sparkline({ data, positive }) {
     const w = 80, h = 28, pad = 2;
     const min = Math.min(...data);
@@ -41,10 +43,13 @@ const COMPANY_NAMES = {
 export default function Watchlist() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
+    const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
     const { stocks: liveStocks, candles } = useLiveStocks();
 
     const [symbols, setSymbols] = useState([]);
+
+    const isAtLimit = !isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT;
     const [loading, setLoading] = useState(true);
     const [adding, setAdding] = useState(false);
     const [newSymbol, setNewSymbol] = useState("");
@@ -65,6 +70,10 @@ export default function Watchlist() {
             alert(`${sym} is already in your watchlist.`);
             return;
         }
+        if (!isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT) {
+            alert(`Basic plan is limited to ${BASIC_WATCHLIST_LIMIT} watchlist stocks. Upgrade to Premium for unlimited.`);
+            return;
+        }
         const res = await addStockToWatchlist(userId, sym);
         if (res.success) {
             setSymbols(prev => [...prev, sym]);
@@ -73,7 +82,7 @@ export default function Watchlist() {
         } else {
             alert(res.message || "Failed to add stock.");
         }
-    }, [newSymbol, symbols, userId]);
+    }, [newSymbol, symbols, userId, isPremium]);
 
     const handleRemove = useCallback(async (sym) => {
         const res = await removeStockFromWatchlist(userId, sym);
@@ -109,7 +118,7 @@ export default function Watchlist() {
             <main className="flex-1 p-4 md:p-7">
 
                 {/* Page header */}
-                <div className="flex justify-between items-start mb-8">
+                <div className="flex justify-between items-start mb-6">
                     <div>
                         <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
                             My Watchlist
@@ -118,15 +127,12 @@ export default function Watchlist() {
                             Track your favourite stocks and market trends
                         </p>
                     </div>
-
                     <div className="flex items-center gap-2">
                         <AnimatePresence>
-                            {adding && (
-                                <motion.div
+                            {adding && !isAtLimit && (
+                                <div
                                     className="flex items-center gap-2"
-                                    initial={{ opacity: 0, x: 12 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 12 }}
+
                                 >
                                     <input
                                         autoFocus
@@ -149,19 +155,77 @@ export default function Watchlist() {
                                     >
                                         Cancel
                                     </button>
-                                </motion.div>
+                                </div>
                             )}
                         </AnimatePresence>
 
+                        {!isPremium && (
+                            <span style={{
+                                fontFamily: "'DM Mono', monospace", fontSize: "11px",
+                                color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.4)",
+                                letterSpacing: "0.06em",
+                            }}>
+                                {symbols.length}/{BASIC_WATCHLIST_LIMIT}
+                            </span>
+                        )}
+
                         <button
-                            onClick={() => adding ? handleAdd() : setAdding(true)}
-                            className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
-                            style={{ background: "linear-gradient(90deg, #155dfc, #0092b8)" }}
+                            onClick={() => {
+                                if (isAtLimit) return;
+                                adding ? handleAdd() : setAdding(true);
+                            }}
+                            disabled={isAtLimit}
+                            title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
+                            className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity"
+                            style={{
+                                background: isAtLimit ? "rgba(255,255,255,0.08)" : "linear-gradient(90deg, #155dfc, #0092b8)",
+                                color: isAtLimit ? "rgba(255,255,255,0.3)" : "white",
+                                cursor: isAtLimit ? "not-allowed" : "pointer",
+                            }}
                         >
                             + Add Symbol
                         </button>
                     </div>
                 </div>
+                <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", marginBottom: 20 }} />
+
+                {/* Basic plan limit banner */}
+                {isAtLimit && (
+                    <div
+
+                        style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            gap: "12px", marginBottom: "20px",
+                            background: "rgba(255,215,0,0.06)",
+                            border: "1px solid rgba(255,215,0,0.25)",
+                            borderRadius: "10px", padding: "12px 16px",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <span style={{ fontSize: "16px" }}>🔒</span>
+                            <div>
+                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#FFD700" }}>
+                                    Watchlist limit reached ({BASIC_WATCHLIST_LIMIT}/{BASIC_WATCHLIST_LIMIT})
+                                </div>
+                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+                                    Basic plan supports up to {BASIC_WATCHLIST_LIMIT} stocks. Upgrade to Premium for unlimited.
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => navigate("/investor/subscription")}
+                            style={{
+                                padding: "7px 16px", borderRadius: "8px", whiteSpace: "nowrap",
+                                background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
+                                border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700",
+                                fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "11px",
+                                letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+                            }}
+                        >
+                            ★ Upgrade
+                        </button>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -198,24 +262,20 @@ export default function Watchlist() {
                         )}
 
                         {!loading && userId && rows.length === 0 && (
-                            <motion.div
+                            <div
                                 className="text-center py-16 text-sm"
                                 style={{ color: "rgba(255,255,255,0.3)" }}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+
                             >
                                 Your watchlist is empty — add a symbol above.
-                            </motion.div>
+                            </div>
                         )}
 
                         {rows.map((row, index) => (
-                            <motion.div
+                            <div
                                 key={row.sym}
                                 layout
-                                initial={{ opacity: 0, y: -6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.2, delay: index * 0.04 }}
+
                                 className="grid items-center px-5 py-3.5 group"
                                 style={{
                                     gridTemplateColumns: "2fr 1.1fr 1.1fr 1.1fr 90px 60px",
@@ -282,14 +342,21 @@ export default function Watchlist() {
                                         ✕
                                     </button>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))}
                     </AnimatePresence>
                 </div>
 
                 {/* Footer */}
                 <div className="flex justify-between items-center mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    <span>Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}</span>
+                    <span>
+                        Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}
+                        {!isPremium && (
+                            <span style={{ color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.25)", marginLeft: "8px" }}>
+                                · {symbols.length}/{BASIC_WATCHLIST_LIMIT} Basic plan slots used
+                            </span>
+                        )}
+                    </span>
                     <span style={{ color: "rgba(255,255,255,0.2)" }}>Live prices via WebSocket</span>
                 </div>
 

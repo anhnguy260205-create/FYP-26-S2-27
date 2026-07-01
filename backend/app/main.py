@@ -45,6 +45,7 @@ from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
+from app.boundary.chatbotb import router as chatbot_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 from app.control.services.email_service import send_renewal_reminder_email
@@ -178,6 +179,7 @@ app.include_router(knowledge_router)
 app.include_router(expert_router)
 app.include_router(consultant_forum_router)
 app.include_router(content_router)
+app.include_router(chatbot_router)
 
 
 @app.get("/")
