@@ -3,8 +3,8 @@ from app.entity.models.forumquestion import ForumRepository
 
 
 class ForumController:
-    def list_posts(self, user_id=None):
-        return {"success": True, "posts": ForumRepository.list_posts(user_id)}
+    def list_posts(self, user_id=None, symbol=None):
+        return {"success": True, "posts": ForumRepository.list_posts(user_id, symbol)}
 
     def get_post(self, post_id, user_id=None):
         post = ForumRepository.get_post(post_id, user_id)
@@ -12,8 +12,8 @@ class ForumController:
             return {"success": False, "message": "Post not found"}
         return {"success": True, "post": post}
 
-    def create_post(self, user_id, title, content, category="General", tags=None):
-        post = ForumRepository.create_post(user_id, title, content, category, tags or [])
+    def create_post(self, user_id, title, content, category="General", tags=None, symbol=None):
+        post = ForumRepository.create_post(user_id, title, content, category, tags or [], symbol)
         return {"success": True, "post": post, "message": "Post created successfully"}
 
     def reply_post(self, post_id, user_id, content):

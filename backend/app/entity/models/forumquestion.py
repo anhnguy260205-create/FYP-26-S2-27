@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, or_
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
@@ -30,6 +30,7 @@ class ForumPost(Base):
     content = Column(Text, nullable=False)
     category = Column(String(80), default="General")
     tags = Column(String(255), default="")
+    symbol = Column(String(10), nullable=True, index=True)
     likes_count = Column(Integer, default=0)
     views_count = Column(Integer, default=0)
     is_pinned = Column(Integer, default=0)
@@ -172,6 +173,7 @@ def _serialise_post(session, post, user_id=None, include_replies=True,
         "content": post.content,
         "preview": post.content[:180] + ("..." if len(post.content) > 180 else ""),
         "category": post.category,
+        "symbol": post.symbol,
         "tags": [t.strip() for t in (post.tags or "").split(",") if t.strip()],
         "author": post.author_name,
         "author_name": post.author_name,
@@ -240,10 +242,17 @@ class ForumRepository:
             return True
 
     @staticmethod
-    def list_posts(user_id=None):
+    def list_posts(user_id=None, symbol=None):
         ForumRepository.seed_posts()
         with get_session() as session:
-            posts = session.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
+            query = session.query(ForumPost)
+            if symbol:
+                sym = symbol.upper()
+                # Match the dedicated symbol column OR the ticker appearing in tags,
+                # so existing tag-based posts show up on the stock page too.
+                query = query.filter(or_(ForumPost.symbol == sym,
+                                         ForumPost.tags.like(f"%{sym}%")))
+            posts = query.order_by(ForumPost.created_at.desc()).all()
             liked_ids: set = set()
             saved_ids: set = set()
             if user_id and posts:
@@ -266,12 +275,13 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def create_post(user_id, title, content, category="General", tags=None):
+    def create_post(user_id, title, content, category="General", tags=None, symbol=None):
         with get_session() as session:
             author_name, author_role = _resolve_user_name(session, user_id)
             post = ForumPost(
                 post_id=f"post_{uuid4()}", user_id=user_id, author_name=author_name, author_role=author_role,
                 title=title, content=content, category=category or "General", tags=",".join(tags or []),
+                symbol=(symbol.upper() if symbol else None),
             )
             session.add(post)
             session.flush()

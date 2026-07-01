@@ -13,6 +13,7 @@ class CreatePostRequest(BaseModel):
     content: str
     category: Optional[str] = "General"
     tags: List[str] = []
+    symbol: Optional[str] = None
 
 
 class ReplyRequest(BaseModel):
@@ -26,8 +27,8 @@ class EditReplyRequest(BaseModel):
 # ── Public reads ───────────────────────────────────────────────────────────────
 
 @router.get("/posts")
-def list_posts(user_id: Optional[str] = None):
-    return ForumController().list_posts(user_id)
+def list_posts(user_id: Optional[str] = None, symbol: Optional[str] = None):
+    return ForumController().list_posts(user_id, symbol)
 
 
 @router.get("/posts/{post_id}")
@@ -43,7 +44,7 @@ def create_post(
     current_user: dict = Depends(get_current_user),
 ):
     return ForumController().create_post(
-        current_user["user_id"], data.title, data.content, data.category, data.tags
+        current_user["user_id"], data.title, data.content, data.category, data.tags, data.symbol
     )
 
 

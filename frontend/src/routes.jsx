@@ -9,7 +9,7 @@ const LoginPage                     = lazy(() => import("./pages/user/LoginPage.
 const HomePage                      = lazy(() => import("./pages/user/HomePage.jsx"));
 const ResetPasswordPage             = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage         = lazy(() => import("./pages/investor/RealTimeDashBoardPage.jsx"));
-const AIPredictionPage              = lazy(() => import("./pages/investor/AIPredictionPage.jsx"));
+const QuantRatingPage               = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
 const ForumPage                     = lazy(() => import("./pages/shared/ForumPage.jsx"));
 const ChangePasswordPage            = lazy(() => import("./pages/shared/ChangePasswordPage.jsx"));
 const AStockDashBoardPage           = lazy(() => import("./pages/investor/AStockDashBoardPage.jsx"));
@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
     { path: "/investor",                     element: protect(["investor"], LoggedInHomePage) },
     { path: "/investor/realtimedashboard",   element: protect(["investor"], RealTimeDashBoardPage) },
     { path: "/investor/realtimedashboard/astockdashboard/:symbol", element: protect(["investor"], AStockDashBoardPage) },
-    { path: "/investor/aiprediction",        element: protect(["investor"], AIPredictionPage) },
+    { path: "/investor/quantrating",         element: protect(["investor"], QuantRatingPage) },
     { path: "/forum",                        element: protect(["investor", "expert"], ForumPage) },
     { path: "/change-password",              element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription",        element: protect(["investor"], SubscriptionPage) },
