@@ -13,9 +13,22 @@ function waitForAuth() {
 
 async function getAuthHeader() {
   const user = auth.currentUser ?? await waitForAuth();
-  if (!user) return {};
-  const token = await user.getIdToken();
-  return { Authorization: `Bearer ${token}` };
+  const headers = {};
+
+  if (user?.email && import.meta.env.DEV) {
+    headers["X-Dev-Email"] = user.email;
+  }
+
+  if (!user) return headers;
+
+  try {
+    const token = await user.getIdToken();
+    headers.Authorization = `Bearer ${token}`;
+  } catch (error) {
+    console.warn("Failed to get Firebase ID token, continuing with dev fallback headers:", error);
+  }
+
+  return headers;
 }
 
 /**

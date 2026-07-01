@@ -7,6 +7,10 @@ cryptography
 websockets
 yfinance
 xgboost
+scikit-learn
+joblib
+pandas
+numpy
 vaderSentiment
 firebase-admin
 stripe
