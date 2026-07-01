@@ -223,7 +223,7 @@ export default function ForumPage() {
           setRoomImageUrls(urls);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const getRoomImage = (roomName) => roomImageUrls[roomName] || ROOM_IMAGES[roomName];
@@ -449,6 +449,7 @@ export default function ForumPage() {
                     <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, fontWeight: 700, letterSpacing: "0.03em", color: "#fff", margin: 0, lineHeight: 1 }}>
                       {activeRoom}
                     </h1>
+
                   </div>
                 </div>
               )}
@@ -514,6 +515,7 @@ function RoomLobby({ posts, userInterests, onEnter, getImage }) {
           Forum Rooms
         </h1>
         <p style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Choose a topic room to browse and join the discussion.</p>
+        <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {rooms.map((room) => (

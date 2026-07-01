@@ -1,252 +1,169 @@
 import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPortalTransactions, getPortalSummary, getPortfolio } from "../../api/tradingApi.js";
+import useLiveStocks from "../../api/useLiveStocks.js";
 
-/* ─── Helpers ──────────────────────────────────────────────────────────────── */
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
+const C = {
+  card:         "#161f38",
+  border:       "#232d4a",
+  rowBorder:    "#1e2740",
+  accent:       "#378ADD",
+  accentText:   "#6fb3f0",
+  accentCardBg: "#17223f",
+  success:      "#4dd68c",
+  danger:       "#ff6b6b",
+  muted:        "#8b92a8",
+};
+
+const PIE_COLORS = ["#378ADD","#EF9F27","#E24B4A","#639922","#9b59b6","#1abc9c","#e67e22","#e91e63"];
+
 function fmt$(n) {
-  return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const abs = Math.abs(Number(n));
+  return `${Number(n) < 0 ? "-" : ""}$${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+function fmtSigned$(n) {
+  const v = Number(n);
+  return `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function fmtDate(iso) {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-SG", { day: "2-digit", month: "short" })
-    + " " + d.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleDateString("en-SG", { day: "2-digit", month: "short" });
 }
 
-const COMPANY = {
-  AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA", MSFT: "Microsoft",
-  GOOGL: "Alphabet", AMZN: "Amazon", META: "Meta", AMD: "AMD",
-  AVGO: "Broadcom", ORCL: "Oracle",
-};
-const SYMBOLS = Object.keys(COMPANY);
+/* ─── SVG: cumulative P&L trend (last 30 days) ────────────────────────── */
+function TrendChart({ transactions }) {
+  const points = useMemo(() => {
+    const now = new Date();
+    const map = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      map[d.toISOString().slice(0, 10)] = 0;
+    }
+    transactions.forEach(t => {
+      const key = (t.transaction_date || "").slice(0, 10);
+      if (key in map) map[key] += t.transaction_type === "sell" ? t.total_amount : -t.total_amount;
+    });
+    let running = 0;
+    return Object.keys(map).sort().map(k => { running += map[k]; return running; });
+  }, [transactions]);
 
-/* ─── Summary stat card ────────────────────────────────────────────────────── */
-function StatCard({ label, value, sub, color = "#e2e8f0", icon }) {
+  const W = 500, H = 130, PL = 8, PR = 8, PT = 12, PB = 8;
+  const cW = W - PL - PR, cH = H - PT - PB;
+  const min = Math.min(...points, 0);
+  const max = Math.max(...points, 1);
+  const range = max - min || 1;
+  const toX = i => PL + (i / (points.length - 1)) * cW;
+  const toY = v => PT + ((max - v) / range) * cH;
+  const pts = points.map((v, i) => ({ x: toX(i), y: toY(v) }));
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area = `${line} L${pts.at(-1).x.toFixed(1)},${H - PB} L${PL},${H - PB} Z`;
+  const zeroY = toY(0).toFixed(1);
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-        border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-        padding: "18px 20px",      }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 10px" }}>{label}</p>
-        {icon && <span style={{ fontSize: 18, opacity: 0.4 }}>{icon}</span>}
-      </div>
-      <p style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color, margin: 0 }}>{value}</p>
-      {sub && <p style={{ fontFamily: sans, fontSize: 11, color: "#94a3b8", margin: "4px 0 0" }}>{sub}</p>}
-    </motion.div>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
+      <defs>
+        <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.accent} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={C.accent} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line x1={PL} y1={zeroY} x2={W - PR} y2={zeroY} stroke={C.border} strokeWidth="1" strokeDasharray="4 4" />
+      <path d={area} fill="url(#tg)" />
+      <path d={line} fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-/* ─── Mini bar chart for symbol breakdown ──────────────────────────────────── */
-function SymbolBreakdownChart({ transactions }) {
-  const counts = useMemo(() => {
-    const map = {};
-    transactions.forEach(t => {
-      map[t.symbol] = (map[t.symbol] || 0) + 1;
-    });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [transactions]);
+/* ─── SVG: donut diversification chart ────────────────────────────────── */
+function arcPath(cx, cy, outerR, innerR, startDeg, endDeg) {
+  const toRad = deg => ((deg - 90) * Math.PI) / 180;
+  const p = (r, deg) => ({ x: cx + r * Math.cos(toRad(deg)), y: cy + r * Math.sin(toRad(deg)) });
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  const [o1, o2, i1, i2] = [p(outerR, startDeg), p(outerR, endDeg), p(innerR, endDeg), p(innerR, startDeg)];
+  return `M${o1.x.toFixed(2)},${o1.y.toFixed(2)} A${outerR},${outerR} 0 ${large} 1 ${o2.x.toFixed(2)},${o2.y.toFixed(2)} L${i1.x.toFixed(2)},${i1.y.toFixed(2)} A${innerR},${innerR} 0 ${large} 0 ${i2.x.toFixed(2)},${i2.y.toFixed(2)} Z`;
+}
 
-  const max = counts[0]?.[1] || 1;
+function DonutChart({ holdings, liveStocks }) {
+  const segments = useMemo(() => {
+    const items = holdings
+      .map((h, i) => {
+        const price = liveStocks[h.symbol]?.price ?? h.average_cost;
+        return { sym: h.symbol, value: price * h.quantity, color: PIE_COLORS[i % PIE_COLORS.length] };
+      })
+      .filter(s => s.value > 0);
+    const total = items.reduce((s, x) => s + x.value, 0) || 1;
+    let cumDeg = 0;
+    return items.map(s => {
+      const deg = (s.value / total) * 360;
+      const seg = { ...s, pct: (s.value / total) * 100, startDeg: cumDeg, endDeg: cumDeg + deg - 0.5 };
+      cumDeg += deg;
+      return seg;
+    });
+  }, [holdings, liveStocks]);
+
+  const SZ = 160, cx = SZ / 2, cy = SZ / 2;
 
   return (
-    <div style={{
-      background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-      border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px",    }}>
-      <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
-        Trades by Symbol
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {counts.map(([sym, count]) => (
-          <div key={sym} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: "#e2e8f0", minWidth: 44 }}>{sym}</span>
-            <div style={{ flex: 1, height: 6, background: "rgba(99,179,237,0.1)", borderRadius: 3 }}>
-              <motion.div
-                initial={{ width: 0 }} animate={{ width: `${(count / max) * 100}%` }}
-                transition={{ duration: 0.25, delay: 0.1 }}
-                style={{ height: "100%", background: "linear-gradient(90deg,#3b82f6,#63b3ed)", borderRadius: 3 }}
-              />
-            </div>
-            <span style={{ fontFamily: mono, fontSize: 10, color: "#94a3b8", minWidth: 20, textAlign: "right" }}>{count}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+      <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ flexShrink: 0 }}>
+        {segments.length === 0
+          ? <circle cx={cx} cy={cy} r={55} fill="none" stroke={C.border} strokeWidth={22} />
+          : segments.map((seg, i) => (
+            <path key={i} d={arcPath(cx, cy, 66, 44, seg.startDeg, seg.endDeg)} fill={seg.color} />
+          ))
+        }
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        {segments.map((seg, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: seg.color, flexShrink: 0 }} />
+            <span style={{ fontFamily: mono, fontSize: 11, color: "#e2e8f0" }}>
+              {seg.sym} <span style={{ color: C.muted }}>{seg.pct.toFixed(1)}%</span>
+            </span>
           </div>
         ))}
-        {counts.length === 0 && (
-          <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b" }}>No trades yet</p>
+        {segments.length === 0 && (
+          <span style={{ fontFamily: sans, fontSize: 12, color: C.muted }}>No holdings</span>
         )}
       </div>
     </div>
   );
 }
 
-/* ─── P&L per symbol chart ─────────────────────────────────────────────────── */
-function PnLBySymbolChart({ transactions }) {
-  const pnl = useMemo(() => {
-    const map = {};
-    transactions.forEach(t => {
-      if (!map[t.symbol]) map[t.symbol] = { buy: 0, sell: 0 };
-      if (t.transaction_type === "buy") map[t.symbol].buy += t.total_amount;
-      else map[t.symbol].sell += t.total_amount;
-    });
-    return Object.entries(map)
-      .map(([sym, v]) => ({ sym, pnl: v.sell - v.buy }))
-      .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl))
-      .slice(0, 8);
-  }, [transactions]);
-
-  const maxAbs = Math.max(...pnl.map(p => Math.abs(p.pnl)), 1);
-
+/* ─── Stat card ────────────────────────────────────────────────────────── */
+function StatCard({ label, value, sub, highlighted = false, valueColor }) {
   return (
     <div style={{
-      background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-      border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px",    }}>
-      <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
-        Realised P&amp;L by Symbol
+      background: highlighted ? C.accentCardBg : C.card,
+      border: `${highlighted ? 2 : 1}px solid ${highlighted ? C.accent : C.border}`,
+      borderRadius: 12, padding: "16px 18px",
+    }}>
+      <p style={{ fontFamily: sans, fontSize: 13, color: highlighted ? C.accentText : C.muted, margin: "0 0 8px" }}>{label}</p>
+      <p style={{ fontFamily: mono, fontSize: highlighted ? 22 : 18, fontWeight: 600, color: valueColor ?? (highlighted ? C.accentText : "#e2e8f0"), margin: 0 }}>
+        {value}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {pnl.map(({ sym, pnl: val }) => {
-          const pos = val >= 0;
-          const pct = (Math.abs(val) / maxAbs) * 100;
-          return (
-            <div key={sym} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: "#e2e8f0", minWidth: 44 }}>{sym}</span>
-              <div style={{ flex: 1, height: 6, background: "rgba(99,179,237,0.1)", borderRadius: 3, position: "relative" }}>
-                <motion.div
-                  initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.25, delay: 0.1 }}
-                  style={{
-                    height: "100%", borderRadius: 3,
-                    background: pos ? "linear-gradient(90deg,rgba(52,211,153,0.6),#34d399)" : "linear-gradient(90deg,rgba(248,113,113,0.6),#f87171)",
-                  }}
-                />
-              </div>
-              <span style={{ fontFamily: mono, fontSize: 10, color: pos ? "#34d399" : "#f87171", minWidth: 72, textAlign: "right" }}>
-                {pos ? "+" : ""}{fmt$(val)}
-              </span>
-            </div>
-          );
-        })}
-        {pnl.length === 0 && (
-          <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b" }}>No completed round-trips yet</p>
-        )}
-      </div>
+      {sub && <p style={{ fontFamily: sans, fontSize: 11, color: highlighted ? C.accentText : C.muted, margin: "6px 0 0" }}>{sub}</p>}
     </div>
   );
 }
 
-/* ─── Volume over time sparkline ───────────────────────────────────────────── */
-function VolumeSparkline({ transactions }) {
-  const days = useMemo(() => {
-    const map = {};
-    transactions.forEach(t => {
-      if (!t.transaction_date) return;
-      const day = t.transaction_date.slice(0, 10);
-      map[day] = (map[day] || 0) + t.total_amount;
-    });
-    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0])).slice(-30);
-  }, [transactions]);
-
-  if (days.length < 2) return null;
-
-  const W = 820, H = 120, PAD = { top: 10, right: 16, bottom: 24, left: 60 };
-  const cW = W - PAD.left - PAD.right;
-  const cH = H - PAD.top - PAD.bottom;
-  const maxV = Math.max(...days.map(d => d[1]));
-  const toX = (i) => PAD.left + (i / (days.length - 1)) * cW;
-  const toY = (v) => PAD.top + ((maxV - v) / (maxV || 1)) * cH;
-  const pts = days.map(([, v], i) => ({ x: toX(i), y: toY(v) }));
-  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const area = path + ` L ${pts.at(-1).x.toFixed(1)},${H - PAD.bottom} L ${pts[0].x.toFixed(1)},${H - PAD.bottom} Z`;
-
-  return (
-    <div style={{
-      background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-      border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-      padding: "18px 20px 10px",    }}>
-      <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 4px" }}>
-        Daily Trade Volume (Last 30 days)
-      </p>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
-        <defs>
-          <linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#vg)" />
-        <path d={path} fill="none" stroke="#63b3ed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        {[0, Math.floor(days.length / 2), days.length - 1].map(i => (
-          <text key={i} x={toX(i)} y={H - PAD.bottom + 14} textAnchor="middle" fill="#475569" fontSize="9" fontFamily={mono}>
-            {days[i][0].slice(5)}
-          </text>
-        ))}
-        <text x={PAD.left - 8} y={PAD.top + 4} textAnchor="end" fill="#475569" fontSize="9" fontFamily={mono}>
-          {fmt$(maxV)}
-        </text>
-      </svg>
-    </div>
-  );
-}
-
-/* ─── Transaction row ──────────────────────────────────────────────────────── */
-function PortalRow({ tx, index }) {
-  const buy = tx.transaction_type === "buy";
-  return (
-    <motion.tr
-      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.02 }}
-      style={{ borderBottom: "1px solid rgba(99,179,237,0.07)" }}>
-      <td style={{ padding: "12px 16px", fontFamily: mono, fontSize: 10, color: "#64748b" }}>
-        {fmtDate(tx.transaction_date)}
-      </td>
-      <td style={{ padding: "12px 16px" }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{tx.symbol}</span>
-          <span style={{ fontFamily: sans, fontSize: 10, color: "#64748b" }}>{COMPANY[tx.symbol] ?? ""}</span>
-        </div>
-      </td>
-      <td style={{ padding: "12px 16px" }}>
-        <span style={{
-          fontFamily: mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-          padding: "3px 10px", borderRadius: 20,
-          color: buy ? "#6ee7b7" : "#fca5a5",
-          background: buy ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-          border: `1px solid ${buy ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
-        }}>
-          {buy ? "▲ BUY" : "▼ SELL"}
-        </span>
-      </td>
-      <td style={{ padding: "12px 16px", fontFamily: mono, fontSize: 13, color: "#e2e8f0", textAlign: "right" }}>{tx.quantity}</td>
-      <td style={{ padding: "12px 16px", fontFamily: mono, fontSize: 12, color: "#94a3b8", textAlign: "right" }}>{fmt$(tx.price)}</td>
-      <td style={{ padding: "12px 16px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: buy ? "#f87171" : "#34d399", textAlign: "right" }}>
-        {buy ? "-" : "+"}{fmt$(tx.total_amount)}
-      </td>
-    </motion.tr>
-  );
-}
-
-/* ─── Page ─────────────────────────────────────────────────────────────────── */
+/* ─── Page ─────────────────────────────────────────────────────────────── */
 function TransactionPortalPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const { stocks: liveStocks } = useLiveStocks();
 
   const [transactions, setTransactions] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [portfolio, setPortfolio] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const [filterSymbol, setFilterSymbol] = useState("ALL");
-  const [filterType, setFilterType] = useState("ALL");
-  const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("overview"); // "overview" | "history"
+  const [summary, setSummary]           = useState(null);
+  const [portfolio, setPortfolio]       = useState(null);
+  const [loading, setLoading]           = useState(true);
 
   useEffect(() => {
     if (!currentUser?.user_id) { setLoading(false); return; }
@@ -256,25 +173,38 @@ function TransactionPortalPage() {
       getPortalSummary(uid),
       getPortfolio(uid),
     ]).then(([txRes, sumRes, portRes]) => {
-      if (txRes.success) setTransactions(txRes.transactions);
-      if (sumRes.success) setSummary(sumRes.summary);
+      if (txRes.success)   setTransactions(txRes.transactions);
+      if (sumRes.success)  setSummary(sumRes.summary);
       if (portRes.success) setPortfolio(portRes.portfolio);
     }).finally(() => setLoading(false));
   }, [currentUser?.user_id]);
 
-  const filtered = useMemo(() => transactions.filter(tx => {
-    if (filterSymbol !== "ALL" && tx.symbol !== filterSymbol) return false;
-    if (filterType !== "ALL" && tx.transaction_type !== filterType) return false;
-    if (search && !tx.symbol.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [transactions, filterSymbol, filterType, search]);
+  const holdings    = portfolio?.holdings ?? [];
+  const paperMoney  = portfolio?.paper_money ?? 0;
+
+  const unrealisedPnL = useMemo(() =>
+    holdings.reduce((sum, h) => {
+      const price = liveStocks[h.symbol]?.price ?? h.average_cost;
+      return sum + (price - h.average_cost) * h.quantity;
+    }, 0),
+  [holdings, liveStocks]);
+
+  const holdingsValue = useMemo(() =>
+    holdings.reduce((sum, h) => {
+      const price = liveStocks[h.symbol]?.price ?? h.average_cost;
+      return sum + price * h.quantity;
+    }, 0),
+  [holdings, liveStocks]);
+
+  const totalValue  = paperMoney + holdingsValue;
+  const realisedPnL = summary?.realised_pnl ?? 0;
 
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900">
         <GeneralHeader />
         <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 40, height: 40, border: "3px solid rgba(99,179,237,0.2)", borderTopColor: "#63b3ed", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ width: 40, height: 40, border: `3px solid rgba(55,138,221,0.2)`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </main>
         <Footer />
@@ -282,237 +212,147 @@ function TransactionPortalPage() {
     );
   }
 
-  const pnl = summary ? summary.realised_pnl : 0;
-
   return (
-    <>
-      
-      <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <GeneralHeader />
+    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <GeneralHeader />
 
-        <main className="flex-1 p-4 md:p-7">
+      <main style={{ flex: 1, padding: "28px 32px", maxWidth: 1100, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
-          {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
-            style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-            <div>
-              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>
-                Transaction Portal
-              </h1>
-              <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>
-                Full trading analytics, P&amp;L breakdown, and order history
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => navigate("/investor/transaction-history")}
-                style={{
-                  padding: "9px 18px", borderRadius: 8, cursor: "pointer",
-                  border: "1px solid rgba(99,179,237,0.25)", background: "transparent",
-                  color: "#64748b", fontFamily: mono, fontSize: 11, fontWeight: 700,
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                }}>
-                History View
-              </button>
-              <button onClick={() => navigate("/investor/realtimedashboard")}
-                style={{
-                  padding: "9px 18px", borderRadius: 8, cursor: "pointer",
-                  border: "1px solid rgba(99,179,237,0.4)", background: "rgba(99,179,237,0.1)",
-                  color: "#63b3ed", fontFamily: mono, fontSize: 11, fontWeight: 700,
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                }}>
-                Trade Now →
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.12)" }}>
-            {[["overview", "Overview"], ["history", "Order History"]].map(([id, label]) => (
-              <button key={id} onClick={() => setActiveTab(id)} style={{
-                padding: "10px 20px", borderRadius: "8px 8px 0 0", cursor: "pointer",
-                border: "none", outline: "none",
-                background: activeTab === id ? "rgba(99,179,237,0.12)" : "transparent",
-                borderBottom: activeTab === id ? "2px solid #63b3ed" : "2px solid transparent",
-                color: activeTab === id ? "#63b3ed" : "#64748b",
-                fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                transition: "all 0.2s",
-              }}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <AnimatePresence mode="wait">
-
-            {/* ── Overview Tab ── */}
-            {activeTab === "overview" && (
-              <motion.div key="overview"
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}>
-
-                {/* Summary stats */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
-                  <StatCard label="Total Trades" value={summary?.total_trades ?? 0} icon="📊" />
-                  <StatCard label="Buy Volume" value={fmt$(summary?.total_buy_amount ?? 0)} color="#f87171" icon="▲" />
-                  <StatCard label="Sell Volume" value={fmt$(summary?.total_sell_amount ?? 0)} color="#34d399" icon="▼" />
-                  <StatCard
-                    label="Realised P&L"
-                    value={`${pnl >= 0 ? "+" : ""}${fmt$(pnl)}`}
-                    color={pnl >= 0 ? "#34d399" : "#f87171"}
-                    sub={pnl >= 0 ? "Overall profit" : "Overall loss"}
-                    icon="💰"
-                  />
-                  <StatCard
-                    label="Available Funds"
-                    value={portfolio ? fmt$(portfolio.paper_money) : "—"}
-                    sub="Paper money remaining"
-                    icon="🏦"
-                  />
-                </div>
-
-                {/* Charts row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-                  <SymbolBreakdownChart transactions={transactions} />
-                  <PnLBySymbolChart transactions={transactions} />
-                </div>
-
-                {/* Volume sparkline */}
-                <VolumeSparkline transactions={transactions} />
-
-                {/* Holdings snapshot */}
-                {portfolio?.holdings?.length > 0 && (
-                  <div style={{
-                    background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-                    border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                    padding: "18px 20px",                  }}>
-                    <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>
-                      Current Holdings
-                    </p>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                      {portfolio.holdings.map(h => (
-                        <div key={h.symbol} style={{
-                          background: "rgba(15,23,42,0.5)", borderRadius: 8, padding: "12px 14px",
-                          border: "1px solid rgba(99,179,237,0.08)",
-                          cursor: "pointer",
-                        }} onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${h.symbol}`)}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: "#e2e8f0" }}>{h.symbol}</span>
-                            <span style={{ fontFamily: mono, fontSize: 11, color: "#64748b" }}>{h.quantity} sh</span>
-                          </div>
-                          <p style={{ fontFamily: mono, fontSize: 11, color: "#94a3b8", margin: 0 }}>
-                            Avg {fmt$(h.average_cost)}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {transactions.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "60px 0" }}>
-                    <p style={{ fontFamily: mono, fontSize: 13, color: "#94a3b8" }}>No trading activity yet</p>
-                    <button onClick={() => navigate("/investor/realtimedashboard")}
-                      style={{
-                        marginTop: 16, padding: "10px 24px", borderRadius: 8,
-                        border: "1px solid rgba(99,179,237,0.4)", background: "rgba(99,179,237,0.1)",
-                        color: "#63b3ed", fontFamily: mono, fontSize: 12, fontWeight: 700,
-                        letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
-                      }}>
-                      Start Trading
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* ── Order History Tab ── */}
-            {activeTab === "history" && (
-              <motion.div key="history"
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}>
-
-                {/* Filters */}
-                <div style={{
-                  background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-                  border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-                  padding: "14px 18px", marginBottom: 14,                  display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
-                }}>
-                  <input placeholder="Search symbol…" value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    style={{
-                      flex: 1, minWidth: 150, height: 36, padding: "0 14px", borderRadius: 8,
-                      border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.6)",
-                      color: "#e2e8f0", fontFamily: mono, fontSize: 12,
-                    }} />
-                  <select value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)} style={{
-                    height: 36, padding: "0 12px", borderRadius: 8,
-                    border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.9)",
-                    color: "#e2e8f0", fontFamily: mono, fontSize: 12, cursor: "pointer",
-                  }}>
-                    <option value="ALL">All Symbols</option>
-                    {SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  {["ALL", "buy", "sell"].map(t => (
-                    <button key={t} onClick={() => setFilterType(t)} style={{
-                      height: 36, padding: "0 16px", borderRadius: 8, cursor: "pointer",
-                      border: filterType === t ? "1px solid rgba(99,179,237,0.5)" : "1px solid rgba(99,179,237,0.12)",
-                      background: filterType === t ? "rgba(99,179,237,0.15)" : "rgba(15,23,42,0.5)",
-                      color: filterType === t ? "#63b3ed" : "#64748b",
-                      fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                    }}>
-                      {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : "▼ Sells"}
-                    </button>
-                  ))}
-                  <span style={{ fontFamily: mono, fontSize: 11, color: "#475569", marginLeft: "auto" }}>
-                    {filtered.length} records
-                  </span>
-                </div>
-
-                {/* Table */}
-                <div style={{
-                  background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-                  border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                }}>
-                  {filtered.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "60px 0" }}>
-                      <p style={{ fontFamily: mono, fontSize: 13, color: "#94a3b8" }}>No matching transactions</p>
-                    </div>
-                  ) : (
-                    <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr style={{ borderBottom: "1px solid rgba(99,179,237,0.15)" }}>
-                            {["Date", "Stock", "Type", "Qty", "Price / Share", "Total"].map((h, i) => (
-                              <th key={h} style={{
-                                padding: "12px 16px", fontFamily: mono, fontSize: 9, fontWeight: 600,
-                                color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase",
-                                textAlign: i >= 3 ? "right" : "left",
-                              }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <AnimatePresence>
-                            {filtered.map((tx, i) => <PortalRow key={tx.transaction_id} tx={tx} index={i} />)}
-                          </AnimatePresence>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 20 }}>
-            Paper trading only · Prices are simulated · Not financial advice
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
+            Transaction Portal
+          </h1>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
+            Full trading analytics, holdings, and order history
           </p>
-        </main>
+        </div>
 
-        <Footer />
-      </motion.div>
-    </>
+        {/* Stat cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
+          <StatCard label="Total portfolio value" value={fmt$(totalValue)} sub="Cash + holdings" highlighted />
+          <StatCard label="Available funds" value={fmt$(paperMoney)} />
+          <StatCard label="Unrealized P&L" value={fmtSigned$(unrealisedPnL)} valueColor={unrealisedPnL >= 0 ? C.success : C.danger} />
+          <StatCard label="Realized P&L"   value={fmtSigned$(realisedPnL)}  valueColor={realisedPnL  >= 0 ? C.success : C.danger} />
+        </div>
+
+        {/* Charts */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px" }}>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "0 0 10px" }}>Cumulative P&L, last 30 days</p>
+            <TrendChart transactions={transactions} />
+          </div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px" }}>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "0 0 12px" }}>Diversification</p>
+            <DonutChart holdings={holdings} liveStocks={liveStocks} />
+          </div>
+        </div>
+
+        {/* Holdings table */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>Current holdings</p>
+            <span style={{ fontFamily: sans, fontSize: 13, color: "#475569" }}>
+              {holdings.length} position{holdings.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          {holdings.length === 0 ? (
+            <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, textAlign: "center", padding: "24px 0", margin: 0 }}>No open positions</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {["Symbol","Shares","Avg cost","Price","Market value","Unrealized P&L"].map((h, i) => (
+                      <th key={h} style={{ padding: "8px 6px", fontFamily: sans, fontSize: 12, fontWeight: 400, color: C.muted, textAlign: i === 0 ? "left" : "right" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {holdings.map((h, idx) => {
+                    const price  = liveStocks[h.symbol]?.price ?? h.average_cost;
+                    const mktVal = price * h.quantity;
+                    const upnl   = (price - h.average_cost) * h.quantity;
+                    const isLast = idx === holdings.length - 1;
+                    return (
+                      <tr key={h.symbol}
+                        style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}`, cursor: "pointer" }}
+                        onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${h.symbol}`)}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(55,138,221,0.05)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{h.symbol}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{h.quantity}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#94a3b8" }}>{fmt$(h.average_cost)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{fmt$(price)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{fmt$(mktVal)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 600, textAlign: "right", color: upnl >= 0 ? C.success : C.danger }}>
+                          {fmtSigned$(upnl)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent orders */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>Recent orders</p>
+            <button onClick={() => navigate("/investor/transaction-history")}
+              style={{ fontFamily: sans, fontSize: 13, color: C.accentText, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              View all →
+            </button>
+          </div>
+          {transactions.length === 0 ? (
+            <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, textAlign: "center", padding: "24px 0", margin: 0 }}>No orders yet</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {["Date","Symbol","Side","Qty","Price"].map((h, i) => (
+                      <th key={h} style={{ padding: "8px 6px", fontFamily: sans, fontSize: 12, fontWeight: 400, color: C.muted, textAlign: i <= 2 ? "left" : "right" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.slice(0, 5).map((tx, i) => {
+                    const buy    = tx.transaction_type === "buy";
+                    const isLast = i === Math.min(transactions.length, 5) - 1;
+                    return (
+                      <tr key={tx.transaction_id} style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}` }}>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, color: "#94a3b8" }}>{fmtDate(tx.transaction_date)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{tx.symbol}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, color: buy ? C.success : C.danger }}>
+                          {buy ? "Buy" : "Sell"}
+                        </td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{tx.quantity}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#94a3b8" }}>{fmt$(tx.price)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 16 }}>
+          Paper trading only · Prices are simulated · Not financial advice
+        </p>
+      </main>
+
+      <Footer />
+    </motion.div>
   );
 }
 

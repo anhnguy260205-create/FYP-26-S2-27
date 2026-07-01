@@ -10,12 +10,12 @@ const sans = "'DM Sans', sans-serif";
 const CATEGORIES = ["All", "Beginner", "Technical Analysis", "Fundamental", "Risk Management", "Market News", "Strategy"];
 
 const CAT_COLORS = {
-  "Beginner":           { bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.35)",  text: "#34d399" },
-  "Technical Analysis": { bg: "rgba(99,179,237,0.12)",  border: "rgba(99,179,237,0.35)",  text: "#63b3ed" },
-  "Fundamental":        { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.35)",  text: "#fbbf24" },
-  "Risk Management":    { bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.35)", text: "#f87171" },
-  "Market News":        { bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.35)", text: "#a78bfa" },
-  "Strategy":           { bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.35)",  text: "#fb923c" },
+  "Beginner": { bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)", text: "#34d399" },
+  "Technical Analysis": { bg: "rgba(99,179,237,0.12)", border: "rgba(99,179,237,0.35)", text: "#63b3ed" },
+  "Fundamental": { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)", text: "#fbbf24" },
+  "Risk Management": { bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.35)", text: "#f87171" },
+  "Market News": { bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.35)", text: "#a78bfa" },
+  "Strategy": { bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)", text: "#fb923c" },
 };
 
 function CategoryBadge({ cat }) {
@@ -44,7 +44,8 @@ function ArticleReader({ article, onClose }) {
           maxWidth: 760, margin: "0 auto",
           background: "linear-gradient(145deg,rgba(10,18,38,0.98),rgba(20,30,58,0.98))",
           border: "1px solid rgba(99,179,237,0.2)", borderRadius: 16,
-          padding: "36px 40px",        }}
+          padding: "36px 40px",
+        }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <CategoryBadge cat={article.category} />
@@ -99,11 +100,11 @@ function EducationContent() {
         <GeneralHeader />
         <main className="flex-1 p-4 md:p-7">
 
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
+          <div
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24 }}>
             <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>Knowledge Hub</h1>
             <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>Educational articles written by verified experts</p>
-          </motion.div>
+          </div>
 
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
             <input placeholder="Search articles, tags…" value={search} onChange={e => setSearch(e.target.value)}
@@ -134,14 +135,13 @@ function EducationContent() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
               {filtered.map((a, i) => (
-                <motion.div key={a.article_id}
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                  whileHover={{ y: -2 }}
+                <div key={a.article_id}
                   onClick={() => setSelected(a)}
                   style={{
                     background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
                     border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-                    padding: "20px 22px", cursor: "pointer",                  }}
+                    padding: "20px 22px", cursor: "pointer",
+                  }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <CategoryBadge cat={a.category} />
@@ -159,7 +159,7 @@ function EducationContent() {
                       ))}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
