@@ -821,24 +821,27 @@ function AIChatbot() {
         >
             <GeneralHeader />
 
-            {/* Live ticker strip */}
+            {/* Live ticker strip — auto-scrolling marquee */}
             {liveStrip.length > 0 && (
                 <div style={{
                     background:"rgba(0,0,0,0.3)",
                     borderBottom:"1px solid rgba(255,255,255,0.06)",
-                    padding:"6px 20px",
-                    display:"flex", gap:"24px", overflowX:"auto",
-                    scrollbarWidth:"none",
+                    padding:"6px 0",
+                    overflow:"hidden",
+                    position:"relative",
                 }}>
-                    {liveStrip.map(({ sym, price, pct }) => (
-                        <span key={sym} style={{ whiteSpace:"nowrap", fontSize:"12px", display:"flex", gap:"6px" }}>
-                            <span style={{ color:"rgba(255,255,255,0.5)" }}>{sym}</span>
-                            <span>${price.toFixed(2)}</span>
-                            <span style={{ color: pct >= 0 ? "#34d399" : "#f87171" }}>
-                                {pct >= 0 ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
+                    <div className="ticker-track">
+                        {[...liveStrip, ...liveStrip].map(({ sym, price, pct }, i) => (
+                            <span key={`${sym}-${i}`} style={{ display:"inline-flex", alignItems:"center", gap:"6px", fontSize:"12px", whiteSpace:"nowrap" }}>
+                                <span style={{ color:"rgba(255,255,255,0.45)", fontWeight:600 }}>{sym}</span>
+                                <span style={{ color:"#e2e8f0" }}>${price.toFixed(2)}</span>
+                                <span style={{ color: pct >= 0 ? "#34d399" : "#f87171" }}>
+                                    {pct >= 0 ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
+                                </span>
+                                <span style={{ color:"rgba(255,255,255,0.12)", margin:"0 10px" }}>•</span>
                             </span>
-                        </span>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -1093,6 +1096,14 @@ function AIChatbot() {
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+                .ticker-track {
+                    display: inline-flex;
+                    gap: 0;
+                    animation: ticker-scroll 28s linear infinite;
+                    will-change: transform;
+                }
+                .ticker-track:hover { animation-play-state: paused; }
                 textarea::placeholder { color: rgba(255,255,255,0.3); }
                 ::-webkit-scrollbar { width: 5px; }
                 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
