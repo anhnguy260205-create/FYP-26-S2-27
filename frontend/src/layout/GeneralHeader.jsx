@@ -157,7 +157,7 @@ function GeneralHeader() {
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/transaction-portal", "/investor/transaction-history"],
       submenu: [
-        { title: "Transaction Portal", path: "/investor/transaction-portal" },
+        { title: "Portfolio Overview", path: "/investor/transaction-portal" },
         { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },
@@ -195,9 +195,8 @@ function GeneralHeader() {
                   {link.label}
                 </a>
                 <span
-                  className={`absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 transition-transform duration-300 origin-left rounded-full ${
-                    active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                  }`}
+                  className={`absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 transition-transform duration-300 origin-left rounded-full ${active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                    }`}
                 />
                 {link.submenu && <NavDropdown items={link.submenu} />}
               </div>

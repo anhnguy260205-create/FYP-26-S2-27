@@ -37,8 +37,7 @@ function ArticleReader({ article, onClose }) {
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 50, overflowY: "auto", padding: "40px 20px" }}
       onClick={onClose}
     >
-      <motion.div
-        initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+      <div
         onClick={e => e.stopPropagation()}
         style={{
           maxWidth: 760, margin: "0 auto",
@@ -66,7 +65,7 @@ function ArticleReader({ article, onClose }) {
           {article.summary}
         </p>
         <div style={{ fontFamily: sans, fontSize: 14, color: "#cbd5e1", lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{article.content}</div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

@@ -10,18 +10,18 @@ const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
 const C = {
-  card:         "#161f38",
-  border:       "#232d4a",
-  rowBorder:    "#1e2740",
-  accent:       "#378ADD",
-  accentText:   "#6fb3f0",
+  card: "#161f38",
+  border: "#232d4a",
+  rowBorder: "#1e2740",
+  accent: "#378ADD",
+  accentText: "#6fb3f0",
   accentCardBg: "#17223f",
-  success:      "#4dd68c",
-  danger:       "#ff6b6b",
-  muted:        "#8b92a8",
+  success: "#4dd68c",
+  danger: "#ff6b6b",
+  muted: "#8b92a8",
 };
 
-const PIE_COLORS = ["#378ADD","#EF9F27","#E24B4A","#639922","#9b59b6","#1abc9c","#e67e22","#e91e63"];
+const PIE_COLORS = ["#378ADD", "#EF9F27", "#E24B4A", "#639922", "#9b59b6", "#1abc9c", "#e67e22", "#e91e63"];
 
 function fmt$(n) {
   const abs = Math.abs(Number(n));
@@ -155,15 +155,15 @@ function StatCard({ label, value, sub, highlighted = false, valueColor }) {
 }
 
 /* ─── Page ─────────────────────────────────────────────────────────────── */
-function TransactionPortalPage() {
+function PortfolioOverviewPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
   const { stocks: liveStocks } = useLiveStocks();
 
   const [transactions, setTransactions] = useState([]);
-  const [summary, setSummary]           = useState(null);
-  const [portfolio, setPortfolio]       = useState(null);
-  const [loading, setLoading]           = useState(true);
+  const [summary, setSummary] = useState(null);
+  const [portfolio, setPortfolio] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!currentUser?.user_id) { setLoading(false); return; }
@@ -173,30 +173,30 @@ function TransactionPortalPage() {
       getPortalSummary(uid),
       getPortfolio(uid),
     ]).then(([txRes, sumRes, portRes]) => {
-      if (txRes.success)   setTransactions(txRes.transactions);
-      if (sumRes.success)  setSummary(sumRes.summary);
+      if (txRes.success) setTransactions(txRes.transactions);
+      if (sumRes.success) setSummary(sumRes.summary);
       if (portRes.success) setPortfolio(portRes.portfolio);
     }).finally(() => setLoading(false));
   }, [currentUser?.user_id]);
 
-  const holdings    = portfolio?.holdings ?? [];
-  const paperMoney  = portfolio?.paper_money ?? 0;
+  const holdings = portfolio?.holdings ?? [];
+  const paperMoney = portfolio?.paper_money ?? 0;
 
   const unrealisedPnL = useMemo(() =>
     holdings.reduce((sum, h) => {
       const price = liveStocks[h.symbol]?.price ?? h.average_cost;
       return sum + (price - h.average_cost) * h.quantity;
     }, 0),
-  [holdings, liveStocks]);
+    [holdings, liveStocks]);
 
   const holdingsValue = useMemo(() =>
     holdings.reduce((sum, h) => {
       const price = liveStocks[h.symbol]?.price ?? h.average_cost;
       return sum + price * h.quantity;
     }, 0),
-  [holdings, liveStocks]);
+    [holdings, liveStocks]);
 
-  const totalValue  = paperMoney + holdingsValue;
+  const totalValue = paperMoney + holdingsValue;
   const realisedPnL = summary?.realised_pnl ?? 0;
 
   if (loading) {
@@ -217,16 +217,17 @@ function TransactionPortalPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
-      <main style={{ flex: 1, padding: "28px 32px", maxWidth: 1100, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      <main style={{ flex: 1, padding: "28px 32px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
-            Transaction Portal
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
+            Portfolio Overview
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
             Full trading analytics, holdings, and order history
           </p>
+          <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
         </div>
 
         {/* Stat cards */}
@@ -234,7 +235,7 @@ function TransactionPortalPage() {
           <StatCard label="Total portfolio value" value={fmt$(totalValue)} sub="Cash + holdings" highlighted />
           <StatCard label="Available funds" value={fmt$(paperMoney)} />
           <StatCard label="Unrealized P&L" value={fmtSigned$(unrealisedPnL)} valueColor={unrealisedPnL >= 0 ? C.success : C.danger} />
-          <StatCard label="Realized P&L"   value={fmtSigned$(realisedPnL)}  valueColor={realisedPnL  >= 0 ? C.success : C.danger} />
+          <StatCard label="Realized P&L" value={fmtSigned$(realisedPnL)} valueColor={realisedPnL >= 0 ? C.success : C.danger} />
         </div>
 
         {/* Charts */}
@@ -264,7 +265,7 @@ function TransactionPortalPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                    {["Symbol","Shares","Avg cost","Price","Market value","Unrealized P&L"].map((h, i) => (
+                    {["Symbol", "Shares", "Avg cost", "Price", "Market value", "Unrealized P&L"].map((h, i) => (
                       <th key={h} style={{ padding: "8px 6px", fontFamily: sans, fontSize: 12, fontWeight: 400, color: C.muted, textAlign: i === 0 ? "left" : "right" }}>
                         {h}
                       </th>
@@ -273,9 +274,9 @@ function TransactionPortalPage() {
                 </thead>
                 <tbody>
                   {holdings.map((h, idx) => {
-                    const price  = liveStocks[h.symbol]?.price ?? h.average_cost;
+                    const price = liveStocks[h.symbol]?.price ?? h.average_cost;
                     const mktVal = price * h.quantity;
-                    const upnl   = (price - h.average_cost) * h.quantity;
+                    const upnl = (price - h.average_cost) * h.quantity;
                     const isLast = idx === holdings.length - 1;
                     return (
                       <tr key={h.symbol}
@@ -317,7 +318,7 @@ function TransactionPortalPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                    {["Date","Symbol","Side","Qty","Price"].map((h, i) => (
+                    {["Date", "Symbol", "Side", "Qty", "Price"].map((h, i) => (
                       <th key={h} style={{ padding: "8px 6px", fontFamily: sans, fontSize: 12, fontWeight: 400, color: C.muted, textAlign: i <= 2 ? "left" : "right" }}>
                         {h}
                       </th>
@@ -326,7 +327,7 @@ function TransactionPortalPage() {
                 </thead>
                 <tbody>
                   {transactions.slice(0, 5).map((tx, i) => {
-                    const buy    = tx.transaction_type === "buy";
+                    const buy = tx.transaction_type === "buy";
                     const isLast = i === Math.min(transactions.length, 5) - 1;
                     return (
                       <tr key={tx.transaction_id} style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}` }}>
@@ -356,4 +357,4 @@ function TransactionPortalPage() {
   );
 }
 
-export default TransactionPortalPage;
+export default PortfolioOverviewPage;
