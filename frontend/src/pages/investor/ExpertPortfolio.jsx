@@ -117,6 +117,7 @@ export default function ExpertPortfolio() {
                         Explore and invest in portfolios managed by our expert consultants.
                     </p>
                 </div>
+                <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
 
                 {/* Search Bar */}
                 <div className="flex gap-3 mb-6">
