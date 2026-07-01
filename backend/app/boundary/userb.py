@@ -168,9 +168,13 @@ def add_stock_symbol(
     if current_user["user_id"] != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
     result = AddStockToWatchlist().addStockToWatchlist(user_id, data.stock_symbol)
-    if not result:
-        return {"success": False, "message": "Failed to add stock to watchlist"}
-    return {"success": True, "message": "Stock added to watchlist"}
+    if not result.get("success"):
+        return {
+            "success": False,
+            "message": result.get("message", "Failed to add stock to watchlist"),
+            "limit_reached": result.get("limit_reached", False),
+        }
+    return {"success": True, "message": result.get("message", "Stock added to watchlist")}
 
 
 @router.get("/investor-watchlist/{user_id}")
