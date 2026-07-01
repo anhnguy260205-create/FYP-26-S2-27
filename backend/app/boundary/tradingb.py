@@ -15,7 +15,7 @@ from app.control.controller.tradingc import (
     CancelOrderController,
 )
 from app.control.services.auth import get_current_user
-from app.boundary.stock_ws import get_live_price
+from app.boundary.stock_ws import get_live_price, get_market_status
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
 
@@ -32,6 +32,8 @@ class SellRequest(BaseModel):
 
 @router.post("/buy")
 def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
+    if get_market_status() != "OPEN":
+        raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
     server_price = get_live_price(data.symbol.upper())
     if server_price is None:
         raise HTTPException(status_code=503, detail=f"Could not fetch current price for {data.symbol}")
@@ -43,6 +45,8 @@ def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
 
 @router.post("/sell")
 def sell_stock(data: SellRequest, current_user: dict = Depends(get_current_user)):
+    if get_market_status() != "OPEN":
+        raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
     server_price = get_live_price(data.symbol.upper())
     if server_price is None:
         raise HTTPException(status_code=503, detail=f"Could not fetch current price for {data.symbol}")
@@ -93,6 +97,8 @@ class OrderRequest(BaseModel):
 
 @router.post("/order")
 def submit_order(data: OrderRequest, current_user: dict = Depends(get_current_user)):
+    if get_market_status() != "OPEN":
+        raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
     if data.quantity <= 0 or data.limit_price <= 0:
         raise HTTPException(status_code=400, detail="quantity and limit_price must be positive")
     return SubmitOrderController().submit(

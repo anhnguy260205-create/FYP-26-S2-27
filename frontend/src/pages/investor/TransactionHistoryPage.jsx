@@ -5,12 +5,28 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPortalTransactions } from "../../api/tradingApi.js";
 
-/* ─── Helpers ──────────────────────────────────────────────────────────────── */
+const mono = "'DM Mono', monospace";
+const sans = "'DM Sans', sans-serif";
 
-const SYMBOLS = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","AVGO","ORCL","AMD"];
+const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
+
+const C = {
+  card: "#161f38",
+  border: "#232d4a",
+  rowBorder: "#1e2740",
+  accent: "#378ADD",
+  accentText: "#6fb3f0",
+  success: "#4dd68c",
+  danger: "#ff6b6b",
+  muted: "#8b92a8",
+};
 
 function fmt$(n) {
   return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+function fmtSigned$(n) {
+  const v = Number(n);
+  return `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -19,10 +35,7 @@ function fmtDate(iso) {
     + " " + d.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit" });
 }
 
-const mono = "'DM Mono', monospace";
-const sans = "'DM Sans', sans-serif";
-
-/* ─── Badge ────────────────────────────────────────────────────────────────── */
+/* ─── Type badge ───────────────────────────────────────────────────────── */
 function TypeBadge({ type }) {
   const buy = type === "buy";
   return (
@@ -30,72 +43,59 @@ function TypeBadge({ type }) {
       fontFamily: mono, fontSize: 11, fontWeight: 700,
       letterSpacing: "0.1em", textTransform: "uppercase",
       padding: "3px 10px", borderRadius: 20,
-      color: buy ? "#6ee7b7" : "#fca5a5",
-      background: buy ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)",
-      border: `1px solid ${buy ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"}`,
+      color: buy ? C.success : C.danger,
+      background: buy ? "rgba(77,214,140,0.1)" : "rgba(255,107,107,0.1)",
+      border: `1px solid ${buy ? "rgba(77,214,140,0.3)" : "rgba(255,107,107,0.3)"}`,
     }}>
       {buy ? "▲ BUY" : "▼ SELL"}
     </span>
   );
 }
 
-/* ─── Row ──────────────────────────────────────────────────────────────────── */
+/* ─── Table row ────────────────────────────────────────────────────────── */
 function TxRow({ tx, index }) {
   const buy = tx.transaction_type === "buy";
   return (
     <motion.tr
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.025 }}
+      transition={{ duration: 0.2, delay: index * 0.02 }}
       style={{
-        borderBottom: "1px solid rgba(99,179,237,0.07)",
-        background: index % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+        borderBottom: `1px solid ${C.rowBorder}`,
+        background: index % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)",
       }}
     >
-      <td style={{ padding: "14px 16px", fontFamily: mono, fontSize: 11, color: "#64748b" }}>
-        {fmtDate(tx.transaction_date)}
-      </td>
-      <td style={{ padding: "14px 16px" }}>
-        <span style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: "#e2e8f0", letterSpacing: "0.06em" }}>
-          {tx.symbol}
-        </span>
-      </td>
-      <td style={{ padding: "14px 16px" }}>
-        <TypeBadge type={tx.transaction_type} />
-      </td>
-      <td style={{ padding: "14px 16px", fontFamily: mono, fontSize: 13, color: "#e2e8f0", textAlign: "right" }}>
-        {tx.quantity}
-      </td>
-      <td style={{ padding: "14px 16px", fontFamily: mono, fontSize: 13, color: "#94a3b8", textAlign: "right" }}>
-        {fmt$(tx.price)}
-      </td>
-      <td style={{ padding: "14px 16px", fontFamily: mono, fontSize: 13, fontWeight: 700, textAlign: "right",
-        color: buy ? "#34d399" : "#f87171" }}>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 11, color: C.muted }}>{fmtDate(tx.transaction_date)}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0", letterSpacing: "0.05em" }}>{tx.symbol}</td>
+      <td style={{ padding: "12px 14px" }}><TypeBadge type={tx.transaction_type} /></td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: "#e2e8f0", textAlign: "right" }}>{tx.quantity}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: "#94a3b8", textAlign: "right" }}>{fmt$(tx.price)}</td>
+      <td style={{
+        padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, textAlign: "right",
+        color: buy ? C.danger : C.success
+      }}>
         {buy ? "-" : "+"}{fmt$(tx.total_amount)}
       </td>
     </motion.tr>
   );
 }
 
-/* ─── Empty state ──────────────────────────────────────────────────────────── */
-function Empty() {
-  const navigate = useNavigate();
+/* ─── Empty state ──────────────────────────────────────────────────────── */
+function Empty({ navigate }) {
   return (
     <div style={{ textAlign: "center", padding: "60px 0" }}>
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style={{ margin: "0 auto 16px", opacity: 0.25 }}>
-        <rect x="8" y="12" width="32" height="28" rx="3" stroke="#63b3ed" strokeWidth="1.5" />
-        <path d="M16 20h16M16 27h10" stroke="#63b3ed" strokeWidth="1.5" strokeLinecap="round" />
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none" style={{ margin: "0 auto 14px", opacity: 0.2 }}>
+        <rect x="8" y="12" width="32" height="28" rx="3" stroke={C.accent} strokeWidth="1.5" />
+        <path d="M16 20h16M16 27h10" stroke={C.accent} strokeWidth="1.5" strokeLinecap="round" />
       </svg>
-      <p style={{ fontFamily: mono, fontSize: 13, color: "#94a3b8", margin: "0 0 4px" }}>No transactions yet</p>
-      <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b", margin: "0 0 20px" }}>
-        Start trading to see your history here
-      </p>
+      <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, margin: "0 0 4px" }}>No transactions yet</p>
+      <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b", margin: "0 0 20px" }}>Start trading to see your history here</p>
       <button onClick={() => navigate("/investor/realtimedashboard")}
         style={{
-          padding: "10px 24px", borderRadius: 8,
-          border: "1px solid rgba(99,179,237,0.4)", background: "rgba(99,179,237,0.1)",
-          color: "#63b3ed", fontFamily: mono, fontSize: 12, fontWeight: 700,
-          letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+          padding: "9px 22px", borderRadius: 8, cursor: "pointer",
+          border: `1px solid rgba(55,138,221,0.4)`, background: "rgba(55,138,221,0.1)",
+          color: C.accentText, fontFamily: mono, fontSize: 12, fontWeight: 700,
+          letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
         Go to Markets
       </button>
@@ -103,7 +103,7 @@ function Empty() {
   );
 }
 
-/* ─── Page ─────────────────────────────────────────────────────────────────── */
+/* ─── Page ─────────────────────────────────────────────────────────────── */
 function TransactionHistoryPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -130,159 +130,134 @@ function TransactionHistoryPage() {
 
   const totalBuy = filtered.filter(t => t.transaction_type === "buy").reduce((s, t) => s + t.total_amount, 0);
   const totalSell = filtered.filter(t => t.transaction_type === "sell").reduce((s, t) => s + t.total_amount, 0);
+  const netPnL = totalSell - totalBuy;
+  const hasFilter = filterSymbol !== "ALL" || filterType !== "ALL" || !!search;
+
+  const inputStyle = {
+    height: 36, padding: "0 12px", borderRadius: 8,
+    border: `1px solid ${C.border}`, background: "rgba(22,31,56,0.8)",
+    color: "#e2e8f0", fontFamily: mono, fontSize: 12, outline: "none",
+  };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
-        @media (max-width: 640px) {
-          .tx-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .tx-page-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-        }
-      `}</style>
-      <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <GeneralHeader />
+    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+      <GeneralHeader />
 
-        <main className="flex-1 p-4 md:p-7">
+      <main style={{ flex: 1, padding: "28px 32px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
 
-          {/* Page header */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
-            className="tx-page-header"
-            style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>
-                Transaction History
-              </h1>
-              <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>
-                All executed buy &amp; sell orders
-              </p>
-            </div>
-            <button onClick={() => navigate("/investor/transaction-portal")}
-              style={{
-                padding: "10px 20px", borderRadius: 8,
-                border: "1px solid rgba(99,179,237,0.4)", background: "rgba(99,179,237,0.1)",
-                color: "#63b3ed", fontFamily: mono, fontSize: 11, fontWeight: 700,
-                letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
-              }}>
-              Open Portal →
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
+            Transaction History
+          </h1>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
+            All executed buy &amp; sell orders
+          </p>
+          <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
+        </div>
+
+
+        {/* Quick stats */}
+        {!loading && transactions.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
+            {[
+              { label: "Showing", value: filtered.length, color: "#e2e8f0", suffix: " trades" },
+              { label: "Buy volume", value: fmt$(totalBuy), color: C.danger },
+              { label: "Sell volume", value: fmt$(totalSell), color: C.success },
+              {
+                label: hasFilter ? "Net P&L (filtered)" : "Net P&L",
+                value: fmtSigned$(netPnL), color: netPnL >= 0 ? C.success : C.danger
+              },
+            ].map(s => (
+              <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" }}>
+                <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 6px" }}>{s.label}</p>
+                <p style={{ fontFamily: mono, fontSize: 18, fontWeight: 600, color: s.color, margin: 0 }}>
+                  {s.value}{s.suffix ?? ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div style={{
+          background: C.card, border: `1px solid ${C.border}`,
+          borderRadius: 10, padding: "12px 16px", marginBottom: 12,
+          display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center",
+        }}>
+          <input placeholder="Search symbol…" value={search} onChange={e => setSearch(e.target.value)}
+            style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
+          <select value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)}
+            style={{ ...inputStyle, cursor: "pointer" }}>
+            <option value="ALL">All Symbols</option>
+            {SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          {["ALL", "buy", "sell"].map(t => (
+            <button key={t} onClick={() => setFilterType(t)} style={{
+              height: 36, padding: "0 14px", borderRadius: 8, cursor: "pointer",
+              border: filterType === t ? `1px solid rgba(55,138,221,0.5)` : `1px solid ${C.border}`,
+              background: filterType === t ? "rgba(55,138,221,0.14)" : "rgba(22,31,56,0.6)",
+              color: filterType === t ? C.accentText : C.muted,
+              fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+            }}>
+              {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : "▼ Sells"}
             </button>
-          </motion.div>
+          ))}
+          {hasFilter && (
+            <button onClick={() => { setFilterSymbol("ALL"); setFilterType("ALL"); setSearch(""); }}
+              style={{
+                height: 36, padding: "0 12px", borderRadius: 8, cursor: "pointer",
+                border: `1px solid rgba(255,107,107,0.25)`, background: "transparent",
+                color: C.danger, fontFamily: mono, fontSize: 11,
+              }}>
+              Clear
+            </button>
+          )}
+          <span style={{ fontFamily: mono, fontSize: 11, color: "#475569", marginLeft: "auto" }}>
+            {filtered.length} record{filtered.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-          {/* Quick stats */}
-          {!loading && transactions.length > 0 && (
-            <div className="tx-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
-              {[
-                { label: "Total Trades", value: filtered.length, color: "#e2e8f0" },
-                { label: "Buy Volume", value: fmt$(totalBuy), color: "#34d399" },
-                { label: "Sell Volume", value: fmt$(totalSell), color: "#f87171" },
-                { label: "Net P&L", value: fmt$(totalSell - totalBuy), color: (totalSell - totalBuy) >= 0 ? "#34d399" : "#f87171" },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-                  border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-                  padding: "14px 18px",                }}>
-                  <p style={{ fontFamily: mono, fontSize: 9, color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 6px" }}>{s.label}</p>
-                  <p style={{ fontFamily: mono, fontSize: 18, fontWeight: 700, color: s.color, margin: 0 }}>{s.value}</p>
-                </div>
-              ))}
+        {/* Table */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+              <div style={{ width: 36, height: 36, border: `3px solid rgba(55,138,221,0.2)`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+            </div>
+          ) : filtered.length === 0 ? (
+            <Empty navigate={navigate} />
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                    {["Date & Time", "Symbol", "Type", "Qty", "Price", "Total"].map((h, i) => (
+                      <th key={h} style={{
+                        padding: "11px 14px", fontFamily: sans, fontSize: 12, fontWeight: 400,
+                        color: C.muted, textAlign: i >= 3 ? "right" : "left",
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence>
+                    {filtered.map((tx, i) => <TxRow key={tx.transaction_id} tx={tx} index={i} />)}
+                  </AnimatePresence>
+                </tbody>
+              </table>
             </div>
           )}
+        </div>
 
-          {/* Filters */}
-          <div style={{
-            background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-            border: "1px solid rgba(99,179,237,0.12)", borderRadius: 10,
-            padding: "14px 18px", marginBottom: 16,            display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
-          }}>
-            {/* Search */}
-            <input
-              placeholder="Search symbol…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                flex: 1, minWidth: 160, height: 36, padding: "0 14px", borderRadius: 8,
-                border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.6)",
-                color: "#e2e8f0", fontFamily: mono, fontSize: 12,
-              }}
-            />
-            {/* Symbol filter */}
-            <select value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)} style={{
-              height: 36, padding: "0 12px", borderRadius: 8,
-              border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.9)",
-              color: "#e2e8f0", fontFamily: mono, fontSize: 12, cursor: "pointer",
-            }}>
-              <option value="ALL">All Symbols</option>
-              {SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            {/* Type filter */}
-            {["ALL", "buy", "sell"].map(t => (
-              <button key={t} onClick={() => setFilterType(t)} style={{
-                height: 36, padding: "0 16px", borderRadius: 8, cursor: "pointer",
-                border: filterType === t ? "1px solid rgba(99,179,237,0.5)" : "1px solid rgba(99,179,237,0.12)",
-                background: filterType === t ? "rgba(99,179,237,0.15)" : "rgba(15,23,42,0.5)",
-                color: filterType === t ? "#63b3ed" : "#64748b",
-                fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-              }}>
-                {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : "▼ Sells"}
-              </button>
-            ))}
-            {(filterSymbol !== "ALL" || filterType !== "ALL" || search) && (
-              <button onClick={() => { setFilterSymbol("ALL"); setFilterType("ALL"); setSearch(""); }}
-                style={{
-                  height: 36, padding: "0 14px", borderRadius: 8, cursor: "pointer",
-                  border: "1px solid rgba(248,113,113,0.25)", background: "transparent",
-                  color: "#f87171", fontFamily: mono, fontSize: 11,
-                }}>
-                Clear
-              </button>
-            )}
-          </div>
+        <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 16 }}>
+          Showing {filtered.length} of {transactions.length} transactions · Paper trading only · Not financial advice
+        </p>
+      </main>
 
-          {/* Table */}
-          <div style={{
-            background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))",
-            border: "1px solid rgba(99,179,237,0.12)", borderRadius: 12,
-          }}>
-            {loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-                <div style={{ width: 36, height: 36, border: "3px solid rgba(99,179,237,0.2)", borderTopColor: "#63b3ed", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-              </div>
-            ) : filtered.length === 0 ? (
-              <Empty />
-            ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(99,179,237,0.15)" }}>
-                      {["Date & Time", "Symbol", "Type", "Qty", "Price", "Total"].map((h, i) => (
-                        <th key={h} style={{
-                          padding: "12px 16px", fontFamily: mono, fontSize: 9, fontWeight: 600,
-                          color: "#64748b", letterSpacing: "0.12em", textTransform: "uppercase",
-                          textAlign: i >= 3 ? "right" : "left",
-                        }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <AnimatePresence>
-                      {filtered.map((tx, i) => <TxRow key={tx.transaction_id} tx={tx} index={i} />)}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 16 }}>
-            Showing {filtered.length} of {transactions.length} transactions · Paper trading only · Not financial advice
-          </p>
-        </main>
-
-        <Footer />
-      </motion.div>
-    </>
+      <Footer />
+    </motion.div>
   );
 }
 

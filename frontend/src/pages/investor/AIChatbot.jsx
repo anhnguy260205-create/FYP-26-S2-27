@@ -17,20 +17,20 @@ const CHAT_STORAGE_VERSION = "chatbot-session-reset-v2";
 const CHAT_VERSION_KEY = "rocketTradeAiChatVersion";
 const CHAT_ACTIVE_USER_KEY = "rocketTradeAiChatActiveUser";
 
-const SYMBOLS = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","AVGO","ORCL","AMD"];
+const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
 const COMPANY_NAMES = {
-    AAPL:"Apple", MSFT:"Microsoft", GOOGL:"Alphabet/Google", AMZN:"Amazon",
-    NVDA:"NVIDIA", META:"Meta", TSLA:"Tesla", AVGO:"Broadcom",
-    ORCL:"Oracle", AMD:"AMD",
+    AAPL: "Apple", MSFT: "Microsoft", GOOGL: "Alphabet/Google", AMZN: "Amazon",
+    NVDA: "NVIDIA", META: "Meta", TSLA: "Tesla", AVGO: "Broadcom",
+    ORCL: "Oracle", AMD: "AMD",
 };
 
 const QUICK_PROMPTS = [
-    { label: "Analyze NVDA for me",           icon: <TrendingUp size={14}/> },
-    { label: "What is the RSI indicator?",     icon: <Brain size={14}/> },
-    { label: "Explain portfolio diversification", icon: <BarChart3 size={14}/> },
-    { label: "What is a bull vs bear market?", icon: <TrendingUp size={14}/> },
-    { label: "How do I read a candlestick chart?", icon: <BarChart3 size={14}/> },
-    { label: "What is market capitalisation?", icon: <Brain size={14}/> },
+    { label: "Analyze NVDA for me", icon: <TrendingUp size={14} /> },
+    { label: "What is the RSI indicator?", icon: <Brain size={14} /> },
+    { label: "Explain portfolio diversification", icon: <BarChart3 size={14} /> },
+    { label: "What is a bull vs bear market?", icon: <TrendingUp size={14} /> },
+    { label: "How do I read a candlestick chart?", icon: <BarChart3 size={14} /> },
+    { label: "What is market capitalisation?", icon: <Brain size={14} /> },
 ];
 
 
@@ -496,8 +496,8 @@ function cleanAssistantReply(text) {
 
 function makeWelcomeMessage(user) {
     return {
-        role:"assistant",
-        content:`Hello${user?.full_name ? `, ${user.full_name}` : ""}! 👋 I'm the RocketTrade AI Assistant.\n\nI can help you with:\n• Stock analysis and market data\n• Investment concepts & terminology\n• Technical & fundamental analysis\n• Understanding the RocketTrade platform\n\nWhat would you like to know?`
+        role: "assistant",
+        content: `Hello${user?.full_name ? `, ${user.full_name}` : ""}! 👋 I'm the RocketTrade AI Assistant.\n\nI can help you with:\n• Stock analysis and market data\n• Investment concepts & terminology\n• Technical & fundamental analysis\n• Understanding the RocketTrade platform\n\nWhat would you like to know?`
     };
 }
 
@@ -511,7 +511,7 @@ function clearRocketTradeAiChatStorage() {
         Object.keys(sessionStorage)
             .filter(key => key.startsWith("rocketTradeAiChat"))
             .forEach(key => sessionStorage.removeItem(key));
-    } catch {}
+    } catch { }
 }
 
 function isEndChatRequest(text) {
@@ -539,10 +539,10 @@ function loadSavedChat(key) {
 
 function toAssistantMessage(reply) {
     if (typeof reply === "string") {
-        return { role:"assistant", content: cleanAssistantReply(reply) };
+        return { role: "assistant", content: cleanAssistantReply(reply) };
     }
     return {
-        role:"assistant",
+        role: "assistant",
         content: cleanAssistantReply(reply?.content || ""),
         cta: reply?.cta,
     };
@@ -552,12 +552,12 @@ function toAssistantMessage(reply) {
 
 function TypingDots() {
     return (
-        <div style={{ display:"flex", gap:"5px", alignItems:"center", padding:"4px 0" }}>
-            {[0,1,2].map(i => (
+        <div style={{ display: "flex", gap: "5px", alignItems: "center", padding: "4px 0" }}>
+            {[0, 1, 2].map(i => (
                 <motion.span key={i}
-                    style={{ width:7, height:7, borderRadius:"50%", background:"rgba(255,255,255,0.5)", display:"block" }}
-                    animate={{ opacity:[0.3,1,0.3], y:[0,-4,0] }}
-                    transition={{ duration:0.9, repeat:Infinity, delay:i*0.2 }}
+                    style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(255,255,255,0.5)", display: "block" }}
+                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
+                    transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.2 }}
                 />
             ))}
         </div>
@@ -571,37 +571,37 @@ function MessageBubble({ msg }) {
     const isUser = msg.role === "user";
     return (
         <motion.div
-            initial={{ opacity:0, y:8 }}
-            animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.25 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
             style={{
-                display:"flex",
+                display: "flex",
                 justifyContent: isUser ? "flex-end" : "flex-start",
-                alignItems:"flex-end",
-                gap:"10px",
+                alignItems: "flex-end",
+                gap: "10px",
             }}
         >
             {!isUser && (
                 <div style={{
-                    width:32, height:32, borderRadius:"50%", flexShrink:0,
-                    background:"linear-gradient(135deg,#155dfc,#0092b8)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
+                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                    background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                    <Bot size={16}/>
+                    <Bot size={16} />
                 </div>
             )}
             <div style={{
-                maxWidth:"72%",
-                padding:"13px 16px",
+                maxWidth: "72%",
+                padding: "13px 16px",
                 borderRadius: isUser ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
                 background: isUser
                     ? "linear-gradient(135deg,#155dfc,#0092b8)"
                     : "rgba(255,255,255,0.07)",
                 border: isUser ? "none" : "1px solid rgba(255,255,255,0.09)",
-                fontSize:"14px",
-                lineHeight:"1.6",
-                whiteSpace:"pre-wrap",
-                wordBreak:"break-word",
+                fontSize: "14px",
+                lineHeight: "1.6",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
             }}>
                 {msg.content}
                 {!isUser && msg.cta?.route && msg.cta?.label && (
@@ -609,21 +609,21 @@ function MessageBubble({ msg }) {
                         type="button"
                         onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
                         style={{
-                            marginTop:"12px",
-                            display:"inline-flex",
-                            alignItems:"center",
-                            gap:"7px",
-                            padding:"8px 11px",
-                            borderRadius:"10px",
-                            background:"linear-gradient(135deg,#155dfc,#0092b8)",
-                            border:"1px solid rgba(255,255,255,0.12)",
-                            color:"white",
-                            fontSize:"12px",
-                            fontWeight:600,
-                            whiteSpace:"normal",
-                            maxWidth:"100%",
-                            textAlign:"left",
-                            cursor:"pointer",
+                            marginTop: "12px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "7px",
+                            padding: "8px 11px",
+                            borderRadius: "10px",
+                            background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color: "white",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            whiteSpace: "normal",
+                            maxWidth: "100%",
+                            textAlign: "left",
+                            cursor: "pointer",
                         }}
                     >
                         {msg.cta.label}
@@ -632,11 +632,11 @@ function MessageBubble({ msg }) {
             </div>
             {isUser && (
                 <div style={{
-                    width:32, height:32, borderRadius:"50%", flexShrink:0,
-                    background:"rgba(255,255,255,0.1)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
+                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(255,255,255,0.1)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                    <User size={15}/>
+                    <User size={15} />
                 </div>
             )}
         </motion.div>
@@ -646,13 +646,13 @@ function MessageBubble({ msg }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 function AIChatbot() {
-    const navigate   = useNavigate();
+    const navigate = useNavigate();
     const stockContext = useLiveStocks() || {};
-    const liveStocks   = stockContext.stocks || {};
-    const liveCandles  = stockContext.candles || {};
-    const bottomRef  = useRef(null);
-    const inputRef   = useRef(null);
-    const abortRef   = useRef(null);
+    const liveStocks = stockContext.stocks || {};
+    const liveCandles = stockContext.candles || {};
+    const bottomRef = useRef(null);
+    const inputRef = useRef(null);
+    const abortRef = useRef(null);
 
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
     const chatStorageKey = getChatStorageKey(currentUser);
@@ -673,12 +673,12 @@ function AIChatbot() {
         }
 
         sessionStorage.setItem(CHAT_ACTIVE_USER_KEY, String(activeUserKey));
-    } catch {}
+    } catch { }
 
-    const [messages,  setMessages]  = useState(() => loadSavedChat(chatStorageKey) || [makeWelcomeMessage(currentUser)]);
-    const [input,     setInput]     = useState("");
-    const [loading,   setLoading]   = useState(false);
-    const [error,     setError]     = useState(null);
+    const [messages, setMessages] = useState(() => loadSavedChat(chatStorageKey) || [makeWelcomeMessage(currentUser)]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const [showScroll, setShowScroll] = useState(false);
 
     // Save the chat for the current logged-in browser session so users can leave the page,
@@ -693,11 +693,6 @@ function AIChatbot() {
         }
     }, [chatStorageKey, messages]);
 
-    // Auto-scroll
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior:"smooth" });
-    }, [messages, loading]);
-
     const handleScroll = useCallback((e) => {
         const el = e.currentTarget;
         setShowScroll(el.scrollHeight - el.scrollTop - el.clientHeight > 120);
@@ -711,7 +706,7 @@ function AIChatbot() {
             abortRef.current?.abort();
             try {
                 sessionStorage.removeItem(chatStorageKey);
-            } catch {}
+            } catch { }
             setInput("");
             setError(null);
             setLoading(false);
@@ -722,7 +717,7 @@ function AIChatbot() {
         setInput("");
         setError(null);
 
-        const userMsg = { role:"user", content:trimmed };
+        const userMsg = { role: "user", content: trimmed };
         const nextMessages = [...messages, userMsg];
         setMessages(nextMessages);
         setLoading(true);
@@ -771,7 +766,7 @@ function AIChatbot() {
             const data = await res.json();
             const reply = cleanAssistantReply(data.reply || "Hmm, I could not generate a proper reply. Try asking it in a shorter way?");
 
-            setMessages(prev => [...prev, { role:"assistant", content:reply }]);
+            setMessages(prev => [...prev, { role: "assistant", content: reply }]);
         } catch (err) {
             if (err.name === "AbortError") return;
             console.error(err);
@@ -782,7 +777,7 @@ function AIChatbot() {
                 : "Something went wrong on my side. Your message was not lost — try again in a moment, or shorten the question a little.";
 
             setError(isRateLimit ? "Please try again later." : "Something went wrong. Please try again.");
-            setMessages(prev => [...prev, { role:"assistant", content:friendlyReply }]);
+            setMessages(prev => [...prev, { role: "assistant", content: friendlyReply }]);
         } finally {
             setLoading(false);
         }
@@ -801,7 +796,7 @@ function AIChatbot() {
         setError(null);
         try {
             sessionStorage.removeItem(chatStorageKey);
-        } catch {}
+        } catch { }
         setMessages([makeWelcomeMessage(currentUser)]);
     };
 
@@ -815,71 +810,71 @@ function AIChatbot() {
     return (
         <motion.div
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-            initial={{ opacity:0, y:20 }}
-            animate={{ opacity:1, y:0 }}
-            transition={{ duration:0.5 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
         >
             <GeneralHeader />
 
-            {/* Live ticker strip */}
+            {/* Live ticker strip — auto-scrolling marquee */}
             {liveStrip.length > 0 && (
                 <div style={{
-                    background:"rgba(0,0,0,0.3)",
-                    borderBottom:"1px solid rgba(255,255,255,0.06)",
-                    padding:"6px 20px",
-                    display:"flex", gap:"24px", overflowX:"auto",
-                    scrollbarWidth:"none",
+                    background: "rgba(0,0,0,0.3)",
+                    borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    padding: "6px 0",
+                    overflow: "hidden",
+                    position: "relative",
                 }}>
-                    {liveStrip.map(({ sym, price, pct }) => (
-                        <span key={sym} style={{ whiteSpace:"nowrap", fontSize:"12px", display:"flex", gap:"6px" }}>
-                            <span style={{ color:"rgba(255,255,255,0.5)" }}>{sym}</span>
-                            <span>${price.toFixed(2)}</span>
-                            <span style={{ color: pct >= 0 ? "#34d399" : "#f87171" }}>
-                                {pct >= 0 ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
+                    <div className="ticker-track">
+                        {[...liveStrip, ...liveStrip].map(({ sym, price, pct }, i) => (
+                            <span key={`${sym}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", whiteSpace: "nowrap" }}>
+                                <span style={{ color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{sym}</span>
+                                <span style={{ color: "#e2e8f0" }}>${price.toFixed(2)}</span>
+                                <span style={{ color: pct >= 0 ? "#34d399" : "#f87171" }}>
+                                    {pct >= 0 ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
+                                </span>
+                                <span style={{ color: "rgba(255,255,255,0.12)", margin: "0 10px" }}>•</span>
                             </span>
-                        </span>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
 
-            <main className="flex-1 p-5" style={{ minHeight:0 }}>
+            <main className="flex-1 p-5" style={{ minHeight: 0 }}>
                 <div style={{
-                    display:"grid",
-                    gridTemplateColumns:"240px 1fr",
-                    gap:"20px",
-                    height:"calc(100vh - 200px)",
-                    maxHeight:"820px",
+                    display: "grid",
+                    gridTemplateColumns: "240px 1fr",
+                    gap: "20px",
+                    height: "calc(100vh - 200px)",
+                    maxHeight: "1000px",
                 }}>
 
                     {/* ── SIDEBAR ── */}
                     <div style={{
-                        background:"rgba(255,255,255,0.04)",
-                        border:"1px solid rgba(255,255,255,0.08)",
-                        borderRadius:"20px",
-                        padding:"20px",
-                        display:"flex",
-                        flexDirection:"column",
-                        gap:"20px",
-                        overflow:"hidden",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: "20px",
+                        padding: "20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "20px",
+                        overflow: "hidden",
                     }}>
-                        <button onClick={() => navigate(-1)}
-                            style={{ display:"flex", alignItems:"center", gap:"6px", color:"rgba(255,255,255,0.55)", fontSize:"13px" }}>
-                            <ChevronLeft size={15}/> Back
-                        </button>
+
 
                         {/* Bot avatar */}
-                        <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div style={{
-                                width:38, height:38, borderRadius:"50%",
-                                background:"linear-gradient(135deg,#155dfc,#0092b8)",
-                                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                                width: 38, height: 38, borderRadius: "50%",
+                                background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                             }}>
-                                <Bot size={18}/>
+                                <Bot size={18} />
                             </div>
                             <div>
-                                <div style={{ fontWeight:600, fontSize:"14px" }}>AI Assistant</div>
-                                <div style={{ fontSize:"11px", color:"#34d399", display:"flex", alignItems:"center", gap:"4px" }}>
-                                    <span style={{ width:6, height:6, borderRadius:"50%", background:"#34d399", display:"inline-block" }}/>
+                                <div style={{ fontWeight: 600, fontSize: "14px" }}>AI Assistant</div>
+                                <div style={{ fontSize: "11px", color: "#34d399", display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", display: "inline-block" }} />
                                     Online
                                 </div>
                             </div>
@@ -887,23 +882,23 @@ function AIChatbot() {
 
                         {/* Quick prompts */}
                         <div>
-                            <p style={{ fontSize:"10px", letterSpacing:"0.07em", color:"rgba(255,255,255,0.3)", marginBottom:"8px" }}>SUGGESTED</p>
-                            <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                            <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED</p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                                 {QUICK_PROMPTS.map(({ label, icon }) => (
                                     <button key={label}
                                         onClick={() => sendMessage(label)}
                                         disabled={loading}
                                         style={{
-                                            padding:"9px 10px", borderRadius:"10px", textAlign:"left",
-                                            background:"rgba(255,255,255,0.03)",
-                                            border:"1px solid rgba(255,255,255,0.06)",
-                                            fontSize:"12px", display:"flex", alignItems:"center", gap:"7px",
-                                            color:"rgba(255,255,255,0.75)",
+                                            padding: "9px 10px", borderRadius: "10px", textAlign: "left",
+                                            background: "rgba(255,255,255,0.03)",
+                                            border: "1px solid rgba(255,255,255,0.06)",
+                                            fontSize: "12px", display: "flex", alignItems: "center", gap: "7px",
+                                            color: "rgba(255,255,255,0.75)",
                                             cursor: loading ? "not-allowed" : "pointer",
-                                            transition:"background 0.15s",
+                                            transition: "background 0.15s",
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.08)"}
-                                        onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,0.03)"}
+                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
                                     >
                                         {icon}{label}
                                     </button>
@@ -912,15 +907,15 @@ function AIChatbot() {
                         </div>
 
                         {/* Topics */}
-                        <div style={{ marginTop:"auto" }}>
-                            <p style={{ fontSize:"10px", letterSpacing:"0.07em", color:"rgba(255,255,255,0.3)", marginBottom:"8px" }}>TOPICS</p>
+                        <div style={{ marginTop: "auto" }}>
+                            <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>TOPICS</p>
                             {[
-                                { icon:<TrendingUp size={13}/>, label:"Stock Analysis" },
-                                { icon:<Brain size={13}/>, label:"AI & Predictions" },
-                                { icon:<BarChart3 size={13}/>, label:"Technical Analysis" },
-                                { icon:<MessageSquare size={13}/>, label:"Investing Basics" },
+                                { icon: <TrendingUp size={13} />, label: "Stock Analysis" },
+                                { icon: <Brain size={13} />, label: "AI & Predictions" },
+                                { icon: <BarChart3 size={13} />, label: "Technical Analysis" },
+                                { icon: <MessageSquare size={13} />, label: "Investing Basics" },
                             ].map(({ icon, label }) => (
-                                <div key={label} style={{ display:"flex", alignItems:"center", gap:"8px", padding:"6px 0", fontSize:"12px", color:"rgba(255,255,255,0.5)" }}>
+                                <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
                                     {icon}{label}
                                 </div>
                             ))}
@@ -929,46 +924,46 @@ function AIChatbot() {
                         {/* End chat */}
                         <button onClick={endChat}
                             style={{
-                                display:"flex", alignItems:"center", gap:"6px",
-                                padding:"9px 12px", borderRadius:"10px", fontSize:"12px",
-                                background:"rgba(255,80,80,0.08)", border:"1px solid rgba(255,80,80,0.2)",
-                                color:"rgba(248,113,113,0.8)", cursor:"pointer",
+                                display: "flex", alignItems: "center", gap: "6px",
+                                padding: "9px 12px", borderRadius: "10px", fontSize: "12px",
+                                background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
+                                color: "rgba(248,113,113,0.8)", cursor: "pointer",
                             }}>
-                            <Trash2 size={13}/> End chat
+                            <Trash2 size={13} /> End chat
                         </button>
                     </div>
 
                     {/* ── CHAT AREA ── */}
                     <div style={{
-                        background:"rgba(255,255,255,0.04)",
-                        border:"1px solid rgba(255,255,255,0.08)",
-                        borderRadius:"20px",
-                        display:"flex",
-                        flexDirection:"column",
-                        overflow:"hidden",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: "20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
                     }}>
                         {/* Header */}
                         <div style={{
-                            padding:"18px 24px",
-                            borderBottom:"1px solid rgba(255,255,255,0.07)",
-                            display:"flex", alignItems:"center", gap:"12px",
+                            padding: "18px 24px",
+                            borderBottom: "1px solid rgba(255,255,255,0.07)",
+                            display: "flex", alignItems: "center", gap: "12px",
                         }}>
                             <div style={{
-                                width:44, height:44, borderRadius:"50%",
-                                background:"linear-gradient(135deg,#155dfc,#0092b8)",
-                                display:"flex", alignItems:"center", justifyContent:"center",
+                                width: 44, height: 44, borderRadius: "50%",
+                                background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
-                                <Bot size={22}/>
+                                <Bot size={22} />
                             </div>
-                            <div style={{ flex:1 }}>
-                                <h1 style={{ fontSize:"18px", fontWeight:700 }}>RocketTrade AI Assistant</h1>
-                                <p style={{ fontSize:"12px", color:"rgba(255,255,255,0.45)" }}>
+                            <div style={{ flex: 1 }}>
+                                <h1 style={{ fontSize: "18px", fontWeight: 700 }}>RocketTrade AI Assistant</h1>
+                                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>
                                     Ask about stocks, market trends, technical analysis, and more
                                 </p>
                             </div>
                             <button onClick={endChat} title="End chat"
-                                style={{ padding:"8px", borderRadius:"8px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", cursor:"pointer", color:"rgba(255,255,255,0.5)" }}>
-                                <RefreshCw size={15}/>
+                                style={{ padding: "8px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
+                                <RefreshCw size={15} />
                             </button>
                         </div>
 
@@ -976,68 +971,68 @@ function AIChatbot() {
                         <div
                             onScroll={handleScroll}
                             style={{
-                                flex:1, overflowY:"auto", padding:"24px",
-                                display:"flex", flexDirection:"column", gap:"16px",
-                                scrollbarWidth:"thin", scrollbarColor:"rgba(255,255,255,0.1) transparent",
+                                flex: 1, overflowY: "auto", padding: "24px",
+                                display: "flex", flexDirection: "column", gap: "16px",
+                                scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent",
                             }}
                         >
                             <AnimatePresence initial={false}>
                                 {messages.map((msg, i) => (
-                                    <MessageBubble key={i} msg={msg}/>
+                                    <MessageBubble key={i} msg={msg} />
                                 ))}
                                 {loading && (
-                                    <motion.div key="typing" initial={{ opacity:0,y:6 }} animate={{ opacity:1,y:0 }}
-                                        style={{ display:"flex", alignItems:"flex-end", gap:"10px" }}>
+                                    <div key="typing"
+                                        style={{ display: "flex", alignItems: "flex-end", gap: "10px" }}>
                                         <div style={{
-                                            width:32, height:32, borderRadius:"50%",
-                                            background:"linear-gradient(135deg,#155dfc,#0092b8)",
-                                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+                                            width: 32, height: 32, borderRadius: "50%",
+                                            background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                                         }}>
-                                            <Bot size={16}/>
+                                            <Bot size={16} />
                                         </div>
                                         <div style={{
-                                            padding:"13px 16px", borderRadius:"18px 18px 18px 4px",
-                                            background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.09)",
+                                            padding: "13px 16px", borderRadius: "18px 18px 18px 4px",
+                                            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.09)",
                                         }}>
-                                            <TypingDots/>
+                                            <TypingDots />
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 )}
                             </AnimatePresence>
 
                             {error && (
                                 <div style={{
-                                    padding:"12px 16px", borderRadius:"12px",
-                                    background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.25)",
-                                    color:"#f87171", fontSize:"13px", textAlign:"center",
+                                    padding: "12px 16px", borderRadius: "12px",
+                                    background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)",
+                                    color: "#f87171", fontSize: "13px", textAlign: "center",
                                 }}>
                                     ⚠️ {error}
                                 </div>
                             )}
 
-                            <div ref={bottomRef}/>
+                            <div ref={bottomRef} />
                         </div>
 
                         {/* Scroll-to-bottom pill */}
                         <AnimatePresence>
                             {showScroll && (
-                                <motion.div initial={{ opacity:0,y:10 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:10 }}
-                                    style={{ position:"relative", display:"flex", justifyContent:"center", marginBottom:"-8px" }}>
-                                    <button onClick={() => bottomRef.current?.scrollIntoView({ behavior:"smooth" })}
+                                <div
+                                    style={{ position: "relative", display: "flex", justifyContent: "center", marginBottom: "-8px" }}>
+                                    <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
                                         style={{
-                                            padding:"5px 14px 5px 12px", borderRadius:"20px",
-                                            background:"rgba(21,93,252,0.85)", border:"1px solid rgba(0,146,184,0.4)",
-                                            fontSize:"11px", display:"flex", alignItems:"center", gap:"4px", cursor:"pointer",
+                                            padding: "5px 14px 5px 12px", borderRadius: "20px",
+                                            background: "rgba(21,93,252,0.85)", border: "1px solid rgba(0,146,184,0.4)",
+                                            fontSize: "11px", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer",
                                         }}>
-                                        <ChevronDown size={13}/> Scroll to bottom
+                                        <ChevronDown size={13} /> Scroll to bottom
                                     </button>
-                                </motion.div>
+                                </div>
                             )}
                         </AnimatePresence>
 
                         {/* Input */}
-                        <div style={{ padding:"16px 20px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-                            <div style={{ display:"flex", gap:"10px", alignItems:"flex-end" }}>
+                        <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                            <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
                                 <textarea
                                     ref={inputRef}
                                     value={input}
@@ -1047,41 +1042,41 @@ function AIChatbot() {
                                     placeholder="Ask about a stock, indicator, strategy… (Enter to send, Shift+Enter for newline)"
                                     rows={1}
                                     style={{
-                                        flex:1, minHeight:"46px", maxHeight:"120px",
-                                        borderRadius:"12px",
-                                        border:"1px solid rgba(255,255,255,0.1)",
-                                        background:"rgba(255,255,255,0.05)",
-                                        padding:"13px 16px",
-                                        outline:"none",
-                                        resize:"none",
-                                        color:"white",
-                                        fontSize:"14px",
-                                        lineHeight:"1.5",
-                                        overflowY:"auto",
-                                        scrollbarWidth:"thin",
+                                        flex: 1, minHeight: "46px", maxHeight: "120px",
+                                        borderRadius: "12px",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(255,255,255,0.05)",
+                                        padding: "13px 16px",
+                                        outline: "none",
+                                        resize: "none",
+                                        color: "white",
+                                        fontSize: "14px",
+                                        lineHeight: "1.5",
+                                        overflowY: "auto",
+                                        scrollbarWidth: "thin",
                                     }}
                                 />
                                 <button
                                     onClick={() => sendMessage()}
                                     disabled={loading || !input.trim()}
                                     style={{
-                                        width:46, height:46, borderRadius:"12px",
+                                        width: 46, height: 46, borderRadius: "12px",
                                         background: loading || !input.trim()
                                             ? "rgba(255,255,255,0.08)"
                                             : "linear-gradient(135deg,#155dfc,#0092b8)",
-                                        display:"flex", alignItems:"center", justifyContent:"center",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
                                         cursor: loading || !input.trim() ? "not-allowed" : "pointer",
-                                        border:"none", flexShrink:0,
-                                        transition:"background 0.2s",
+                                        border: "none", flexShrink: 0,
+                                        transition: "background 0.2s",
                                     }}
                                 >
                                     {loading
-                                        ? <Loader2 size={18} style={{ animation:"spin 1s linear infinite" }}/>
-                                        : <Send size={18}/>
+                                        ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                                        : <Send size={18} />
                                     }
                                 </button>
                             </div>
-                            <p style={{ textAlign:"center", marginTop:"8px", fontSize:"11px", color:"rgba(255,255,255,0.25)" }}>
+                            <p style={{ textAlign: "center", marginTop: "8px", fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>
                                 For educational purposes only · Not financial advice · Powered by RocketTrade AI
                             </p>
                         </div>
@@ -1089,10 +1084,18 @@ function AIChatbot() {
                 </div>
             </main>
 
-            <Footer/>
+            <Footer />
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+                .ticker-track {
+                    display: inline-flex;
+                    gap: 0;
+                    animation: ticker-scroll 28s linear infinite;
+                    will-change: transform;
+                }
+                .ticker-track:hover { animation-play-state: paused; }
                 textarea::placeholder { color: rgba(255,255,255,0.3); }
                 ::-webkit-scrollbar { width: 5px; }
                 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
