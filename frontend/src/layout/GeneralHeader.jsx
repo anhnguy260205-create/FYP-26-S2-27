@@ -155,9 +155,9 @@ function GeneralHeader() {
     {
       label: "Transactions",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-      activePaths: ["/investor/transaction-portal", "/investor/transaction-history"],
+      activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
       submenu: [
-        { title: "Portfolio Overview", path: "/investor/transaction-portal" },
+        { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
         { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },

@@ -174,8 +174,8 @@ function PortfolioOverviewPage() {
       getPortfolio(uid),
     ]).then(([txRes, sumRes, portRes]) => {
       if (txRes.success) setTransactions(txRes.transactions);
-      if (sumRes.success) setSummary(sumRes.summary);
-      if (portRes.success) setPortfolio(portRes.portfolio);
+      if (sumRes.success) setSummary(sumRes);
+      if (portRes.success) setPortfolio(portRes);
     }).finally(() => setLoading(false));
   }, [currentUser?.user_id]);
 
