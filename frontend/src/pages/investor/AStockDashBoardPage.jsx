@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
+import StockComments from "../../components/StockComments.jsx";
+import StockPrediction from "../../components/StockPrediction.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
@@ -536,7 +538,7 @@ function PremiumLockCard() {
 }
 
 /* ─── Second + Third Level (two-column layout) ─────────────── */
-const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium }) {
+const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium, showAlerts = true }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
 
@@ -600,8 +602,8 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
         </motion.div>
       </div>
 
-      {/* RIGHT COLUMN: alerts board (premium only) */}
-      {isPremium ? <AlertBoard symbol={symbol} /> : <PremiumLockCard />}
+      {/* RIGHT COLUMN: alerts board (premium only) — hidden when alerts have their own tab */}
+      {showAlerts && (isPremium ? <AlertBoard symbol={symbol} /> : <PremiumLockCard />)}
     </motion.div>
   );
 });
@@ -896,6 +898,15 @@ function AStockDashBoardPage() {
   const stockCandles = isPoolStock ? (candles?.[selectedStock] ?? []) : externalCandles;
   const stockList = useMemo(() => Object.values(stocks ?? {}), [stocks]);
 
+  // TradingView-style tab bar: everything for this stock lives on one page.
+  const [tab, setTab] = useState("overview");
+  const TABS = [
+    { key: "overview", label: "Overview" },
+    { key: "prediction", label: "Prediction" },
+    { key: "comments", label: "Comments" },
+    { key: "alerts", label: "Alerts" },
+  ];
+
 
   return (
     <>
@@ -916,18 +927,55 @@ function AStockDashBoardPage() {
             lastUpdated={lastUpdated}
             currentUser={currentUser}
           />
-          <SecondAndThirdLevel
-            symbol={symbol}
-            stock={stock}
-            stockCandles={stockCandles}
-            requestRangeData={requestRangeData}
-            stockList={stockList}
-            candles={candles}
-            candleRanges={candleRanges}
-            isPremium={isPremium}
-          />
+          {/* Tab bar — one page for chart, forecast, discussion and alerts */}
+          <div style={{ display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
+            borderBottom: "1px solid rgba(99,179,237,0.15)" }}>
+            {TABS.map((t) => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                style={{
+                  padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
+                  cursor: "pointer", color: tab === t.key ? "#fff" : "#94a3b8",
+                  borderBottom: tab === t.key ? "2px solid #3b82f6" : "2px solid transparent",
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-          <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
+          {tab === "overview" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <SecondAndThirdLevel
+                symbol={symbol}
+                stock={stock}
+                stockCandles={stockCandles}
+                requestRangeData={requestRangeData}
+                stockList={stockList}
+                candles={candles}
+                candleRanges={candleRanges}
+                isPremium={isPremium}
+                showAlerts={false}
+              />
+              <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
+            </div>
+          )}
+
+          {tab === "prediction" && (
+            <div className="max-w-5xl">
+              <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
+            </div>
+          )}
+
+          {tab === "comments" && (
+            <div className="max-w-5xl">
+              <StockComments symbol={selectedStock || symbol} />
+            </div>
+          )}
+
+          {tab === "alerts" && (
+            <div className="max-w-3xl">
+              {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
+            </div>
+          )}
 
         </main>
 
