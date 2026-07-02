@@ -8,26 +8,19 @@ import MiniChart from "../../components/MiniChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 
-const STOCK_POOL = [
-  "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD",
-  "CRM", "QCOM", "ADBE", "NFLX", "DIS", "NKE", "MCD", "HD",
-  "JPM", "BAC", "V", "MA", "XOM", "CVX", "COP", "AMT", "PLD", "O",
+// The 11 GICS primary sectors — every pool stock carries a matching
+// `sector` field in its snapshot (set by the backend), used for filtering.
+const GICS_SECTORS = [
+  "Information Technology", "Communication Services", "Consumer Discretionary",
+  "Financials", "Energy", "Real Estate", "Health Care", "Consumer Staples",
+  "Industrials", "Materials", "Utilities",
 ];
 
-const STOCK_SPECIALTIES = {
-  "Information Technology": ["NVDA", "AMD", "AVGO", "MSFT", "ORCL", "AAPL", "CRM", "QCOM", "ADBE"],
-  "Communication Services": ["META", "GOOGL", "NFLX", "DIS"],
-  "Consumer Discretionary": ["AMZN", "TSLA", "NKE", "MCD", "HD"],
-  "Financials": ["JPM", "BAC", "V", "MA"],
-  "Energy": ["XOM", "CVX", "COP"],
-  "Real Estate": ["AMT", "PLD", "O"],
-};
-
-const STOCK_RISK = {
-  Conservative: ["AAPL", "MSFT", "ORCL", "JPM", "BAC", "V", "MA", "XOM", "CVX", "AMT", "PLD", "O", "MCD", "DIS"],
-  Moderate: ["GOOGL", "META", "AVGO", "CRM", "ADBE", "AMZN", "HD", "NKE", "COP", "DIS"],
-  Aggressive: ["NVDA", "AMD", "TSLA", "QCOM", "NFLX", "COP", "META", "AMZN"],
-};
+// How many stocks "Recommended for You" shows. Candidates come from the
+// user's interest sectors; stocks whose volatility bucket (computed by the
+// backend: 3-month volatility tertiles → Conservative/Moderate/Aggressive)
+// matches the user's risk tolerance rank first, then by 1-month momentum.
+const RECOMMEND_COUNT = 8;
 
 function SearchBar({ onSearch, loading }) {
   const [inputValue, setInputValue] = useState("");
@@ -151,7 +144,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
             </span>
           )}
         </div>
-        <span className="text-gray-500 text-xs">{companyName(stock.symbol)}</span>
+        <span className="text-gray-500 text-xs">{stock.name ?? companyName(stock.symbol)}</span>
       </div>
 
       {/* Price */}
@@ -214,7 +207,7 @@ const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick 
               {isTopPick ? "Top Pick" : "For You"}
             </span>
           </div>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, display: "block" }}>{companyName(stock.symbol)}</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, display: "block" }}>{stock.name ?? companyName(stock.symbol)}</span>
         </div>
         <div className="text-right shrink-0">
           <div style={{ fontWeight: 600, fontSize: 14, color: isUp ? "#4ade80" : "#f87171" }}>
@@ -242,8 +235,7 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
 
   const filtered = useMemo(() => {
     if (!categoryFilter || categoryFilter === "All") return stockList;
-    const inCategory = new Set(STOCK_SPECIALTIES[categoryFilter] || []);
-    return stockList.filter(s => inCategory.has(s.symbol));
+    return stockList.filter(s => s.sector === categoryFilter);
   }, [stockList, categoryFilter]);
 
   return (
@@ -314,20 +306,25 @@ function RealTimeDashBoardPage() {
       .catch(() => {});
   }, []);
 
-  const { sectorSymbols, topPickSymbols } = useMemo(() => {
-    if (!interests.length) return { sectorSymbols: [], topPickSymbols: [] };
-    const sector = new Set();
-    interests.forEach(interest => {
-      (STOCK_SPECIALTIES[interest] || []).forEach(s => sector.add(s));
-    });
-    const sectorArr = [...sector];
-    if (!riskTolerance) return { sectorSymbols: sectorArr, topPickSymbols: [] };
-    const riskSet = new Set(STOCK_RISK[riskTolerance] || []);
-    const top = sectorArr.filter(s => riskSet.has(s));
-    return { sectorSymbols: sectorArr, topPickSymbols: top };
-  }, [interests, riskTolerance]);
+  const { topPicks, forYou } = useMemo(() => {
+    if (!interests.length) return { topPicks: [], forYou: [] };
+    const interestSet = new Set(interests);
+    const byMomentum = (a, b) => (b.mom21 ?? -Infinity) - (a.mom21 ?? -Infinity);
 
-  const recommendedSymbols = sectorSymbols;
+    const pool = Object.values(stocks ?? {}).filter(s => interestSet.has(s.sector));
+    const riskMatched = riskTolerance
+      ? pool.filter(s => s.risk === riskTolerance).sort(byMomentum)
+      : [];
+    const riskSet = new Set(riskMatched.map(s => s.symbol));
+    const others = pool.filter(s => !riskSet.has(s.symbol)).sort(byMomentum);
+
+    // Risk-matched picks first, momentum-ranked; fill up to 8 with the rest
+    const picks = [...riskMatched, ...others].slice(0, RECOMMEND_COUNT);
+    return {
+      topPicks: picks.filter(s => riskSet.has(s.symbol)),
+      forYou:   picks.filter(s => !riskSet.has(s.symbol)),
+    };
+  }, [stocks, interests, riskTolerance]);
 
   async function handleSearch(sym) {
     setSearchError("");
@@ -342,7 +339,7 @@ function RealTimeDashBoardPage() {
     setSearchQuery(sym);
 
     // Symbol is in the pool — just filter, no API call
-    if (STOCK_POOL.includes(sym)) {
+    if (stocks?.[sym]) {
       setSearchedStock(null);
       setSearchedCandles([]);
       return;
@@ -389,8 +386,7 @@ function RealTimeDashBoardPage() {
     );
   }, [stocks, searchQuery]);
 
-  const allSectors = ["All", ...Object.keys(STOCK_SPECIALTIES)];
-  const browseTabs = allSectors;
+  const browseTabs = ["All", ...GICS_SECTORS];
 
   return (
     <motion.div
@@ -446,53 +442,41 @@ function RealTimeDashBoardPage() {
           ) : (
             <div style={{ padding: "clamp(14px, 3vw, 24px)", borderRadius: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
 
-              {/* Top Picks */}
-              {topPickSymbols.length > 0 && (
+              {/* Top Picks — sector + risk-tolerance match, momentum-ranked */}
+              {topPicks.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
                     <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#fbbf24" }}>★ Top Picks</span>
-                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— matches your sector + risk tolerance</span>
+                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— matches your sector + risk tolerance, ranked by 1-month momentum</span>
                   </div>
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                    {topPickSymbols.map(sym => {
-                      const stock = Object.values(stocks ?? {}).find(s => s.symbol === sym);
-                      if (!stock) return null;
-                      return (
-                        <StockCard key={sym} stock={stock} candles={candles?.[sym]}
-                          onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
-                          isTopPick={true} />
-                      );
-                    })}
+                    {topPicks.map(stock => (
+                      <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
+                        onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
+                        isTopPick={true} />
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Sector matches (non-top-pick) */}
-              {(() => {
-                const sectorOnly = sectorSymbols.filter(s => !topPickSymbols.includes(s));
-                if (!sectorOnly.length) return null;
-                return (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#00D3F2" }}>For You</span>
-                      <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— in your selected sectors</span>
-                    </div>
-                    <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
-                      {sectorOnly.map(sym => {
-                        const stock = Object.values(stocks ?? {}).find(s => s.symbol === sym);
-                        if (!stock) return null;
-                        return (
-                          <StockCard key={sym} stock={stock} candles={candles?.[sym]}
-                            onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
-                            isTopPick={false} />
-                        );
-                      })}
-                    </div>
+              {/* Sector matches (different risk bucket) filling up to 8 */}
+              {forYou.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#00D3F2" }}>For You</span>
+                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— in your selected sectors</span>
                   </div>
-                );
-              })()}
+                  <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                    {forYou.map(stock => (
+                      <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
+                        onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
+                        isTopPick={false} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              {sectorSymbols.length === 0 && (
+              {topPicks.length === 0 && forYou.length === 0 && (
                 <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, textAlign: "center", padding: "16px 0" }}>No stocks match your current interests.</p>
               )}
             </div>

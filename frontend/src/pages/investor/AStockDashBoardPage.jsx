@@ -14,8 +14,6 @@ import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
 
-const STOCK_POOL = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
-
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
   if (!Number.isFinite(Number(num))) return "0";
@@ -213,7 +211,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
             fontFamily: "'DM Sans', sans-serif", fontSize: "15px",
             color: "#64748b", fontWeight: 400, letterSpacing: "0.02em",
           }}>
-            {companyName(selectedStock)}
+            {stock?.name ?? companyName(selectedStock)}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
@@ -868,7 +866,10 @@ function AStockDashBoardPage() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
-  const isPoolStock = STOCK_POOL.includes(selectedStock);
+  // Pool membership is dynamic: any symbol present in the live snapshot
+  // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
+  // to a one-off REST fetch.
+  const isPoolStock = Boolean(stocks?.[selectedStock]);
 
   // For non-pool stocks, fetch snapshot + candles via REST
   const [externalStock, setExternalStock] = useState(null);
