@@ -7,6 +7,7 @@ import InteractiveChart from "../../components/InteractiveChart.jsx";
 import StockComments from "../../components/StockComments.jsx";
 import StockOverview from "../../components/StockOverview.jsx";
 import StockQuantRating from "../../components/StockQuantRating.jsx";
+import StockPrediction from "../../components/StockPrediction.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
@@ -355,31 +356,28 @@ function AlertBoard({ symbol }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       style={{
-        width: "300px", flexShrink: 0,
-        background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
+        width: "100%",
+        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
         border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
-        padding: "20px",
+        padding: "24px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-        <span style={{ fontSize: "16px" }}>🔔</span>
-        <h2 style={{
-          fontFamily: "'DM Mono', monospace", fontSize: "13px", color: "#e2e8f0",
-          fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0,
-        }}>
-          Stock Alerts
-        </h2>
-      </div>
-      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#475569", margin: "0 0 4px", lineHeight: 1.5 }}>
-        Get notified when <span style={{ color: "#60a5fa" }}>{symbol}</span> hits your target.
+      <p style={{
+        fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6",
+        letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 10px",
+      }}>
+        🔔 Stock Alerts
+      </p>
+      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#94a3b8", margin: "0 0 4px", lineHeight: 1.5 }}>
+        Get notified when <span style={{ color: "#60a5fa", fontWeight: 600 }}>{symbol}</span> hits your target.
       </p>
 
       {submitted ? (
-        <div style={{ textAlign: "center", padding: "24px 0" }}>
+        <div style={{ textAlign: "center", padding: "36px 0" }}>
           <div style={{
             width: "48px", height: "48px", borderRadius: "50%",
             background: "linear-gradient(135deg, #0284c7, #2563eb)",
@@ -391,13 +389,13 @@ function AlertBoard({ symbol }) {
             </svg>
           </div>
           <p style={{ color: "#34d399", fontFamily: "'DM Mono', monospace", fontSize: "13px" }}>Alert activated!</p>
-          <p style={{ color: "#475569", fontFamily: "'DM Sans', sans-serif", fontSize: "11px", marginTop: "4px" }}>
+          <p style={{ color: "#64748b", fontFamily: "'DM Sans', sans-serif", fontSize: "11px", marginTop: "4px" }}>
             Email will be sent to {formData.notification_email}
           </p>
           <button
             onClick={() => { setSubmitted(false); setFormData(p => ({ ...p, price_above: "", price_below: "", pct_increase: "", pct_decrease: "" })); }}
             style={{
-              marginTop: "12px", padding: "8px 20px", borderRadius: "7px",
+              marginTop: "16px", padding: "8px 20px", borderRadius: "7px",
               background: "rgba(37,99,235,0.2)", border: "1px solid rgba(59,130,246,0.4)",
               color: "#60a5fa", fontFamily: "'DM Mono', monospace", fontSize: "12px", cursor: "pointer",
             }}
@@ -408,7 +406,7 @@ function AlertBoard({ symbol }) {
       ) : (
         <form id="alert-form" onSubmit={handleSubmit}>
           <p style={sectionHeadStyle}>Price Alerts</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "12px" }}>
             <div>
               <p style={labelStyle}>Price above ($)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_above} placeholder="e.g. 200.00"
@@ -425,7 +423,7 @@ function AlertBoard({ symbol }) {
             </div>
           </div>
           <p style={sectionHeadStyle}>% Change Alerts</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "12px" }}>
             <div>
               <p style={labelStyle}>Increase by (%)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.pct_increase} placeholder="e.g. 5"
@@ -442,12 +440,14 @@ function AlertBoard({ symbol }) {
             </div>
           </div>
           <p style={sectionHeadStyle}>Notification</p>
-          <div>
-            <p style={labelStyle}>Send email to</p>
-            <input style={inputStyle} type="email" required value={formData.notification_email} placeholder="your@email.com"
-              onChange={(e) => handleChange("notification_email", e.target.value)}
-              onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-              onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "12px" }}>
+            <div>
+              <p style={labelStyle}>Send email to</p>
+              <input style={inputStyle} type="email" required value={formData.notification_email} placeholder="your@email.com"
+                onChange={(e) => handleChange("notification_email", e.target.value)}
+                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+            </div>
           </div>
           {error && (
             <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#f87171", marginTop: "8px" }}>
@@ -463,7 +463,7 @@ function AlertBoard({ symbol }) {
           form="alert-form"
           disabled={loading}
           style={{
-            width: "100%", marginTop: "16px", padding: "11px", borderRadius: "8px",
+            width: "100%", marginTop: "20px", padding: "12px", borderRadius: "8px",
             background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
             fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px",
             letterSpacing: "0.1em", textTransform: "uppercase", border: "none",
@@ -490,29 +490,29 @@ function PremiumLockCard() {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25 }}
       style={{
-        width: "300px", flexShrink: 0,
-        background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
+        width: "100%",
+        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
         border: "1px solid rgba(255,215,0,0.2)", borderRadius: "12px",
-        padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        gap: "12px", textAlign: "center",
+        padding: "48px 24px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "14px", textAlign: "center",
       }}
     >
       <div style={{
-        width: "52px", height: "52px", borderRadius: "50%",
+        width: "60px", height: "60px", borderRadius: "50%",
         background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)",
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px",
       }}>
         🔒
       </div>
       <h2 style={{
-        fontFamily: "'DM Mono', monospace", fontSize: "13px", color: "#FFD700",
+        fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "#FFD700",
         fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0,
       }}>
         Premium Feature
       </h2>
       <p style={{
-        fontFamily: "'DM Sans', sans-serif", fontSize: "12px",
-        color: "#64748b", lineHeight: 1.6, margin: 0,
+        fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
+        color: "#94a3b8", lineHeight: 1.6, margin: 0, maxWidth: "360px",
       }}>
         Custom stock alerts are available for <span style={{ color: "#FFD700" }}>Premium</span> members only.
         Upgrade to get notified when prices hit your targets.
@@ -520,7 +520,7 @@ function PremiumLockCard() {
       <button
         onClick={() => navigate("/investor/subscription")}
         style={{
-          marginTop: "4px", padding: "10px 24px", borderRadius: "8px",
+          marginTop: "6px", padding: "11px 28px", borderRadius: "8px",
           background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
           border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700",
           fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px",
@@ -904,6 +904,7 @@ function AStockDashBoardPage() {
   const [tab, setTab] = useState("overview");
   const TABS = [
     { key: "overview", label: "Overview" },
+    { key: "trading", label: "Trading" },
     { key: "prediction", label: "Prediction" },
     { key: "comments", label: "Comments" },
     { key: "alerts", label: "Alerts" },
@@ -936,8 +937,10 @@ function AStockDashBoardPage() {
               border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
               padding: "20px", marginTop: "16px",
             }}>
-              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
-                letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px" }}>
+              <p style={{
+                fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
+                letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px"
+              }}>
                 Price Chart
               </p>
               <InteractiveChart
@@ -952,8 +955,10 @@ function AStockDashBoardPage() {
           )}
 
           {/* Tab bar — chart above stays put; only the panel below switches */}
-          <div style={{ display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
-            borderBottom: "1px solid rgba(99,179,237,0.15)" }}>
+          <div style={{
+            display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
+            borderBottom: "1px solid rgba(99,179,237,0.15)"
+          }}>
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 style={{
@@ -969,24 +974,30 @@ function AStockDashBoardPage() {
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <StockOverview symbol={selectedStock || symbol} live={stock} />
+            </div>
+          )}
+
+          {tab === "trading" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>
           )}
 
           {tab === "prediction" && (
-            <div className="max-w-5xl mx-auto">
+            <div className="max-w mx-auto flex flex-col gap-6">
+              <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
               <StockQuantRating symbol={selectedStock || symbol} />
             </div>
           )}
 
           {tab === "comments" && (
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w mx-auto">
               <StockComments symbol={selectedStock || symbol} />
             </div>
           )}
 
           {tab === "alerts" && (
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w mx-auto">
               {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
             </div>
           )}
