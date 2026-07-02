@@ -22,10 +22,10 @@ const SECTORS = [
 
 // Label → color theme (Seeking-Alpha-style: green buy, amber hold, red sell)
 const LABEL_THEME = {
-  "Strong Buy":  { text: "#10b981", ring: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.4)" },
-  "Buy":         { text: "#34d399", ring: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
-  "Hold":        { text: "#fbbf24", ring: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" },
-  "Sell":        { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
+  "Strong Buy": { text: "#10b981", ring: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.4)" },
+  "Buy": { text: "#34d399", ring: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
+  "Hold": { text: "#fbbf24", ring: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" },
+  "Sell": { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
   "Strong Sell": { text: "#f87171", ring: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.4)" },
 };
 
@@ -151,7 +151,7 @@ export default function QuantRatingPage() {
     <div className="min-h-screen" style={{ background: "#020617" }}>
       <GeneralHeader />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w mx-auto ">
         {/* Title */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-100">Sector Quant Ratings</h1>
@@ -180,11 +180,10 @@ export default function QuantRatingPage() {
           {SECTORS.map((s) => (
             <button key={s.key}
               onClick={() => loadRanking(s.key)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                ranking?.sector === s.key
-                  ? "bg-cyan-600/20 border-cyan-500 text-cyan-300"
-                  : "bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-500"
-              }`}>
+              className={`text-xs px-3 py-1.5 rounded-full border transition ${ranking?.sector === s.key
+                ? "bg-cyan-600/20 border-cyan-500 text-cyan-300"
+                : "bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-500"
+                }`}>
               {s.label}
             </button>
           ))}
@@ -309,9 +308,8 @@ export default function QuantRatingPage() {
                         return (
                           <tr key={r.symbol}
                             onClick={() => loadRating(r.symbol)}
-                            className={`border-b border-slate-800/60 cursor-pointer transition ${
-                              active ? "bg-cyan-500/10" : "hover:bg-slate-800/40"
-                            }`}>
+                            className={`border-b border-slate-800/60 cursor-pointer transition ${active ? "bg-cyan-500/10" : "hover:bg-slate-800/40"
+                              }`}>
                             <td className="py-2.5 pr-2 text-slate-500 tabular-nums">{r.rank}</td>
                             <td className="py-2.5 pr-2 font-semibold text-slate-100">{r.symbol}</td>
                             <td className="py-2.5 pr-2">
