@@ -5,6 +5,7 @@ import yfinance as yf
 
 from app.control.controller.predictionc import PredictionController
 from app.control.services.auth import get_current_user
+from app.entity.models.predictionusage import PredictionUsage
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
 
@@ -27,6 +28,18 @@ def predict(
     data: PredictRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    # Basic investors: lifetime limit of 3 distinct stocks. Re-viewing an
+    # already-unlocked stock is free; premium/expert/admin are unlimited.
+    quota = PredictionUsage.check(current_user["user_id"], data.symbol)
+    if not quota["allowed"]:
+        return {
+            "success": False,
+            "limit_reached": True,
+            "views_used": quota["views_used"],
+            "views_limit": quota["limit"],
+            "message": "Free prediction limit reached. Upgrade to Premium for unlimited AI predictions.",
+        }
+
     result = PredictionController().predict(
         data.symbol.upper(),
         data.days,
@@ -37,8 +50,22 @@ def predict(
         timeline_days=data.timeline_days,
     )
     if result is None:
+        # Failed predictions never consume quota
         return {"success": False, "message": "Prediction failed"}
-    return {"success": True, **result}
+
+    usage = PredictionUsage.record_view(current_user["user_id"], data.symbol)
+    return {
+        "success": True,
+        "views_used": usage["views_used"],
+        "views_limit": usage["limit"],
+        **result,
+    }
+
+
+@router.get("/usage")
+def prediction_usage(current_user: dict = Depends(get_current_user)):
+    """How many free predictions the current user has used (basic plan)."""
+    return {"success": True, **PredictionUsage.get_usage(current_user["user_id"])}
 
 
 @router.get("/analyst/{symbol}")
