@@ -30,7 +30,6 @@ class ForumPost(Base):
     content = Column(Text, nullable=False)
     category = Column(String(80), default="General")
     tags = Column(String(255), default="")
-    symbol = Column(String(10), nullable=True, index=True)
     likes_count = Column(Integer, default=0)
     views_count = Column(Integer, default=0)
     is_pinned = Column(Integer, default=0)
@@ -173,7 +172,6 @@ def _serialise_post(session, post, user_id=None, include_replies=True,
         "content": post.content,
         "preview": post.content[:180] + ("..." if len(post.content) > 180 else ""),
         "category": post.category,
-        "symbol": post.symbol,
         "tags": [t.strip() for t in (post.tags or "").split(",") if t.strip()],
         "author": post.author_name,
         "author_name": post.author_name,
@@ -248,10 +246,9 @@ class ForumRepository:
             query = session.query(ForumPost)
             if symbol:
                 sym = symbol.upper()
-                # Match the dedicated symbol column OR the ticker appearing in tags,
-                # so existing tag-based posts show up on the stock page too.
-                query = query.filter(or_(ForumPost.symbol == sym,
-                                         ForumPost.tags.like(f"%{sym}%")))
+                # Scope by ticker stored in the tags field — no dedicated column,
+                # so NO database migration is required.
+                query = query.filter(ForumPost.tags.like(f"%{sym}%"))
             posts = query.order_by(ForumPost.created_at.desc()).all()
             liked_ids: set = set()
             saved_ids: set = set()
@@ -274,14 +271,24 @@ class ForumRepository:
             post.views_count = int(post.views_count or 0) + 1
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
+    # Roles allowed to post/reply in the stock discussion (verified professionals).
+    EXPERT_ROLES = ("expert", "consultant", "admin")
+
     @staticmethod
     def create_post(user_id, title, content, category="General", tags=None, symbol=None):
         with get_session() as session:
             author_name, author_role = _resolve_user_name(session, user_id)
+            # Only verified experts may comment on stocks.
+            if (author_role or "").lower() not in ForumRepository.EXPERT_ROLES:
+                return "forbidden"
+            tag_list = list(tags or [])
+            if symbol:
+                sym = symbol.upper()
+                if sym not in [str(t).upper() for t in tag_list]:
+                    tag_list.append(sym)
             post = ForumPost(
                 post_id=f"post_{uuid4()}", user_id=user_id, author_name=author_name, author_role=author_role,
-                title=title, content=content, category=category or "General", tags=",".join(tags or []),
-                symbol=(symbol.upper() if symbol else None),
+                title=title, content=content, category=category or "General", tags=",".join(tag_list),
             )
             session.add(post)
             session.flush()
@@ -294,6 +301,9 @@ class ForumRepository:
             if not post:
                 return None
             author_name, author_role = _resolve_user_name(session, user_id)
+            # Only verified experts may comment on stocks.
+            if (author_role or "").lower() not in ForumRepository.EXPERT_ROLES:
+                return "forbidden"
             reply = ForumReply(reply_id=f"reply_{uuid4()}", post_id=post_id, user_id=user_id, author_name=author_name, author_role=author_role, content=content)
             post.updated_at = _now()
             session.add(reply)

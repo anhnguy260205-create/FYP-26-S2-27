@@ -14,10 +14,14 @@ class ForumController:
 
     def create_post(self, user_id, title, content, category="General", tags=None, symbol=None):
         post = ForumRepository.create_post(user_id, title, content, category, tags or [], symbol)
+        if post == "forbidden":
+            return {"success": False, "message": "Only verified experts can comment on stocks."}
         return {"success": True, "post": post, "message": "Post created successfully"}
 
     def reply_post(self, post_id, user_id, content):
         post = ForumRepository.add_reply(post_id, user_id, content)
+        if post == "forbidden":
+            return {"success": False, "message": "Only verified experts can comment on stocks."}
         if not post:
             return {"success": False, "message": "Post not found"}
         return {"success": True, "post": post, "message": "Reply posted successfully"}
