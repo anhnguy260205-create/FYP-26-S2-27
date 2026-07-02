@@ -951,6 +951,7 @@ function SectionLabel({ text }) {
 
 function AIPredictionPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [symbol, setSymbol] = useState("AAPL");
@@ -959,6 +960,7 @@ function AIPredictionPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [limitReached, setLimitReached] = useState(false);
   const hasRun = useRef(false);
   const hasHandledDeepLink = useRef(false);
 
@@ -983,6 +985,7 @@ function AIPredictionPage() {
     setLoading(true);
     setError("");
     setResult(null);
+    setLimitReached(false);
     hasRun.current = true;
     try {
       const res = await authFetch(`${API_BASE}/predict`, {
@@ -991,7 +994,8 @@ function AIPredictionPage() {
         body: JSON.stringify({ symbol: sym, days: currentDays, mode: "standard" }),
       });
       const data = await res.json();
-      if (!data.success) setError(data.message ?? "Prediction failed");
+      if (data.limit_reached) setLimitReached(true);
+      else if (!data.success) setError(data.message ?? "Prediction failed");
       else setResult(data);
     } catch {
       setError("Could not reach backend. Make sure FastAPI is running on port 8000.");
@@ -1105,6 +1109,38 @@ function AIPredictionPage() {
               <DaysControl days={days} onChange={handleDaysChange} />
             </div>
           </motion.div>
+
+          {/* ── Free quota exhausted (basic plan) ── */}
+          {limitReached && (
+            <div style={{
+              background: "linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7))",
+              border: "1px solid rgba(255,215,0,0.25)", borderRadius: 12,
+              padding: "28px 20px", marginBottom: 16, textAlign: "center",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+            }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: "50%", fontSize: 24,
+                background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>🔒</div>
+              <div style={{ color: "#f1f5f9", fontWeight: 600, fontSize: 15 }}>
+                You've used all your free AI predictions
+              </div>
+              <div style={{ color: "#94a3b8", fontSize: 13, maxWidth: 380 }}>
+                Basic accounts can unlock predictions for 3 stocks. Upgrade to Premium for
+                unlimited AI forecasts across all S&P 500 stocks.
+              </div>
+              <button onClick={() => navigate("/investor/subscription")}
+                style={{
+                  marginTop: 4, padding: "10px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+                  color: "#fff", fontWeight: 600, fontSize: 14,
+                  background: "linear-gradient(90deg, #d4a017, #b8860b)",
+                  boxShadow: "0 8px 18px rgba(212,160,23,0.3)",
+                }}>
+                Upgrade to Premium →
+              </button>
+            </div>
+          )}
 
           {/* ── Error ── */}
           <AnimatePresence>
