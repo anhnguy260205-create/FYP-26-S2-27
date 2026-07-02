@@ -15,6 +15,11 @@ const SPECIALTIES = [
     "Communication Services",
     "Energy",
     "Real Estate",
+    "Health Care",
+    "Consumer Staples",
+    "Industrials",
+    "Materials",
+    "Utilities",
 ];
 /* ─── Editable field ──────────────────────────────────────── */
 function FormField({ label, children, hint, htmlFor }) {
