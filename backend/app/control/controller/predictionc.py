@@ -44,10 +44,10 @@ def _sanitize(obj):
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-SUPPORTED_SYMBOLS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "META", "TSLA", "AVGO", "ORCL", "AMD",
-]
+# The full S&P 500 pool. The XGBoost model is symbol-agnostic (features are
+# computed from price history + sentiment at request time), so any pool
+# symbol can be predicted — the whitelist only guards against junk input.
+from app.boundary.stock_ws import stock_pool as SUPPORTED_SYMBOLS
 
 # Confidence interval half-widths as % of price (widens with forecast horizon)
 CI_BASE_PCT = 0.015   # ±1.5 % on day-1
