@@ -10,6 +10,11 @@ const SPECIALTIES = [
   "Communication Services",
   "Energy",
   "Real Estate",
+  "Health Care",
+  "Consumer Staples",
+  "Industrials",
+  "Materials",
+  "Utilities",
 ];
 
 function UpdateParticularPage() {
@@ -23,6 +28,14 @@ function UpdateParticularPage() {
   const [riskTolerance, setRiskTolerance] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [dontAskAgain, setDontAskAgain] = useState(false);
+
+  const handleSkip = () => {
+    if (dontAskAgain && currentUser.user_id) {
+      localStorage.setItem(`profileSetupDismissed_${currentUser.user_id}`, "1");
+    }
+    navigate("/investor");
+  };
 
   const toggleInterest = (s) =>
     setInterests((prev) =>
@@ -212,11 +225,21 @@ function UpdateParticularPage() {
 
           <button
             type="button"
-            onClick={() => navigate("/investor")}
+            onClick={handleSkip}
             className="w-full text-gray-400 text-[14px] hover:text-gray-600 transition-colors"
           >
             Skip for now
           </button>
+
+          <label className="flex items-center justify-center gap-2 text-[12px] text-gray-400 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={dontAskAgain}
+              onChange={(e) => setDontAskAgain(e.target.checked)}
+              style={{ accentColor: "#0092b8" }}
+            />
+            Don't ask me again on login
+          </label>
         </form>
       </div>
     </motion.div>
