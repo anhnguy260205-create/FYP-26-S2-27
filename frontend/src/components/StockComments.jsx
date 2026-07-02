@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   getStockComments,
   postStockComment,
@@ -147,9 +148,42 @@ function CommentCard({ post, me, canPost, onChanged }) {
   );
 }
 
+/* CourseHero-style premium gate: real posts render blurred underneath a
+   lock overlay, so basic users see that content exists but can't read it. */
+function PremiumBlurGate({ children, count, symbol }) {
+  const navigate = useNavigate();
+  return (
+    <div className="relative rounded-xl overflow-hidden">
+      <div style={{ filter: "blur(7px)", userSelect: "none", pointerEvents: "none" }} aria-hidden="true">
+        {children}
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 text-center p-5"
+        style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.92))" }}>
+        <div className="flex items-center justify-center rounded-full"
+          style={{ width: 50, height: 50, fontSize: 22, background: "#fef3c7", border: "1px solid #fcd34d" }}>
+          🔒
+        </div>
+        <div className="text-slate-900 font-semibold text-sm">
+          {count} expert post{count === 1 ? "" : "s"} on {symbol} — Premium only
+        </div>
+        <div className="text-slate-500 text-xs max-w-70">
+          Upgrade to Premium to read what verified experts are saying about {symbol}.
+        </div>
+        <button onClick={() => navigate("/investor/subscription")}
+          className="text-sm font-semibold px-5 py-2 rounded-xl text-white hover:opacity-90 active:scale-[0.99] transition"
+          style={{ background: "linear-gradient(90deg, #d4a017, #b8860b)", boxShadow: "0 8px 18px rgba(212,160,23,0.25)" }}>
+          Upgrade to Premium →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function StockComments({ symbol }) {
   const me = currentUser();
   const canPost = isExpert(me.role);
+  // Reading expert ideas is a premium perk; experts/consultants/admins always can.
+  const canRead = canPost || (me.subscription_status || "").toLowerCase() === "premium";
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -210,7 +244,7 @@ export default function StockComments({ symbol }) {
         </div>
       ) : posts.length === 0 ? (
         <div className="text-center py-10 text-slate-500 text-sm">No expert posts on {symbol} yet.</div>
-      ) : (
+      ) : canRead ? (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
             {posts.map((p) => (
@@ -218,6 +252,14 @@ export default function StockComments({ symbol }) {
             ))}
           </AnimatePresence>
         </div>
+      ) : (
+        <PremiumBlurGate count={posts.length} symbol={symbol}>
+          <div className="space-y-3">
+            {posts.slice(0, 3).map((p) => (
+              <CommentCard key={p.post_id} post={p} me={me} canPost={false} onChanged={() => {}} />
+            ))}
+          </div>
+        </PremiumBlurGate>
       )}
     </div>
   );

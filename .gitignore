@@ -1,6 +1,7 @@
 .venv/
 backend/.env
 backend/serviceAccountKey.json
+backend/snapshot_cache.json
 __pycache__/
 *.pyc
 node_modules
