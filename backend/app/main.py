@@ -28,11 +28,12 @@ from app.entity.models.forumquestion import ForumPost, ForumReply, ForumPostLike
 from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.entity.models.emailalert import StockAlert
 from app.entity.models.order_book import OrderBook
+from app.entity.models.predictionusage import PredictionUsage
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
-    get_snapshot_yfinance,
     get_market_status,
+    ensure_snapshots_fresh,
     _snapshot_cache,
 )
 from app.boundary.predictionb import router as prediction_router
@@ -63,11 +64,14 @@ async def yfinance_alert_poller():
     await asyncio.sleep(10)  # wait for server to fully start
     while True:
         market_open = get_market_status() == "OPEN"
+        # One batched refresh fills the cache for the whole pool — no
+        # per-symbol yfinance calls even when no client is connected.
+        await ensure_snapshots_fresh()
         for symbol in stock_pool:
             try:
-                # Read from snapshot cache first to avoid redundant yfinance calls.
-                # Falls back to a fresh fetch only if the cache is empty.
-                snapshot = _snapshot_cache.get(symbol) or await asyncio.to_thread(get_snapshot_yfinance, symbol)
+                snapshot = _snapshot_cache.get(symbol)
+                if not snapshot:
+                    continue
                 price = snapshot.get("p")
                 prev_close = snapshot.get("previousClose")
                 if price is not None:
