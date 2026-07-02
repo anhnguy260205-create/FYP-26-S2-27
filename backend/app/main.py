@@ -147,6 +147,13 @@ with engine.connect() as _conn:
         "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL",
         "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0",
         "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL",
+        "ALTER TABLE user_account MODIFY COLUMN full_name VARCHAR(100) NULL",
+        "ALTER TABLE user_account MODIFY COLUMN phone_number VARCHAR(20) NULL",
+        "ALTER TABLE user_account MODIFY COLUMN address VARCHAR(255) NULL",
+        "ALTER TABLE user_account MODIFY COLUMN password VARCHAR(255) NULL",
+        "ALTER TABLE article ADD COLUMN author_type VARCHAR(20) NOT NULL DEFAULT 'expert'",
+        "ALTER TABLE article ADD COLUMN author_name VARCHAR(100) NULL",
+        "ALTER TABLE expert ADD COLUMN documents TEXT NULL",
     ]:
         try:
             _conn.execute(text(_sql))
