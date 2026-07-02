@@ -210,6 +210,10 @@ export function StocksProvider({ children }) {
                         changed = true;
                         updated[stock.s] = {
                             symbol:        stock.s,
+                            sector:        stock.sector ?? cur?.sector,
+                            name:          stock.name ?? cur?.name,
+                            risk:          stock.risk ?? cur?.risk,
+                            mom21:         stock.mom21 ?? cur?.mom21,
                             price:         stock.p,
                             open:          stock.open,
                             high:          stock.high,

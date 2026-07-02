@@ -71,7 +71,10 @@ function LoginPage() {
       }
       localStorage.setItem("currentUser", JSON.stringify(result.user));
       const role = result.user.role;
-      const isFirstLogin = !result.user.full_name;
+      // Show the profile-setup page only if the user never completed it AND
+      // hasn't ticked "Don't ask me again" on the setup page.
+      const profileDismissed = localStorage.getItem(`profileSetupDismissed_${result.user.user_id}`) === "1";
+      const isFirstLogin = !result.user.full_name && !profileDismissed;
       if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");
       else if (role === "expert") navigate(isFirstLogin ? "/expert/updateparticular" : "/expert");
       else if (role === "admin") navigate("/adminpanel");
