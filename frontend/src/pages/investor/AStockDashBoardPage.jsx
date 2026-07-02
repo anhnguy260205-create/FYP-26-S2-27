@@ -5,7 +5,8 @@ import { useParams } from "react-router-dom";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import StockComments from "../../components/StockComments.jsx";
-import StockPrediction from "../../components/StockPrediction.jsx";
+import StockOverview from "../../components/StockOverview.jsx";
+import StockQuantRating from "../../components/StockQuantRating.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
@@ -927,7 +928,29 @@ function AStockDashBoardPage() {
             lastUpdated={lastUpdated}
             currentUser={currentUser}
           />
-          {/* Tab bar — one page for chart, forecast, discussion and alerts */}
+          {/* Persistent price chart — stays fixed above the tabs on every view */}
+          {stock && (
+            <div style={{
+              background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
+              border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
+              padding: "20px", marginTop: "16px",
+            }}>
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
+                letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px" }}>
+                Price Chart
+              </p>
+              <InteractiveChart
+                data={stockCandles}
+                symbol={symbol}
+                requestRangeData={requestRangeData}
+                stockList={stockList}
+                compareDataBySymbol={candles}
+                candleRanges={candleRanges}
+              />
+            </div>
+          )}
+
+          {/* Tab bar — chart above stays put; only the panel below switches */}
           <div style={{ display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
             borderBottom: "1px solid rgba(99,179,237,0.15)" }}>
             {TABS.map((t) => (
@@ -944,35 +967,25 @@ function AStockDashBoardPage() {
 
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <SecondAndThirdLevel
-                symbol={symbol}
-                stock={stock}
-                stockCandles={stockCandles}
-                requestRangeData={requestRangeData}
-                stockList={stockList}
-                candles={candles}
-                candleRanges={candleRanges}
-                isPremium={isPremium}
-                showAlerts={false}
-              />
+              <StockOverview symbol={selectedStock || symbol} live={stock} />
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>
           )}
 
           {tab === "prediction" && (
-            <div className="max-w-5xl">
-              <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
+            <div className="max-w-5xl mx-auto">
+              <StockQuantRating symbol={selectedStock || symbol} />
             </div>
           )}
 
           {tab === "comments" && (
-            <div className="max-w-5xl">
+            <div className="max-w-3xl mx-auto">
               <StockComments symbol={selectedStock || symbol} />
             </div>
           )}
 
           {tab === "alerts" && (
-            <div className="max-w-3xl">
+            <div className="max-w-3xl mx-auto">
               {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
             </div>
           )}

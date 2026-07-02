@@ -131,12 +131,6 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Quant Ratings",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-      activePaths: ["/investor/quantrating"],
-      onClick: () => navigate("/investor/quantrating"),
-    },
-    {
       label: "Knowledge Hub",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/educationcontent", "/investor/expertportfolio", "/investor/aichatbot"],

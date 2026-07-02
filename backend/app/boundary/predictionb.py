@@ -58,3 +58,64 @@ def get_analyst(symbol: str, current_user: dict = Depends(get_current_user)):
         }
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+@router.get("/overview/{symbol}")
+def get_overview(symbol: str, current_user: dict = Depends(get_current_user)):
+    """Company key stats, upcoming earnings and profile for the Overview tab."""
+    try:
+        ticker = yf.Ticker(symbol.upper())
+        info = ticker.info or {}
+
+        ceo = None
+        for off in (info.get("companyOfficers") or []):
+            title = (off.get("title") or "").lower()
+            if "ceo" in title or "chief executive" in title:
+                ceo = off.get("name")
+                break
+
+        next_earnings, eps_est, rev_est = None, None, None
+        try:
+            cal = ticker.calendar
+            if isinstance(cal, dict):
+                ed = cal.get("Earnings Date")
+                if isinstance(ed, (list, tuple)) and ed:
+                    next_earnings = str(ed[0])
+                elif ed:
+                    next_earnings = str(ed)
+                eps_est = cal.get("Earnings Average") or cal.get("EPS Estimate")
+                rev_est = cal.get("Revenue Average") or cal.get("Revenue Estimate")
+        except Exception:
+            pass
+        if eps_est is None:
+            eps_est = info.get("forwardEps")
+
+        hq = ", ".join([p for p in [info.get("city"), info.get("country")] if p]) or None
+
+        return {
+            "success": True,
+            "symbol": symbol.upper(),
+            "name": info.get("shortName") or info.get("longName"),
+            "marketCap": info.get("marketCap"),
+            "dividendYield": info.get("dividendYield"),
+            "trailingPE": info.get("trailingPE"),
+            "trailingEps": info.get("trailingEps"),
+            "netIncome": info.get("netIncomeToCommon"),
+            "revenue": info.get("totalRevenue"),
+            "floatShares": info.get("floatShares") or info.get("sharesOutstanding"),
+            "beta": info.get("beta"),
+            "employees": info.get("fullTimeEmployees"),
+            "volume": info.get("volume") or info.get("regularMarketVolume"),
+            "avgVolume": info.get("averageVolume"),
+            "nextEarningsDate": next_earnings,
+            "epsEstimate": eps_est,
+            "revenueEstimate": rev_est,
+            "sector": info.get("sector"),
+            "industry": info.get("industry"),
+            "ceo": ceo,
+            "website": info.get("website"),
+            "headquarters": hq,
+            "description": info.get("longBusinessSummary"),
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
