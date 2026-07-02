@@ -8,20 +8,20 @@ import {
   deleteForumPost,
 } from "../api/stockCommentsApi";
 
-// ─── Role → badge style (experts highlighted, TradingView-style) ───────────────
+// Only verified professionals may comment on stocks.
+const EXPERT_ROLES = ["expert", "consultant", "admin"];
 
 const ROLE_BADGE = {
-  expert:     { label: "Expert",     color: "#fbbf24", bg: "rgba(251,191,36,0.14)", border: "rgba(251,191,36,0.4)" },
-  consultant: { label: "Consultant", color: "#c084fc", bg: "rgba(192,132,252,0.14)", border: "rgba(192,132,252,0.4)" },
-  premium:    { label: "Premium",    color: "#22d3ee", bg: "rgba(34,211,238,0.14)", border: "rgba(34,211,238,0.35)" },
+  expert:     { label: "Expert",     color: "#b45309", bg: "#fef3c7", border: "#fcd34d" },
+  consultant: { label: "Consultant", color: "#6d28d9", bg: "#ede9fe", border: "#c4b5fd" },
+  admin:      { label: "Admin",      color: "#0e7490", bg: "#cffafe", border: "#67e8f9" },
+  premium:    { label: "Premium",    color: "#0369a1", bg: "#e0f2fe", border: "#7dd3fc" },
 };
-
-const isExpert = (role) => role === "expert" || role === "consultant";
+const isExpert = (role) => EXPERT_ROLES.includes((role || "").toLowerCase());
 
 function initials(name = "?") {
   return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
-
 function timeAgo(iso) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -32,13 +32,10 @@ function timeAgo(iso) {
   if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
   return d.toLocaleDateString();
 }
-
 function currentUser() {
   try { return JSON.parse(localStorage.getItem("currentUser") || "{}"); }
   catch { return {}; }
 }
-
-// ─── Avatar ────────────────────────────────────────────────────────────────────
 
 function Avatar({ name, role }) {
   const expert = isExpert(role);
@@ -47,109 +44,93 @@ function Avatar({ name, role }) {
       style={{
         width: 38, height: 38, color: "#fff",
         background: expert ? "linear-gradient(135deg,#f59e0b,#b45309)" : "linear-gradient(135deg,#0092b8,#155dfc)",
-        boxShadow: expert ? "0 0 0 2px rgba(251,191,36,0.35)" : "none",
       }}>
       {initials(name)}
     </div>
   );
 }
-
 function RoleBadge({ role }) {
-  const b = ROLE_BADGE[role];
+  const b = ROLE_BADGE[(role || "").toLowerCase()];
   if (!b) return null;
   return (
     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-      style={{ color: b.color, background: b.bg, border: `1px solid ${b.border}` }}>
-      {b.label}
-    </span>
+      style={{ color: b.color, background: b.bg, border: `1px solid ${b.border}` }}>{b.label}</span>
   );
 }
 
-// ─── One comment (with replies) ────────────────────────────────────────────────
-
-function CommentCard({ post, symbol, me, onChanged }) {
+function CommentCard({ post, me, canPost, onChanged }) {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [busy, setBusy] = useState(false);
   const expert = isExpert(post.author_role);
   const mine = me?.user_id && post.user_id === me.user_id;
 
-  const like = async () => {
-    try { await toggleForumLike(post.post_id); onChanged(); } catch { /* ignore */ }
-  };
+  const like = async () => { try { await toggleForumLike(post.post_id); onChanged(); } catch { /* */ } };
   const submitReply = async () => {
     if (!replyText.trim()) return;
     setBusy(true);
-    try {
-      await replyForumPost(post.post_id, { content: replyText.trim() });
-      setReplyText(""); setShowReply(false); onChanged();
-    } finally { setBusy(false); }
+    try { await replyForumPost(post.post_id, { content: replyText.trim() }); setReplyText(""); setShowReply(false); onChanged(); }
+    finally { setBusy(false); }
   };
   const remove = async () => {
     if (!confirm("Delete this comment?")) return;
-    try { await deleteForumPost(post.post_id); onChanged(); } catch { /* ignore */ }
+    try { await deleteForumPost(post.post_id); onChanged(); } catch { /* */ }
   };
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border p-3.5"
-      style={{
-        background: expert ? "rgba(251,191,36,0.05)" : "rgba(15,23,42,0.55)",
-        borderColor: expert ? "rgba(251,191,36,0.3)" : "rgba(51,65,85,0.6)",
-      }}>
+      style={{ background: expert ? "#fffbeb" : "#ffffff", borderColor: expert ? "#fcd34d" : "#e2e8f0" }}>
       <div className="flex gap-3">
         <Avatar name={post.author_name} role={post.author_role} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-slate-100">{post.author_name}</span>
+            <span className="text-sm font-semibold text-slate-900">{post.author_name}</span>
             <RoleBadge role={post.author_role} />
-            <span className="text-[11px] text-slate-500">· {timeAgo(post.created_at)}</span>
+            <span className="text-[11px] text-slate-400">· {timeAgo(post.created_at)}</span>
           </div>
-          <p className="text-sm text-slate-300 mt-1 whitespace-pre-wrap break-words">{post.content}</p>
+          <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap break-words">{post.content}</p>
 
-          <div className="flex items-center gap-4 mt-2 text-slate-400">
+          <div className="flex items-center gap-4 mt-2 text-slate-500">
             <button onClick={like}
-              className={`flex items-center gap-1 text-xs transition hover:text-rose-400 ${post.liked_by_me ? "text-rose-400" : ""}`}>
+              className={`flex items-center gap-1 text-xs transition hover:text-rose-500 ${post.liked_by_me ? "text-rose-500" : ""}`}>
               <span>{post.liked_by_me ? "♥" : "♡"}</span>{post.likes || 0}
             </button>
-            <button onClick={() => setShowReply((s) => !s)}
-              className="text-xs hover:text-cyan-400 transition">
-              Reply{post.reply_count ? ` (${post.reply_count})` : ""}
-            </button>
-            {mine && (
-              <button onClick={remove} className="text-xs hover:text-red-400 transition ml-auto">Delete</button>
+            {canPost && (
+              <button onClick={() => setShowReply((s) => !s)} className="text-xs hover:text-cyan-600 transition">
+                Reply{post.reply_count ? ` (${post.reply_count})` : ""}
+              </button>
             )}
+            {mine && <button onClick={remove} className="text-xs hover:text-red-500 transition ml-auto">Delete</button>}
           </div>
 
-          {/* Replies */}
           {post.replies?.length > 0 && (
-            <div className="mt-3 space-y-2 border-l-2 border-slate-700/50 pl-3">
+            <div className="mt-3 space-y-2 border-l-2 border-slate-200 pl-3">
               {post.replies.map((r) => (
                 <div key={r.reply_id} className="flex gap-2">
                   <Avatar name={r.author_name} role={r.author_role} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-slate-200">{r.author_name}</span>
+                      <span className="text-xs font-semibold text-slate-800">{r.author_name}</span>
                       <RoleBadge role={r.author_role} />
-                      <span className="text-[10px] text-slate-500">· {timeAgo(r.created_at)}</span>
+                      <span className="text-[10px] text-slate-400">· {timeAgo(r.created_at)}</span>
                     </div>
-                    <p className="text-xs text-slate-300 mt-0.5 whitespace-pre-wrap break-words">{r.content}</p>
+                    <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap break-words">{r.content}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Reply composer */}
           <AnimatePresence>
-            {showReply && (
+            {showReply && canPost && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)}
-                  rows={2} placeholder={`Reply to ${post.author_name}…`}
-                  className="w-full bg-slate-900/70 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+                <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} rows={2}
+                  placeholder={`Reply to ${post.author_name}…`}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500" />
                 <div className="flex justify-end gap-2 mt-1.5">
-                  <button onClick={() => setShowReply(false)} className="text-xs text-slate-400 px-3 py-1.5">Cancel</button>
+                  <button onClick={() => setShowReply(false)} className="text-xs text-slate-500 px-3 py-1.5">Cancel</button>
                   <button onClick={submitReply} disabled={busy || !replyText.trim()}
                     className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white">
                     {busy ? "Posting…" : "Reply"}
@@ -164,15 +145,13 @@ function CommentCard({ post, symbol, me, onChanged }) {
   );
 }
 
-// ─── Main widget ───────────────────────────────────────────────────────────────
-
 export default function StockComments({ symbol }) {
   const me = currentUser();
+  const canPost = isExpert(me.role);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
-  const [expertsOnly, setExpertsOnly] = useState(false);
 
   const load = useCallback(async () => {
     if (!symbol) return;
@@ -192,57 +171,48 @@ export default function StockComments({ symbol }) {
     finally { setPosting(false); }
   };
 
-  const shown = expertsOnly ? posts.filter((p) => isExpert(p.author_role)) : posts;
-  const expertCount = posts.filter((p) => isExpert(p.author_role)).length;
-
   return (
-    <div className="rounded-2xl border border-slate-700/60 p-5" style={{ background: "rgba(15,23,42,0.5)" }}>
+    <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-sm font-semibold text-slate-200">
-          Community & Expert Ideas <span className="text-cyan-400">· {symbol}</span>
+        <h2 className="text-sm font-semibold text-slate-900">
+          Expert Ideas <span className="text-cyan-600">· {symbol}</span>
         </h2>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-500">{posts.length} posts · {expertCount} expert</span>
-          <button onClick={() => setExpertsOnly((v) => !v)}
-            className={`px-2.5 py-1 rounded-full border transition ${
-              expertsOnly ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "border-slate-700 text-slate-400 hover:border-slate-500"
-            }`}>
-            Experts only
-          </button>
-        </div>
+        <span className="text-xs text-slate-400">{posts.length} posts</span>
       </div>
-      <p className="text-xs text-slate-500 mb-4">Share your take on {symbol}. Verified experts are highlighted in gold.</p>
+      <p className="text-xs text-slate-500 mb-4">Verified experts share their view on {symbol}.</p>
 
-      {/* Composer */}
-      <div className="rounded-xl bg-slate-900/60 border border-slate-700 p-3 mb-5">
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
-          placeholder={`What's your view on ${symbol}?`}
-          className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none" />
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[11px] text-slate-600">Be respectful — not investment advice.</span>
-          <button onClick={submit} disabled={posting || !text.trim()}
-            className="text-sm px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white font-medium transition">
-            {posting ? "Posting…" : "Post"}
-          </button>
+      {/* Composer — verified experts only */}
+      {canPost ? (
+        <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 mb-5">
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
+            placeholder={`Share your expert view on ${symbol}…`}
+            className="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none resize-none" />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[11px] text-slate-400">Not investment advice.</span>
+            <button onClick={submit} disabled={posting || !text.trim()}
+              className="text-sm px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white font-medium transition">
+              {posting ? "Posting…" : "Post"}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mb-5 text-center text-sm text-slate-500">
+          Only <span className="font-semibold text-amber-600">verified experts</span> can post here. You can read the discussion below.
+        </div>
+      )}
 
       {/* List */}
       {loading ? (
         <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-slate-800/40 animate-pulse" />
-          ))}
+          {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-xl bg-slate-100 animate-pulse" />)}
         </div>
-      ) : shown.length === 0 ? (
-        <div className="text-center py-10 text-slate-500 text-sm">
-          {expertsOnly ? `No expert posts on ${symbol} yet.` : `Be the first to share an idea on ${symbol}.`}
-        </div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-10 text-slate-400 text-sm">No expert posts on {symbol} yet.</div>
       ) : (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {shown.map((p) => (
-              <CommentCard key={p.post_id} post={p} symbol={symbol} me={me} onChanged={load} />
+            {posts.map((p) => (
+              <CommentCard key={p.post_id} post={p} me={me} canPost={canPost} onChanged={load} />
             ))}
           </AnimatePresence>
         </div>
