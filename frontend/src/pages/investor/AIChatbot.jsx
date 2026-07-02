@@ -321,7 +321,7 @@ function buildStockSpecificReply(question, liveStocks, liveCandles) {
     if (!detected.supported) return buildUnsupportedStockReply(symbol, question);
 
     const snapshot = getLatestStockSnapshot(liveStocks, liveCandles, symbol);
-    const predictionRoute = `/investor/aiprediction${symbol ? `?symbol=${encodeURIComponent(symbol)}` : ""}`;
+    const predictionRoute = `/investor/realtimedashboard/astockdashboard/${encodeURIComponent(symbol)}`;
 
     if (!snapshot) {
         return {
@@ -846,7 +846,7 @@ function AIChatbot() {
                     gridTemplateColumns: "240px 1fr",
                     gap: "20px",
                     height: "calc(100vh - 200px)",
-                    maxHeight: "1000px",
+                    maxHeight: "1300px",
                 }}>
 
                     {/* ── SIDEBAR ── */}
@@ -859,11 +859,12 @@ function AIChatbot() {
                         flexDirection: "column",
                         gap: "20px",
                         overflow: "hidden",
+                        height: "100%",
                     }}>
 
 
                         {/* Bot avatar */}
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
                             <div style={{
                                 width: 38, height: 38, borderRadius: "50%",
                                 background: "linear-gradient(135deg,#155dfc,#0092b8)",
@@ -880,52 +881,55 @@ function AIChatbot() {
                             </div>
                         </div>
 
-                        {/* Quick prompts */}
-                        <div>
-                            <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED</p>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                {QUICK_PROMPTS.map(({ label, icon }) => (
-                                    <button key={label}
-                                        onClick={() => sendMessage(label)}
-                                        disabled={loading}
-                                        style={{
-                                            padding: "9px 10px", borderRadius: "10px", textAlign: "left",
-                                            background: "rgba(255,255,255,0.03)",
-                                            border: "1px solid rgba(255,255,255,0.06)",
-                                            fontSize: "12px", display: "flex", alignItems: "center", gap: "7px",
-                                            color: "rgba(255,255,255,0.75)",
-                                            cursor: loading ? "not-allowed" : "pointer",
-                                            transition: "background 0.15s",
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-                                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
-                                    >
+                        {/* Scrollable middle: quick prompts + topics */}
+                        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {/* Quick prompts */}
+                            <div>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED</p>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    {QUICK_PROMPTS.map(({ label, icon }) => (
+                                        <button key={label}
+                                            onClick={() => sendMessage(label)}
+                                            disabled={loading}
+                                            style={{
+                                                padding: "9px 10px", borderRadius: "10px", textAlign: "left",
+                                                background: "rgba(255,255,255,0.03)",
+                                                border: "1px solid rgba(255,255,255,0.06)",
+                                                fontSize: "12px", display: "flex", alignItems: "center", gap: "7px",
+                                                color: "rgba(255,255,255,0.75)",
+                                                cursor: loading ? "not-allowed" : "pointer",
+                                                transition: "background 0.15s",
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                                            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                                        >
+                                            {icon}{label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Topics */}
+                            <div style={{ marginTop: "auto" }}>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>TOPICS</p>
+                                {[
+                                    { icon: <TrendingUp size={13} />, label: "Stock Analysis" },
+                                    { icon: <Brain size={13} />, label: "AI & Predictions" },
+                                    { icon: <BarChart3 size={13} />, label: "Technical Analysis" },
+                                    { icon: <MessageSquare size={13} />, label: "Investing Basics" },
+                                ].map(({ icon, label }) => (
+                                    <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
                                         {icon}{label}
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Topics */}
-                        <div style={{ marginTop: "auto" }}>
-                            <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>TOPICS</p>
-                            {[
-                                { icon: <TrendingUp size={13} />, label: "Stock Analysis" },
-                                { icon: <Brain size={13} />, label: "AI & Predictions" },
-                                { icon: <BarChart3 size={13} />, label: "Technical Analysis" },
-                                { icon: <MessageSquare size={13} />, label: "Investing Basics" },
-                            ].map(({ icon, label }) => (
-                                <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
-                                    {icon}{label}
-                                </div>
-                            ))}
                         </div>
 
                         {/* End chat */}
                         <button onClick={endChat}
                             style={{
-                                display: "flex", alignItems: "center", gap: "6px",
-                                padding: "9px 12px", borderRadius: "10px", fontSize: "12px",
+                                display: "flex", alignItems: "center", gap: "3px", flexShrink: 0,
+                                padding: "8px 12px", borderRadius: "10px", fontSize: "12px",
                                 background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
                                 color: "rgba(248,113,113,0.8)", cursor: "pointer",
                             }}>
