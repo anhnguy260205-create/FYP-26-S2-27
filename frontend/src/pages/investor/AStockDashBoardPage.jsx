@@ -15,8 +15,6 @@ import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
 
-const STOCK_POOL = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
-
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
   if (!Number.isFinite(Number(num))) return "0";
@@ -192,10 +190,8 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
 
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
+
       style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         paddingBottom: "20px", borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: "24px",
@@ -214,7 +210,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
             fontFamily: "'DM Sans', sans-serif", fontSize: "15px",
             color: "#64748b", fontWeight: 400, letterSpacing: "0.02em",
           }}>
-            {companyName(selectedStock)}
+            {stock?.name ?? companyName(selectedStock)}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
@@ -259,7 +255,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
       </div>
       <WatchlistButton stock_symbol={selectedStock} currentUser={currentUser} />
 
-    </motion.div>
+    </div>
   );
 }
 
@@ -357,10 +353,7 @@ function AlertBoard({ symbol }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       style={{
         width: "100%",
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
@@ -479,7 +472,7 @@ function AlertBoard({ symbol }) {
           {loading ? "Saving..." : "Turn On Alerts"}
         </button>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -487,10 +480,7 @@ function AlertBoard({ symbol }) {
 function PremiumLockCard() {
   const navigate = useNavigate();
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       style={{
         width: "100%",
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
@@ -534,7 +524,7 @@ function PremiumLockCard() {
       >
         ★ Upgrade to Premium
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -544,10 +534,7 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
   const { open, high, low, volume, avgVolume } = stock;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       style={{ display: "flex", gap: "16px", alignItems: "flex-start", flexShrink: 0 }}
     >
       {/* LEFT COLUMN: stats strip + chart stacked */}
@@ -576,10 +563,8 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
         </div>
 
         {/* Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+        <div
+
           style={{
             background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
             border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
@@ -600,12 +585,12 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
             compareDataBySymbol={candles}
             candleRanges={candleRanges}
           />
-        </motion.div>
+        </div>
       </div>
 
       {/* RIGHT COLUMN: alerts board (premium only) — hidden when alerts have their own tab */}
       {showAlerts && (isPremium ? <AlertBoard symbol={symbol} /> : <PremiumLockCard />)}
-    </motion.div>
+    </div>
   );
 });
 
@@ -709,10 +694,8 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const statusColor = { pending: "#fbbf24", partial: "#60a5fa", filled: "#34d399", cancelled: "#64748b" };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
+
       style={{
         marginTop: "16px",
         background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
@@ -856,7 +839,7 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
         </div>
       )}
 
-    </motion.div>
+    </div>
   );
 }
 
@@ -868,7 +851,10 @@ function AStockDashBoardPage() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
-  const isPoolStock = STOCK_POOL.includes(selectedStock);
+  // Pool membership is dynamic: any symbol present in the live snapshot
+  // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
+  // to a one-off REST fetch.
+  const isPoolStock = Boolean(stocks?.[selectedStock]);
 
   // For non-pool stocks, fetch snapshot + candles via REST
   const [externalStock, setExternalStock] = useState(null);
