@@ -6,10 +6,10 @@ import { fetchRating } from "../api/ratingApi.js";
 
 const LABEL_THEME = {
   "Strong Buy": { text: "#10b981", ring: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.4)" },
-  "Buy":        { text: "#34d399", ring: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
-  "Hold":       { text: "#fbbf24", ring: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" },
-  "Sell":       { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
-  "Strong Sell":{ text: "#f87171", ring: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.4)" },
+  "Buy": { text: "#34d399", ring: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
+  "Hold": { text: "#fbbf24", ring: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" },
+  "Sell": { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
+  "Strong Sell": { text: "#f87171", ring: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.4)" },
 };
 const GRADE_COLOR = { A: "#10b981", B: "#34d399", C: "#fbbf24", D: "#fb923c", F: "#f87171", "N/A": "#64748b" };
 const CARD = { background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))", border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px" };
@@ -60,7 +60,7 @@ export default function StockQuantRating({ symbol }) {
   const upside = r.targetMeanPrice && r.currentPrice ? r.targetMeanPrice / r.currentPrice - 1 : null;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+    <div
       className="flex flex-col gap-4">
 
       {/* Rating headline */}
@@ -113,7 +113,7 @@ export default function StockQuantRating({ symbol }) {
       </div>
 
       <p className="text-[11px] text-slate-600">Calibrated buy probability from the sector model — educational only, not investment advice.</p>
-    </motion.div>
+    </div>
   );
 }
 
