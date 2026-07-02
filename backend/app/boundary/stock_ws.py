@@ -33,25 +33,328 @@ clients_lock = asyncio.Lock()
 alpaca_task: Optional[asyncio.Task] = None
 previous_close_cache: Dict[str, float] = {}
 
-stock_pool = [
-    # Information Technology
+# S&P 500 constituents categorized by GICS primary sector (11 sectors).
+# stock_pool (below) is derived from this dict; use GET /stocks/sectors or
+# import SECTOR_POOLS wherever a sector→symbols mapping is needed.
+SECTOR_POOLS: Dict[str, list] = {
+    "Information Technology": [
+    "AAPL", "ACN", "ADBE", "ADI", "ADSK", "AKAM", "AMAT", "AMD", "ANET", "APH",
+    "APP", "AVGO", "CDNS", "CDW", "CIEN", "COHR", "CRM", "CRWD", "CSCO", "CTSH",
+    "DDOG", "DELL", "EPAM", "FFIV", "FICO", "FSLR", "FTNT", "GDDY", "GEN", "GLW",
+    "HPE", "HPQ", "IBM", "INTC", "INTU", "IT", "JBL", "KEYS", "KLAC", "LITE",
+    "LRCX", "MCHP", "MPWR", "MSFT", "MSI", "MU", "NOW", "NTAP", "NVDA", "NXPI",
+    "ON", "ORCL", "PANW", "PLTR", "PTC", "Q", "QCOM", "ROP", "SMCI", "SNDK",
+    "SNPS", "STX", "SWKS", "TDY", "TEL", "TER", "TRMB", "TXN", "TYL", "VRSN",
+    "WDAY", "WDC", "ZBRA",
+    ],
+    "Communication Services": [
+    "CHTR", "CMCSA", "DIS", "EA", "FOX", "FOXA", "GOOG", "GOOGL", "LYV", "META",
+    "NFLX", "NWS", "NWSA", "OMC", "PSKY", "SATS", "T", "TKO", "TMUS", "TTD",
+    "TTWO", "VZ", "WBD",
+    ],
+    "Consumer Discretionary": [
+    "ABNB", "AMZN", "APTV", "AZO", "BBY", "BKNG", "CCL", "CMG", "CVNA", "DASH",
+    "DECK", "DHI", "DPZ", "DRI", "EBAY", "EXPE", "F", "GM", "GPC", "GRMN",
+    "HAS", "HD", "HLT", "LEN", "LOW", "LULU", "LVS", "MAR", "MCD", "MGM",
+    "NCLH", "NKE", "NVR", "ORLY", "PHM", "POOL", "RCL", "RL", "ROST", "SBUX",
+    "TJX", "TPR", "TSCO", "TSLA", "ULTA", "WSM", "WYNN", "YUM",
+    ],
+    "Financials": [
+    "ACGL", "AFL", "AIG", "AIZ", "AJG", "ALL", "AMP", "AON", "APO", "ARES",
+    "AXP", "BAC", "BEN", "BK", "BLK", "BRK-B", "BRO", "BX", "C", "CB",
+    "CBOE", "CFG", "CINF", "CME", "COF", "COIN", "CPAY", "EG", "ERIE", "FDS",
+    "FIS", "FISV", "FITB", "GL", "GPN", "GS", "HBAN", "HIG", "HOOD", "IBKR",
+    "ICE", "IVZ", "JKHY", "JPM", "KEY", "KKR", "L", "MA", "MCO", "MET",
+    "MRSH", "MS", "MSCI", "MTB", "NDAQ", "NTRS", "PFG", "PGR", "PNC", "PRU",
+    "PYPL", "RF", "RJF", "SCHW", "SPGI", "STT", "SYF", "TFC", "TROW", "TRV",
+    "USB", "V", "WFC", "WRB", "WTW", "XYZ",
+    ],
+    "Energy": [
+    "APA", "BKR", "COP", "CTRA", "CVX", "DVN", "EOG", "EQT", "EXE", "FANG",
+    "HAL", "KMI", "MPC", "OKE", "OXY", "PSX", "SLB", "TPL", "TRGP", "VLO",
+    "WMB", "XOM",
+    ],
+    "Real Estate": [
+    "AMT", "ARE", "AVB", "BXP", "CBRE", "CCI", "CPT", "CSGP", "DLR", "DOC",
+    "EQIX", "EQR", "ESS", "EXR", "FRT", "HST", "INVH", "IRM", "KIM", "MAA",
+    "O", "PLD", "PSA", "REG", "SBAC", "SPG", "UDR", "VICI", "VTR", "WELL",
+    "WY",
+    ],
+    "Health Care": [
+    "A", "ABBV", "ABT", "ALGN", "AMGN", "BAX", "BDX", "BIIB", "BMY", "BSX",
+    "CAH", "CI", "CNC", "COO", "COR", "CRL", "CVS", "DGX", "DHR", "DVA",
+    "DXCM", "ELV", "EW", "GEHC", "GILD", "HCA", "HSIC", "HUM", "IDXX", "INCY",
+    "IQV", "ISRG", "JNJ", "LH", "LLY", "MCK", "MDT", "MRK", "MRNA", "MTD",
+    "PFE", "PODD", "REGN", "RMD", "RVTY", "SOLV", "STE", "SYK", "TECH", "TMO",
+    "UHS", "UNH", "VRTX", "VTRS", "WAT", "WST", "ZBH", "ZTS",
+    ],
+    "Consumer Staples": [
+    "ADM", "BF-B", "BG", "CAG", "CASY", "CHD", "CL", "CLX", "COST", "CPB",
+    "DG", "DLTR", "EL", "GIS", "HRL", "HSY", "KDP", "KHC", "KMB", "KO",
+    "KR", "KVUE", "MDLZ", "MKC", "MNST", "MO", "PEP", "PG", "PM", "SJM",
+    "STZ", "SYY", "TAP", "TGT", "TSN", "WMT",
+    ],
+    "Industrials": [
+    "ADP", "ALLE", "AME", "AOS", "AXON", "BA", "BLDR", "BR", "CARR", "CAT",
+    "CHRW", "CMI", "CPRT", "CSX", "CTAS", "DAL", "DE", "DOV", "EFX", "EME",
+    "EMR", "ETN", "EXPD", "FAST", "FDX", "FIX", "FTV", "GD", "GE", "GEV",
+    "GNRC", "GWW", "HII", "HON", "HUBB", "HWM", "IEX", "IR", "ITW", "J",
+    "JBHT", "JCI", "LDOS", "LHX", "LII", "LMT", "LUV", "MAS", "MMM", "NDSN",
+    "NOC", "NSC", "ODFL", "OTIS", "PAYX", "PCAR", "PH", "PNR", "PWR", "ROK",
+    "ROL", "RSG", "RTX", "SNA", "SWK", "TDG", "TT", "TXT", "UAL", "UBER",
+    "UNP", "UPS", "URI", "VLTO", "VRSK", "VRT", "WAB", "WM", "XYL",
+    ],
+    "Materials": [
+    "ALB", "AMCR", "APD", "AVY", "BALL", "CF", "CRH", "CTVA", "DD", "DOW",
+    "ECL", "FCX", "IFF", "IP", "LIN", "LYB", "MLM", "MOS", "NEM", "NUE",
+    "PKG", "PPG", "SHW", "STLD", "SW", "VMC",
+    ],
+    "Utilities": [
+    "AEE", "AEP", "AES", "ATO", "AWK", "CEG", "CMS", "CNP", "D", "DTE",
+    "DUK", "ED", "EIX", "ES", "ETR", "EVRG", "EXC", "FE", "LNT", "NEE",
+    "NI", "NRG", "PCG", "PEG", "PNW", "PPL", "SO", "SRE", "VST", "WEC",
+    "XEL",
+    ],
+}
+
+# Flat pool (all 503 symbols) — derived from SECTOR_POOLS, order preserved
+stock_pool = [s for symbols in SECTOR_POOLS.values() for s in symbols]
+
+# symbol -> sector reverse lookup
+SYMBOL_SECTOR = {s: sector for sector, symbols in SECTOR_POOLS.items() for s in symbols}
+
+# symbol -> company name (S&P 500 constituents)
+COMPANY_NAMES: Dict[str, str] = {
+    "A": "Agilent Technologies", "AAPL": "Apple Inc.", "ABBV": "AbbVie", "ABNB": "Airbnb",
+    "ABT": "Abbott Laboratories", "ACGL": "Arch Capital Group", "ACN": "Accenture",
+    "ADBE": "Adobe Inc.", "ADI": "Analog Devices", "ADM": "Archer Daniels Midland",
+    "ADP": "Automatic Data Processing", "ADSK": "Autodesk", "AEE": "Ameren",
+    "AEP": "American Electric Power", "AES": "AES Corporation", "AFL": "Aflac",
+    "AIG": "American International Group", "AIZ": "Assurant", "AJG": "Arthur J. Gallagher & Co.",
+    "AKAM": "Akamai Technologies", "ALB": "Albemarle Corporation", "ALGN": "Align Technology",
+    "ALL": "Allstate", "ALLE": "Allegion", "AMAT": "Applied Materials", "AMCR": "Amcor",
+    "AMD": "Advanced Micro Devices", "AME": "Ametek", "AMGN": "Amgen",
+    "AMP": "Ameriprise Financial", "AMT": "American Tower", "AMZN": "Amazon",
+    "ANET": "Arista Networks", "AON": "Aon plc", "AOS": "A. O. Smith", "APA": "APA Corporation",
+    "APD": "Air Products", "APH": "Amphenol", "APO": "Apollo Global Management", "APP": "AppLovin",
+    "APTV": "Aptiv", "ARE": "Alexandria Real Estate Equities", "ARES": "Ares Management",
+    "ATO": "Atmos Energy", "AVB": "AvalonBay Communities", "AVGO": "Broadcom",
+    "AVY": "Avery Dennison", "AWK": "American Water Works", "AXON": "Axon Enterprise",
+    "AXP": "American Express", "AZO": "AutoZone", "BA": "Boeing", "BAC": "Bank of America",
+    "BALL": "Ball Corporation", "BAX": "Baxter International", "BBY": "Best Buy",
+    "BDX": "Becton Dickinson", "BEN": "Franklin Resources", "BF-B": "Brown–Forman",
+    "BG": "Bunge Global", "BIIB": "Biogen", "BK": "BNY Mellon", "BKNG": "Booking Holdings",
+    "BKR": "Baker Hughes", "BLDR": "Builders FirstSource", "BLK": "BlackRock",
+    "BMY": "Bristol Myers Squibb", "BR": "Broadridge Financial Solutions",
+    "BRK-B": "Berkshire Hathaway", "BRO": "Brown & Brown", "BSX": "Boston Scientific",
+    "BX": "Blackstone Inc.", "BXP": "BXP, Inc.", "C": "Citigroup", "CAG": "Conagra Brands",
+    "CAH": "Cardinal Health", "CARR": "Carrier Global", "CASY": "Casey's",
+    "CAT": "Caterpillar Inc.", "CB": "Chubb Limited", "CBOE": "Cboe Global Markets",
+    "CBRE": "CBRE Group", "CCI": "Crown Castle", "CCL": "Carnival",
+    "CDNS": "Cadence Design Systems", "CDW": "CDW Corporation", "CEG": "Constellation Energy",
+    "CF": "CF Industries", "CFG": "Citizens Financial Group", "CHD": "Church & Dwight",
+    "CHRW": "C.H. Robinson", "CHTR": "Charter Communications", "CI": "Cigna", "CIEN": "Ciena",
+    "CINF": "Cincinnati Financial", "CL": "Colgate-Palmolive", "CLX": "Clorox", "CMCSA": "Comcast",
+    "CME": "CME Group", "CMG": "Chipotle Mexican Grill", "CMI": "Cummins", "CMS": "CMS Energy",
+    "CNC": "Centene Corporation", "CNP": "CenterPoint Energy", "COF": "Capital One",
+    "COHR": "Coherent Corp.", "COIN": "Coinbase", "COO": "Cooper Companies (The)",
+    "COP": "ConocoPhillips", "COR": "Cencora", "COST": "Costco", "CPAY": "Corpay",
+    "CPB": "Campbell's Company (The)", "CPRT": "Copart", "CPT": "Camden Property Trust",
+    "CRH": "CRH plc", "CRL": "Charles River Laboratories", "CRM": "Salesforce",
+    "CRWD": "CrowdStrike", "CSCO": "Cisco", "CSGP": "CoStar Group", "CSX": "CSX Corporation",
+    "CTAS": "Cintas", "CTRA": "Coterra", "CTSH": "Cognizant", "CTVA": "Corteva", "CVNA": "Carvana",
+    "CVS": "CVS Health", "CVX": "Chevron Corporation", "D": "Dominion Energy",
+    "DAL": "Delta Air Lines", "DASH": "DoorDash", "DD": "DuPont", "DDOG": "Datadog",
+    "DE": "Deere & Company", "DECK": "Deckers Brands", "DELL": "Dell Technologies",
+    "DG": "Dollar General", "DGX": "Quest Diagnostics", "DHI": "D. R. Horton",
+    "DHR": "Danaher Corporation", "DIS": "Walt Disney Company (The)", "DLR": "Digital Realty",
+    "DLTR": "Dollar Tree", "DOC": "Healthpeak Properties", "DOV": "Dover Corporation",
+    "DOW": "Dow Inc.", "DPZ": "Domino's", "DRI": "Darden Restaurants", "DTE": "DTE Energy",
+    "DUK": "Duke Energy", "DVA": "DaVita", "DVN": "Devon Energy", "DXCM": "Dexcom",
+    "EA": "Electronic Arts", "EBAY": "eBay Inc.", "ECL": "Ecolab", "ED": "Consolidated Edison",
+    "EFX": "Equifax", "EG": "Everest Group", "EIX": "Edison International",
+    "EL": "Estée Lauder Companies (The)", "ELV": "Elevance Health", "EME": "Emcor",
+    "EMR": "Emerson Electric", "EOG": "EOG Resources", "EPAM": "EPAM Systems", "EQIX": "Equinix",
+    "EQR": "Equity Residential", "EQT": "EQT Corporation", "ERIE": "Erie Indemnity",
+    "ES": "Eversource Energy", "ESS": "Essex Property Trust", "ETN": "Eaton Corporation",
+    "ETR": "Entergy", "EVRG": "Evergy", "EW": "Edwards Lifesciences", "EXC": "Exelon",
+    "EXE": "Expand Energy", "EXPD": "Expeditors International", "EXPE": "Expedia Group",
+    "EXR": "Extra Space Storage", "F": "Ford Motor Company", "FANG": "Diamondback Energy",
+    "FAST": "Fastenal", "FCX": "Freeport-McMoRan", "FDS": "FactSet", "FDX": "FedEx",
+    "FE": "FirstEnergy", "FFIV": "F5, Inc.", "FICO": "Fair Isaac",
+    "FIS": "Fidelity National Information Services", "FISV": "Fiserv",
+    "FITB": "Fifth Third Bancorp", "FIX": "Comfort Systems USA", "FOX": "Fox Corporation (Class B)",
+    "FOXA": "Fox Corporation (Class A)", "FRT": "Federal Realty Investment Trust",
+    "FSLR": "First Solar", "FTNT": "Fortinet", "FTV": "Fortive", "GD": "General Dynamics",
+    "GDDY": "GoDaddy", "GE": "GE Aerospace", "GEHC": "GE HealthCare", "GEN": "Gen Digital",
+    "GEV": "GE Vernova", "GILD": "Gilead Sciences", "GIS": "General Mills", "GL": "Globe Life",
+    "GLW": "Corning Inc.", "GM": "General Motors", "GNRC": "Generac",
+    "GOOG": "Alphabet Inc. (Class C)", "GOOGL": "Alphabet Inc. (Class A)",
+    "GPC": "Genuine Parts Company", "GPN": "Global Payments", "GRMN": "Garmin",
+    "GS": "Goldman Sachs", "GWW": "W. W. Grainger", "HAL": "Halliburton", "HAS": "Hasbro",
+    "HBAN": "Huntington Bancshares", "HCA": "HCA Healthcare", "HD": "Home Depot (The)",
+    "HIG": "Hartford (The)", "HII": "Huntington Ingalls Industries", "HLT": "Hilton Worldwide",
+    "HON": "Honeywell", "HOOD": "Robinhood Markets", "HPE": "Hewlett Packard Enterprise",
+    "HPQ": "HP Inc.", "HRL": "Hormel Foods", "HSIC": "Henry Schein", "HST": "Host Hotels & Resorts",
+    "HSY": "Hershey Company (The)", "HUBB": "Hubbell Incorporated", "HUM": "Humana",
+    "HWM": "Howmet Aerospace", "IBKR": "Interactive Brokers", "IBM": "IBM",
+    "ICE": "Intercontinental Exchange", "IDXX": "Idexx Laboratories", "IEX": "IDEX Corporation",
+    "IFF": "International Flavors & Fragrances", "INCY": "Incyte", "INTC": "Intel",
+    "INTU": "Intuit", "INVH": "Invitation Homes", "IP": "International Paper", "IQV": "IQVIA",
+    "IR": "Ingersoll Rand", "IRM": "Iron Mountain", "ISRG": "Intuitive Surgical", "IT": "Gartner",
+    "ITW": "Illinois Tool Works", "IVZ": "Invesco", "J": "Jacobs Solutions", "JBHT": "J.B. Hunt",
+    "JBL": "Jabil", "JCI": "Johnson Controls", "JKHY": "Jack Henry & Associates",
+    "JNJ": "Johnson & Johnson", "JPM": "JPMorgan Chase", "KDP": "Keurig Dr Pepper",
+    "KEY": "KeyCorp", "KEYS": "Keysight Technologies", "KHC": "Kraft Heinz", "KIM": "Kimco Realty",
+    "KKR": "KKR & Co.", "KLAC": "KLA Corporation", "KMB": "Kimberly-Clark", "KMI": "Kinder Morgan",
+    "KO": "Coca-Cola Company (The)", "KR": "Kroger", "KVUE": "Kenvue", "L": "Loews Corporation",
+    "LDOS": "Leidos", "LEN": "Lennar", "LH": "Labcorp", "LHX": "L3Harris",
+    "LII": "Lennox International", "LIN": "Linde plc", "LITE": "Lumentum", "LLY": "Lilly (Eli)",
+    "LMT": "Lockheed Martin", "LNT": "Alliant Energy", "LOW": "Lowe's", "LRCX": "Lam Research",
+    "LULU": "Lululemon Athletica", "LUV": "Southwest Airlines", "LVS": "Las Vegas Sands",
+    "LYB": "LyondellBasell", "LYV": "Live Nation Entertainment", "MA": "Mastercard",
+    "MAA": "Mid-America Apartment Communities", "MAR": "Marriott International", "MAS": "Masco",
+    "MCD": "McDonald's", "MCHP": "Microchip Technology", "MCK": "McKesson Corporation",
+    "MCO": "Moody's Corporation", "MDLZ": "Mondelez International", "MDT": "Medtronic",
+    "MET": "MetLife", "META": "Meta Platforms", "MGM": "MGM Resorts", "MKC": "McCormick & Company",
+    "MLM": "Martin Marietta Materials", "MMM": "3M", "MNST": "Monster Beverage", "MO": "Altria",
+    "MOS": "Mosaic Company (The)", "MPC": "Marathon Petroleum", "MPWR": "Monolithic Power Systems",
+    "MRK": "Merck & Co.", "MRNA": "Moderna", "MRSH": "Marsh McLennan", "MS": "Morgan Stanley",
+    "MSCI": "MSCI Inc.", "MSFT": "Microsoft", "MSI": "Motorola Solutions", "MTB": "M&T Bank",
+    "MTD": "Mettler Toledo", "MU": "Micron Technology", "NCLH": "Norwegian Cruise Line Holdings",
+    "NDAQ": "Nasdaq, Inc.", "NDSN": "Nordson Corporation", "NEE": "NextEra Energy",
+    "NEM": "Newmont", "NFLX": "Netflix", "NI": "NiSource", "NKE": "Nike, Inc.",
+    "NOC": "Northrop Grumman", "NOW": "ServiceNow", "NRG": "NRG Energy", "NSC": "Norfolk Southern",
+    "NTAP": "NetApp", "NTRS": "Northern Trust", "NUE": "Nucor", "NVDA": "Nvidia",
+    "NVR": "NVR, Inc.", "NWS": "News Corp (Class B)", "NWSA": "News Corp (Class A)",
+    "NXPI": "NXP Semiconductors", "O": "Realty Income", "ODFL": "Old Dominion", "OKE": "Oneok",
+    "OMC": "Omnicom Group", "ON": "ON Semiconductor", "ORCL": "Oracle Corporation",
+    "ORLY": "O'Reilly Automotive", "OTIS": "Otis Worldwide", "OXY": "Occidental Petroleum",
+    "PANW": "Palo Alto Networks", "PAYX": "Paychex", "PCAR": "Paccar", "PCG": "PG&E Corporation",
+    "PEG": "Public Service Enterprise Group", "PEP": "PepsiCo", "PFE": "Pfizer",
+    "PFG": "Principal Financial Group", "PG": "Procter & Gamble", "PGR": "Progressive Corporation",
+    "PH": "Parker Hannifin", "PHM": "PulteGroup", "PKG": "Packaging Corporation of America",
+    "PLD": "Prologis", "PLTR": "Palantir Technologies", "PM": "Philip Morris International",
+    "PNC": "PNC Financial Services", "PNR": "Pentair", "PNW": "Pinnacle West Capital",
+    "PODD": "Insulet Corporation", "POOL": "Pool Corporation", "PPG": "PPG Industries",
+    "PPL": "PPL Corporation", "PRU": "Prudential Financial", "PSA": "Public Storage",
+    "PSKY": "Paramount Skydance Corporation", "PSX": "Phillips 66", "PTC": "PTC Inc.",
+    "PWR": "Quanta Services", "PYPL": "PayPal", "Q": "Qnity Electronics", "QCOM": "Qualcomm",
+    "RCL": "Royal Caribbean Group", "REG": "Regency Centers", "REGN": "Regeneron Pharmaceuticals",
+    "RF": "Regions Financial Corporation", "RJF": "Raymond James Financial",
+    "RL": "Ralph Lauren Corporation", "RMD": "ResMed", "ROK": "Rockwell Automation",
+    "ROL": "Rollins, Inc.", "ROP": "Roper Technologies", "ROST": "Ross Stores",
+    "RSG": "Republic Services", "RTX": "RTX Corporation", "RVTY": "Revvity", "SATS": "EchoStar",
+    "SBAC": "SBA Communications", "SBUX": "Starbucks", "SCHW": "Charles Schwab Corporation",
+    "SHW": "Sherwin-Williams", "SJM": "J.M. Smucker Company (The)", "SLB": "Schlumberger",
+    "SMCI": "Supermicro", "SNA": "Snap-on", "SNDK": "Sandisk", "SNPS": "Synopsys",
+    "SO": "Southern Company", "SOLV": "Solventum", "SPG": "Simon Property Group",
+    "SPGI": "S&P Global", "SRE": "Sempra", "STE": "Steris", "STLD": "Steel Dynamics",
+    "STT": "State Street Corporation", "STX": "Seagate Technology", "STZ": "Constellation Brands",
+    "SW": "Smurfit Westrock", "SWK": "Stanley Black & Decker", "SWKS": "Skyworks Solutions",
+    "SYF": "Synchrony Financial", "SYK": "Stryker Corporation", "SYY": "Sysco", "T": "AT&T",
+    "TAP": "Molson Coors Beverage Company", "TDG": "TransDigm Group",
+    "TDY": "Teledyne Technologies", "TECH": "Bio-Techne", "TEL": "TE Connectivity",
+    "TER": "Teradyne", "TFC": "Truist Financial", "TGT": "Target Corporation",
+    "TJX": "TJX Companies", "TKO": "TKO Group Holdings", "TMO": "Thermo Fisher Scientific",
+    "TMUS": "T-Mobile US", "TPL": "Texas Pacific Land Corporation", "TPR": "Tapestry, Inc.",
+    "TRGP": "Targa Resources", "TRMB": "Trimble Inc.", "TROW": "T. Rowe Price",
+    "TRV": "Travelers Companies (The)", "TSCO": "Tractor Supply", "TSLA": "Tesla, Inc.",
+    "TSN": "Tyson Foods", "TT": "Trane Technologies", "TTD": "Trade Desk (The)",
+    "TTWO": "Take-Two Interactive", "TXN": "Texas Instruments", "TXT": "Textron",
+    "TYL": "Tyler Technologies", "UAL": "United Airlines Holdings", "UBER": "Uber",
+    "UDR": "UDR, Inc.", "UHS": "Universal Health Services", "ULTA": "Ulta Beauty",
+    "UNH": "UnitedHealth Group", "UNP": "Union Pacific Corporation", "UPS": "United Parcel Service",
+    "URI": "United Rentals", "USB": "U.S. Bancorp", "V": "Visa Inc.", "VICI": "Vici Properties",
+    "VLO": "Valero Energy", "VLTO": "Veralto", "VMC": "Vulcan Materials Company",
+    "VRSK": "Verisk Analytics", "VRSN": "Verisign", "VRT": "Vertiv",
+    "VRTX": "Vertex Pharmaceuticals", "VST": "Vistra Corp.", "VTR": "Ventas", "VTRS": "Viatris",
+    "VZ": "Verizon", "WAB": "Wabtec", "WAT": "Waters Corporation", "WBD": "Warner Bros. Discovery",
+    "WDAY": "Workday, Inc.", "WDC": "Western Digital", "WEC": "WEC Energy Group",
+    "WELL": "Welltower", "WFC": "Wells Fargo", "WM": "Waste Management",
+    "WMB": "Williams Companies", "WMT": "Walmart", "WRB": "W. R. Berkley Corporation",
+    "WSM": "Williams-Sonoma, Inc.", "WST": "West Pharmaceutical Services",
+    "WTW": "Willis Towers Watson", "WY": "Weyerhaeuser", "WYNN": "Wynn Resorts",
+    "XEL": "Xcel Energy", "XOM": "ExxonMobil", "XYL": "Xylem Inc.", "XYZ": "Block, Inc.",
+    "YUM": "Yum! Brands", "ZBH": "Zimmer Biomet", "ZBRA": "Zebra Technologies", "ZTS": "Zoetis",
+}
+
+# Live-stream subset: Alpaca's free IEX websocket caps subscriptions at 30
+# symbols, so only these get true tick-by-tick updates while the market is
+# open. Everything else in stock_pool refreshes via the periodic batch
+# snapshot cycle (60s open / 300s closed), which is visually equivalent for
+# the dashboard grid.
+STREAM_SYMBOL_LIMIT = 30
+stream_pool = [
     "AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "CRM", "QCOM", "ADBE",
-    # Communication Services
     "GOOGL", "META", "NFLX", "DIS",
-    # Consumer Discretionary
     "AMZN", "TSLA", "NKE", "MCD", "HD",
-    # Financials
     "JPM", "BAC", "V", "MA",
-    # Energy
     "XOM", "CVX", "COP",
-    # Real Estate
     "AMT", "PLD", "O",
-]
+][:STREAM_SYMBOL_LIMIT]
 
 # Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
 _snapshot_cache: Dict[str, dict] = {}
 _snapshot_cache_ts: Dict[str, float] = {}
 SNAPSHOT_TTL = 30.0  # seconds
+
+# Batch pool cache: one yf.download for the whole pool instead of 500+
+# per-symbol fetches. Refreshed at most once per BATCH_REFRESH_INTERVAL.
+_spark_cache: Dict[str, list] = {}    # symbol -> daily bars (on-connect sparklines)
+_batch_refresh_lock = asyncio.Lock()
+_batch_last_refresh: Optional[float] = None   # monotonic ts of last successful refresh
+BATCH_REFRESH_INTERVAL = 55.0  # seconds; just under the 60s broadcast cycle
+SPARK_BARS = 30                # ~6 weeks of daily bars per sparkline
+
+# ── Cache persistence ──────────────────────────────────────────────────────────
+# The batch caches are saved to disk after every refresh, so a restarted
+# server paints the dashboard instantly with the last known data while the
+# background refresh fetches fresh prices (within a minute or two).
+
+_CACHE_FILE = BASE_DIR / "snapshot_cache.json"
+
+
+def _save_cache_to_disk() -> None:
+    try:
+        tmp = _CACHE_FILE.with_suffix(".json.tmp")
+        with open(tmp, "w") as fh:
+            json.dump({
+                "saved_at":  time.time(),
+                "snapshots": _snapshot_cache,
+                "sparks":    _spark_cache,
+            }, fh)
+        os.replace(tmp, _CACHE_FILE)  # atomic — no half-written file on crash
+    except Exception as e:
+        print(f"Snapshot cache save failed: {e}")
+
+
+def _load_cache_from_disk() -> None:
+    """Warm the in-memory caches from the last saved copy. Any age is accepted
+    — stale prices beat an empty screen, and the batch refresh replaces them
+    shortly after startup."""
+    try:
+        if not _CACHE_FILE.exists():
+            return
+        with open(_CACHE_FILE) as fh:
+            data = json.load(fh)
+        snaps = data.get("snapshots") or {}
+        _snapshot_cache.update(snaps)
+        _spark_cache.update(data.get("sparks") or {})
+        for sym, snap in snaps.items():
+            # Older cache files may predate the sector/name fields
+            snap.setdefault("sector", SYMBOL_SECTOR.get(sym))
+            snap.setdefault("name", COMPANY_NAMES.get(sym))
+            pc = snap.get("previousClose")
+            if pc is not None:
+                previous_close_cache[sym] = float(pc)
+        age_h = (time.time() - float(data.get("saved_at", 0))) / 3600
+        print(f"Loaded persisted snapshot cache: {len(snaps)} symbols, saved {age_h:.1f}h ago")
+    except Exception as e:
+        print(f"Snapshot cache load failed: {e}")
+
+
+_load_cache_from_disk()
 
 
 def get_live_price(symbol: str) -> float | None:
@@ -110,6 +413,127 @@ def get_market_status() -> str:
     if weekday and market_open and market_close:
         return "OPEN"
     return "CLOSED"
+
+
+# ── Batch pool refresh (one download for all 500+ symbols) ─────────────────────
+
+def refresh_pool_snapshots() -> None:
+    """Populate the snapshot + sparkline caches for the ENTIRE pool with a
+    single batched yf.download (3 months of daily bars).
+
+    Derived per symbol:
+      - snapshot: price/open/high/low/volume from the latest bar,
+        previousClose from the bar before it, avgVolume = 3-month mean volume.
+      - sparkline: the last SPARK_BARS daily bars (sent on connect instead of
+        per-symbol 1-minute history; full-resolution charts stay on demand).
+
+    Runs in a worker thread (blocking I/O)."""
+    df = yf.download(
+        tickers=stock_pool, period="3mo", interval="1d",
+        group_by="ticker", auto_adjust=False, threads=True, progress=False,
+    )
+    if df is None or df.empty:
+        raise RuntimeError("yf.download returned no data for the stock pool")
+
+    now = time.monotonic()
+    multi = hasattr(df.columns, "levels")  # MultiIndex when >1 ticker
+
+    for symbol in stock_pool:
+        try:
+            sub = df[symbol] if multi else df
+        except KeyError:
+            continue
+        sub = sub.dropna(subset=["Close"])
+        if sub.empty:
+            continue
+
+        today = sub.iloc[-1]
+        yesterday = sub.iloc[-2] if len(sub) >= 2 else None
+        avg_volume = sub["Volume"].tail(63).mean()
+
+        # 3-month annualized volatility (risk bucketing) + 21-day momentum
+        rets = sub["Close"].pct_change().dropna()
+        vol3m = float(rets.std() * math.sqrt(252)) if len(rets) > 5 else None
+        closes = sub["Close"]
+        mom21 = (float(closes.iloc[-1] / closes.iloc[-22] - 1)
+                 if len(closes) >= 22 and closes.iloc[-22] else None)
+
+        def _f(v):
+            try:
+                v = float(v)
+                return v if math.isfinite(v) else None
+            except (TypeError, ValueError):
+                return None
+
+        snap = {
+            "s":             symbol,
+            "sector":        SYMBOL_SECTOR.get(symbol),
+            "name":          COMPANY_NAMES.get(symbol),
+            "p":             _f(today["Close"]),
+            "close":         _f(today["Close"]),
+            "previousClose": _f(yesterday["Close"]) if yesterday is not None else None,
+            "open":          _f(today["Open"]),
+            "high":          _f(today["High"]),
+            "low":           _f(today["Low"]),
+            "volume":        int(today["Volume"]) if _f(today["Volume"]) is not None else None,
+            "avgVolume":     int(avg_volume) if _f(avg_volume) is not None else None,
+            "vol3m":         round(vol3m, 4) if vol3m is not None and math.isfinite(vol3m) else None,
+            "mom21":         round(mom21, 4) if mom21 is not None and math.isfinite(mom21) else None,
+        }
+        _snapshot_cache[symbol] = snap
+        _snapshot_cache_ts[symbol] = now
+        if snap["previousClose"] is not None:
+            previous_close_cache[symbol] = snap["previousClose"]
+
+        bars = []
+        for ts, row in sub.tail(SPARK_BARS).iterrows():
+            o, h, l, c = _f(row["Open"]), _f(row["High"]), _f(row["Low"]), _f(row["Close"])
+            if c is None:
+                continue
+            bars.append({
+                "time":   int(ts.timestamp() * 1000),
+                "open":   round(o, 4) if o is not None else None,
+                "high":   round(h, 4) if h is not None else None,
+                "low":    round(l, 4) if l is not None else None,
+                "close":  round(c, 4),
+                "volume": int(row["Volume"]) if _f(row["Volume"]) is not None else 0,
+            })
+        _spark_cache[symbol] = bars
+
+    # Risk bucket per symbol: volatility tertiles across the whole pool.
+    # Lowest third -> Conservative, middle -> Moderate, highest -> Aggressive.
+    vol_items = [(s, snap["vol3m"]) for s, snap in _snapshot_cache.items()
+                 if snap.get("vol3m") is not None]
+    if len(vol_items) >= 3:
+        ordered = sorted(v for _, v in vol_items)
+        lo = ordered[len(ordered) // 3]
+        hi = ordered[(2 * len(ordered)) // 3]
+        for s, v in vol_items:
+            _snapshot_cache[s]["risk"] = (
+                "Conservative" if v <= lo else "Moderate" if v <= hi else "Aggressive"
+            )
+
+    _save_cache_to_disk()
+
+
+async def ensure_snapshots_fresh(force: bool = False) -> None:
+    """Refresh the batch caches if stale. Safe to call from every client
+    connect — the lock + interval check means the expensive download runs at
+    most once per BATCH_REFRESH_INTERVAL regardless of connection count."""
+    global _batch_last_refresh
+    async with _batch_refresh_lock:
+        fresh = (
+            _snapshot_cache
+            and _batch_last_refresh is not None
+            and (time.monotonic() - _batch_last_refresh) < BATCH_REFRESH_INTERVAL
+        )
+        if fresh and not force:
+            return
+        try:
+            await asyncio.to_thread(refresh_pool_snapshots)
+            _batch_last_refresh = time.monotonic()
+        except Exception as e:
+            print(f"Batch snapshot refresh failed: {e}")
 
 
 # ── yfinance helpers ───────────────────────────────────────────────────────────
@@ -410,27 +834,21 @@ async def broadcast_to_clients(message: str):
 # ── On-connect data burst ──────────────────────────────────────────────────────
 
 async def send_snapshot_prices(websocket: WebSocket):
-    """Send latest price snapshot — Alpaca if open, yfinance if closed."""
-    results = await asyncio.gather(
-        *[asyncio.to_thread(get_snapshot, s) for s in stock_pool],
-        return_exceptions=True,
-    )
-    quotes = []
-    failed_symbols = []
+    """Send the latest cached snapshot for the whole pool.
 
-    for symbol, result in zip(stock_pool, results):
-        if isinstance(result, Exception):
-            print(f"Snapshot fetch failed for {symbol}: {result}")
-            failed_symbols.append(symbol)
-            continue
-        quotes.append(result)
-        if result.get("previousClose") is not None:
-            previous_close_cache[symbol] = float(result["previousClose"])
+    The cache is filled by one batched yf.download (see ensure_snapshots_fresh),
+    so connecting clients get an instant first paint instead of triggering
+    500+ per-symbol fetches. Live tick updates for stream_pool symbols follow
+    via the Alpaca websocket when the market is open."""
+    await ensure_snapshots_fresh()
+
+    quotes = [_snapshot_cache[s] for s in stock_pool if s in _snapshot_cache]
+    failed_symbols = [s for s in stock_pool if s not in _snapshot_cache]
 
     await send_json_to_client(websocket, {
         "type":   "snapshot",
         "data":   quotes,
-        "source": "alpaca" if get_market_status() == "OPEN" else "yfinance",
+        "source": "yfinance",
     })
 
     if failed_symbols:
@@ -438,6 +856,19 @@ async def send_snapshot_prices(websocket: WebSocket):
             "type": "error",
             "message": f"Could not fetch stock snapshot for: {', '.join(failed_symbols)}",
         })
+
+
+async def send_spark_history(websocket: WebSocket):
+    """On-connect sparkline data: cached daily bars for every pool symbol,
+    derived from the same batch download as the snapshots. Full-resolution
+    charts are still fetched on demand via the client's "range" message."""
+    await ensure_snapshots_fresh()
+    await send_json_to_client(websocket, {
+        "type":   "history",
+        "data":   _spark_cache,
+        "range":  "1M",
+        "source": "yfinance",
+    })
 
 
 async def send_historical_candles(websocket: WebSocket, symbols: Optional[list[str]] = None, range: str = "1D"):
@@ -491,10 +922,13 @@ async def run_alpaca_connection():
                 }))
                 await alpaca_ws.recv()
 
+                # Subscribe only to the hot subset — the free IEX feed caps
+                # websocket subscriptions at 30 symbols; the rest of the pool
+                # updates via the periodic batch snapshot broadcast.
                 await alpaca_ws.send(json.dumps({
                     "action": "subscribe",
-                    "trades": stock_pool,
-                    "bars":   stock_pool,
+                    "trades": stream_pool,
+                    "bars":   stream_pool,
                 }))
                 await alpaca_ws.recv()
 
@@ -575,16 +1009,13 @@ async def periodic_snapshot_broadcast():
         if not clients:
             return
         try:
-            results = await asyncio.gather(
-                *[asyncio.to_thread(get_snapshot, s) for s in stock_pool],
-                return_exceptions=True,
-            )
-            quotes = [r for r in results if isinstance(r, dict)]
+            await ensure_snapshots_fresh(force=True)
+            quotes = [_snapshot_cache[s] for s in stock_pool if s in _snapshot_cache]
             if quotes:
                 msg = json.dumps(clean_json_value({
                     "type": "snapshot",
                     "data": quotes,
-                    "source": "alpaca" if market_open else "yfinance",
+                    "source": "yfinance",
                 }))
                 for ws in clients:
                     try:
@@ -596,6 +1027,16 @@ async def periodic_snapshot_broadcast():
 
 
 # ── WebSocket endpoint ─────────────────────────────────────────────────────────
+
+@router.get("/stocks/sectors")
+def rest_stock_sectors():
+    """S&P 500 pool categorized by GICS primary sector (11 sectors)."""
+    return {
+        "success": True,
+        "count":   len(stock_pool),
+        "sectors": SECTOR_POOLS,
+    }
+
 
 @router.get("/stocks/snapshot/{symbol}")
 def rest_stock_snapshot(symbol: str):
@@ -634,11 +1075,12 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         market = get_market_status()
 
-        # 1. Latest prices (Alpaca if open, yfinance if closed)
+        # 1. Latest prices for the whole pool, served from the batch cache
         await send_snapshot_prices(websocket)
 
-        # 2. 1D historical candles for all stocks (needed for sparklines)
-        await send_historical_candles(websocket, symbols=stock_pool, range="1D")
+        # 2. Daily candles for all stocks (needed for sparklines) — served
+        #    from the batch cache, not fetched per symbol
+        await send_spark_history(websocket)
 
         # 3. Market status banner
         await send_json_to_client(websocket, {
