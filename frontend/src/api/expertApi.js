@@ -57,6 +57,12 @@ export const createForumPost = (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const updateForumPost = (postId, payload) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
 export const replyForumPost = (postId, payload) =>
   requestJson(`${FORUM_BASE_URL}/posts/${postId}/reply`, {
     method: "POST",
