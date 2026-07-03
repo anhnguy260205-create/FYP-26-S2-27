@@ -9,7 +9,7 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import {
-    createForumPost, deleteForumPost, deleteForumReply,
+    createForumPost, updateForumPost, deleteForumPost, deleteForumReply,
     updateForumReply, getForumPost, getForumPosts,
     replyForumPost, toggleForumLike, toggleForumSave,
 } from "../../api/expertApi.js";
@@ -237,7 +237,7 @@ export default function ForumPage() {
     const [selectedPost, setSelectedPost] = useState(null);
     const [activeRoom,   setActiveRoom]   = useState(null);
     const [query,        setQuery]        = useState("");
-    const [sort,         setSort]         = useState("latest");
+    const [sort,         setSort]         = useState("");
     const [showCreate,   setShowCreate]   = useState(false);
     const [creating,     setCreating]     = useState(false);
     const [replyText,    setReplyText]    = useState("");
@@ -270,12 +270,16 @@ export default function ForumPage() {
         let list = posts.filter(p => {
             const matchRoom   = !activeRoom || p.category === activeRoom;
             const matchSearch = !q || [p.title, p.content, p.category, p.author, ...(p.tags||[])].some(v => safeText(v).toLowerCase().includes(q));
-            const matchSaved  = sort !== "saved" || p.saved_by_me;
-            return matchRoom && matchSearch && matchSaved;
+            const matchSaved  = sort !== "saved"  || p.saved_by_me;
+            const matchLiked  = sort !== "liked"  || p.liked_by_me;
+            const matchMine   = sort !== "mine"   || p.user_id === userId;
+            return matchRoom && matchSearch && matchSaved && matchLiked && matchMine;
         });
-        if (sort === "popular") list = [...list].sort((a,b) => b.likes - a.likes);
+        if (sort === "popular") list = [...list].sort((a,b) => (b.likes - a.likes) || (b.views - a.views));
         else if (sort === "replies") list = [...list].sort((a,b) => getReplyCount(b) - getReplyCount(a));
+        else if (sort === "saved" || sort === "liked" || sort === "mine") list = [...list].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
         else list = [...list].sort((a,b) => {
+            // "latest" or "" both sort by newest first
             if (a.is_pinned && !b.is_pinned) return -1;
             if (!a.is_pinned && b.is_pinned) return 1;
             return new Date(b.created_at) - new Date(a.created_at);
@@ -319,6 +323,18 @@ export default function ForumPage() {
         setPosts(prev => prev.filter(p => p.id !== post.id));
         setSelectedPost(prev => prev?.id === post.id ? null : prev);
         try { await deleteForumPost(post.id, userId); } catch {}
+    }
+
+    const [editingPost, setEditingPost] = useState(null);
+
+    async function handleEditPost(post, updatedData) {
+        const optimistic = normalisePost({ ...post, ...updatedData });
+        mutatePost(optimistic);
+        setEditingPost(null);
+        try {
+            const d = await updateForumPost(post.id, updatedData);
+            if (d?.post) mutatePost(d.post);
+        } catch {}
     }
 
     async function handleDeleteReply(post, reply) {
@@ -389,7 +405,9 @@ export default function ForumPage() {
                         onDelete={e => handleDelete(selectedPost, e)}
                         onDeleteReply={(reply) => handleDeleteReply(selectedPost, reply)}
                         onEditReply={(reply, content) => handleEditReply(selectedPost, reply, content)}
+                        onEditPost={(data) => handleEditPost(selectedPost, data)}
                         canDelete={canDeletePost(selectedPost, currentUser)}
+                        canEdit={canDeletePost(selectedPost, currentUser)}
                         replyText={replyText}
                         setReplyText={setReplyText}
                         onReply={handleReply}
@@ -406,6 +424,7 @@ export default function ForumPage() {
                         setSort={setSort}
                         filteredPosts={filteredPosts}
                         currentUser={currentUser}
+                        userId={userId}
                         onShowCreate={() => setShowCreate(true)}
                         onOpenPost={openPost}
                         onLike={handleLike}
@@ -435,12 +454,15 @@ export default function ForumPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 function ForumHome({
     posts, loading, activeRoom, setActiveRoom, query, setQuery,
-    sort, setSort, filteredPosts, currentUser, onShowCreate,
+    sort, setSort, filteredPosts, currentUser, userId, onShowCreate,
     onOpenPost, onLike, onSave, onDelete, canDelete,
 }) {
     const recentPosts    = [...posts].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+    const savedPosts     = posts.filter(p => p.saved_by_me);
+    const myPosts        = posts.filter(p => p.user_id && p.user_id === userId);
+    const likedPosts     = posts.filter(p => p.liked_by_me);
     const trendingPosts  = [...posts].sort((a,b) => (b.likes + b.views) - (a.likes + a.views)).slice(0, 3);
-    const showHome       = !activeRoom && !query;
+    const showHome       = !activeRoom && !query && sort === "";
 
     return (
         <>
@@ -480,7 +502,7 @@ function ForumHome({
             {/* ── Category pill strip ── */}
             <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:20, scrollbarWidth:"none" }}>
                 {CATEGORIES.map(cat => (
-                    <button key={cat} onClick={() => setActiveRoom(cat==="All"?null:cat)} style={{
+                    <button key={cat} onClick={() => { setActiveRoom(cat==="All"?null:cat); }} style={{
                         padding:"7px 15px", borderRadius:50, fontSize:12, fontWeight:600,
                         whiteSpace:"nowrap", cursor:"pointer", flexShrink:0,
                         border: (cat==="All"?!activeRoom:activeRoom===cat) ? "none" : `1px solid ${C.border}`,
@@ -499,14 +521,17 @@ function ForumHome({
                         placeholder="Search posts, topics, authors…"
                         style={{ width:"100%", padding:"10px 12px 10px 36px", borderRadius:12, border:`1px solid ${C.border}`, background:C.card, color:C.text, fontSize:13, outline:"none", boxSizing:"border-box" }}/>
                 </div>
-                <select value={sort} onChange={e=>setSort(e.target.value)} style={{
+                <select value={sort} onChange={e=>{ setSort(e.target.value); }} style={{
                     padding:"10px 14px", borderRadius:12, border:`1px solid ${C.border}`,
                     background:C.card, color:C.text, fontSize:13, outline:"none", cursor:"pointer",
                 }}>
+                    <option value="">Home</option>
                     <option value="latest">Latest</option>
-                    <option value="popular">Popular</option>
+                    <option value="popular">Most Popular</option>
                     <option value="replies">Most Replies</option>
-                    <option value="saved">Saved</option>
+                    <option value="saved">My Saved</option>
+                    <option value="liked">My Liked</option>
+                    <option value="mine">My Posts</option>
                 </select>
             </div>
 
@@ -529,6 +554,48 @@ function ForumHome({
                                         onSave={e => onSave(post, e)}
                                     />
                                 ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* ── My Activity ── */}
+                    {(savedPosts.length > 0 || likedPosts.length > 0 || myPosts.length > 0) && (
+                        <section style={{ marginBottom:32 }}>
+                            <SectionHeader icon="👤" label="My Activity" />
+                            <div style={{ display:"flex", gap:12 }}>
+                                <button onClick={() => setSort("saved")} style={{
+                                    flex:1, padding:"14px 18px", borderRadius:14,
+                                    background:C.card, border:`1px solid ${C.border}`,
+                                    cursor:"pointer", textAlign:"left", transition:"border-color 0.15s",
+                                }}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=C.cyan}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                                    <div style={{ fontSize:22, marginBottom:6 }}>⭐</div>
+                                    <div style={{ fontSize:20, fontWeight:800, color:C.text }}>{savedPosts.length}</div>
+                                    <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Saved Posts</div>
+                                </button>
+                                <button onClick={() => setSort("liked")} style={{
+                                    flex:1, padding:"14px 18px", borderRadius:14,
+                                    background:C.card, border:`1px solid ${C.border}`,
+                                    cursor:"pointer", textAlign:"left", transition:"border-color 0.15s",
+                                }}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=C.danger}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                                    <div style={{ fontSize:22, marginBottom:6 }}>❤️</div>
+                                    <div style={{ fontSize:20, fontWeight:800, color:C.text }}>{likedPosts.length}</div>
+                                    <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Liked Posts</div>
+                                </button>
+                                <button onClick={() => setSort("mine")} style={{
+                                    flex:1, padding:"14px 18px", borderRadius:14,
+                                    background:C.card, border:`1px solid ${C.border}`,
+                                    cursor:"pointer", textAlign:"left", transition:"border-color 0.15s",
+                                }}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor="#a78bfa"}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                                    <div style={{ fontSize:22, marginBottom:6 }}>📝</div>
+                                    <div style={{ fontSize:20, fontWeight:800, color:C.text }}>{myPosts.length}</div>
+                                    <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>My Posts</div>
+                                </button>
                             </div>
                         </section>
                     )}
@@ -596,32 +663,64 @@ function ForumHome({
             )}
 
             {/* ════════════════════════════════════════════════════════════════ */}
-            {/* FILTERED VIEW — room selected or search active                 */}
+            {/* FILTERED VIEW — room / sort / search active                    */}
             {/* ════════════════════════════════════════════════════════════════ */}
             {(!showHome || loading) && (
                 loading ? (
                     <div style={{ textAlign:"center", color:C.muted, padding:60 }}>Loading posts…</div>
                 ) : (
-                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                        {filteredPosts.map(post => (
-                            <PostCard
-                                key={post.id}
-                                post={post}
-                                currentUser={currentUser}
-                                onOpen={() => onOpenPost(post)}
-                                onLike={e => onLike(post, e)}
-                                onSave={e => onSave(post, e)}
-                                onDelete={e => onDelete(post, e)}
-                                canDelete={canDelete(post, currentUser)}
-                            />
-                        ))}
-                        {filteredPosts.length === 0 && (
-                            <div style={{ textAlign:"center", color:C.muted, padding:60, fontSize:14 }}>
-                                No posts yet.{" "}
-                                <button onClick={onShowCreate} style={{ color:C.accent, background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>Be the first!</button>
+                    <>
+                        {/* Section label for special sort modes */}
+                        {(sort === "saved" || sort === "liked" || sort === "popular" || sort === "replies" || sort === "mine" || sort === "latest") && !activeRoom && (
+                            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
+                                <span style={{ fontSize:18 }}>
+                                    {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "popular" ? "🔥" : sort === "latest" ? "🕐" : "💬"}
+                                </span>
+                                <span style={{ fontSize:16, fontWeight:700, color:C.text }}>
+                                    {sort === "saved"   ? "My Saved Posts"
+                                   : sort === "liked"   ? "Posts I Liked"
+                                   : sort === "mine"    ? "My Posts"
+                                   : sort === "popular" ? "Most Popular"
+                                   : sort === "latest"  ? "Latest Posts"
+                                   :                      "Most Replies"}
+                                </span>
+                                <span style={{ fontSize:12, color:C.muted }}>({filteredPosts.length} post{filteredPosts.length!==1?"s":""})</span>
                             </div>
                         )}
-                    </div>
+
+                        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                            {filteredPosts.map(post => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    currentUser={currentUser}
+                                    onOpen={() => onOpenPost(post)}
+                                    onLike={e => onLike(post, e)}
+                                    onSave={e => onSave(post, e)}
+                                    onDelete={e => onDelete(post, e)}
+                                    canDelete={canDelete(post, currentUser)}
+                                />
+                            ))}
+                            {filteredPosts.length === 0 && (
+                                <div style={{ textAlign:"center", padding:60 }}>
+                                    <div style={{ fontSize:40, marginBottom:12 }}>
+                                        {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : "📭"}
+                                    </div>
+                                    <div style={{ color:C.muted, fontSize:14, marginBottom:8 }}>
+                                        {sort === "saved" ? "You haven't saved any posts yet."
+                                       : sort === "liked" ? "You haven't liked any posts yet."
+                                       : sort === "mine"  ? "You haven't posted anything yet."
+                                       : "No posts found."}
+                                    </div>
+                                    {sort !== "saved" && sort !== "liked" && (
+                                        <button onClick={onShowCreate} style={{ color:C.accent, background:"none", border:"none", cursor:"pointer", fontWeight:600, fontSize:13 }}>
+                                            Be the first to post →
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )
             )}
         </>
@@ -816,10 +915,13 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, canDele
 // ─────────────────────────────────────────────────────────────────────────────
 //  PostDetail
 // ─────────────────────────────────────────────────────────────────────────────
-function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDeleteReply, onEditReply, canDelete, replyText, setReplyText, onReply }) {
+function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDeleteReply, onEditReply, onEditPost, canDelete, canEdit, replyText, setReplyText, onReply }) {
     const replies = Array.isArray(post.replies) ? post.replies.map(normaliseReply) : [];
-    const [editingId,   setEditingId]   = useState(null);
-    const [editingText, setEditingText] = useState("");
+    const [editingId,      setEditingId]      = useState(null);
+    const [editingText,    setEditingText]    = useState("");
+    const [editingPost,    setEditingPost]    = useState(false);
+    const [editTitle,      setEditTitle]      = useState(post.title || "");
+    const [editContent,    setEditContent]    = useState(post.content || "");
 
     async function saveEdit(reply) {
         const ok = await onEditReply(reply, editingText);
@@ -843,22 +945,66 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                         </div>
                         <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>{formatDate(post.created_at)} · {post.category}</div>
                     </div>
-                    {canDelete && (
-                        <button onClick={onDelete} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, background:"rgba(248,113,113,0.1)", border:`1px solid rgba(248,113,113,0.2)`, color:C.danger, cursor:"pointer", fontSize:12 }}>
-                            <Trash2 size={13}/> Delete
-                        </button>
-                    )}
+                    <div style={{ display:"flex", gap:8 }}>
+                        {canEdit && !editingPost && (
+                            <button onClick={() => { setEditTitle(post.title); setEditContent(post.content); setEditingPost(true); }}
+                                style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, background:"rgba(55,138,221,0.1)", border:`1px solid rgba(55,138,221,0.25)`, color:C.accent, cursor:"pointer", fontSize:12 }}>
+                                <Pencil size={13}/> Edit
+                            </button>
+                        )}
+                        {canDelete && !editingPost && (
+                            <button onClick={onDelete} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, background:"rgba(248,113,113,0.1)", border:`1px solid rgba(248,113,113,0.2)`, color:C.danger, cursor:"pointer", fontSize:12 }}>
+                                <Trash2 size={13}/> Delete
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ padding:"0 16px 16px" }}>
-                    <h1 style={{ fontSize:20, fontWeight:800, color:C.text, margin:"0 0 12px", lineHeight:1.3 }}>{post.title}</h1>
-                    <p style={{ fontSize:14, color:C.sub, lineHeight:1.8, margin:0, whiteSpace:"pre-line" }}>{post.content}</p>
-                    {post.tags?.length > 0 && (
-                        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:14 }}>
-                            {post.tags.map(t => (
-                                <span key={t} style={{ fontSize:12, padding:"3px 10px", borderRadius:6, background:"rgba(55,138,221,0.12)", color:C.accent, fontWeight:600 }}>#{t}</span>
-                            ))}
+                    {editingPost ? (
+                        <div>
+                            <input
+                                value={editTitle}
+                                onChange={e => setEditTitle(e.target.value)}
+                                placeholder="Post title"
+                                style={{ width:"100%", padding:"10px 14px", borderRadius:10, border:`1px solid ${C.accent}`, background:C.card2, color:C.text, fontSize:16, fontWeight:700, outline:"none", marginBottom:12, boxSizing:"border-box" }}
+                            />
+                            <textarea
+                                value={editContent}
+                                onChange={e => setEditContent(e.target.value)}
+                                rows={8}
+                                placeholder="Post content"
+                                style={{ width:"100%", padding:"10px 14px", borderRadius:10, border:`1px solid ${C.border}`, background:C.card2, color:C.text, fontSize:14, outline:"none", resize:"vertical", boxSizing:"border-box", lineHeight:1.7 }}
+                            />
+                            <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"flex-end" }}>
+                                <button onClick={() => setEditingPost(false)}
+                                    style={{ padding:"8px 16px", borderRadius:10, background:C.card2, border:`1px solid ${C.border}`, color:C.muted, cursor:"pointer", fontSize:13 }}>
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (editTitle.trim() && editContent.trim()) {
+                                            onEditPost({ title: editTitle.trim(), content: editContent.trim() });
+                                            setEditingPost(false);
+                                        }
+                                    }}
+                                    style={{ padding:"8px 20px", borderRadius:10, background:C.accent, border:"none", color:"white", cursor:"pointer", fontSize:13, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}>
+                                    <Check size={13}/> Save Changes
+                                </button>
+                            </div>
                         </div>
+                    ) : (
+                        <>
+                            <h1 style={{ fontSize:20, fontWeight:800, color:C.text, margin:"0 0 12px", lineHeight:1.3 }}>{post.title}</h1>
+                            <p style={{ fontSize:14, color:C.sub, lineHeight:1.8, margin:0, whiteSpace:"pre-line" }}>{post.content}</p>
+                            {post.tags?.length > 0 && (
+                                <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:14 }}>
+                                    {post.tags.map(t => (
+                                        <span key={t} style={{ fontSize:12, padding:"3px 10px", borderRadius:6, background:"rgba(55,138,221,0.12)", color:C.accent, fontWeight:600 }}>#{t}</span>
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
