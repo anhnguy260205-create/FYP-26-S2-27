@@ -8,13 +8,13 @@
   + npm run dev
 - app link: http://localhost:5173/ 
 - Admin account:
-  + Username: admin
+  + Email: admin@gmail.com
   + Password: admin123
 - Investor account:
-  + Username: Kim
+  + Email: kim@gmail.com
   + Password: password
 - Expert account:
-  + Username: Anh
+  + Email : kimhi@gmail.com
   + Password: password
 - Check api: http://127.0.0.1:8000/docs#/
 - Deployment:
