@@ -20,13 +20,6 @@ export const checkEmailExists = async (email) => {
   return response.json();
 };
 
-export const getEmailByUsername = async (username) => {
-  const response = await fetch(
-    `${BASE_URL}/email-by-username?username=${encodeURIComponent(username)}`
-  );
-  return response.json();
-};
-
 export const lookupAccount = async (emailAddress) => {
   const response = await fetch(`${BASE_URL}/lookup-account`, {
     method: "POST",
