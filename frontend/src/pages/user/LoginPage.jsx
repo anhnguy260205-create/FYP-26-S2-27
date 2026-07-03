@@ -2,10 +2,12 @@ import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { firebaseLogin, getEmailByUsername } from "../../api/userApi";
+import { firebaseLogin } from "../../api/userApi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import image1 from "../../images/image1.png";
+
+const API_BASE = import.meta.env.VITE_API_URL;
 
 function ImageStockMarketTradingCharts() {
   return (
@@ -39,7 +41,7 @@ function ImageStockMarketTradingCharts() {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
 
@@ -53,15 +55,18 @@ function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      // 1. Resolve the username to its account email (Firebase only supports email/password sign-in)
-      const lookup = await getEmailByUsername(formData.username.trim());
-      if (!lookup.success) {
-        setError("No account found with this username.");
+      // 1. Check email exists in our system first
+      const checkRes = await fetch(
+        `${API_BASE}/user/check-email?email=${encodeURIComponent(formData.email.trim().toLowerCase())}`
+      );
+      const checkData = await checkRes.json();
+      if (!checkData.exists) {
+        setError("No account found with this email address.");
         return;
       }
 
-      // 2. Username confirmed — now authenticate password via Firebase
-      await signInWithEmailAndPassword(auth, lookup.email, formData.password);
+      // 2. Email confirmed — now authenticate password via Firebase
+      await signInWithEmailAndPassword(auth, formData.email.trim().toLowerCase(), formData.password);
 
       // 3. Load user profile (token set by Firebase; authFetch picks it up automatically)
       const result = await firebaseLogin();
@@ -71,10 +76,7 @@ function LoginPage() {
       }
       localStorage.setItem("currentUser", JSON.stringify(result.user));
       const role = result.user.role;
-      // Show the profile-setup page only if the user never completed it AND
-      // hasn't ticked "Don't ask me again" on the setup page.
-      const profileDismissed = localStorage.getItem(`profileSetupDismissed_${result.user.user_id}`) === "1";
-      const isFirstLogin = !result.user.full_name && !profileDismissed;
+      const isFirstLogin = !result.user.full_name;
       if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");
       else if (role === "expert") navigate(isFirstLogin ? "/expert/updateparticular" : "/expert");
       else if (role === "admin") navigate("/adminpanel");
@@ -124,14 +126,14 @@ function LoginPage() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-              {/* Username */}
+              {/* Email */}
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-[14px] text-gray-700 pl-1">Username</label>
+                <label className="font-semibold text-[14px] text-gray-700 pl-1">Email</label>
                 <input
-                  id="username" name="username"
-                  type="text" placeholder="Enter your username"
-                  value={formData.username} required autoComplete="username"
-                  onChange={(e) => handleChange("username", e.target.value)}
+                  id="email" name="email"
+                  type="email" placeholder="Enter your email"
+                  value={formData.email} required autoComplete="email"
+                  onChange={(e) => handleChange("email", e.target.value)}
                   className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
                   style={inputStyle} onFocus={focusStyle} onBlur={blurStyle}
                 />
