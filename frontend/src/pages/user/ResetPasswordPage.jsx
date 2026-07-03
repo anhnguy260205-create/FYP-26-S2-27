@@ -36,11 +36,10 @@ function Stepper({ current }) {
         <div key={label} className="flex items-center flex-1 last:flex-none">
           <div className="flex flex-col items-center">
             <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${
-                i + 1 <= current
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${i + 1 <= current
                   ? "bg-orange-500 border-orange-500 text-white"
                   : "bg-white border-gray-300 text-gray-400"
-              }`}
+                }`}
             >
               {i + 1}
             </div>
@@ -48,9 +47,8 @@ function Stepper({ current }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`flex-1 border-t-2 border-dashed mb-4 mx-1 transition-all ${
-                current > i + 1 ? "border-orange-500" : "border-white"
-              }`}
+              className={`flex-1 border-t-2 border-dashed mb-4 mx-1 transition-all ${current > i + 1 ? "border-orange-500" : "border-white"
+                }`}
             />
           )}
         </div>
@@ -188,7 +186,7 @@ function ResetPasswordPage() {
     >
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
-        <div className="w-full max-w-[460px]">
+        <div className="w-full max-w-115">
           <div
             className="bg-[rgba(255,255,255,0.82)] w-full flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
@@ -240,11 +238,11 @@ function ResetPasswordPage() {
               <div className="flex flex-col gap-5">
                 {/* Profile card */}
                 <div
-                  className="flex items-center gap-4 p-4 rounded-[16px]"
+                  className="flex items-center gap-4 p-4 rounded-2xl"
                   style={{ background: "rgba(0,146,184,0.08)", border: "1px solid rgba(0,146,184,0.25)" }}
                 >
                   <div
-                    className="flex items-center justify-center flex-shrink-0"
+                    className="flex items-center justify-center shrink-0"
                     style={{
                       width: "56px", height: "56px", borderRadius: "50%",
                       background: "linear-gradient(135deg,#0092b8,#155dfc)",
