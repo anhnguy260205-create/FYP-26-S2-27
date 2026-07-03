@@ -55,7 +55,7 @@ function ScoreGauge({ score, label }) {
   const largeVal = valueAngleSpan > Math.PI ? 1 : 0;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[260px]">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-65">
       {/* track */}
       <path d={`M ${sx} ${sy} A ${r} ${r} 0 ${largeBg} 1 ${ex} ${ey}`}
         fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="14" strokeLinecap="round" />
@@ -209,7 +209,7 @@ export default function QuantRatingPage() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="text-2xl font-bold text-slate-100">{rating.symbol}</div>
-                      <div className="text-xs text-slate-400 truncate max-w-[180px]">{rating.name}</div>
+                      <div className="text-xs text-slate-400 truncate max-w-45">{rating.name}</div>
                     </div>
                     <span className="text-[11px] px-2 py-1 rounded-md bg-slate-800 text-slate-300">
                       {rating.sectorLabel}
