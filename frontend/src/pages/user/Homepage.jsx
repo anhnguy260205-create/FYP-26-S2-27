@@ -182,11 +182,11 @@ function Hero() {
         const heroItem = data.content.find((c) => c.section === "hero");
         if (heroItem) setHero(heroItem);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
-    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden">
+    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
       {/* Background glow */}
       <div
         className="absolute inset-0"
@@ -202,7 +202,6 @@ function Hero() {
           backgroundSize: "60px 60px",
         }}
       />
-
       <div className="relative z-20 text-center px-6 max-w-3xl py-20 sm:py-28">
         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 mb-6 text-xs font-semibold tracking-wide text-cyan-300 uppercase">
           <Sparkles size={14} /> AI-Powered Investing Platform
@@ -221,23 +220,23 @@ function Hero() {
         <div className="flex flex-wrap gap-4 justify-center">
           <button
             onClick={() => navigate("/register")}
-            className="w-40 px-8 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-colors flex items-center justify-center gap-1.5"
+            className="group relative w-40 px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] overflow-hidden flex items-center justify-center"
           >
-            Get Started <ArrowRight size={17} />
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Get Started</span>
           </button>
           <button
             onClick={() => navigate("/login")}
-            className="w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-cyan-400 hover:text-cyan-300 text-white font-semibold text-base transition-colors"
+            className="group relative w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-white text-white font-semibold text-base overflow-hidden transition-colors flex items-center justify-center"
           >
-            Login
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-slate-900">Login</span>
           </button>
         </div>
       </div>
 
       <style>{`
-        @media (max-width: 640px) {
-          .hero-section { min-height: 60vh; }
-        }
+        .hero-section { min-height: calc(95vh - 60px); }
       `}</style>
     </div>
   );
@@ -249,11 +248,11 @@ function StatsBar() {
       {STATS.map(({ Icon, label, value }) => (
         <div
           key={label}
-          className="flex flex-col items-center text-center gap-2 rounded-2xl border border-blue-900/30 bg-white/5 px-4 py-6"
+          className="flex flex-col items-center text-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6"
         >
-          <Icon className="text-cyan-400" size={26} />
-          <span className="text-xl sm:text-2xl font-extrabold text-white">{value}</span>
-          <span className="text-xs sm:text-sm text-slate-400">{label}</span>
+          <Icon className="text-cyan-600" size={26} />
+          <span className="text-xl sm:text-2xl font-extrabold text-slate-900">{value}</span>
+          <span className="text-xs sm:text-sm text-slate-500">{label}</span>
         </div>
       ))}
     </div>
@@ -264,21 +263,21 @@ function PlatformFeatures() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Everything You Need to Invest Smarter</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">One platform, six ways to sharpen your edge.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Everything You Need to Invest Smarter</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">One platform, six ways to sharpen your edge.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {PLATFORM_FEATURES.map(({ Icon, title, description }) => (
           <div
             key={title}
-            className="rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent p-6"
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
           >
-            <div className="w-11 h-11 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-4">
-              <Icon className="text-cyan-400" size={22} />
+            <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">
+              <Icon className="text-cyan-600" size={22} />
             </div>
-            <h3 className="font-bold text-white text-base mb-1.5">{title}</h3>
-            <p className="text-sm text-slate-400">{description}</p>
+            <h3 className="font-bold text-slate-900 text-base mb-1.5">{title}</h3>
+            <p className="text-sm text-slate-500">{description}</p>
           </div>
         ))}
       </div>
@@ -296,7 +295,7 @@ function FeatureGrid() {
         if (!data.success) return;
         setFeatures(data.content.filter((c) => c.section === "feature"));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   if (features.length === 0) return null;
@@ -304,8 +303,8 @@ function FeatureGrid() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Quick Highlights</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">A snapshot of what powers your dashboard.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Quick Highlights</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">A snapshot of what powers your dashboard.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
@@ -314,13 +313,13 @@ function FeatureGrid() {
           return (
             <div
               key={feature.content_id}
-              className="group rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent p-6 hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300"
+              className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-cyan-500/50 hover:-translate-y-1 transition-all duration-300"
             >
-              <div className="w-11 h-11 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-4 group-hover:bg-cyan-400/20 transition-colors">
-                <Icon className="text-cyan-400" size={22} />
+              <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4 group-hover:bg-cyan-200 transition-colors">
+                <Icon className="text-cyan-600" size={22} />
               </div>
-              <h3 className="font-bold text-white text-base mb-1.5">{feature.title}</h3>
-              <p className="text-sm text-slate-400">{feature.description}</p>
+              <h3 className="font-bold text-slate-900 text-base mb-1.5">{feature.title}</h3>
+              <p className="text-sm text-slate-500">{feature.description}</p>
             </div>
           );
         })}
@@ -332,8 +331,8 @@ function FeatureGrid() {
 function CTASection() {
   const navigate = useNavigate();
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16 pt-4">
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-400/20 bg-linear-to-r from-blue-950 via-slate-900 to-blue-950 px-6 sm:px-12 py-12 text-center">
+    <div className="max-w-6xl mx-auto px-2 sm:px-8 pb-16 pt-4">
+      <div className="relative overflow-hidden rounded-3xl border border-cyan-400/40 bg-linear-to-r from-blue-950 via-slate-900 to-blue-950 px-6 sm:px-12 py-12 text-center shadow-[0_0_50px_rgba(34,211,238,0.15)]">
         <div
           className="absolute inset-0"
           style={{ background: "radial-gradient(circle at 50% 0%, rgba(34,211,238,0.15) 0%, transparent 70%)" }}
@@ -347,7 +346,7 @@ function CTASection() {
             onClick={() => navigate("/register")}
             className="px-8 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-colors inline-flex items-center gap-1.5"
           >
-            Create Free Account <ArrowRight size={17} />
+            Create Free Account
           </button>
         </div>
       </div>
@@ -386,7 +385,7 @@ function usePlanContent() {
           priceSubtitle: premPrice?.description ?? "per month, billed annually",
         });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
@@ -395,28 +394,37 @@ function usePlanContent() {
 function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
   return (
     <div
-      className={`w-full max-w-sm rounded-3xl p-8 border ${
-        highlighted
-          ? "border-yellow-400/40 bg-linear-to-b from-yellow-400/10 via-white/5 to-transparent"
-          : "border-blue-900/30 bg-linear-to-b from-white/5 to-transparent"
-      }`}
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+        ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
+        : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
+        }`}
     >
-      <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 ${badgeClass}`}>
-        {badge}
-      </span>
-      <p className="text-xl font-semibold text-white mb-1">{plan.name}</p>
-      <p className={`text-4xl font-extrabold mb-1 ${highlighted ? "text-yellow-300" : "text-cyan-300"}`}>{plan.price}</p>
-      <p className="text-sm text-slate-400 mb-6">{plan.priceSubtitle}</p>
-      <div className="h-px bg-white/10 mb-6" />
-      <div className="space-y-3">
-        {features.map((f) => (
-          <div key={f} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-yellow-400/20 text-yellow-300" : "bg-cyan-400/20 text-cyan-300"}`}>
-              <Check size={13} />
-            </span>
-            <span className="text-sm text-slate-300">{f}</span>
-          </div>
-        ))}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: highlighted
+            ? "radial-gradient(circle at 50% 0%, rgba(250,204,21,0.18) 0%, transparent 65%)"
+            : "radial-gradient(circle at 50% 0%, rgba(34,211,238,0.14) 0%, transparent 65%)",
+        }}
+      />
+      <div className="relative z-10">
+        <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 ${badgeClass}`}>
+          {badge}
+        </span>
+        <p className="text-xl font-semibold text-white mb-1">{plan.name}</p>
+        <p className={`text-4xl font-extrabold mb-1 ${highlighted ? "text-yellow-300" : "text-cyan-300"}`}>{plan.price}</p>
+        <p className="text-sm text-slate-400 mb-6">{plan.priceSubtitle}</p>
+        <div className="h-px bg-white/10 mb-6" />
+        <div className="space-y-3">
+          {features.map((f) => (
+            <div key={f} className="flex items-start gap-2.5">
+              <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-yellow-400/20 text-yellow-300" : "bg-cyan-400/20 text-cyan-300"}`}>
+                <Check size={13} />
+              </span>
+              <span className="text-sm text-slate-300">{f}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -430,7 +438,7 @@ function PricingSection() {
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Simple, Transparent Pricing</h2>
         <p className="text-slate-400 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an account to get started.</p>
       </div>
-      <div className="flex flex-col md:flex-row gap-6 items-center md:items-start justify-center">
+      <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
         <PlanCard badge="Free" badgeClass="bg-blue-500/20 text-blue-300" plan={freePlan} features={freeFeatures} />
         <PlanCard badge="⭐ Premium" badgeClass="bg-yellow-400/20 text-yellow-300" plan={premiumPlan} features={premiumFeatures} highlighted />
       </div>
@@ -440,19 +448,19 @@ function PricingSection() {
 
 function FAQItem({ q, a, open, onToggle }) {
   return (
-    <div className="rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent overflow-hidden">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 text-left px-6 py-5 cursor-pointer"
       >
-        <span className="font-semibold text-white text-sm sm:text-base">{q}</span>
+        <span className="font-semibold text-slate-900 text-sm sm:text-base">{q}</span>
         <ChevronDown
           size={18}
-          className={`text-cyan-400 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          className={`text-cyan-600 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <p className="px-6 pb-5 text-sm text-slate-400 leading-relaxed">{a}</p>
+        <p className="px-6 pb-5 text-sm text-slate-500 leading-relaxed">{a}</p>
       )}
     </div>
   );
@@ -463,8 +471,8 @@ function FAQSection() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
       </div>
       <div className="space-y-3">
         {FAQS.map((faq, index) => (
@@ -490,15 +498,21 @@ function HomePage() {
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <main className="flex-1">
+      <MarketTicker />
+      <main className="flex-1 flex flex-col">
         <Hero />
-        <MarketTicker />
-        <StatsBar />
-        <PlatformFeatures />
-        <FeatureGrid />
-        <CTASection />
-        <PricingSection />
-        <FAQSection />
+        <div className="bg-white">
+          <StatsBar />
+          <PlatformFeatures />
+          <FeatureGrid />
+        </div>
+        <div style={{ paddingTop: "100px", paddingBottom: "100px", height: "1350px", background: "linear-gradient(to bottom, #ffffff 0px, #0f172a 260px, #0f172a calc(100% - 260px), #ffffff 100%)" }}>
+          <CTASection />
+          <PricingSection />
+        </div>
+        <div className="bg-white flex-1" style={{ paddingTop: "50px" }}>
+          <FAQSection />
+        </div>
       </main>
       <Footer />
     </motion.div>
