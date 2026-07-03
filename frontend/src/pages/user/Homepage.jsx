@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../layout/Footer.jsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
 import { fetchStockSnapshot } from "../../api/stockApi.js";
 import {
-  Bot, TrendingUp, Sparkles, Bell, Users, Globe, Zap, ShieldCheck, ArrowRight, Star,
-  Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown,
+  Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
+  Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown, Play, Award,
+  UserPlus, Mail, Rocket, DollarSign,
 } from "lucide-react";
 
 const TICKER_SYMBOLS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "META", "JPM", "V", "DIS"];
@@ -84,13 +85,6 @@ function getFeatureIcon(title = "") {
   const found = FEATURE_ICONS.find((f) => lower.includes(f.match));
   return found ? found.Icon : Star;
 }
-
-const STATS = [
-  { Icon: Globe, label: "Global Stocks Tracked", value: "30+" },
-  { Icon: Zap, label: "Real-Time Market Data", value: "Live" },
-  { Icon: Bot, label: "AI-Powered Predictions", value: "24/7" },
-  { Icon: ShieldCheck, label: "Expert-Verified Insights", value: "Trusted" },
-];
 
 function MarketTicker() {
   const [quotes, setQuotes] = useState([]);
@@ -182,11 +176,11 @@ function Hero() {
         const heroItem = data.content.find((c) => c.section === "hero");
         if (heroItem) setHero(heroItem);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
-    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden">
+    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
       {/* Background glow */}
       <div
         className="absolute inset-0"
@@ -202,7 +196,6 @@ function Hero() {
           backgroundSize: "60px 60px",
         }}
       />
-
       <div className="relative z-20 text-center px-6 max-w-3xl py-20 sm:py-28">
         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 mb-6 text-xs font-semibold tracking-wide text-cyan-300 uppercase">
           <Sparkles size={14} /> AI-Powered Investing Platform
@@ -221,64 +214,65 @@ function Hero() {
         <div className="flex flex-wrap gap-4 justify-center">
           <button
             onClick={() => navigate("/register")}
-            className="w-40 px-8 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-colors flex items-center justify-center gap-1.5"
+            className="group relative w-40 px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] overflow-hidden flex items-center justify-center"
           >
-            Get Started <ArrowRight size={17} />
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Get Started</span>
           </button>
           <button
             onClick={() => navigate("/login")}
-            className="w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-cyan-400 hover:text-cyan-300 text-white font-semibold text-base transition-colors"
+            className="group relative w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-white text-white font-semibold text-base overflow-hidden transition-colors flex items-center justify-center"
           >
-            Login
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-slate-900">Login</span>
           </button>
         </div>
       </div>
 
       <style>{`
-        @media (max-width: 640px) {
-          .hero-section { min-height: 60vh; }
-        }
+        .hero-section { min-height: calc(95vh - 60px); }
       `}</style>
     </div>
   );
 }
 
-function StatsBar() {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto px-4 sm:px-8 py-12">
-      {STATS.map(({ Icon, label, value }) => (
-        <div
-          key={label}
-          className="flex flex-col items-center text-center gap-2 rounded-2xl border border-blue-900/30 bg-white/5 px-4 py-6"
-        >
-          <Icon className="text-cyan-400" size={26} />
-          <span className="text-xl sm:text-2xl font-extrabold text-white">{value}</span>
-          <span className="text-xs sm:text-sm text-slate-400">{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+const FEATURE_THEMES = {
+  cyan: {
+    border: "border-blue-100",
+    bg: "bg-blue-50",
+    hoverBorder: "hover:border-cyan-400/50",
+    iconBg: "bg-cyan-100",
+    iconColor: "text-cyan-600",
+  },
+  purple: {
+    border: "border-purple-100",
+    bg: "bg-purple-50",
+    hoverBorder: "hover:border-purple-400/50",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+  },
+};
 
-function PlatformFeatures() {
+function FeatureCards({ heading, subtitle, items, theme = "cyan" }) {
+  const t = FEATURE_THEMES[theme];
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 pb-14">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Everything You Need to Invest Smarter</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">One platform, six ways to sharpen your edge.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {PLATFORM_FEATURES.map(({ Icon, title, description }) => (
+        {items.map(({ Icon, title, description }) => (
           <div
             key={title}
-            className="rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent p-6"
+            className={`rounded-2xl border ${t.border} ${t.bg} p-6 shadow-sm hover:shadow-lg ${t.hoverBorder} hover:-translate-y-1 transition-all duration-300`}
           >
-            <div className="w-11 h-11 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-4">
-              <Icon className="text-cyan-400" size={22} />
+            <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-4`}>
+              <Icon className={t.iconColor} size={22} />
             </div>
-            <h3 className="font-bold text-white text-base mb-1.5">{title}</h3>
-            <p className="text-sm text-slate-400">{description}</p>
+            <h3 className="font-bold text-slate-900 text-base mb-1.5">{title}</h3>
+            <p className="text-sm text-slate-500">{description}</p>
           </div>
         ))}
       </div>
@@ -286,74 +280,6 @@ function PlatformFeatures() {
   );
 }
 
-function FeatureGrid() {
-  const [features, setFeatures] = useState([]);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) return;
-        setFeatures(data.content.filter((c) => c.section === "feature"));
-      })
-      .catch(() => {});
-  }, []);
-
-  if (features.length === 0) return null;
-
-  return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Quick Highlights</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">A snapshot of what powers your dashboard.</p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-        {features.map((feature) => {
-          const Icon = getFeatureIcon(feature.title);
-          return (
-            <div
-              key={feature.content_id}
-              className="group rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent p-6 hover:border-cyan-400/40 hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="w-11 h-11 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-4 group-hover:bg-cyan-400/20 transition-colors">
-                <Icon className="text-cyan-400" size={22} />
-              </div>
-              <h3 className="font-bold text-white text-base mb-1.5">{feature.title}</h3>
-              <p className="text-sm text-slate-400">{feature.description}</p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function CTASection() {
-  const navigate = useNavigate();
-  return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16 pt-4">
-      <div className="relative overflow-hidden rounded-3xl border border-cyan-400/20 bg-linear-to-r from-blue-950 via-slate-900 to-blue-950 px-6 sm:px-12 py-12 text-center">
-        <div
-          className="absolute inset-0"
-          style={{ background: "radial-gradient(circle at 50% 0%, rgba(34,211,238,0.15) 0%, transparent 70%)" }}
-        />
-        <div className="relative z-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Ready to invest smarter?</h2>
-          <p className="text-slate-400 mb-7 max-w-xl mx-auto text-sm sm:text-base">
-            Create your free account and get real-time data, AI predictions, and expert insights in minutes.
-          </p>
-          <button
-            onClick={() => navigate("/register")}
-            className="px-8 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-colors inline-flex items-center gap-1.5"
-          >
-            Create Free Account <ArrowRight size={17} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function usePlanContent() {
   const [freeFeatures, setFreeFeatures] = useState([]);
@@ -386,7 +312,7 @@ function usePlanContent() {
           priceSubtitle: premPrice?.description ?? "per month, billed annually",
         });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
@@ -395,28 +321,37 @@ function usePlanContent() {
 function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
   return (
     <div
-      className={`w-full max-w-sm rounded-3xl p-8 border ${
-        highlighted
-          ? "border-yellow-400/40 bg-linear-to-b from-yellow-400/10 via-white/5 to-transparent"
-          : "border-blue-900/30 bg-linear-to-b from-white/5 to-transparent"
-      }`}
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+        ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
+        : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
+        }`}
     >
-      <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 ${badgeClass}`}>
-        {badge}
-      </span>
-      <p className="text-xl font-semibold text-white mb-1">{plan.name}</p>
-      <p className={`text-4xl font-extrabold mb-1 ${highlighted ? "text-yellow-300" : "text-cyan-300"}`}>{plan.price}</p>
-      <p className="text-sm text-slate-400 mb-6">{plan.priceSubtitle}</p>
-      <div className="h-px bg-white/10 mb-6" />
-      <div className="space-y-3">
-        {features.map((f) => (
-          <div key={f} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-yellow-400/20 text-yellow-300" : "bg-cyan-400/20 text-cyan-300"}`}>
-              <Check size={13} />
-            </span>
-            <span className="text-sm text-slate-300">{f}</span>
-          </div>
-        ))}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: highlighted
+            ? "radial-gradient(circle at 50% 0%, rgba(250,204,21,0.18) 0%, transparent 65%)"
+            : "radial-gradient(circle at 50% 0%, rgba(34,211,238,0.14) 0%, transparent 65%)",
+        }}
+      />
+      <div className="relative z-10">
+        <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 ${badgeClass}`}>
+          {badge}
+        </span>
+        <p className="text-xl font-semibold text-white mb-1">{plan.name}</p>
+        <p className={`text-4xl font-extrabold mb-1 ${highlighted ? "text-yellow-300" : "text-cyan-300"}`}>{plan.price}</p>
+        <p className="text-sm text-slate-400 mb-6">{plan.priceSubtitle}</p>
+        <div className="h-px bg-white/10 mb-6" />
+        <div className="space-y-3">
+          {features.map((f) => (
+            <div key={f} className="flex items-start gap-2.5">
+              <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-yellow-400/20 text-yellow-300" : "bg-cyan-400/20 text-cyan-300"}`}>
+                <Check size={13} />
+              </span>
+              <span className="text-sm text-slate-300">{f}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -428,9 +363,9 @@ function PricingSection() {
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Simple, Transparent Pricing</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an account to get started.</p>
+        <p className="text-slate-400 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an investor account to get started.</p>
       </div>
-      <div className="flex flex-col md:flex-row gap-6 items-center md:items-start justify-center">
+      <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
         <PlanCard badge="Free" badgeClass="bg-blue-500/20 text-blue-300" plan={freePlan} features={freeFeatures} />
         <PlanCard badge="⭐ Premium" badgeClass="bg-yellow-400/20 text-yellow-300" plan={premiumPlan} features={premiumFeatures} highlighted />
       </div>
@@ -440,20 +375,31 @@ function PricingSection() {
 
 function FAQItem({ q, a, open, onToggle }) {
   return (
-    <div className="rounded-2xl border border-blue-900/30 bg-linear-to-b from-white/5 to-transparent overflow-hidden">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 text-left px-6 py-5 cursor-pointer"
       >
-        <span className="font-semibold text-white text-sm sm:text-base">{q}</span>
+        <span className="font-semibold text-slate-900 text-sm sm:text-base">{q}</span>
         <ChevronDown
           size={18}
-          className={`text-cyan-400 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          className={`text-cyan-600 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </button>
-      {open && (
-        <p className="px-6 pb-5 text-sm text-slate-400 leading-relaxed">{a}</p>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="px-6 pb-5 text-sm text-slate-500 leading-relaxed">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -463,8 +409,8 @@ function FAQSection() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
       </div>
       <div className="space-y-3">
         {FAQS.map((faq, index) => (
@@ -481,7 +427,289 @@ function FAQSection() {
   );
 }
 
+function MarketingVideoSection() {
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-8">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-black">See RocketTrade in Action</h2>
+        <p className="text-slate-400 mt-2 text-sm sm:text-base">Watch a quick walkthrough of the platform and its AI-powered tools.</p>
+      </div>
+      <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
+        <button
+          type="button"
+          aria-label="Play marketing video"
+          className="group relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.5)] hover:bg-cyan-400 transition-colors"
+        >
+          <Play className="text-white translate-x-0.5" size={28} fill="currentColor" />
+        </button>
+        <span className="absolute bottom-4 text-xs text-slate-500">Video coming soon</span>
+      </div>
+    </div>
+  );
+}
+
+const WHY_ROCKETTRADE = [
+  {
+    Icon: ShieldCheck,
+    title: "Zero-Risk Learning",
+    description: "Practice with virtual funds against live market prices — sharpen your instincts without risking real money.",
+    stat: { value: "30+", label: "stocks to practice on, risk-free" },
+    accent: {
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      statColor: "text-emerald-700",
+      border: "hover:border-emerald-400/50",
+    },
+  },
+  {
+    Icon: Zap,
+    title: "AI when you need speed. Experts when you need certainty.",
+    description: "Live prices and news sentiment keep your paper portfolio in sync with what's actually happening in the market.",
+    stat: { value: "24/7", label: "AI monitoring, backed by real experts" },
+    emphasized: true,
+  },
+  {
+    Icon: Users,
+    title: "Expert-Backed Community",
+    description: "Learn alongside fellow investors and get answers straight from verified market experts.",
+    stat: { value: "Verified", label: "answers from real market experts" },
+    accent: {
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      statColor: "text-amber-700",
+      border: "hover:border-amber-400/50",
+    },
+  },
+];
+
+const EXPERT_WHY = [
+  {
+    Icon: DollarSign,
+    title: "Get Paid for Your Expertise",
+    description: "Earn from paid consultations and premium content — your market knowledge has real value here.",
+    stat: { value: "Paid", label: "consultations & premium articles" },
+    accent: {
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      statColor: "text-emerald-700",
+      border: "hover:border-emerald-400/50",
+    },
+  },
+  {
+    Icon: Zap,
+    title: "Be the certainty investors need when speed isn't enough.",
+    description: "Reach investors who are already using AI predictions and want a real expert to validate the call.",
+    stat: { value: "24/7", label: "visibility to AI-assisted traders" },
+    emphasized: true,
+  },
+  {
+    Icon: Users,
+    title: "Build a Following You Own",
+    description: "Grow your reputation through Q&A, portfolio publishing, and the community forum.",
+    stat: { value: "Verified", label: "badge boosts trust & visibility" },
+    accent: {
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      statColor: "text-amber-700",
+      border: "hover:border-amber-400/50",
+    },
+  },
+];
+
+function WhyCards({ heading, subtitle, items }) {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {items.map(({ Icon, title, description, stat, emphasized, accent }) => (
+          <div
+            key={title}
+            className={`relative h-full flex flex-col rounded-2xl p-6 transition-all duration-300 ${emphasized
+              ? "border border-indigo-400/50 bg-linear-to-br from-indigo-600 to-blue-700 shadow-[0_0_45px_rgba(79,70,229,0.35)] hover:shadow-[0_0_60px_rgba(79,70,229,0.45)] lg:scale-105 lg:-translate-y-2 z-10"
+              : `border border-blue-100 bg-blue-50 shadow-sm hover:shadow-lg hover:-translate-y-1 ${accent.border}`
+              }`}
+          >
+            {emphasized && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white text-indigo-700 shadow-sm">
+                Our Edge
+              </span>
+            )}
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${emphasized ? "bg-white/15" : accent.iconBg
+                }`}
+            >
+              <Icon className={emphasized ? "text-white" : accent.iconColor} size={22} />
+            </div>
+            <h3 className={`font-bold text-base mb-1.5 ${emphasized ? "text-white" : "text-slate-900"}`}>{title}</h3>
+            <p className={`text-sm flex-1 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{description}</p>
+            <div className={`mt-4 pt-4 border-t ${emphasized ? "border-white/15" : "border-slate-200"}`}>
+              <span className={`text-2xl font-extrabold ${emphasized ? "text-white" : accent.statColor}`}>{stat.value}</span>
+              <span className={`block text-xs mt-0.5 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{stat.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+const ROLE_OPTIONS = [
+  {
+    value: "investor",
+    Icon: Wallet,
+    label: "Investor",
+    desc: "Trade, learn, and get AI-backed predictions",
+    active: "border-cyan-500 bg-cyan-50 text-cyan-700",
+    activeIcon: "bg-cyan-100 text-cyan-600",
+  },
+  {
+    value: "expert",
+    Icon: Award,
+    label: "Expert",
+    desc: "Publish insights and mentor investors",
+    active: "border-purple-500 bg-purple-50 text-purple-700",
+    activeIcon: "bg-purple-100 text-purple-600",
+  },
+];
+
+function RoleToggle({ activeRole, onSelect }) {
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-2 pb-10 text-center">
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Choose Your Path</h2>
+      <p className="text-slate-500 mt-2 mb-8 text-sm sm:text-base">
+        Tell us who you are, so we can show you what matters most.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {ROLE_OPTIONS.map(({ value, Icon, label, desc, active, activeIcon }) => {
+          const selected = activeRole === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onSelect(value)}
+              aria-pressed={selected}
+              className={`flex items-center gap-3 px-6 py-4 rounded-2xl border-2 transition-all duration-300 text-left w-full sm:w-72 ${selected ? `${active} shadow-sm` : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+            >
+              <span
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${selected ? activeIcon : "bg-slate-100 text-slate-500"
+                  }`}
+              >
+                <Icon size={22} />
+              </span>
+              <span>
+                <span className="block font-bold text-base">{label}</span>
+                <span className={`block text-xs mt-0.5 ${selected ? "" : "text-slate-400"}`}>{desc}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const EXPERT_FEATURES = [
+  {
+    Icon: DollarSign,
+    title: "Paid Consultations",
+    description: "Offer 1-on-1 sessions with investors and earn directly for your time and expertise.",
+  },
+  {
+    Icon: Award,
+    title: "Verified Expert Badge",
+    description: "Stand out with a trust badge that boosts your visibility across the platform.",
+  },
+  {
+    Icon: GraduationCap,
+    title: "Publish Educational Content",
+    description: "Share articles in the Knowledge Hub and become a go-to voice for new investors.",
+  },
+  {
+    Icon: MessageCircleQuestion,
+    title: "Answer Investor Questions",
+    description: "Respond to Ask the Experts questions and grow your following one answer at a time.",
+  },
+  {
+    Icon: BrainCircuit,
+    title: "Publish Portfolio Insights",
+    description: "Share your strategy and quant calls, and let investors follow your track record.",
+  },
+  {
+    Icon: Bot,
+    title: "AI-Matched Reach",
+    description: "Get surfaced to investors using AI predictions who want a human expert's take.",
+  },
+];
+
+const REGISTRATION_STEPS = [
+  {
+    Icon: UserPlus,
+    step: "1",
+    title: "Choose your role & sign up",
+    description: "Pick Investor or Expert, then create your account with a username, email, and password.",
+  },
+  {
+    Icon: Mail,
+    step: "2",
+    title: "Verify your email",
+    description: "Confirm the verification email we send you to activate your account.",
+  },
+  {
+    Icon: ShieldCheck,
+    step: "3",
+    title: "Agree to the terms",
+    description: "Review and accept RocketTrade's Terms and Conditions and Privacy Policy.",
+  },
+  {
+    Icon: Rocket,
+    step: "4",
+    title: "Start using RocketTrade",
+    description: "Investors jump straight into paper trading; Experts get verified before publishing insights.",
+  },
+];
+
+function RegistrationGuide() {
+  const navigate = useNavigate();
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-10">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">How to Get Started</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">Signing up only takes a few minutes, for investors and experts alike.</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {REGISTRATION_STEPS.map(({ Icon, step, title, description }) => (
+          <div
+            key={step}
+            className="relative rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm hover:shadow-lg hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
+          >
+            <span className="absolute top-4 right-4 text-xs font-bold text-cyan-300">STEP {step}</span>
+            <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">
+              <Icon className="text-cyan-600" size={22} />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1.5">{title}</h3>
+            <p className="text-sm text-slate-500">{description}</p>
+          </div>
+        ))}
+      </div>
+      <div className="text-center mt-10">
+        <button
+          onClick={() => navigate("/register")}
+          className="group relative px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.3)] overflow-hidden inline-flex items-center justify-center"
+        >
+          <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+          <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Create Your Account</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function HomePage() {
+  const [activeRole, setActiveRole] = useState("investor");
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -490,15 +718,56 @@ function HomePage() {
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <main className="flex-1">
+      <MarketTicker />
+      <main className="flex-1 flex flex-col">
         <Hero />
-        <MarketTicker />
-        <StatsBar />
-        <PlatformFeatures />
-        <FeatureGrid />
-        <CTASection />
-        <PricingSection />
-        <FAQSection />
+        <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>
+          <MarketingVideoSection />
+        </div>
+        <div className="bg-white">
+          <RoleToggle activeRole={activeRole} onSelect={setActiveRole} />
+        </div>
+        {activeRole === "investor" ? (
+          <>
+            <div className="bg-white">
+              <WhyCards
+                heading="Why RocketTrade"
+                subtitle="Built to help you invest smarter, without the real-money risk."
+                items={WHY_ROCKETTRADE}
+              />
+              <FeatureCards
+                heading="Everything You Need to Invest Smarter"
+                subtitle="One platform, six ways to sharpen your edge."
+                items={PLATFORM_FEATURES}
+                theme="cyan"
+              />
+            </div>
+            <div style={{ paddingTop: "300px", paddingBottom: "100px", height: "1300px", background: "linear-gradient(to bottom, #ffffff 0px, #0f172a 260px, #0f172a calc(100% - 260px), #ffffff 100%)" }}>
+              <PricingSection />
+            </div>
+          </>
+        ) : (
+          <div className="bg-white">
+            <WhyCards
+              heading="Why Become a RocketTrade Expert"
+              subtitle="Turn your market knowledge into income and influence."
+              items={EXPERT_WHY}
+            />
+            <FeatureCards
+              heading="Everything You Get as an Expert"
+              subtitle="One platform, six ways to get paid and get seen."
+              items={EXPERT_FEATURES}
+              theme="purple"
+            />
+          </div>
+        )}
+        <div className="bg-white">
+          <RegistrationGuide />
+        </div>
+        <div className="bg-white flex-1">
+          <FAQSection />
+        </div>
+
       </main>
       <Footer />
     </motion.div>

@@ -41,7 +41,7 @@ function Footer() {
   }, []);
 
   return (
-    <footer className="border-t border-blue-900/30 bg-slate-950/50 backdrop-blur-md mt-10">
+    <footer className="border-t border-blue-900/30 bg-slate-950/50 backdrop-blur-md">
       <div className="max-w-300 mx-auto px-8 py-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
 

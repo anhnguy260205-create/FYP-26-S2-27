@@ -21,7 +21,7 @@ function Header() {
   return (
     <>
       <div
-        className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-4 md:px-8"
+        className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-4 md:px-8 shadow-sm"
         style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)" }}
       >
         <img
