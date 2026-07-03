@@ -29,7 +29,7 @@ const COMPANY_NAMES = {
   VOO: "Vanguard S&P 500 ETF", MU: "Micron Technology", PLTR: "Palantir Technologies",
 };
 
-const POPULAR_SYMBOLS = ["AAPL", "NVDA", "VOO", "TSLA", "AMZN", "MU", "PLTR"];
+const POPULAR_SYMBOLS = ["AAPL", "NVDA", "TSLA", "AMZN", "MU", "PLTR"];
 
 function fmt$(n) {
   const abs = Math.abs(Number(n));
