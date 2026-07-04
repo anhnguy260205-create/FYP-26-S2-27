@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
     Bookmark, Eye, Hash, Heart, MessageCircle,
     Search, Send, X, ArrowLeft, Trash2, Pencil,
@@ -226,6 +227,7 @@ function RoleBadge({ role }) {
 //  Main component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ForumPage() {
+    const navigate = useNavigate();
     const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
     const role     = String(currentUser?.role || "").toLowerCase();
     const isExpert = role === "expert";
@@ -241,6 +243,7 @@ export default function ForumPage() {
     const [showCreate,   setShowCreate]   = useState(false);
     const [creating,     setCreating]     = useState(false);
     const [replyText,    setReplyText]    = useState("");
+    const [loadingReplies, setLoadingReplies] = useState(false);
 
     // Clear stale localStorage forum data from old versions on first load
     useEffect(() => {
@@ -272,12 +275,13 @@ export default function ForumPage() {
             const matchSearch = !q || [p.title, p.content, p.category, p.author, ...(p.tags||[])].some(v => safeText(v).toLowerCase().includes(q));
             const matchSaved  = sort !== "saved"  || p.saved_by_me;
             const matchLiked  = sort !== "liked"  || p.liked_by_me;
-            const matchMine   = sort !== "mine"   || p.user_id === userId;
-            return matchRoom && matchSearch && matchSaved && matchLiked && matchMine;
+            const matchMine      = sort !== "mine"      || p.user_id === userId;
+            const matchCommented = sort !== "commented" || p.commented_by_me;
+            return matchRoom && matchSearch && matchSaved && matchLiked && matchMine && matchCommented;
         });
         if (sort === "popular") list = [...list].sort((a,b) => (b.likes - a.likes) || (b.views - a.views));
         else if (sort === "replies") list = [...list].sort((a,b) => getReplyCount(b) - getReplyCount(a));
-        else if (sort === "saved" || sort === "liked" || sort === "mine") list = [...list].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+        else if (sort === "saved" || sort === "liked" || sort === "mine" || sort === "commented") list = [...list].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
         else list = [...list].sort((a,b) => {
             // "latest" or "" both sort by newest first
             if (a.is_pinned && !b.is_pinned) return -1;
@@ -297,10 +301,24 @@ export default function ForumPage() {
     }
 
     function openPost(post) {
-        setSelectedPost(normalisePost(post));
+        // Show post content immediately (no replies yet)
+        setSelectedPost(normalisePost({ ...post, replies: [] }));
+        setLoadingReplies(true);
+        // Always fetch fresh from backend — ensures replies are current
         getForumPost(post.id, userId)
-            .then(data => { if (data?.success && data.post) { mutatePost(data.post); setSelectedPost(normalisePost(data.post)); } })
-            .catch(() => {});
+            .then(data => {
+                if (data?.success && data.post) {
+                    const fresh = normalisePost(data.post);
+                    mutatePost(fresh);
+                    setSelectedPost(fresh);
+                } else if (data?.post) {
+                    const fresh = normalisePost(data.post);
+                    mutatePost(fresh);
+                    setSelectedPost(fresh);
+                }
+            })
+            .catch(() => {})
+            .finally(() => setLoadingReplies(false));
     }
 
     function handleLike(post, e) {
@@ -381,11 +399,38 @@ export default function ForumPage() {
 
     async function handleReply() {
         if (!replyText.trim() || !selectedPost) return;
-        const tempReply = normaliseReply({ id:`reply_${Date.now()}`, user_id: userId, author: userName, author_role: currentUser?.role||"investor", content: replyText.trim(), time: new Date().toISOString(), likes: 0, isNew: true });
-        const next = normalisePost({ ...selectedPost, replies: [...(selectedPost.replies||[]), tempReply], reply_count: getReplyCount(selectedPost)+1 });
-        mutatePost(next);
+        const content = replyText.trim();
+        // Optimistic update — show reply immediately
+        const tempReply = normaliseReply({
+            id: `reply_${Date.now()}`,
+            user_id: userId,
+            author: userName,
+            author_role: currentUser?.role || "investor",
+            content,
+            time: new Date().toISOString(),
+            likes: 0,
+            isNew: true,
+        });
+        const optimistic = normalisePost({
+            ...selectedPost,
+            replies: [...(selectedPost.replies || []), tempReply],
+            reply_count: getReplyCount(selectedPost) + 1,
+        });
+        mutatePost(optimistic);
         setReplyText("");
-        try { const d = await replyForumPost(selectedPost.id, { user_id: userId, content: tempReply.content }); if (d?.post) mutatePost(d.post); } catch {}
+        try {
+            // Send only content — user_id comes from the auth token on the backend
+            const d = await replyForumPost(selectedPost.id, { content });
+            if (d?.post) {
+                // Backend returned the updated post with the persisted reply
+                mutatePost(d.post);
+                setSelectedPost(normalisePost(d.post));
+            } else if (d?.success === false) {
+                console.error("Reply failed:", d?.message);
+            }
+        } catch (err) {
+            console.error("Reply error:", err);
+        }
     }
 
     return (
@@ -411,6 +456,7 @@ export default function ForumPage() {
                         replyText={replyText}
                         setReplyText={setReplyText}
                         onReply={handleReply}
+                        loadingReplies={loadingReplies}
                     />
                 ) : (
                     <ForumHome
@@ -425,6 +471,8 @@ export default function ForumPage() {
                         filteredPosts={filteredPosts}
                         currentUser={currentUser}
                         userId={userId}
+                        isExpert={isExpert}
+                        navigate={navigate}
                         onShowCreate={() => setShowCreate(true)}
                         onOpenPost={openPost}
                         onLike={handleLike}
@@ -454,12 +502,13 @@ export default function ForumPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 function ForumHome({
     posts, loading, activeRoom, setActiveRoom, query, setQuery,
-    sort, setSort, filteredPosts, currentUser, userId, onShowCreate,
+    sort, setSort, filteredPosts, currentUser, userId, isExpert, navigate, onShowCreate,
     onOpenPost, onLike, onSave, onDelete, canDelete,
 }) {
     const recentPosts    = [...posts].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     const savedPosts     = posts.filter(p => p.saved_by_me);
     const myPosts        = posts.filter(p => p.user_id && p.user_id === userId);
+    const commentedPosts = posts.filter(p => p.commented_by_me);
     const likedPosts     = posts.filter(p => p.liked_by_me);
     const trendingPosts  = [...posts].sort((a,b) => (b.likes + b.views) - (a.likes + a.views)).slice(0, 3);
     const showHome       = !activeRoom && !query && sort === "";
@@ -469,10 +518,17 @@ function ForumHome({
             {/* ── Top bar ── */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
                 <div>
+                    {/* Back to community forum home — only shows when viewing a filtered/sorted view */}
+                    {(sort !== "" || activeRoom || query) && (
+                        <button onClick={() => { setSort(""); setActiveRoom(null); setQuery(""); }}
+                            style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:C.muted, background:"none", border:"none", cursor:"pointer", marginBottom:10, padding:0 }}>
+                            <ArrowLeft size={13}/> Back to Community Forum
+                        </button>
+                    )}
                     {activeRoom && (
-                        <button onClick={() => { setActiveRoom(null); setQuery(""); }}
+                        <button onClick={() => { setActiveRoom(null); setQuery(""); setSort(""); }}
                             style={{ display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:600, color:C.cyan, background:"none", border:"none", cursor:"pointer", marginBottom:6, padding:0 }}>
-                            <ArrowLeft size={15}/> Back to Forum
+                            <ArrowLeft size={15}/> All Topics
                         </button>
                     )}
                     <h1 style={{ fontSize:22, fontWeight:800, margin:0, color:C.text }}>
@@ -532,6 +588,7 @@ function ForumHome({
                     <option value="saved">My Saved</option>
                     <option value="liked">My Liked</option>
                     <option value="mine">My Posts</option>
+                    <option value="commented">Commented</option>
                 </select>
             </div>
 
@@ -559,7 +616,7 @@ function ForumHome({
                     )}
 
                     {/* ── My Activity ── */}
-                    {(savedPosts.length > 0 || likedPosts.length > 0 || myPosts.length > 0) && (
+                    {(savedPosts.length > 0 || likedPosts.length > 0 || myPosts.length > 0 || commentedPosts.length > 0) && (
                         <section style={{ marginBottom:32 }}>
                             <SectionHeader icon="👤" label="My Activity" />
                             <div style={{ display:"flex", gap:12 }}>
@@ -595,6 +652,17 @@ function ForumHome({
                                     <div style={{ fontSize:22, marginBottom:6 }}>📝</div>
                                     <div style={{ fontSize:20, fontWeight:800, color:C.text }}>{myPosts.length}</div>
                                     <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>My Posts</div>
+                                </button>
+                                <button onClick={() => setSort("commented")} style={{
+                                    flex:1, padding:"14px 18px", borderRadius:14,
+                                    background:C.card, border:`1px solid ${C.border}`,
+                                    cursor:"pointer", textAlign:"left", transition:"border-color 0.15s",
+                                }}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor="#34d399"}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                                    <div style={{ fontSize:22, marginBottom:6 }}>💬</div>
+                                    <div style={{ fontSize:20, fontWeight:800, color:C.text }}>{commentedPosts.length}</div>
+                                    <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Commented</div>
                                 </button>
                             </div>
                         </section>
@@ -671,16 +739,17 @@ function ForumHome({
                 ) : (
                     <>
                         {/* Section label for special sort modes */}
-                        {(sort === "saved" || sort === "liked" || sort === "popular" || sort === "replies" || sort === "mine" || sort === "latest") && !activeRoom && (
+                        {(sort === "saved" || sort === "liked" || sort === "popular" || sort === "replies" || sort === "mine" || sort === "commented" || sort === "latest") && !activeRoom && (
                             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
                                 <span style={{ fontSize:18 }}>
-                                    {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "popular" ? "🔥" : sort === "latest" ? "🕐" : "💬"}
+                                    {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "commented" ? "💬" : sort === "popular" ? "🔥" : sort === "latest" ? "🕐" : "💬"}
                                 </span>
                                 <span style={{ fontSize:16, fontWeight:700, color:C.text }}>
                                     {sort === "saved"   ? "My Saved Posts"
                                    : sort === "liked"   ? "Posts I Liked"
-                                   : sort === "mine"    ? "My Posts"
-                                   : sort === "popular" ? "Most Popular"
+                                   : sort === "mine"      ? "My Posts"
+                                   : sort === "commented" ? "Posts I Commented On"
+                                   : sort === "popular"   ? "Most Popular"
                                    : sort === "latest"  ? "Latest Posts"
                                    :                      "Most Replies"}
                                 </span>
@@ -704,12 +773,13 @@ function ForumHome({
                             {filteredPosts.length === 0 && (
                                 <div style={{ textAlign:"center", padding:60 }}>
                                     <div style={{ fontSize:40, marginBottom:12 }}>
-                                        {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : "📭"}
+                                        {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "commented" ? "💬" : "📭"}
                                     </div>
                                     <div style={{ color:C.muted, fontSize:14, marginBottom:8 }}>
                                         {sort === "saved" ? "You haven't saved any posts yet."
                                        : sort === "liked" ? "You haven't liked any posts yet."
-                                       : sort === "mine"  ? "You haven't posted anything yet."
+                                       : sort === "mine"        ? "You haven't posted anything yet."
+                                       : sort === "commented"   ? "You haven't commented on any posts yet."
                                        : "No posts found."}
                                     </div>
                                     {sort !== "saved" && sort !== "liked" && (
@@ -915,7 +985,7 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, canDele
 // ─────────────────────────────────────────────────────────────────────────────
 //  PostDetail
 // ─────────────────────────────────────────────────────────────────────────────
-function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDeleteReply, onEditReply, onEditPost, canDelete, canEdit, replyText, setReplyText, onReply }) {
+function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDeleteReply, onEditReply, onEditPost, canDelete, canEdit, replyText, setReplyText, onReply, loadingReplies }) {
     const replies = Array.isArray(post.replies) ? post.replies.map(normaliseReply) : [];
     const [editingId,      setEditingId]      = useState(null);
     const [editingText,    setEditingText]    = useState("");
@@ -1024,10 +1094,13 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
 
             {/* Comments section */}
             <div style={{ background:C.card, borderRadius:20, border:`1px solid ${C.border}`, overflow:"hidden" }}>
-                <div style={{ padding:"16px", borderBottom:`1px solid ${C.border}` }}>
+                <div style={{ padding:"16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                     <h2 style={{ fontSize:15, fontWeight:700, color:C.text, margin:0 }}>
                         Comments ({replies.length})
                     </h2>
+                    {loadingReplies && (
+                        <span style={{ fontSize:12, color:C.muted }}>Loading…</span>
+                    )}
                 </div>
 
                 {replies.length === 0 ? (
