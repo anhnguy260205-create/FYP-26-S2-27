@@ -191,6 +191,7 @@ app.add_middleware(
 
 # ── 1. Create brand-new tables ────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
+ensure_forum_schema(engine)
 
 # ── 2. Patch existing tables (MySQL-version-safe) ─────────────────────────────
 ensure_all_schemas(engine)
