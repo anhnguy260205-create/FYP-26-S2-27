@@ -40,6 +40,10 @@ function fmtSigned$(n) {
   return `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function Skeleton({ className, style }) {
+  return <div className={`animate-pulse rounded-lg bg-white/5 ${className ?? ""}`} style={style} />;
+}
+
 function PortfolioStatCard({ label, value, highlighted, valueColor }) {
   return (
     <div
@@ -80,7 +84,22 @@ function PortfolioSummarySection() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  if (!userId || loading) return null;
+  if (!userId) return null;
+
+  if (loading) {
+    return (
+      <section>
+        <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: "0 0 16px" }}>
+          Portfolio Summary
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} style={{ height: 76 }} />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   const holdings = portfolio?.holdings ?? [];
   const paperMoney = portfolio?.paper_money ?? 0;
@@ -128,7 +147,7 @@ function QuickActions() {
         <button
           key={label}
           onClick={() => navigate(to)}
-          className="flex flex-col items-center gap-2 rounded-2xl py-4 px-2 transition-colors hover:bg-white/5"
+          className="flex flex-col items-center gap-2 rounded-2xl py-4 px-2 cursor-pointer transition-all duration-200 hover:bg-white/5 hover:border-cyan-400/40 hover:-translate-y-0.5"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,211,243,0.1)" }}>
@@ -240,9 +259,11 @@ function WatchlistSection() {
           <span className="text-right">Trend (1D)</span>
         </div>
 
-        {loading && (
-          <div className="px-6 py-10 text-center text-sm text-gray-500">Loading watchlist…</div>
-        )}
+        {loading && Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="px-4 sm:px-6 py-3.5 border-b border-white/5">
+            <Skeleton style={{ height: 34 }} />
+          </div>
+        ))}
 
         {!loading && !userId && (
           <div className="px-6 py-10 text-center text-sm text-gray-500">Log in to see your watchlist.</div>
@@ -366,18 +387,28 @@ function PopularStocksSection() {
       <p className="text-xs text-gray-500 mb-4">Trending picks investors are watching right now</p>
 
       {loading ? (
-        <div className="px-6 py-10 text-center text-sm text-gray-500 rounded-xl border border-white/10">Loading popular stocks…</div>
-      ) : (
-        <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-          {POPULAR_SYMBOLS.map((symbol) => (
-            <PopularStockCard
-              key={symbol}
-              symbol={symbol}
-              snapshot={snapshots[symbol]}
-              candles={candles[symbol]}
-              onSelect={handleSelect}
-            />
+        <div className="flex gap-4 overflow-hidden pb-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="shrink-0" style={{ width: 200, height: 128, borderRadius: 16 }} />
           ))}
+        </div>
+      ) : (
+        <div className="relative">
+          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {POPULAR_SYMBOLS.map((symbol) => (
+              <PopularStockCard
+                key={symbol}
+                symbol={symbol}
+                snapshot={snapshots[symbol]}
+                candles={candles[symbol]}
+                onSelect={handleSelect}
+              />
+            ))}
+          </div>
+          <div
+            className="pointer-events-none absolute top-0 right-0 h-full w-12"
+            style={{ background: "linear-gradient(to right, transparent, rgba(8,15,35,0.9))" }}
+          />
         </div>
       )}
     </section>
