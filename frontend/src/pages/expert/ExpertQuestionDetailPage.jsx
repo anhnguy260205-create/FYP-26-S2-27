@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ArrowLeft, Send, Trash2, Pencil } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -54,6 +55,10 @@ function syncToCache(updatedQuestion) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {}
 }
+
+const PAGE_BG = "min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white";
+const CARD    = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" };
+const SUBCARD = { background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" };
 
 export default function ExpertQuestionDetailPage() {
     const { questionId } = useParams();
@@ -166,9 +171,9 @@ export default function ExpertQuestionDetailPage() {
 
     if (loading && !question) {
         return (
-            <div className="min-h-screen flex flex-col bg-slate-50">
+            <div className={PAGE_BG}>
                 <ConsultantHeader />
-                <main className="flex-1 flex items-center justify-center text-slate-400">Loading question…</main>
+                <main className="flex-1 flex items-center justify-center" style={{ color:"rgba(255,255,255,0.4)" }}>Loading question…</main>
                 <Footer />
             </div>
         );
@@ -176,11 +181,13 @@ export default function ExpertQuestionDetailPage() {
 
     if (!question) {
         return (
-            <div className="min-h-screen flex flex-col bg-slate-50">
+            <div className={PAGE_BG}>
                 <ConsultantHeader />
                 <main className="flex-1 flex flex-col items-center justify-center gap-4">
-                    <p className="text-slate-500">Question not found.</p>
-                    <button onClick={() => navigate("/expert/questions")} className="rounded-xl bg-cyan-600 px-4 py-2 text-white text-sm font-bold hover:bg-cyan-700">
+                    <p style={{ color:"rgba(255,255,255,0.5)" }}>Question not found.</p>
+                    <button onClick={() => navigate("/expert/questions")}
+                        className="rounded-xl px-4 py-2 text-sm font-bold transition-colors"
+                        style={{ background:"rgba(0,211,243,0.15)", border:"1px solid rgba(0,211,243,0.3)", color:"#22d3ee" }}>
                         Back to Questions
                     </button>
                 </main>
@@ -192,56 +199,60 @@ export default function ExpertQuestionDetailPage() {
     const hasReply = Boolean(question.reply_text?.trim());
 
     return (
-        <div className="min-h-screen flex flex-col bg-slate-50">
+        <motion.div className={PAGE_BG} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             <ConsultantHeader />
-            <main className="flex-1 p-8 max-w-4xl mx-auto w-full">
+            <main className="flex-1 p-4 md:p-7 max-w-4xl mx-auto w-full">
 
                 {/* Back */}
                 <button onClick={() => navigate("/expert/questions")}
-                    className="mb-6 flex items-center gap-2 text-sm font-semibold text-cyan-700 hover:text-cyan-900">
+                    className="mb-6 flex items-center gap-2 text-sm font-semibold transition-colors"
+                    style={{ color:"#22d3ee" }}>
                     <ArrowLeft size={16} /> Back to Questions
                 </button>
 
                 {/* Question card */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+                <div className="rounded-2xl p-6 mb-6" style={CARD}>
                     <div className="flex items-start justify-between flex-wrap gap-4 mb-4">
                         <div>
-                            <h1 className="text-xl font-bold text-slate-900 mb-1">{question.title}</h1>
-                            <p className="text-sm text-slate-500">
+                            <h1 className="text-xl font-bold mb-1" style={{ color:"#e2e8f0" }}>{question.title}</h1>
+                            <p className="text-sm" style={{ color:"rgba(255,255,255,0.45)" }}>
                                 From {question.investor_name} · {formatDate(question.submitted_at)}
                             </p>
                         </div>
                         <div className="flex gap-2 flex-wrap">
                             {(question.tickers || []).map((t) => (
-                                <span key={t} className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 border border-cyan-200">{t}</span>
+                                <span key={t} className="rounded-full px-3 py-1 text-xs font-bold"
+                                    style={{ background:"rgba(0,211,243,0.12)", color:"#22d3ee", border:"1px solid rgba(0,211,243,0.25)" }}>{t}</span>
                             ))}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 p-4 bg-slate-50 rounded-xl text-sm">
-                        <div><span className="text-slate-400 block text-xs">Type</span><span className="font-semibold text-slate-700">{question.question_type}</span></div>
-                        <div><span className="text-slate-400 block text-xs">Urgency</span><span className="font-semibold text-slate-700">{question.urgency}</span></div>
-                        <div><span className="text-slate-400 block text-xs">Risk Profile</span><span className="font-semibold text-slate-700">{question.risk_profile}</span></div>
-                        <div><span className="text-slate-400 block text-xs">Portfolio Value</span><span className="font-semibold text-slate-700">${Number(question.portfolio_value || 0).toLocaleString()}</span></div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 p-4 rounded-xl text-sm" style={SUBCARD}>
+                        <div><span className="block text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>Type</span><span className="font-semibold" style={{ color:"rgba(255,255,255,0.85)" }}>{question.question_type}</span></div>
+                        <div><span className="block text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>Urgency</span><span className="font-semibold" style={{ color:"rgba(255,255,255,0.85)" }}>{question.urgency}</span></div>
+                        <div><span className="block text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>Risk Profile</span><span className="font-semibold" style={{ color:"rgba(255,255,255,0.85)" }}>{question.risk_profile}</span></div>
+                        <div><span className="block text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>Portfolio Value</span><span className="font-semibold" style={{ color:"rgba(255,255,255,0.85)" }}>${Number(question.portfolio_value || 0).toLocaleString()}</span></div>
                     </div>
 
-                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">{question.content}</p>
+                    <p className="leading-relaxed whitespace-pre-line" style={{ color:"rgba(255,255,255,0.75)" }}>{question.content}</p>
                 </div>
 
                 {/* Reply section */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="rounded-2xl p-6" style={CARD}>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-bold text-slate-900">
+                        <h2 className="text-base font-bold" style={{ color:"#e2e8f0" }}>
                             {hasReply ? "Your Reply" : "Write a Reply"}
                         </h2>
                         {hasReply && !editingReply && (
                             <div className="flex gap-2">
                                 <button onClick={() => setEditingReply(true)}
-                                    className="flex items-center gap-1 text-xs font-semibold text-cyan-700 hover:text-cyan-900 px-3 py-1.5 rounded-lg border border-cyan-200 hover:bg-cyan-50">
+                                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                                    style={{ color:"#22d3ee", border:"1px solid rgba(0,211,243,0.25)", background:"rgba(0,211,243,0.06)" }}>
                                     <Pencil size={12} /> Edit
                                 </button>
                                 <button onClick={handleDeleteReply} disabled={submitting}
-                                    className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-800 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50">
+                                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                                    style={{ color:"#f87171", border:"1px solid rgba(248,113,113,0.25)", background:"rgba(248,113,113,0.06)" }}>
                                     <Trash2 size={12} /> Delete
                                 </button>
                             </div>
@@ -250,12 +261,12 @@ export default function ExpertQuestionDetailPage() {
 
                     {/* Show saved reply */}
                     {hasReply && !editingReply ? (
-                        <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
-                            <div className="text-xs text-cyan-600 font-semibold mb-2">
+                        <div className="rounded-xl p-4" style={{ background:"rgba(0,211,243,0.06)", border:"1px solid rgba(0,211,243,0.2)" }}>
+                            <div className="text-xs font-semibold mb-2" style={{ color:"#22d3ee" }}>
                                 Answered by {consultantName}
                                 {question.answered_at && ` · ${formatDate(question.answered_at)}`}
                             </div>
-                            <p className="text-slate-700 leading-relaxed whitespace-pre-line">{question.reply_text}</p>
+                            <p className="leading-relaxed whitespace-pre-line" style={{ color:"rgba(255,255,255,0.8)" }}>{question.reply_text}</p>
                         </div>
                     ) : (
                         /* Reply textarea */
@@ -265,17 +276,20 @@ export default function ExpertQuestionDetailPage() {
                                 onChange={(e) => setReply(e.target.value)}
                                 rows={8}
                                 placeholder="Write your expert reply here…"
-                                className="w-full rounded-xl border border-slate-200 p-4 text-sm outline-none focus:border-cyan-400 resize-y"
+                                className="w-full rounded-xl p-4 text-sm outline-none resize-y"
+                                style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", color:"#e2e8f0" }}
                             />
                             <div className="flex gap-3 mt-3 justify-end">
                                 {editingReply && hasReply && (
                                     <button onClick={() => { setReply(question.reply_text); setEditingReply(false); }}
-                                        className="px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
+                                        className="px-4 py-2 rounded-xl text-sm transition-colors"
+                                        style={{ border:"1px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.6)", background:"rgba(255,255,255,0.03)" }}>
                                         Cancel
                                     </button>
                                 )}
                                 <button onClick={handleSubmit} disabled={submitting || !reply.trim()}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-600 text-white text-sm font-bold hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{ background:"linear-gradient(135deg,#0092b8,#155dfc)", color:"white" }}>
                                     <Send size={14} />
                                     {submitting ? "Saving…" : hasReply ? "Update Reply" : "Submit Reply"}
                                 </button>
@@ -284,17 +298,17 @@ export default function ExpertQuestionDetailPage() {
                     )}
 
                     {message && (
-                        <div className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
-                            message.type === "success" ? "bg-green-50 text-green-700 border border-green-200"
-                          : message.type === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                          : "bg-red-50 text-red-700 border border-red-200"
-                        }`}>
+                        <div className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={
+                            message.type === "success" ? { background:"rgba(52,211,153,0.1)", color:"#34d399", border:"1px solid rgba(52,211,153,0.25)" }
+                          : message.type === "warning" ? { background:"rgba(251,191,36,0.1)", color:"#fbbf24", border:"1px solid rgba(251,191,36,0.25)" }
+                          :                               { background:"rgba(248,113,113,0.1)", color:"#f87171", border:"1px solid rgba(248,113,113,0.25)" }
+                        }>
                             {message.text}
                         </div>
                     )}
                 </div>
             </main>
             <Footer />
-        </div>
+        </motion.div>
     );
 }

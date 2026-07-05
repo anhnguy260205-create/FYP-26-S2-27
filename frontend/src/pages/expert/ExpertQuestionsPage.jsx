@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Eye } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -28,14 +29,14 @@ function formatDate(value) {
     });
 }
 
-function urgencyClass(u) {
-    if (u === "High")   return "border-red-200 bg-red-50 text-red-700";
-    if (u === "Medium") return "border-yellow-200 bg-yellow-50 text-yellow-700";
-    return "border-green-200 bg-green-50 text-green-700";
+function urgencyStyle(u) {
+    if (u === "High")   return { background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.3)" };
+    if (u === "Medium") return { background:"rgba(251,191,36,0.12)",  color:"#fbbf24", border:"1px solid rgba(251,191,36,0.3)" };
+    return                     { background:"rgba(52,211,153,0.12)",  color:"#34d399", border:"1px solid rgba(52,211,153,0.3)" };
 }
-function statusClass(s) {
-    if (s === "Answered") return "border-green-200 bg-green-50 text-green-700";
-    return "border-slate-200 bg-slate-50 text-slate-700";
+function statusStyle(s) {
+    if (s === "Answered") return { background:"rgba(52,211,153,0.12)", color:"#34d399", border:"1px solid rgba(52,211,153,0.3)" };
+    return                       { background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.5)", border:"1px solid rgba(255,255,255,0.1)" };
 }
 
 export default function ExpertQuestionsPage() {
@@ -77,41 +78,38 @@ export default function ExpertQuestionsPage() {
         return matchFilter && matchQuery;
     });
 
-    const S = {
-        bg:     "#0d1526",
-        card:   "#161f38",
-        card2:  "#1e2740",
-        border: "rgba(255,255,255,0.08)",
-        accent: "#378ADD",
-        muted:  "#8b92a8",
-        text:   "#e2e8f0",
-        sub:    "rgba(255,255,255,0.55)",
-    };
-
     return (
-        <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", background: S.bg, color: S.text }}>
+        <motion.div
+            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+        >
             <ConsultantHeader />
-            <main style={{ flex:1, padding:"32px 40px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box" }}>
+            <main className="flex-1 p-4 md:p-7 max-w-6xl mx-auto w-full">
 
                 {/* Header */}
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, marginBottom:28 }}>
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-7">
                     <div>
-                        <h1 style={{ fontSize:24, fontWeight:800, margin:0, color: S.text }}>Investor Questions</h1>
-                        <p style={{ fontSize:13, color: S.muted, marginTop:4 }}>
+                        <h1 style={{ fontFamily:"'DM Mono', monospace", fontSize:26, fontWeight:700, letterSpacing:"0.02em", color:"#e2e8f0", margin:0 }}>
+                            Investor Questions
+                        </h1>
+                        <p style={{ marginTop:6, fontSize:13, color:"rgba(255,255,255,0.45)" }}>
                             {questions.length} question{questions.length !== 1 ? "s" : ""} assigned to you
                         </p>
                     </div>
-                    <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                    <div className="flex gap-2.5 flex-wrap">
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search questions…"
-                            style={{ padding:"9px 14px", borderRadius:10, border:`1px solid ${S.border}`, background: S.card, color: S.text, fontSize:13, outline:"none", width:200 }}
+                            className="w-52"
+                            style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none" }}
                         />
                         <select
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
-                            style={{ padding:"9px 14px", borderRadius:10, border:`1px solid ${S.border}`, background: S.card, color: S.text, fontSize:13, outline:"none", cursor:"pointer" }}
+                            style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none", cursor:"pointer" }}
                         >
                             <option value="All">All</option>
                             <option value="Pending">Pending</option>
@@ -121,18 +119,18 @@ export default function ExpertQuestionsPage() {
                 </div>
 
                 {loading && questions.length === 0 ? (
-                    <div style={{ textAlign:"center", padding:60, color: S.muted }}>Loading questions…</div>
+                    <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>Loading questions…</div>
                 ) : filtered.length === 0 ? (
-                    <div style={{ textAlign:"center", padding:60, color: S.muted }}>
+                    <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>
                         {questions.length === 0 ? "No questions assigned yet." : "No questions match your search."}
                     </div>
                 ) : (
-                    <div style={{ background: S.card, border:`1px solid ${S.border}`, borderRadius:18, overflow:"hidden" }}>
-                        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <div className="rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                        <table className="w-full text-sm border-collapse">
                             <thead>
-                                <tr style={{ background: S.card2, borderBottom:`1px solid ${S.border}` }}>
+                                <tr style={{ background:"rgba(255,255,255,0.03)", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
                                     {["Title", "Type", "Tickers", "Investor", "Urgency", "Status", "Submitted", ""].map((h) => (
-                                        <th key={h} style={{ padding:"12px 16px", textAlign:"left", fontSize:11, fontWeight:700, color: S.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide" style={{ color:"rgba(255,255,255,0.45)" }}>
                                             {h}
                                         </th>
                                     ))}
@@ -141,43 +139,37 @@ export default function ExpertQuestionsPage() {
                             <tbody>
                                 {filtered.map((q, i) => (
                                     <tr key={q.id}
-                                        style={{ borderTop: i === 0 ? "none" : `1px solid ${S.border}`, transition:"background 0.15s", cursor:"pointer" }}
-                                        onMouseEnter={e => e.currentTarget.style.background = S.card2}
+                                        className="cursor-pointer transition-colors"
+                                        style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}
+                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
                                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                                     >
-                                        <td style={{ padding:"14px 16px", fontWeight:700, color: S.text, maxWidth:240 }}>
-                                            <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{q.title}</div>
+                                        <td className="px-4 py-3.5 font-semibold max-w-60" style={{ color:"#e2e8f0" }}>
+                                            <div className="truncate">{q.title}</div>
                                         </td>
-                                        <td style={{ padding:"14px 16px", color: S.sub }}>{q.question_type}</td>
-                                        <td style={{ padding:"14px 16px" }}>
-                                            <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                                        <td className="px-4 py-3.5" style={{ color:"rgba(255,255,255,0.6)" }}>{q.question_type}</td>
+                                        <td className="px-4 py-3.5">
+                                            <div className="flex flex-wrap gap-1">
                                                 {(q.tickers || []).map((t) => (
-                                                    <span key={t} style={{ padding:"2px 8px", borderRadius:20, fontSize:11, fontWeight:700, background:"rgba(55,138,221,0.15)", color: S.accent, border:"1px solid rgba(55,138,221,0.25)" }}>{t}</span>
+                                                    <span key={t} className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background:"rgba(0,211,243,0.12)", color:"#22d3ee", border:"1px solid rgba(0,211,243,0.25)" }}>{t}</span>
                                                 ))}
                                             </div>
                                         </td>
-                                        <td style={{ padding:"14px 16px", color: S.sub }}>{q.investor_name}</td>
-                                        <td style={{ padding:"14px 16px" }}>
-                                            <span style={{ padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700,
-                                                background: q.urgency==="High" ? "rgba(248,113,113,0.12)" : q.urgency==="Medium" ? "rgba(251,191,36,0.12)" : "rgba(52,214,140,0.12)",
-                                                color:      q.urgency==="High" ? "#f87171"              : q.urgency==="Medium" ? "#fbbf24"               : "#34d68c",
-                                                border:     q.urgency==="High" ? "1px solid rgba(248,113,113,0.3)" : q.urgency==="Medium" ? "1px solid rgba(251,191,36,0.3)" : "1px solid rgba(52,214,140,0.3)",
-                                            }}>{q.urgency}</span>
+                                        <td className="px-4 py-3.5" style={{ color:"rgba(255,255,255,0.6)" }}>{q.investor_name}</td>
+                                        <td className="px-4 py-3.5">
+                                            <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={urgencyStyle(q.urgency)}>{q.urgency}</span>
                                         </td>
-                                        <td style={{ padding:"14px 16px" }}>
-                                            <span style={{ padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700,
-                                                background: q.status==="Answered" ? "rgba(52,214,140,0.12)" : "rgba(255,255,255,0.06)",
-                                                color:      q.status==="Answered" ? "#34d68c"               : S.muted,
-                                                border:     q.status==="Answered" ? "1px solid rgba(52,214,140,0.3)" : `1px solid ${S.border}`,
-                                            }}>{q.status}</span>
+                                        <td className="px-4 py-3.5">
+                                            <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={statusStyle(q.status)}>{q.status}</span>
                                         </td>
-                                        <td style={{ padding:"14px 16px", color: S.muted, fontSize:12 }}>{formatDate(q.submitted_at)}</td>
-                                        <td style={{ padding:"14px 16px" }}>
+                                        <td className="px-4 py-3.5 text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>{formatDate(q.submitted_at)}</td>
+                                        <td className="px-4 py-3.5">
                                             <button
                                                 onClick={() => navigate(`/expert/question/${q.id}`)}
-                                                style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:10, background:"rgba(55,138,221,0.15)", border:"1px solid rgba(55,138,221,0.3)", color: S.accent, fontSize:12, fontWeight:700, cursor:"pointer", transition:"background 0.15s" }}
-                                                onMouseEnter={e => e.currentTarget.style.background="rgba(55,138,221,0.28)"}
-                                                onMouseLeave={e => e.currentTarget.style.background="rgba(55,138,221,0.15)"}
+                                                className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors"
+                                                style={{ background:"rgba(0,211,243,0.12)", border:"1px solid rgba(0,211,243,0.25)", color:"#22d3ee" }}
+                                                onMouseEnter={e => e.currentTarget.style.background="rgba(0,211,243,0.22)"}
+                                                onMouseLeave={e => e.currentTarget.style.background="rgba(0,211,243,0.12)"}
                                             >
                                                 <Eye size={13} /> View
                                             </button>
@@ -190,6 +182,6 @@ export default function ExpertQuestionsPage() {
                 )}
             </main>
             <Footer />
-        </div>
+        </motion.div>
     );
 }

@@ -677,29 +677,28 @@ function MessageBubble({ msg }) {
             }}>
                 {msg.content}
                 {!isUser && msg.cta?.route && msg.cta?.label && (
-                    <button
-                        type="button"
-                        onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
-                        style={{
-                            marginTop: "12px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "7px",
-                            padding: "8px 11px",
-                            borderRadius: "10px",
-                            background: "linear-gradient(135deg,#155dfc,#0092b8)",
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            color: "white",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            whiteSpace: "normal",
-                            maxWidth: "100%",
-                            textAlign: "left",
-                            cursor: "pointer",
-                        }}
-                    >
-                        {msg.cta.label}
-                    </button>
+                    <div style={{ marginTop: "10px" }}>
+                        <button
+                            type="button"
+                            onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "7px",
+                                padding: "8px 14px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                color: "white",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                width: "fit-content",
+                            }}
+                        >
+                            {msg.cta.label}
+                        </button>
+                    </div>
                 )}
             </div>
             {isUser && (
