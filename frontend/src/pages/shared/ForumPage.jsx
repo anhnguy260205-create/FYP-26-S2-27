@@ -615,9 +615,8 @@ function ForumHome({
                         </section>
                     )}
 
-                    {/* ── My Activity ── */}
-                    {(savedPosts.length > 0 || likedPosts.length > 0 || myPosts.length > 0 || commentedPosts.length > 0) && (
-                        <section style={{ marginBottom:32 }}>
+                    {/* ── My Activity — always shown, even with 0 counts ── */}
+                    <section style={{ marginBottom:32 }}>
                             <SectionHeader icon="👤" label="My Activity" />
                             <div style={{ display:"flex", gap:12 }}>
                                 <button onClick={() => setSort("saved")} style={{
@@ -665,8 +664,7 @@ function ForumHome({
                                     <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>Commented</div>
                                 </button>
                             </div>
-                        </section>
-                    )}
+                    </section>
 
                     {/* ── Topic rooms grid ── */}
                     <section style={{ marginBottom:32 }}>
@@ -1096,14 +1094,18 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
             <div style={{ background:C.card, borderRadius:20, border:`1px solid ${C.border}`, overflow:"hidden" }}>
                 <div style={{ padding:"16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                     <h2 style={{ fontSize:15, fontWeight:700, color:C.text, margin:0 }}>
-                        Comments ({replies.length})
+                        {loadingReplies ? "Comments" : `Comments (${replies.length})`}
                     </h2>
                     {loadingReplies && (
                         <span style={{ fontSize:12, color:C.muted }}>Loading…</span>
                     )}
                 </div>
 
-                {replies.length === 0 ? (
+                {loadingReplies ? (
+                    <div style={{ padding:32, textAlign:"center", color:C.muted, fontSize:13 }}>
+                        Loading comments…
+                    </div>
+                ) : replies.length === 0 ? (
                     <div style={{ padding:32, textAlign:"center", color:C.muted, fontSize:13 }}>
                         No comments yet. Be the first to reply!
                     </div>
