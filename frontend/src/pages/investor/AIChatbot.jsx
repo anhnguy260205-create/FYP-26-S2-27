@@ -16,6 +16,7 @@ const API_BASE = "http://127.0.0.1:8000";
 const CHAT_STORAGE_VERSION = "chatbot-session-reset-v2";
 const CHAT_VERSION_KEY = "rocketTradeAiChatVersion";
 const CHAT_ACTIVE_USER_KEY = "rocketTradeAiChatActiveUser";
+const BASIC_QUESTION_LIMIT = 4;
 
 const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
 const COMPANY_NAMES = {
@@ -32,6 +33,77 @@ const QUICK_PROMPTS = [
     { label: "How do I read a candlestick chart?", icon: <BarChart3 size={14} /> },
     { label: "What is market capitalisation?", icon: <Brain size={14} /> },
 ];
+
+// ── Follow-up suggestion rules ────────────────────────────────────────────────
+// Each rule has a priority score — higher = matched first when multiple rules fire.
+// This prevents vague keywords like "market" from overriding specific ones like "alibaba".
+const FOLLOW_UP_MAP = [
+    // Specific companies — check first (priority 10)
+    { priority: 10, keywords: ["alibaba","baba","lazada","taobao"],  suggestions: ["How does Alibaba make money?", "How does BABA compare to Amazon?", "What is Alibaba's main risk in China?"] },
+    { priority: 10, keywords: ["nvda","nvidia"],                     suggestions: ["What sector is NVIDIA in?", "How does NVDA compare to AMD?", "What drives NVIDIA's revenue?"] },
+    { priority: 10, keywords: ["aapl","apple","iphone"],             suggestions: ["What is Apple's main revenue driver?", "How does Apple's P/E compare to the sector?", "What is Apple's services segment?"] },
+    { priority: 10, keywords: ["msft","microsoft","azure"],          suggestions: ["How does Azure affect Microsoft's earnings?", "What is Microsoft's dividend history?", "How does Microsoft compare to Google Cloud?"] },
+    { priority: 10, keywords: ["amzn","amazon","aws"],               suggestions: ["What is AWS and why does it matter for Amazon?", "How does Amazon make money outside e-commerce?", "What is Amazon's P/E ratio?"] },
+    { priority: 10, keywords: ["tsla","tesla"],                      suggestions: ["What drives Tesla's revenue?", "How does Tesla compare to other EV makers?", "What is Tesla's gross margin trend?"] },
+    { priority: 10, keywords: ["meta","facebook","instagram"],       suggestions: ["What is Meta's main revenue source?", "How does Meta's ad platform work?", "What is Meta's P/E ratio?"] },
+    { priority: 10, keywords: ["googl","google","alphabet"],         suggestions: ["What is Google's main business?", "How does Google Cloud compare to AWS?", "What is Alphabet's revenue breakdown?"] },
+    { priority: 10, keywords: ["jd","jd.com","pinduoduo","pdd"],     suggestions: ["How does JD.com compare to Alibaba?", "What is Pinduoduo's business model?", "What are risks of investing in Chinese e-commerce?"] },
+    { priority: 10, keywords: ["dbs","uob","ocbc","singapore bank"], suggestions: ["What drives Singapore bank profits?", "How does SIBOR affect Singapore banks?", "What is DBS's dividend yield?"] },
+
+    // Technical indicators (priority 8)
+    { priority: 8, keywords: ["rsi","relative strength index"],      suggestions: ["How do I spot RSI divergence?", "What RSI level means overbought?", "How does RSI combine with MACD?"] },
+    { priority: 8, keywords: ["macd","moving average convergence"],  suggestions: ["What is a MACD crossover signal?", "How do I combine MACD with RSI?", "What timeframe is best for MACD?"] },
+    { priority: 8, keywords: ["candlestick","doji","hammer","engulf","candle pattern"], suggestions: ["What is a bullish engulfing pattern?", "How do I spot a doji candle?", "What does a hammer candle signal?"] },
+    { priority: 8, keywords: ["bollinger band","bollinger"],         suggestions: ["What is a Bollinger Band squeeze?", "How do I trade Bollinger Band breakouts?", "How do Bollinger Bands relate to volatility?"] },
+    { priority: 8, keywords: ["support","resistance","key level"],   suggestions: ["How do I draw support and resistance?", "What happens when support breaks?", "How do I find key price levels?"] },
+    { priority: 8, keywords: ["moving average","sma","ema","50-day","200-day"], suggestions: ["What is a golden cross in stocks?", "What is the 200-day moving average?", "How do I use moving averages to find trends?"] },
+
+    // Concepts (priority 5)
+    { priority: 5, keywords: ["e-commerce","ecommerce","online retail"], suggestions: ["How do I compare e-commerce companies?", "What metrics matter for e-commerce stocks?", "How does logistics affect e-commerce margins?"] },
+    { priority: 5, keywords: ["portfolio","diversif","allocation"],  suggestions: ["What is a good portfolio split for beginners?", "How many stocks should I hold?", "What is portfolio rebalancing?"] },
+    { priority: 5, keywords: ["p/e ratio","price to earnings","valuation","pe ratio"], suggestions: ["What is a good P/E ratio?", "How does P/E compare to P/B?", "What is the PEG ratio?"] },
+    { priority: 5, keywords: ["dividend","yield","income"],          suggestions: ["How is dividend yield calculated?", "What is a dividend payout ratio?", "What are the best dividend sectors?"] },
+    { priority: 5, keywords: ["stop loss","stop-loss","risk management"], suggestions: ["How do I set a stop loss?", "What is a trailing stop loss?", "What is the 2% risk rule?"] },
+    { priority: 5, keywords: ["etf","index fund","passive invest"],  suggestions: ["What is the difference between ETF and mutual fund?", "What is the S&P 500?", "How do I start with index funds?"] },
+    { priority: 5, keywords: ["earnings","revenue","eps","quarterly"], suggestions: ["What is EPS in stocks?", "How do I read an earnings report?", "What is free cash flow?"] },
+    { priority: 5, keywords: ["short selling","short squeeze","shorting"], suggestions: ["How does short selling work?", "What is a short squeeze?", "What are the risks of shorting?"] },
+    { priority: 5, keywords: ["crypto","bitcoin","btc","ethereum"],  suggestions: ["How is Bitcoin different from stocks?", "What is market cap in crypto?", "What causes crypto volatility?"] },
+
+    // General market (priority 2 — matched last so specific topics win)
+    { priority: 2, keywords: ["bull market","bear market"],          suggestions: ["How long do bear markets last on average?", "What sectors outperform in a bull market?", "How do I protect my portfolio in a downturn?"] },
+    { priority: 2, keywords: ["technical analysis","chart pattern"],  suggestions: ["What is a head and shoulders pattern?", "How do I identify a breakout?", "What is a trend line?"] },
+    { priority: 2, keywords: ["fundamental analysis","balance sheet"], suggestions: ["What is EPS?", "How do I read a balance sheet?", "What is free cash flow?"] },
+];
+
+const DEFAULT_FOLLOW_UPS = [
+    "What is a good stock for beginners?",
+    "How do I start building a portfolio?",
+    "What is the difference between stocks and ETFs?",
+];
+
+function getFollowUps(messages) {
+    // Only look at the single most recent AI reply
+    const lastAI = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAI?.content) return DEFAULT_FOLLOW_UPS;
+    const text = lastAI.content.toLowerCase();
+
+    // Score every rule that matches, then pick the highest-priority one
+    let bestMatch = null;
+    let bestPriority = -1;
+
+    for (const rule of FOLLOW_UP_MAP) {
+        const hits = rule.keywords.filter(k => text.includes(k)).length;
+        if (hits > 0) {
+            const score = rule.priority * 100 + hits;
+            if (score > bestPriority) {
+                bestPriority = score;
+                bestMatch = rule;
+            }
+        }
+    }
+
+    return bestMatch ? bestMatch.suggestions.slice(0, 3) : DEFAULT_FOLLOW_UPS;
+}
 
 
 const STOCK_NAME_ALIASES = {
@@ -605,29 +677,28 @@ function MessageBubble({ msg }) {
             }}>
                 {msg.content}
                 {!isUser && msg.cta?.route && msg.cta?.label && (
-                    <button
-                        type="button"
-                        onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
-                        style={{
-                            marginTop: "12px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "7px",
-                            padding: "8px 11px",
-                            borderRadius: "10px",
-                            background: "linear-gradient(135deg,#155dfc,#0092b8)",
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            color: "white",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            whiteSpace: "normal",
-                            maxWidth: "100%",
-                            textAlign: "left",
-                            cursor: "pointer",
-                        }}
-                    >
-                        {msg.cta.label}
-                    </button>
+                    <div style={{ marginTop: "10px" }}>
+                        <button
+                            type="button"
+                            onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "7px",
+                                padding: "8px 14px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                color: "white",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                width: "fit-content",
+                            }}
+                        >
+                            {msg.cta.label}
+                        </button>
+                    </div>
                 )}
             </div>
             {isUser && (
@@ -655,6 +726,9 @@ function AIChatbot() {
     const abortRef = useRef(null);
 
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const isPremium = currentUser?.subscription_status === "premium"
+        || currentUser?.investor_subscription_status === "premium"
+        || currentUser?.subscription_status === "active";
     const chatStorageKey = getChatStorageKey(currentUser);
     const activeUserKey = currentUser?.user_id || currentUser?.id || currentUser?.username || currentUser?.email || "guest";
 
@@ -680,6 +754,12 @@ function AIChatbot() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showScroll, setShowScroll] = useState(false);
+    const [basicQuestionCount, setBasicQuestionCount] = useState(() => {
+        try {
+            const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
+            return parseInt(sessionStorage.getItem(key) || "0", 10);
+        } catch { return 0; }
+    });
 
     // Save the chat for the current logged-in browser session so users can leave the page,
     // refresh, or visit the dashboard and still come back to the same chat.
@@ -714,6 +794,11 @@ function AIChatbot() {
             return;
         }
 
+        // Basic user: block after limit
+        if (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT) {
+            return;
+        }
+
         setInput("");
         setError(null);
 
@@ -721,6 +806,15 @@ function AIChatbot() {
         const nextMessages = [...messages, userMsg];
         setMessages(nextMessages);
         setLoading(true);
+
+        if (!isPremium) {
+            const newCount = basicQuestionCount + 1;
+            setBasicQuestionCount(newCount);
+            try {
+                const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
+                sessionStorage.setItem(key, String(newCount));
+            } catch {}
+        }
 
         const localReply = isInvestmentPickQuestion(trimmed)
             ? buildInvestmentFrameworkReply()
@@ -890,7 +984,7 @@ function AIChatbot() {
                                     {QUICK_PROMPTS.map(({ label, icon }) => (
                                         <button key={label}
                                             onClick={() => sendMessage(label)}
-                                            disabled={loading}
+                                            disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
                                             style={{
                                                 padding: "9px 10px", borderRadius: "10px", textAlign: "left",
                                                 background: "rgba(255,255,255,0.03)",
@@ -909,32 +1003,41 @@ function AIChatbot() {
                                 </div>
                             </div>
 
-                            {/* Topics */}
+                            {/* Dynamic follow-up suggestions */}
                             <div style={{ marginTop: "auto" }}>
-                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>TOPICS</p>
-                                {[
-                                    { icon: <TrendingUp size={13} />, label: "Stock Analysis" },
-                                    { icon: <Brain size={13} />, label: "AI & Predictions" },
-                                    { icon: <BarChart3 size={13} />, label: "Technical Analysis" },
-                                    { icon: <MessageSquare size={13} />, label: "Investing Basics" },
-                                ].map(({ icon, label }) => (
-                                    <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
-                                        {icon}{label}
-                                    </div>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED FOLLOW-UPS</p>
+                                {getFollowUps(messages).map((prompt) => (
+                                    <button key={prompt} onClick={() => sendMessage(prompt)}
+                                        disabled={!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT}
+                                        style={{
+                                            display: "flex", alignItems: "flex-start", gap: "7px",
+                                            padding: "6px 0", fontSize: "11.5px", lineHeight: "1.4",
+                                            color: "rgba(255,255,255,0.55)", background: "none",
+                                            border: "none", cursor: "pointer", width: "100%",
+                                            textAlign: "left", transition: "color 0.15s",
+                                        }}
+                                        onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.color = "white"; }}
+                                        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
+                                    >
+                                        <span style={{ color: "rgba(55,138,221,0.7)", marginTop: "1px", flexShrink: 0 }}>›</span>
+                                        {prompt}
+                                    </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* End chat */}
-                        <button onClick={endChat}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "3px", flexShrink: 0,
-                                padding: "8px 12px", borderRadius: "10px", fontSize: "12px",
-                                background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
-                                color: "rgba(248,113,113,0.8)", cursor: "pointer",
-                            }}>
-                            <Trash2 size={13} /> End chat
-                        </button>
+                        {/* End chat — premium only */}
+                        {isPremium && (
+                            <button onClick={endChat}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "3px", flexShrink: 0,
+                                    padding: "8px 12px", borderRadius: "10px", fontSize: "12px",
+                                    background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
+                                    color: "rgba(248,113,113,0.8)", cursor: "pointer",
+                                }}>
+                                <Trash2 size={13} /> End chat
+                            </button>
+                        )}
                     </div>
 
                     {/* ── CHAT AREA ── */}
@@ -965,10 +1068,12 @@ function AIChatbot() {
                                     Ask about stocks, market trends, technical analysis, and more
                                 </p>
                             </div>
-                            <button onClick={endChat} title="End chat"
-                                style={{ padding: "8px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
-                                <RefreshCw size={15} />
-                            </button>
+                            {isPremium && (
+                                <button onClick={endChat} title="End chat"
+                                    style={{ padding: "8px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
+                                    <RefreshCw size={15} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Messages */}
@@ -1034,6 +1139,41 @@ function AIChatbot() {
                             )}
                         </AnimatePresence>
 
+                        {/* Basic user upgrade wall */}
+                        {!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT && (
+                            <div style={{
+                                margin: "0 20px 12px",
+                                padding: "20px",
+                                borderRadius: 16,
+                                background: "linear-gradient(135deg,rgba(21,93,252,0.15),rgba(0,146,184,0.1))",
+                                border: "1px solid rgba(21,93,252,0.3)",
+                                textAlign: "center",
+                            }}>
+                                <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
+                                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6, color: "white" }}>
+                                    You have used all {BASIC_QUESTION_LIMIT} free questions
+                                </div>
+                                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 14 }}>
+                                    Upgrade to Premium for unlimited AI chat, advanced predictions, expert portfolios, and more.
+                                </div>
+                                <button
+                                    onClick={() => navigate("/investor/subscription")}
+                                    style={{
+                                        padding: "10px 24px", borderRadius: 50,
+                                        background: "linear-gradient(135deg,#155dfc,#0092b8)",
+                                        border: "none", color: "white", fontWeight: 700,
+                                        fontSize: 14, cursor: "pointer",
+                                        boxShadow: "0 4px 16px rgba(21,93,252,0.4)",
+                                    }}
+                                >
+                                    Upgrade to Premium →
+                                </button>
+                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
+                                    Your {BASIC_QUESTION_LIMIT} messages above are still visible
+                                </div>
+                            </div>
+                        )}
+
                         {/* Input */}
                         <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                             <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
@@ -1042,7 +1182,7 @@ function AIChatbot() {
                                     value={input}
                                     onChange={e => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    disabled={loading}
+                                    disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
                                     placeholder="Ask about a stock, indicator, strategy… (Enter to send, Shift+Enter for newline)"
                                     rows={1}
                                     style={{
@@ -1062,10 +1202,10 @@ function AIChatbot() {
                                 />
                                 <button
                                     onClick={() => sendMessage()}
-                                    disabled={loading || !input.trim()}
+                                    disabled={loading || !input.trim() || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
                                     style={{
                                         width: 46, height: 46, borderRadius: "12px",
-                                        background: loading || !input.trim()
+                                        background: loading || !input.trim() || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)
                                             ? "rgba(255,255,255,0.08)"
                                             : "linear-gradient(135deg,#155dfc,#0092b8)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -1081,7 +1221,7 @@ function AIChatbot() {
                                 </button>
                             </div>
                             <p style={{ textAlign: "center", marginTop: "8px", fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>
-                                For educational purposes only · Not financial advice · Powered by RocketTrade AI
+                                {!isPremium ? `${Math.min(basicQuestionCount, BASIC_QUESTION_LIMIT)}/${BASIC_QUESTION_LIMIT} free questions · ` : ""}For educational purposes only · Not financial advice · Powered by RocketTrade AI
                             </p>
                         </div>
                     </div>
