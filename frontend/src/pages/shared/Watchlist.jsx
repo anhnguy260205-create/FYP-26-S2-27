@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useCallback, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -44,6 +45,8 @@ export default function Watchlist() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+    const role = String(currentUser?.role || "").toLowerCase();
+    const isExpert = role === "expert";
 
     const { stocks: liveStocks, candles } = useLiveStocks();
 
@@ -94,7 +97,7 @@ export default function Watchlist() {
     }, [userId]);
     const navigate = useNavigate();
     const handleSelect = useCallback((symbol) => {
-        navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+        navigate(`/realtimedashboard/astockdashboard/${symbol}`);
     }, [navigate]);
     const rows = symbols.map(sym => {
         const live = liveStocks[sym];
@@ -109,13 +112,12 @@ export default function Watchlist() {
             : [50, 50, 50, 50, 50, 50, 50, 50];
         return { sym, price, change, percent, positive, spark };
     });
-
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <GeneralHeader />
+            {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
 
-            <main className="flex-1 p-4 md:p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">

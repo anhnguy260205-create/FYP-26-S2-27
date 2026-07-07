@@ -124,10 +124,10 @@ function GeneralHeader() {
     {
       label: "DashBoard",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
-      activePaths: ["/investor/watchlist", "/investor/realtimedashboard"],
+      activePaths: ["/watchlist", "/realtimedashboard"],
       submenu: [
-        { title: "Watchlist", path: "/investor/watchlist" },
-        { title: "Real-time Dashboard", path: "/investor/realtimedashboard" },
+        { title: "Watchlist", path: "/watchlist" },
+        { title: "Real-time Dashboard", path: "/realtimedashboard" },
       ],
     },
     {
@@ -141,7 +141,7 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Forum Community",
+      label: "Community Forum",
       gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),

@@ -118,6 +118,15 @@ function ConsultantHeader() {
 
   const navLinks = [
     {
+      label: "DashBoard",
+      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      activePaths: ["/watchlist", "/realtimedashboard"],
+      submenu: [
+        { title: "Watchlist", path: "/watchlist" },
+        { title: "Real-time Dashboard", path: "/realtimedashboard" },
+      ],
+    },
+    {
       label: "Questions",
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       onClick: () => navigate("/expert/questions"),
