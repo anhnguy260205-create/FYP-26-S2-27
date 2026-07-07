@@ -1,4 +1,5 @@
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -230,7 +231,7 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
   const handleSelect = useCallback((symbol) => {
-    navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+    navigate(`/realtimedashboard/astockdashboard/${symbol}`);
   }, [navigate]);
 
   const filtered = useMemo(() => {
@@ -303,7 +304,7 @@ function RealTimeDashBoardPage() {
         const updated = { ...stored, interests: info.interests || "", risk_tolerance: freshRisk };
         localStorage.setItem("currentUser", JSON.stringify(updated));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const { topPicks, forYou } = useMemo(() => {
@@ -322,7 +323,7 @@ function RealTimeDashBoardPage() {
     const picks = [...riskMatched, ...others].slice(0, RECOMMEND_COUNT);
     return {
       topPicks: picks.filter(s => riskSet.has(s.symbol)),
-      forYou:   picks.filter(s => !riskSet.has(s.symbol)),
+      forYou: picks.filter(s => !riskSet.has(s.symbol)),
     };
   }, [stocks, interests, riskTolerance]);
 
@@ -385,6 +386,10 @@ function RealTimeDashBoardPage() {
       s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [stocks, searchQuery]);
+  const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
+  const role = String(currentUser?.role || "").toLowerCase();
+
+  const isExpert = role === "expert";
 
   const browseTabs = ["All", ...GICS_SECTORS];
 
@@ -393,8 +398,8 @@ function RealTimeDashBoardPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
-      <GeneralHeader />
-      <main className="flex-1 p-4 md:p-7 flex flex-col gap-8">
+      {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
+      <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
         {/* ── Page header ────────────────────────────────────── */}
         <div>
@@ -452,7 +457,7 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {topPicks.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
                         isTopPick={true} />
                     ))}
                   </div>
@@ -469,7 +474,7 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {forYou.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/investor/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
                         isTopPick={false} />
                     ))}
                   </div>

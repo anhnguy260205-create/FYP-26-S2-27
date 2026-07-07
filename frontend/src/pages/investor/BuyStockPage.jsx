@@ -90,7 +90,7 @@ function BuyStockPage() {
       }
       setPaperMoney(result.paper_money);
       alert(`Bought ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each. Total: ${formatCurrency(result.total_amount)}`);
-      navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`);
+      navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
       alert("Failed to execute buy order");
@@ -266,7 +266,7 @@ function BuyStockPage() {
             {/* Action buttons */}
             <div style={{ display: "flex", gap: "12px" }}>
               <button
-                onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`)}
+                onClick={() => navigate(`/realtimedashboard/astockdashboard/${selectedStock}`)}
                 style={{
                   flex: 1, padding: "14px", borderRadius: "8px",
                   border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",
