@@ -14,6 +14,7 @@ import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
+import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -850,6 +851,8 @@ function AStockDashBoardPage() {
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+  const role = String(currentUser?.role || "").toLowerCase();
+  const isExpert = role === "expert";
 
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
@@ -903,9 +906,9 @@ function AStockDashBoardPage() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
-        <GeneralHeader />
+        {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
 
-        <main className="flex-1 p-4 md:p-7" style={{ position: "relative", zIndex: 1 }}>
+        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", position: "relative", zIndex: 1 }}>
 
           <FirstLevel
             symbol={symbol}
