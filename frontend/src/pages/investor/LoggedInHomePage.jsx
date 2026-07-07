@@ -11,7 +11,7 @@ import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
 import { LineChart, Sparkles, Users, Bot, GraduationCap } from "lucide-react";
 
 const QUICK_ACTIONS = [
-  { Icon: LineChart, label: "Trade", to: "/investor/realtimedashboard" },
+  { Icon: LineChart, label: "Trade", to: "/realtimedashboard" },
   { Icon: Sparkles, label: "AI Predictions", to: "/investor/quantrating" },
   { Icon: Users, label: "Ask an Expert", to: "/investor/expertadvice" },
   { Icon: Bot, label: "AI Chatbot", to: "/investor/aichatbot" },
@@ -226,7 +226,7 @@ function WatchlistSection() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleSelect = (symbol) => navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
 
   return (
     <section>
@@ -377,7 +377,7 @@ function PopularStocksSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleSelect = (symbol) => navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
 
   return (
     <section>
