@@ -434,9 +434,8 @@ export default function ForumPage() {
     }
 
     return (
-        <motion.div className="bg-linear-to-br from-slate-950 via-blue-950 to-slate-900"
-            style={{ minHeight: "100vh", display: "flex", flexDirection: "column", color: C.text }}
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
@@ -532,7 +531,7 @@ function ForumHome({
                             <ArrowLeft size={15} /> All Topics
                         </button>
                     )}
-                    <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.text }}>
+                    <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.text, margin: 0, lineHeight: 1 }}>
                         {activeRoom || "Community Forum"}
                     </h1>
                     {activeRoom && (
