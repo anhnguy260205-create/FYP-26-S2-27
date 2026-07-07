@@ -393,7 +393,7 @@ function buildStockSpecificReply(question, liveStocks, liveCandles) {
     if (!detected.supported) return buildUnsupportedStockReply(symbol, question);
 
     const snapshot = getLatestStockSnapshot(liveStocks, liveCandles, symbol);
-    const predictionRoute = `/investor/realtimedashboard/astockdashboard/${encodeURIComponent(symbol)}`;
+    const predictionRoute = `/realtimedashboard/astockdashboard/${encodeURIComponent(symbol)}`;
 
     if (!snapshot) {
         return {
