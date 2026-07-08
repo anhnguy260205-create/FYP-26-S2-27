@@ -1,4 +1,5 @@
 from app.entity.models.forumquestion import ForumRepository
+from app.control.controller.notificationc import create_notification
 
 
 class ForumController:
@@ -41,6 +42,16 @@ class ForumController:
         post = ForumRepository.add_reply(post_id, user_id, content)
         if not post:
             return {"success": False, "message": "Post not found or thread is closed"}
+        author_id = post.get("user_id")
+        if author_id and author_id != user_id:
+            replies = post.get("replies") or []
+            replier_name = replies[-1].get("author_name") if replies else "Someone"
+            create_notification(
+                author_id,
+                "consultation",
+                f"New reply on \"{post.get('title')}\"",
+                f"{replier_name or 'Someone'} replied to your post.",
+            )
         return {"success": True, "post": post, "message": "Reply posted successfully"}
 
     def toggle_like(self, post_id, user_id):

@@ -892,7 +892,7 @@ function AStockDashBoardPage() {
   const [tab, setTab] = useState("overview");
   const TABS = [
     { key: "overview", label: "Overview" },
-    { key: "trading", label: "Trading" },
+    ...(isExpert ? [] : [{ key: "trading", label: "Trading" }]),
     { key: "prediction", label: "Prediction" },
     { key: "comments", label: "Comments" },
     { key: "alerts", label: "Alerts" },
@@ -965,7 +965,7 @@ function AStockDashBoardPage() {
             </div>
           )}
 
-          {tab === "trading" && (
+          {tab === "trading" && !isExpert && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>

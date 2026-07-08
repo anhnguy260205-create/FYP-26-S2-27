@@ -49,6 +49,7 @@ const ExpertNotificationPage = lazy(() => import("./pages/expert/ExpertNotificat
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
+const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
 
 function S({ children }) {
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
@@ -101,6 +102,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
     { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
+    { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
     { path: "/expert", element: protect(["expert"], ExpertLoggedInPage) },
