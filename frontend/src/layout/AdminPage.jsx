@@ -12,6 +12,7 @@ const menuItems = [
   { name: "Subscription Management", path: "/adminpanel/subscriptions" },
   { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" },
   { name: "Content Managment", path: "/adminpanel/contentmanagement" },
+  { name: "Notification", path: "/adminpanel/notifications" },
 ];
 
 function AdminLayout({ title, subtitle, children }) {

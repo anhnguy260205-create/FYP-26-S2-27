@@ -1,6 +1,7 @@
 from app.entity.models.emailalert import StockAlert
 from app.entity.database.session import get_session
 from app.control.services.email_service import send_alert_email
+from app.control.controller.notificationc import create_notification
 
 
 class CreateAlertController:
@@ -78,3 +79,9 @@ class CheckAndTriggerAlertsController:
                     )
                     if sent:
                         alert.is_triggered = True
+                        create_notification(
+                            alert.user_id,
+                            "stock",
+                            f"{symbol} triggered your price alert",
+                            condition,
+                        )
