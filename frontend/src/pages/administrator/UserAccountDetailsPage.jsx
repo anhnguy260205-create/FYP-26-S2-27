@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminPage from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
 
 function UserAccountDetailsPage() {
   const { userId } = useParams();
@@ -14,8 +15,8 @@ function UserAccountDetailsPage() {
 
   const fetchUserDetails = async () => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/admin/useraccounts/${userId}`
+      const response = await authFetch(
+        `${import.meta.env.VITE_API_URL}/admin/useraccounts/${userId}`
       );
       const data = await response.json();
 
@@ -67,7 +68,7 @@ function UserAccountDetailsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-32 gap-y-10 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-32 gap-y-10 mt-8">
           <div>
             <p className="text-sm font-bold text-slate-400 uppercase">Full Name</p>
             <p className="text-lg text-slate-900 mt-1">{user.full_name}</p>

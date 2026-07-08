@@ -10,6 +10,7 @@ function UserAccountsPage() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const fetchUsers = async (searchKeyword = "") => {
     try {
@@ -90,13 +91,15 @@ function UserAccountsPage() {
   };
 
   const handleDelete = async (userId) => {
-    const confirmed = window.confirm("Are you sure you want to delete this user?");
+    const confirmed = window.confirm("Are you sure you want to permanently delete this account?");
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}`, {
-        method: "DELETE",
-      });
+      const requestingId = currentUser?.user_id ?? "";
+      const response = await fetch(
+        `http://127.0.0.1:8000/admin/useraccounts/${userId}?requesting_user_id=${encodeURIComponent(requestingId)}`,
+        { method: "DELETE" }
+      );
 
       const data = await response.json();
 
@@ -138,157 +141,165 @@ function UserAccountsPage() {
       title="User Accounts"
       subtitle="Search and manage all user accounts"
     >
-          <div className="p-3">
-            {/* Search Box */}
-            <section className="bg-white rounded-lg p-7 mb-5">
-              <div className="flex items-center gap-8">
-                <div className="relative flex-1 max-w-[590px]">
-                  <Search
-                    size={19}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        fetchUsers(keyword);
-                      }
-                    }}
-                    placeholder="Search by name, email, ID, or phone..."
-                    className="w-full h-12 border border-gray-300 rounded-lg pl-12 pr-4 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+      <div className="p-3">
+        {/* Search Box */}
+        <section className="bg-white rounded-lg p-7 mb-5">
+          <div className="flex items-center gap-8">
+            <div className="relative flex-1 max-w-147.5">
+              <Search
+                size={19}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    fetchUsers(keyword);
+                  }
+                }}
+                placeholder="Search by name, email, ID, or phone..."
+                className="w-full h-12 border border-gray-300 rounded-lg pl-12 pr-4 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-                <button
-                  onClick={() => fetchUsers(keyword)}
-                  className="h-12 px-8 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-                >
-                  Search
-                </button>
+            <button
+              onClick={() => fetchUsers(keyword)}
+              className="h-12 px-8 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            >
+              Search
+            </button>
 
-                <Filter size={22} className="text-slate-500" />
+            <Filter size={22} className="text-slate-500" />
 
-                <input className="h-12 w-36 border border-gray-300 rounded-lg px-3 outline-none" />
-              </div>
-
-              <p className="text-sm text-slate-600 mt-5">
-                {loading ? "Loading..." : `Found ${users.length} user(s)`}
-              </p>
-            </section>
-
-            {/* Table */}
-            <section className="bg-white rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
-                    <th className="px-5 py-4">User</th>
-                    <th className="px-5 py-4">Contact</th>
-                    <th className="px-5 py-4">Role</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4">Join Date</th>
-                    <th className="px-5 py-4">Last Active</th>
-                    <th className="px-5 py-4">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.user_id} className="border-b border-gray-100">
-                      <td className="px-5 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
-                            {user.initials}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{user.full_name}</p>
-                            <p className="text-slate-500">{user.user_id}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-5 text-slate-600">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Mail size={15} className="text-gray-400" />
-                          <span>{user.email_address}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone size={15} className="text-gray-400" />
-                          <span>{user.phone_number}</span>
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-5">
-                        <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
-                          {user.role}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-5">
-                        <span className={`px-4 py-2 rounded-full text-xs font-bold ${statusStyle(user.account_status)}`}>
-                          {user.account_status}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-5 text-slate-600">{user.join_date}</td>
-                      <td className="px-5 py-5 text-slate-600">{user.last_login}</td>
-
-                      <td className="px-5 py-5">
-                        <div className="flex items-center gap-5">
-                          <Eye
-                            size={18}
-                            onClick={() => handleView(user.user_id)}
-                            className="text-blue-600 cursor-pointer"
-                          />
-
-                          {user.account_status === "suspended" ? (
-                            <UserCheck
-                              size={18}
-                              onClick={() => handleActivate(user.user_id)}
-                              className="text-green-600 cursor-pointer"
-                            />
-                          ) : (
-                            <Ban
-                              size={18}
-                              onClick={() => handleSuspend(user.user_id)}
-                              className="text-orange-600 cursor-pointer"
-                            />
-                          )}
-
-                          <Trash2
-                            size={18}
-                            onClick={() => handleDelete(user.user_id)}
-                            className="text-red-600 cursor-pointer"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between px-7 py-5">
-                <p className="text-sm text-slate-600">
-                  Showing 1 to {users.length} of {users.length} results
-                </p>
-
-                <div className="flex items-center gap-3">
-                  <button className="px-5 py-3 border border-gray-200 rounded-lg text-gray-400">
-                    Previous
-                  </button>
-                  <button className="px-4 py-3 bg-blue-600 text-white rounded-lg">
-                    1
-                  </button>
-                  <button className="px-5 py-3 border border-gray-200 rounded-lg text-gray-400">
-                    Next
-                  </button>
-                </div>
-              </div>
-            </section>
+            <input className="h-12 w-36 border border-gray-300 rounded-lg px-3 outline-none" />
           </div>
-        </AdminLayout>
+
+          <p className="text-sm text-slate-600 mt-5">
+            {loading ? "Loading..." : `Found ${users.length} user(s)`}
+          </p>
+        </section>
+
+        {/* Table */}
+        <section className="bg-white rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
+                <th className="px-5 py-4">User</th>
+                <th className="px-5 py-4">Contact</th>
+                <th className="px-5 py-4">Role</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4">Join Date</th>
+                <th className="px-5 py-4">Last Active</th>
+                <th className="px-5 py-4">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.user_id} className="border-b border-gray-100">
+                  <td className="px-5 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-full bg-linear-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold">
+                        {user.initials}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{user.full_name}</p>
+                        <p className="text-slate-500">{user.user_id}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-5 text-slate-600">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail size={15} className="text-gray-400" />
+                      <span>{user.email_address}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone size={15} className="text-gray-400" />
+                      <span>{user.phone_number}</span>
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-5">
+                    <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
+                      {user.role}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-5">
+                    <span className={`px-4 py-2 rounded-full text-xs font-bold ${statusStyle(user.account_status)}`}>
+                      {user.account_status}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-5 text-slate-600">{user.join_date}</td>
+                  <td className="px-5 py-5 text-slate-600">{user.last_login}</td>
+
+                  <td className="px-5 py-5">
+                    <div className="flex items-center gap-5">
+                      <Eye
+                        size={18}
+                        onClick={() => handleView(user.user_id)}
+                        className="text-blue-600 cursor-pointer"
+                      />
+
+                      {user.account_status === "suspended" ? (
+                        <UserCheck
+                          size={18}
+                          onClick={() => handleActivate(user.user_id)}
+                          className="text-green-600 cursor-pointer"
+                        />
+                      ) : (
+                        <Ban
+                          size={18}
+                          onClick={() => handleSuspend(user.user_id)}
+                          className="text-orange-600 cursor-pointer"
+                        />
+                      )}
+
+                      {user.user_id === currentUser?.user_id ? (
+                        <Trash2
+                          size={18}
+                          className="text-gray-300 cursor-not-allowed"
+                          title="You cannot delete your own account"
+                        />
+                      ) : (
+                        <Trash2
+                          size={18}
+                          onClick={() => handleDelete(user.user_id)}
+                          className="text-red-600 cursor-pointer"
+                        />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-7 py-5">
+            <p className="text-sm text-slate-600">
+              Showing 1 to {users.length} of {users.length} results
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button className="px-5 py-3 border border-gray-200 rounded-lg text-gray-400">
+                Previous
+              </button>
+              <button className="px-4 py-3 bg-blue-600 text-white rounded-lg">
+                1
+              </button>
+              <button className="px-5 py-3 border border-gray-200 rounded-lg text-gray-400">
+                Next
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </AdminLayout>
   );
 }
 

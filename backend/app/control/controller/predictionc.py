@@ -24,6 +24,7 @@ translated into:
 
 import math
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import yfinance as yf
 import pandas as pd
@@ -44,10 +45,10 @@ def _sanitize(obj):
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-SUPPORTED_SYMBOLS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "META", "TSLA", "AVGO", "ORCL", "AMD",
-]
+# The full S&P 500 pool. The XGBoost model is symbol-agnostic (features are
+# computed from price history + sentiment at request time), so any pool
+# symbol can be predicted — the whitelist only guards against junk input.
+from app.boundary.stock_ws import stock_pool as SUPPORTED_SYMBOLS, get_market_status
 
 # Confidence interval half-widths as % of price (widens with forecast horizon)
 CI_BASE_PCT = 0.015   # ±1.5 % on day-1
@@ -59,6 +60,22 @@ TRADING_HOURS_PER_DAY = 6.5
 
 # ~1 calendar month ≈ 21 trading days
 ONE_MONTH_TRADING_DAYS = 21
+
+# ── Prediction input cache ──────────────────────────────────────────────────
+# The expensive work (yfinance history fetch, model inference, sentiment) is
+# shared across all three modes and only actually depends on `symbol` - not on
+# `days`/`budget`/`target_return_pct`. Since the model runs on DAILY bars, the
+# result can't meaningfully change until the next trading-day boundary, so
+# rather than a flat TTL we key the cache on (ET calendar date, market status).
+# That key changes exactly when it matters: at the open/close transition and
+# at midnight rollover - so a symbol is only re-fetched once per session
+# change instead of on every request.
+_prediction_cache: dict[str, tuple[str, dict]] = {}
+
+
+def _trading_day_key() -> str:
+    eastern_now = datetime.now(ZoneInfo("America/New_York"))
+    return f"{eastern_now.strftime('%Y-%m-%d')}:{get_market_status()}"
 
 
 # ── Controller ─────────────────────────────────────────────────────────────────
@@ -76,19 +93,15 @@ class PredictionController:
         if symbol not in SUPPORTED_SYMBOLS:
             return None
 
-        history = self._fetch_history(symbol)
-        if history is None or history.empty:
+        inputs = self._get_cached_inputs(symbol)
+        if inputs is None:
             return None
 
-        last_close = float(history["Close"].iloc[-1])
-
-        prob_up = ml_model.predict_probability_up(history)
-        if prob_up is None:
-            return None
-
-        confidence = ml_model.confidence_tier(prob_up)
-        typical_move_pct = self._typical_daily_move_pct(history)
-        sentiment = self._run_sentiment(symbol, prob_up)
+        last_close = inputs["last_close"]
+        prob_up = inputs["prob_up"]
+        confidence = inputs["confidence"]
+        typical_move_pct = inputs["typical_move_pct"]
+        sentiment = inputs["sentiment"]
 
         if mode == "daytrade":
             return _sanitize(self._build_daytrade_response(
@@ -128,6 +141,37 @@ class PredictionController:
         })
 
     # ── Data fetching ────────────────────────────────────────────────────────
+
+    def _get_cached_inputs(self, symbol: str) -> dict | None:
+        """
+        Returns the shared prediction inputs (last close, model probability,
+        confidence tier, typical move, sentiment) for `symbol`, reusing a
+        cached bundle if it was already computed for the current trading-day
+        key. Failures are never cached, so a transient yfinance/model error
+        doesn't get stuck for the rest of the session.
+        """
+        key = _trading_day_key()
+        cached = _prediction_cache.get(symbol)
+        if cached is not None and cached[0] == key:
+            return cached[1]
+
+        history = self._fetch_history(symbol)
+        if history is None or history.empty:
+            return None
+
+        prob_up = ml_model.predict_probability_up(history, symbol)
+        if prob_up is None:
+            return None
+
+        bundle = {
+            "last_close": float(history["Close"].iloc[-1]),
+            "prob_up": prob_up,
+            "confidence": ml_model.confidence_tier(prob_up),
+            "typical_move_pct": self._typical_daily_move_pct(history),
+            "sentiment": self._run_sentiment(symbol, prob_up),
+        }
+        _prediction_cache[symbol] = (key, bundle)
+        return bundle
 
     def _fetch_history(self, symbol: str) -> pd.DataFrame | None:
         try:
@@ -351,15 +395,28 @@ class PredictionController:
 
     def _run_sentiment(self, symbol: str, prob_up: float) -> dict:
         """
-        ╔══════════════════════════════════════════════════════════════╗
-        ║  ← REPLACE THIS with real FinBERT sentiment scorer          ║
-        ╚══════════════════════════════════════════════════════════════╝
-
-        Until the FinBERT news pipeline is connected, derive a placeholder
-        sentiment reading from the model's directional probability so the
-        UI has something representative to display.
+        Build the sentiment panel from VADER-scored news headlines (cached
+        in ml_model from the same fetch used for model features). Falls back
+        to a prob_up-derived estimate when no news is available.
         """
-        score = round((prob_up - 0.5) * 2, 4)  # -1..+1
+        feat = ml_model._get_sentiment_features(symbol)
+        news_count = feat.get("news_count", 0.0)
+
+        if news_count > 0:
+            score = feat["finbert_score_mean"]
+            pos   = feat["finbert_pos_mean"]
+            neg   = feat["finbert_neg_mean"]
+            neu   = round(max(0.0, 1.0 - pos - neg), 4)
+            confidence = round(min(0.99, abs(score) * 0.8 + 0.15), 4)
+        else:
+            # No news available — fall back to model probability signal
+            score = round((prob_up - 0.5) * 2, 4)
+            magnitude = abs(score)
+            neu = round(max(0.1, 1 - magnitude), 4)
+            remaining = round(1 - neu, 4)
+            pos = round(remaining * (0.5 + score / 2), 4)
+            neg = round(remaining - pos, 4)
+            confidence = round(min(0.99, magnitude * 0.8 + 0.15), 4)
 
         if score > 0.15:
             label = "Bullish"
@@ -368,24 +425,13 @@ class PredictionController:
         else:
             label = "Neutral"
 
-        # Center the breakdown around a neutral baseline so weak signals
-        # don't collapse "neutral" to zero.
-        magnitude = abs(score)
-        neu = round(max(0.1, 1 - magnitude), 4)
-        remaining = round(1 - neu, 4)
-        pos = round(remaining * (0.5 + score / 2), 4)
-        neg = round(remaining - pos, 4)
-
-        confidence = round(abs(score) * 0.8 + 0.15, 4)
-        confidence = min(confidence, 0.99)
-
         return {
-            "score": score,
+            "score": round(score, 4),
             "label": label,
             "confidence": confidence,
             "breakdown": {
-                "positive": pos,
-                "neutral": neu,
-                "negative": neg,
+                "positive": round(pos, 4),
+                "neutral": round(neu, 4),
+                "negative": round(neg, 4),
             },
         }

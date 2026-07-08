@@ -1,4 +1,5 @@
 fastapi
+uvicorn
 python-dotenv
 sqlalchemy
 pymysql
@@ -6,3 +7,15 @@ cryptography
 websockets
 yfinance
 xgboost
+scikit-learn
+joblib
+pandas
+numpy
+vaderSentiment
+firebase-admin
+stripe
+slowapi
+pip-system-certs
+firebase
+groq
+pytest

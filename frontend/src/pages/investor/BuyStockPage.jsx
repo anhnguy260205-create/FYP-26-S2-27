@@ -90,7 +90,7 @@ function BuyStockPage() {
       }
       setPaperMoney(result.paper_money);
       alert(`Bought ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each. Total: ${formatCurrency(result.total_amount)}`);
-      navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`);
+      navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
       alert("Failed to execute buy order");
@@ -101,27 +101,23 @@ function BuyStockPage() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
-      `}</style>
 
       <motion.div
         className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
         <GeneralHeader />
 
-        <main style={{ flex: 1, padding: "28px 32px", display: "flex", justifyContent: "center" }}>
+        <main className="flex-1 p-4 md:p-7 flex justify-center">
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.25 }}
             style={{
               width: "100%", maxWidth: "560px",
               background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
               border: "1px solid rgba(99,179,237,0.15)", borderRadius: "16px",
-              padding: "28px", backdropFilter: "blur(12px)",
-            }}
+              padding: "28px",            }}
           >
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
@@ -167,7 +163,25 @@ function BuyStockPage() {
               </span>
             </div>
 
-            {/* Price */}
+            {!isMarketOpen && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                borderRadius: "10px", padding: "12px 14px", marginBottom: "20px",
+              }}>
+                <span style={{ fontSize: "16px" }}>🔒</span>
+                <div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#fca5a5" }}>
+                    Market closed — trading unavailable
+                  </div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+                    US markets are open Mon–Fri, 9:30am–4:00pm ET (about 9:30pm–4:00am Singapore time).
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
               padding: "16px 0", borderTop: "1px solid rgba(99,179,237,0.1)",
@@ -252,7 +266,7 @@ function BuyStockPage() {
             {/* Action buttons */}
             <div style={{ display: "flex", gap: "12px" }}>
               <button
-                onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`)}
+                onClick={() => navigate(`/realtimedashboard/astockdashboard/${selectedStock}`)}
                 style={{
                   flex: 1, padding: "14px", borderRadius: "8px",
                   border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",

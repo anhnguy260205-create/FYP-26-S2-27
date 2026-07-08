@@ -91,10 +91,10 @@ export default function ExpertPortfolio() {
 
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} >
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
             <GeneralHeader />
 
-            <main className="flex-1 p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
                 {/* Header */}
                 <div className="mb-6">
                     <h1
@@ -117,6 +117,7 @@ export default function ExpertPortfolio() {
                         Explore and invest in portfolios managed by our expert consultants.
                     </p>
                 </div>
+                <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
 
                 {/* Search Bar */}
                 <div className="flex gap-3 mb-6">

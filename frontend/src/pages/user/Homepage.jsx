@@ -1,292 +1,777 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import RegistrationPage from "./RegistrationPage.jsx";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Footer from "../../layout/Footer.jsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
+import { fetchStockSnapshot } from "../../api/stockApi.js";
+import {
+  Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
+  Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown, Play, Award,
+  UserPlus, Mail, Rocket, DollarSign,
+} from "lucide-react";
 
-function DynamicFeatureBubbleHero() {
-  const navigate = useNavigate();
-  const features = [
-    {
-      title: "AI Assistant",
-      desc: "Smart financial insights",
-      size: 140,
-      target: { top: "7%", left: "8%" },
-      fadeDelay: "0.3s",
-      floatDelay: "1.6s",
-    },
-    {
-      title: "Market Trends",
-      desc: "Live stock movement",
-      size: 170,
-      target: { top: "10%", right: "6%" },
-      fadeDelay: "0.15s",
-      floatDelay: "1.75s",
-    },
-    {
-      title: "AI Predictions",
-      desc: "Future market insights",
-      size: 150,
-      target: { bottom: "20%", left: "20%" },
-      fadeDelay: "0.3s",
-      floatDelay: "1.9s",
-    },
-    {
-      title: "Alerts",
-      desc: "Real-time notifications",
-      size: 130,
-      target: { bottom: "12%", right: "8%" },
-      fadeDelay: "0.45s",
-      floatDelay: "2.05s",
-    },
-    {
-      title: "Professional Experts",
-      desc: "Insights from industry leaders",
-      size: 155,
-      target: { top: "40%", left: "4%" },
-      fadeDelay: "0.6s",
-      floatDelay: "2.2s",
-    },
-  ];
+const TICKER_SYMBOLS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "META", "JPM", "V", "DIS"];
 
-  // Build a unique CSS animation per bubble that goes from center to its target corner
-  const buildKeyframes = (index, size, target) => {
-    const half = size / 2;
-    // translate from center to 0,0 offset at final position
-    // We use translate trick: start at CSS center offset, end at 0
-    const directions = [
-      `translate(-50%, -50%)`,  // will be overridden per bubble
-    ];
+const FAQS = [
+  {
+    q: "Is this real money trading?",
+    a: "No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.",
+  },
+  {
+    q: "How much does it cost to use RocketTrade?",
+    a: "You can start for free with our Starter plan. Upgrade to Pro anytime for unlimited AI predictions, deeper quant ratings, and priority expert access.",
+  },
+  {
+    q: "How accurate are the AI predictions?",
+    a: "Our models combine technical indicators and news sentiment to forecast short-term price direction. They're a decision-support tool, not a guarantee, so always do your own research too.",
+  },
+  {
+    q: "Do I need any trading experience to get started?",
+    a: "Not at all. Our Educational Content library covers everything from beginner basics to advanced strategy, so you can learn as you go.",
+  },
+  {
+    q: "Can I get help from a real person?",
+    a: "Yes — chat instantly with our AI assistant, or connect with a verified market expert through consultations and Q&A.",
+  },
+  {
+    q: "Can I cancel or change my plan anytime?",
+    a: "Yes, you can upgrade, downgrade, or cancel your subscription at any time from your account settings.",
+  },
+];
 
-    // Map target position to a translate offset from center
-    // Each bubble's final resting place is its `target` styles (top/left/bottom/right)
-    // We animate using translate so absolute position stays at 50%/50% then moves
-    const moves = [
-      { tx: "-20vw", ty: "-32vh" }, // top-left
-      { tx: "38vw", ty: "-20vh" }, // top-right
-      { tx: "-10vw", ty: "40vh" }, // bottom-left
-      { tx: "36vw", ty: "30vh" }, // bottom-right
-      { tx: "-40vw", ty: "0vh" }, // mid-left
-    ];
+const PLATFORM_FEATURES = [
+  {
+    Icon: Wallet,
+    title: "Paper Trading Exchange",
+    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
+  },
+  {
+    Icon: BrainCircuit,
+    title: "AI Stock Predictions",
+    description: "Multi-day price forecasts and sector quant ratings powered by machine learning, updated with live data.",
+  },
+  {
+    Icon: MessagesSquare,
+    title: "Investor Community",
+    description: "Join discussion rooms on technical analysis, portfolio strategy, and market news with fellow investors.",
+  },
+  {
+    Icon: Bot,
+    title: "AI Chatbot & Expert Consultants",
+    description: "Get instant answers from our AI assistant, or browse and connect with verified market experts.",
+  },
+  {
+    Icon: GraduationCap,
+    title: "Educational Content",
+    description: "Learn at your own pace with a growing library of articles — from beginner basics to advanced strategy.",
+  },
+  {
+    Icon: MessageCircleQuestion,
+    title: "Ask the Experts",
+    description: "Submit your investing questions directly to verified experts and get personalized answers.",
+  },
+];
 
-    const { tx, ty } = moves[index] || { tx: "0", ty: "0" };
+const FEATURE_ICONS = [
+  { match: "assistant", Icon: Bot },
+  { match: "trend", Icon: TrendingUp },
+  { match: "predict", Icon: Sparkles },
+  { match: "alert", Icon: Bell },
+  { match: "expert", Icon: Users },
+];
 
-    return `
-      @keyframes spreadOut${index} {
-        0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
-        20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-        100% { opacity: 1; transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) scale(1); }
-      }
-      @keyframes floatY${index} {
-        0%, 100% { transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) translateY(0px); }
-        50%       { transform: translate(calc(${tx} - 50%), calc(${ty} - 50%)) translateY(-14px); }
-      }
-    `;
-  };
+function getFeatureIcon(title = "") {
+  const lower = title.toLowerCase();
+  const found = FEATURE_ICONS.find((f) => lower.includes(f.match));
+  return found ? found.Icon : Star;
+}
+
+function MarketTicker() {
+  const [quotes, setQuotes] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      TICKER_SYMBOLS.map((symbol) =>
+        fetchStockSnapshot(symbol)
+          .then((res) => (res.success ? res.data : null))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      setQuotes(results.filter(Boolean));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (quotes.length === 0) return <div style={{ height: 56 }} />;
+
+  const track = [...quotes, ...quotes];
 
   return (
-    <div
-      style={{
-        position: "relative",
-        height: "130vh",
-        width: "100%",
-        overflow: "hidden",
-        color: "white",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: "-25vh",
-        marginBottom: "-20vh",
-      }}
-    >
+    <div className="ticker-wrap">
+      <div className="ticker-track">
+        {track.map((q, i) => {
+          const change = q.previousClose ? ((q.p - q.previousClose) / q.previousClose) * 100 : 0;
+          const up = change >= 0;
+          return (
+            <div key={`${q.s}-${i}`} className="ticker-item">
+              <span className="ticker-symbol">{q.s}</span>
+              <span className="ticker-price">${q.p.toFixed(2)}</span>
+              <span className={up ? "ticker-up" : "ticker-down"}>
+                {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .ticker-wrap {
+          width: 100%;
+          overflow: hidden;
+          border-top: 1px solid rgba(59,130,246,0.2);
+          border-bottom: 1px solid rgba(59,130,246,0.2);
+          background: rgba(2,6,23,0.5);
+          -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+        }
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerScroll 40s linear infinite;
+        }
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+        .ticker-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.85rem 1.5rem;
+          white-space: nowrap;
+          font-size: 0.85rem;
+          border-right: 1px solid rgba(148,163,184,0.12);
+        }
+        .ticker-symbol { font-weight: 700; color: #e2e8f0; }
+        .ticker-price { color: #94a3b8; }
+        .ticker-up { color: #4ade80; font-weight: 600; }
+        .ticker-down { color: #f87171; font-weight: 600; }
+        @keyframes tickerScroll {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Hero() {
+  const navigate = useNavigate();
+  const [hero, setHero] = useState({ title: "Discover the Future of Smart Investing", description: "Explore powerful tools floating around your financial universe." });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const heroItem = data.content.find((c) => c.section === "hero");
+        if (heroItem) setHero(heroItem);
+      })
+      .catch(() => { });
+  }, []);
+
+  return (
+    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
       {/* Background glow */}
       <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at center, rgba(59,130,246,0.22) 0%, transparent 60%)",
-        }}
+        className="absolute inset-0"
+        style={{ background: "radial-gradient(circle at 50% 30%, rgba(59,130,246,0.22) 0%, transparent 60%)" }}
       />
-
       {/* Grid */}
       <div
+        className="absolute inset-0"
         style={{
-          position: "absolute",
-          inset: 0,
           opacity: 0.15,
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />
+      <div className="relative z-20 text-center px-6 max-w-3xl py-20 sm:py-28">
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 mb-6 text-xs font-semibold tracking-wide text-cyan-300 uppercase">
+          <Sparkles size={14} /> AI-Powered Investing Platform
+        </div>
 
-      {/* Hero text */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 20,
-          textAlign: "center",
-          padding: "0 1.5rem",
-          maxWidth: "700px",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "clamp(2rem, 5vw, 3.5rem)",
-            fontWeight: 700,
-            lineHeight: 1.15,
-            color: "white",
-            margin: 0,
-          }}
-        >
-          Discover the Future of
-          <span
-            style={{
-              display: "block",
-              background: "linear-gradient(to right, #22d3ee, #3b82f6)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Smart Investing
+        <h1 className="text-[clamp(2.2rem,6vw,3.8rem)] font-extrabold leading-tight m-0">
+          <span className="block bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            {hero.title}
           </span>
         </h1>
 
-        <p style={{ margin: "1rem 0 1.5rem", color: "#94a3b8", fontSize: "1rem" }}>
-          Explore powerful tools floating around your financial universe.
+        <p className="mt-4 mb-8 text-slate-400 text-base sm:text-lg">
+          {hero.description}
         </p>
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-wrap gap-4 justify-center">
           <button
             onClick={() => navigate("/register")}
-            style={{
-              width: "150px",
-              padding: "0.75rem 2rem",
-              borderRadius: 14,
-              background: "#06b6d4",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(34,211,238,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#22d3ee")}
-            onMouseLeave={(e) => (e.target.style.background = "#06b6d4")}
+            className="group relative w-40 px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] overflow-hidden flex items-center justify-center"
           >
-            Get Started
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Get Started</span>
           </button>
           <button
             onClick={() => navigate("/login")}
-            style={{
-              padding: "0.75rem 2rem",
-              width: "150px",
-              borderRadius: 14,
-              background: "#eab308",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "1rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 0 20px rgba(250,204,21,0.4)",
-            }}
-            onMouseEnter={(e) => (e.target.style.background = "#f59e0b")}
-            onMouseLeave={(e) => (e.target.style.background = "#facc15")}
+            className="group relative w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-white text-white font-semibold text-base overflow-hidden transition-colors flex items-center justify-center"
           >
-            Login
+            <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-slate-900">Login</span>
           </button>
         </div>
       </div>
 
-      {/* Feature bubbles — all anchored at 50%/50%, moved via translate */}
-      {features.map((feature, index) => (
-        <div
-          key={index}
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            width: feature.size,
-            height: feature.size,
-            animation: `spreadOut${index} 1.4s cubic-bezier(0.22, 1, 0.36, 1) ${feature.fadeDelay} forwards, floatY${index} 4s ease-in-out ${feature.floatDelay} infinite`,
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              borderRadius: "50%",
-              background: "rgba(59,130,246,0.22)",
-              border: "1px solid rgba(59,130,246,0.22)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "box-shadow 0.3s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 32px rgba(34,211,238,0.4)")}
-            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
-          >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(59,130,246,0.08))",
-              }}
-            />
-
-            <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0.5rem" }}>
-              <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "white" }}>
-                {feature.title}
-              </h3>
-              <p style={{ margin: "4px 0 0", fontSize: "0.72rem", color: "#94a3b8" }}>
-                {feature.desc}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-
       <style>{`
-        ${features.map((f, i) => buildKeyframes(i, f.size, f.target)).join("")}
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
+        .hero-section { min-height: calc(95vh - 60px); }
       `}</style>
     </div>
   );
 }
-function MarketDemo() {
 
+const FEATURE_THEMES = {
+  cyan: {
+    border: "border-blue-100",
+    bg: "bg-blue-50",
+    hoverBorder: "hover:border-cyan-400/50",
+    iconBg: "bg-cyan-100",
+    iconColor: "text-cyan-600",
+  },
+  purple: {
+    border: "border-purple-100",
+    bg: "bg-purple-50",
+    hoverBorder: "hover:border-purple-400/50",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+  },
+};
+
+function FeatureCards({ heading, subtitle, items, theme = "cyan" }) {
+  const t = FEATURE_THEMES[theme];
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 pb-14">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {items.map(({ Icon, title, description }) => (
+          <div
+            key={title}
+            className={`rounded-2xl border ${t.border} ${t.bg} p-6 shadow-sm hover:shadow-lg ${t.hoverBorder} hover:-translate-y-1 transition-all duration-300`}
+          >
+            <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-4`}>
+              <Icon className={t.iconColor} size={22} />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1.5">{title}</h3>
+            <p className="text-sm text-slate-500">{description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+function usePlanContent() {
+  const [freeFeatures, setFreeFeatures] = useState([]);
+  const [premiumFeatures, setPremiumFeatures] = useState([]);
+  const [freePlan, setFreePlan] = useState({ name: "Starter", price: "$0.00", priceSubtitle: "forever, no card needed" });
+  const [premiumPlan, setPremiumPlan] = useState({ name: "Pro", price: "$20.99", priceSubtitle: "per month, billed annually" });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const c = data.content;
+        setFreeFeatures(c.filter((x) => x.section === "free_investor").map((x) => x.title));
+        setPremiumFeatures(c.filter((x) => x.section === "premium_investor").map((x) => x.title));
+
+        const freeName = c.find((x) => x.content_id === "free_plan_name");
+        const freePrice = c.find((x) => x.content_id === "free_plan_price");
+        if (freeName || freePrice) setFreePlan({
+          name: freeName?.title ?? "Starter",
+          price: freePrice?.title ?? "$0.00",
+          priceSubtitle: freePrice?.description ?? "forever, no card needed",
+        });
+
+        const premName = c.find((x) => x.content_id === "premium_plan_name");
+        const premPrice = c.find((x) => x.content_id === "premium_plan_price");
+        if (premName || premPrice) setPremiumPlan({
+          name: premName?.title ?? "Pro",
+          price: premPrice?.title ?? "$20.99",
+          priceSubtitle: premPrice?.description ?? "per month, billed annually",
+        });
+      })
+      .catch(() => { });
+  }, []);
+
+  return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
+}
+
+function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
+  return (
+    <div
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+        ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
+        : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
+        }`}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: highlighted
+            ? "radial-gradient(circle at 50% 0%, rgba(250,204,21,0.18) 0%, transparent 65%)"
+            : "radial-gradient(circle at 50% 0%, rgba(34,211,238,0.14) 0%, transparent 65%)",
+        }}
+      />
+      <div className="relative z-10">
+        <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 ${badgeClass}`}>
+          {badge}
+        </span>
+        <p className="text-xl font-semibold text-white mb-1">{plan.name}</p>
+        <p className={`text-4xl font-extrabold mb-1 ${highlighted ? "text-yellow-300" : "text-cyan-300"}`}>{plan.price}</p>
+        <p className="text-sm text-slate-400 mb-6">{plan.priceSubtitle}</p>
+        <div className="h-px bg-white/10 mb-6" />
+        <div className="space-y-3">
+          {features.map((f) => (
+            <div key={f} className="flex items-start gap-2.5">
+              <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${highlighted ? "bg-yellow-400/20 text-yellow-300" : "bg-cyan-400/20 text-cyan-300"}`}>
+                <Check size={13} />
+              </span>
+              <span className="text-sm text-slate-300">{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingSection() {
+  const { freeFeatures, premiumFeatures, freePlan, premiumPlan } = usePlanContent();
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Simple, Transparent Pricing</h2>
+        <p className="text-slate-400 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an investor account to get started.</p>
+      </div>
+      <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
+        <PlanCard badge="Free" badgeClass="bg-blue-500/20 text-blue-300" plan={freePlan} features={freeFeatures} />
+        <PlanCard badge="⭐ Premium" badgeClass="bg-yellow-400/20 text-yellow-300" plan={premiumPlan} features={premiumFeatures} highlighted />
+      </div>
+    </div>
+  );
+}
+
+function FAQItem({ q, a, open, onToggle }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 text-left px-6 py-5 cursor-pointer"
+      >
+        <span className="font-semibold text-slate-900 text-sm sm:text-base">{q}</span>
+        <ChevronDown
+          size={18}
+          className={`text-cyan-600 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="answer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="px-6 pb-5 text-sm text-slate-500 leading-relaxed">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FAQSection() {
+  const [openIndex, setOpenIndex] = useState(0);
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
+      </div>
+      <div className="space-y-3">
+        {FAQS.map((faq, index) => (
+          <FAQItem
+            key={faq.q}
+            q={faq.q}
+            a={faq.a}
+            open={openIndex === index}
+            onToggle={() => setOpenIndex(openIndex === index ? -1 : index)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MarketingVideoSection() {
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-8">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-black">See RocketTrade in Action</h2>
+        <p className="text-slate-400 mt-2 text-sm sm:text-base">Watch a quick walkthrough of the platform and its AI-powered tools.</p>
+      </div>
+      <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
+        <button
+          type="button"
+          aria-label="Play marketing video"
+          className="group relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.5)] hover:bg-cyan-400 transition-colors"
+        >
+          <Play className="text-white translate-x-0.5" size={28} fill="currentColor" />
+        </button>
+        <span className="absolute bottom-4 text-xs text-slate-500">Video coming soon</span>
+      </div>
+    </div>
+  );
+}
+
+const WHY_ROCKETTRADE = [
+  {
+    Icon: ShieldCheck,
+    title: "Zero-Risk Learning",
+    description: "Practice with virtual funds against live market prices — sharpen your instincts without risking real money.",
+    stat: { value: "30+", label: "stocks to practice on, risk-free" },
+    accent: {
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      statColor: "text-emerald-700",
+      border: "hover:border-emerald-400/50",
+    },
+  },
+  {
+    Icon: Zap,
+    title: "AI when you need speed. Experts when you need certainty.",
+    description: "Live prices and news sentiment keep your paper portfolio in sync with what's actually happening in the market.",
+    stat: { value: "24/7", label: "AI monitoring, backed by real experts" },
+    emphasized: true,
+  },
+  {
+    Icon: Users,
+    title: "Expert-Backed Community",
+    description: "Learn alongside fellow investors and get answers straight from verified market experts.",
+    stat: { value: "Verified", label: "answers from real market experts" },
+    accent: {
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      statColor: "text-amber-700",
+      border: "hover:border-amber-400/50",
+    },
+  },
+];
+
+const EXPERT_WHY = [
+  {
+    Icon: DollarSign,
+    title: "Get Paid for Your Expertise",
+    description: "Earn from paid consultations and premium content — your market knowledge has real value here.",
+    stat: { value: "Paid", label: "consultations & premium articles" },
+    accent: {
+      iconBg: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      statColor: "text-emerald-700",
+      border: "hover:border-emerald-400/50",
+    },
+  },
+  {
+    Icon: Zap,
+    title: "Be the certainty investors need when speed isn't enough.",
+    description: "Reach investors who are already using AI predictions and want a real expert to validate the call.",
+    stat: { value: "24/7", label: "visibility to AI-assisted traders" },
+    emphasized: true,
+  },
+  {
+    Icon: Users,
+    title: "Build a Following You Own",
+    description: "Grow your reputation through Q&A, portfolio publishing, and the community forum.",
+    stat: { value: "Verified", label: "badge boosts trust & visibility" },
+    accent: {
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      statColor: "text-amber-700",
+      border: "hover:border-amber-400/50",
+    },
+  },
+];
+
+function WhyCards({ heading, subtitle, items }) {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {items.map(({ Icon, title, description, stat, emphasized, accent }) => (
+          <div
+            key={title}
+            className={`relative h-full flex flex-col rounded-2xl p-6 transition-all duration-300 ${emphasized
+              ? "border border-indigo-400/50 bg-linear-to-br from-indigo-600 to-blue-700 shadow-[0_0_45px_rgba(79,70,229,0.35)] hover:shadow-[0_0_60px_rgba(79,70,229,0.45)] lg:scale-105 lg:-translate-y-2 z-10"
+              : `border border-blue-100 bg-blue-50 shadow-sm hover:shadow-lg hover:-translate-y-1 ${accent.border}`
+              }`}
+          >
+            {emphasized && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white text-indigo-700 shadow-sm">
+                Our Edge
+              </span>
+            )}
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${emphasized ? "bg-white/15" : accent.iconBg
+                }`}
+            >
+              <Icon className={emphasized ? "text-white" : accent.iconColor} size={22} />
+            </div>
+            <h3 className={`font-bold text-base mb-1.5 ${emphasized ? "text-white" : "text-slate-900"}`}>{title}</h3>
+            <p className={`text-sm flex-1 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{description}</p>
+            <div className={`mt-4 pt-4 border-t ${emphasized ? "border-white/15" : "border-slate-200"}`}>
+              <span className={`text-2xl font-extrabold ${emphasized ? "text-white" : accent.statColor}`}>{stat.value}</span>
+              <span className={`block text-xs mt-0.5 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{stat.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+const ROLE_OPTIONS = [
+  {
+    value: "investor",
+    Icon: Wallet,
+    label: "Investor",
+    desc: "Trade, learn, and get AI-backed predictions",
+    active: "border-cyan-500 bg-cyan-50 text-cyan-700",
+    activeIcon: "bg-cyan-100 text-cyan-600",
+  },
+  {
+    value: "expert",
+    Icon: Award,
+    label: "Expert",
+    desc: "Publish insights and mentor investors",
+    active: "border-purple-500 bg-purple-50 text-purple-700",
+    activeIcon: "bg-purple-100 text-purple-600",
+  },
+];
+
+function RoleToggle({ activeRole, onSelect }) {
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-2 pb-10 text-center">
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Choose Your Path</h2>
+      <p className="text-slate-500 mt-2 mb-8 text-sm sm:text-base">
+        Tell us who you are, so we can show you what matters most.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {ROLE_OPTIONS.map(({ value, Icon, label, desc, active, activeIcon }) => {
+          const selected = activeRole === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onSelect(value)}
+              aria-pressed={selected}
+              className={`flex items-center gap-3 px-6 py-4 rounded-2xl border-2 transition-all duration-300 text-left w-full sm:w-72 ${selected ? `${active} shadow-sm` : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+            >
+              <span
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${selected ? activeIcon : "bg-slate-100 text-slate-500"
+                  }`}
+              >
+                <Icon size={22} />
+              </span>
+              <span>
+                <span className="block font-bold text-base">{label}</span>
+                <span className={`block text-xs mt-0.5 ${selected ? "" : "text-slate-400"}`}>{desc}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const EXPERT_FEATURES = [
+  {
+    Icon: DollarSign,
+    title: "Paid Consultations",
+    description: "Offer 1-on-1 sessions with investors and earn directly for your time and expertise.",
+  },
+  {
+    Icon: Award,
+    title: "Verified Expert Badge",
+    description: "Stand out with a trust badge that boosts your visibility across the platform.",
+  },
+  {
+    Icon: GraduationCap,
+    title: "Publish Educational Content",
+    description: "Share articles in the Knowledge Hub and become a go-to voice for new investors.",
+  },
+  {
+    Icon: MessageCircleQuestion,
+    title: "Answer Investor Questions",
+    description: "Respond to Ask the Experts questions and grow your following one answer at a time.",
+  },
+  {
+    Icon: BrainCircuit,
+    title: "Publish Portfolio Insights",
+    description: "Share your strategy and quant calls, and let investors follow your track record.",
+  },
+  {
+    Icon: Bot,
+    title: "AI-Matched Reach",
+    description: "Get surfaced to investors using AI predictions who want a human expert's take.",
+  },
+];
+
+const REGISTRATION_STEPS = [
+  {
+    Icon: UserPlus,
+    step: "1",
+    title: "Choose your role & sign up",
+    description: "Pick Investor or Expert, then create your account with a username, email, and password.",
+  },
+  {
+    Icon: Mail,
+    step: "2",
+    title: "Verify your email",
+    description: "Confirm the verification email we send you to activate your account.",
+  },
+  {
+    Icon: ShieldCheck,
+    step: "3",
+    title: "Agree to the terms",
+    description: "Review and accept RocketTrade's Terms and Conditions and Privacy Policy.",
+  },
+  {
+    Icon: Rocket,
+    step: "4",
+    title: "Start using RocketTrade",
+    description: "Investors jump straight into paper trading; Experts get verified before publishing insights.",
+  },
+];
+
+function RegistrationGuide() {
+  const navigate = useNavigate();
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-10">
+      <div className="text-center mb-10">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">How to Get Started</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">Signing up only takes a few minutes, for investors and experts alike.</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {REGISTRATION_STEPS.map(({ Icon, step, title, description }) => (
+          <div
+            key={step}
+            className="relative rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm hover:shadow-lg hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
+          >
+            <span className="absolute top-4 right-4 text-xs font-bold text-cyan-300">STEP {step}</span>
+            <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">
+              <Icon className="text-cyan-600" size={22} />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1.5">{title}</h3>
+            <p className="text-sm text-slate-500">{description}</p>
+          </div>
+        ))}
+      </div>
+      <div className="text-center mt-10">
+        <button
+          onClick={() => navigate("/register")}
+          className="group relative px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.3)] overflow-hidden inline-flex items-center justify-center"
+        >
+          <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
+          <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Create Your Account</span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function HomePage() {
+  const [activeRole, setActiveRole] = useState("investor");
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white "
+      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.25 }}
     >
       <Header />
-      <main className="flex-1 p-7.5">
+      <MarketTicker />
+      <main className="flex-1 flex flex-col">
+        <Hero />
+        <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>
+          <MarketingVideoSection />
+        </div>
+        <div className="bg-white">
+          <RoleToggle activeRole={activeRole} onSelect={setActiveRole} />
+        </div>
+        {activeRole === "investor" ? (
+          <>
+            <div className="bg-white">
+              <WhyCards
+                heading="Why RocketTrade"
+                subtitle="Built to help you invest smarter, without the real-money risk."
+                items={WHY_ROCKETTRADE}
+              />
+              <FeatureCards
+                heading="Everything You Need to Invest Smarter"
+                subtitle="One platform, six ways to sharpen your edge."
+                items={PLATFORM_FEATURES}
+                theme="cyan"
+              />
+            </div>
+            <div style={{ paddingTop: "300px", paddingBottom: "100px", height: "1300px", background: "linear-gradient(to bottom, #ffffff 0px, #0f172a 260px, #0f172a calc(100% - 260px), #ffffff 100%)" }}>
+              <PricingSection />
+            </div>
+          </>
+        ) : (
+          <div className="bg-white">
+            <WhyCards
+              heading="Why Become a RocketTrade Expert"
+              subtitle="Turn your market knowledge into income and influence."
+              items={EXPERT_WHY}
+            />
+            <FeatureCards
+              heading="Everything You Get as an Expert"
+              subtitle="One platform, six ways to get paid and get seen."
+              items={EXPERT_FEATURES}
+              theme="purple"
+            />
+          </div>
+        )}
+        <div className="bg-white">
+          <RegistrationGuide />
+        </div>
+        <div className="bg-white flex-1">
+          <FAQSection />
+        </div>
 
-        <DynamicFeatureBubbleHero />
       </main>
-
       <Footer />
     </motion.div>
-
-
-
   );
 }
-export default HomePage; 
+
+export default HomePage;

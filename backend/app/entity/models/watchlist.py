@@ -18,6 +18,8 @@ class Watchlist(Base):
     added_at = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
 
+    BASIC_WATCHLIST_LIMIT = 3
+
     @staticmethod
     def add_stock(user_id, stock_symbol):
         with get_session() as session:
@@ -25,13 +27,25 @@ class Watchlist(Base):
                 Investor.user_id == user_id
             ).first()
             if not investor:
-                return False
+                return {"success": False, "message": "Investor not found"}
+
+            if investor.investor_subscription_status != "premium":
+                count = session.query(Watchlist).filter(
+                    Watchlist.investor_id == investor.investor_id
+                ).count()
+                if count >= Watchlist.BASIC_WATCHLIST_LIMIT:
+                    return {
+                        "success": False,
+                        "message": f"Basic plan is limited to {Watchlist.BASIC_WATCHLIST_LIMIT} watchlist stocks. Upgrade to Premium for unlimited.",
+                        "limit_reached": True,
+                    }
+
             existing = session.query(Watchlist).filter(
                 Watchlist.investor_id == investor.investor_id,
                 Watchlist.stock_symbol == stock_symbol.upper()
             ).first()
             if existing:
-                return False
+                return {"success": False, "message": "Stock is already in your watchlist"}
 
             entry = Watchlist(
                 investor_id=investor.investor_id,
@@ -39,7 +53,7 @@ class Watchlist(Base):
             )
             session.add(entry)
             session.flush()
-            return True
+            return {"success": True, "message": "Stock added to watchlist"}
 
     @staticmethod
     def remove_stock(user_id, stock_symbol):
