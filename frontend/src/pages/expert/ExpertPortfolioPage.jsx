@@ -80,7 +80,7 @@ function AllocationBar({ holdings }) {
 
 export default function ExpertPortfolioPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const loggedInName = currentUser?.full_name || currentUser?.name || currentUser?.username || currentUser?.email || "Consultant";
   const [portfolio, setPortfolio] = useState(DEFAULT_PORTFOLIO);
   const [search, setSearch] = useState("");

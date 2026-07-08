@@ -27,6 +27,7 @@ class UserAccount(Base):
     last_login = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
     is_active = Column(Boolean, default=False)
+    has_welcomed = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
 
     @staticmethod
@@ -109,6 +110,9 @@ class UserAccount(Base):
             user.is_active = True
             user.account_status = "active"
 
+            first_login = not user.has_welcomed
+            user.has_welcomed = True
+
             profile_name = user.profile.profile_name if user.profile else None
             investor = session.query(Investor).filter(
                 Investor.user_id == user.user_id).first()
@@ -134,6 +138,7 @@ class UserAccount(Base):
                 "interests": investor.interests if investor else None,
                 "risk_tolerance": investor.risk_tolerance if investor else None,
                 "verification_status": expert.verification_status if expert else None,
+                "_first_login": first_login,
             }
 
     @staticmethod

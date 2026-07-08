@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.control.controller.investorc import GetInvestorController, CreateInvestorController
 from app.entity.models.useraccount import UserAccount
 from app.control.services.email_service import send_subscription_email, send_cancellation_email
+from app.control.controller.notificationc import create_notification
 
 
 def _email_subscription(user_id: str, plan_type: str):
@@ -51,7 +52,14 @@ class CreateSubscription:
         if not investor:
             return False
         subscription = self.create_investor_controller.createSubscription(
-            transaction_id, plan_type, investor["investor_id"]) 
+            transaction_id, plan_type, investor["investor_id"])
+        if subscription:
+            create_notification(
+                user_id,
+                "subscription",
+                f"{plan_type.capitalize()} subscription activated",
+                f"Your {plan_type} membership is now active.",
+            )
         return subscription
 
 
@@ -149,6 +157,12 @@ def cancel_subscription(user_id: str):
             args=(user_id, latest["plan_type"]),
             daemon=True,
         ).start()
+        create_notification(
+            user_id,
+            "subscription",
+            f"{latest['plan_type'].capitalize()} subscription cancelled",
+            "Your subscription has been cancelled.",
+        )
     return {"success": True, "message": "Subscription cancelled successfully", "new_status": new_status}
 
 
