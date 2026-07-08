@@ -109,6 +109,20 @@ def ensure_all_schemas(engine):
             except Exception as e:
                 print(f"[SCHEMA] Skipped {table}.{col}: {e}")
 
+        # user_account.has_welcomed drives the one-time welcome notification on first
+        # login. Existing accounts must be backfilled as already-welcomed the moment
+        # this column is created, or every current user would get "welcomed" on their
+        # next login as if they were brand new.
+        try:
+            if not _col_exists(conn, "user_account", "has_welcomed"):
+                conn.execute(text(
+                    "ALTER TABLE user_account ADD COLUMN has_welcomed TINYINT(1) NOT NULL DEFAULT 0"))
+                conn.execute(text("UPDATE user_account SET has_welcomed = 1"))
+                conn.commit()
+                print("[SCHEMA] Added user_account.has_welcomed (existing accounts backfilled)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped user_account.has_welcomed: {e}")
+
         # watchlist.investor_id must become nullable (experts have no investor row),
         # and existing rows need user_id backfilled from their investor's user_id.
         try:

@@ -42,7 +42,7 @@ const COMPANY_NAMES = {
 };
 
 export default function Watchlist() {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
     const role = String(currentUser?.role || "").toLowerCase();
@@ -52,7 +52,7 @@ export default function Watchlist() {
 
     const [symbols, setSymbols] = useState([]);
 
-    const isAtLimit = !isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT;
+    const isAtLimit = !isPremium && !isExpert && symbols.length >= BASIC_WATCHLIST_LIMIT;
     const [loading, setLoading] = useState(true);
     const [adding, setAdding] = useState(false);
     const [newSymbol, setNewSymbol] = useState("");
@@ -73,7 +73,7 @@ export default function Watchlist() {
             alert(`${sym} is already in your watchlist.`);
             return;
         }
-        if (!isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT) {
+        if (!isPremium && !isExpert && symbols.length >= BASIC_WATCHLIST_LIMIT) {
             alert(`Basic plan is limited to ${BASIC_WATCHLIST_LIMIT} watchlist stocks. Upgrade to Premium for unlimited.`);
             return;
         }
@@ -85,7 +85,7 @@ export default function Watchlist() {
         } else {
             alert(res.message || "Failed to add stock.");
         }
-    }, [newSymbol, symbols, userId, isPremium]);
+    }, [newSymbol, symbols, userId, isPremium, isExpert]);
 
     const handleRemove = useCallback(async (sym) => {
         const res = await removeStockFromWatchlist(userId, sym);
@@ -161,7 +161,7 @@ export default function Watchlist() {
                             )}
                         </AnimatePresence>
 
-                        {!isPremium && (
+                        {!isPremium && !isExpert && (
                             <span style={{
                                 fontFamily: "'DM Mono', monospace", fontSize: "11px",
                                 color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.4)",
@@ -353,7 +353,7 @@ export default function Watchlist() {
                 <div className="flex justify-between items-center mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
                     <span>
                         Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}
-                        {!isPremium && (
+                        {!isPremium && !isExpert && (
                             <span style={{ color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.25)", marginLeft: "8px" }}>
                                 · {symbols.length}/{BASIC_WATCHLIST_LIMIT} Basic plan slots used
                             </span>

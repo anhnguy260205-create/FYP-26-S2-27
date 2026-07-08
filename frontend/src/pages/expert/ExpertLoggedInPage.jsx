@@ -239,7 +239,7 @@ function sortQuestions(list) {
 }
 
 function ExpertLoggedInPage() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const name = currentUser?.username || currentUser?.full_name || "Expert";
 

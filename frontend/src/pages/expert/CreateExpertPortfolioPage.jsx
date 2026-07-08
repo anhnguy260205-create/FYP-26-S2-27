@@ -82,7 +82,7 @@ function loadInitialPortfolio() {
 
 export default function CreateExpertPortfolioPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const loggedInName = currentUser?.full_name || currentUser?.name || currentUser?.username || currentUser?.email || "Consultant";
   const [portfolio, setPortfolio] = useState(loadInitialPortfolio);
   const [saving, setSaving] = useState(false);

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { getExpertInformation } from "../../api/userApi.js";
+import { getExpertInformation, deleteExpert } from "../../api/userApi.js";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import Footer from "../../layout/Footer.jsx";
@@ -242,11 +242,11 @@ function PersonalInformationCard({ expertInfo, onUpdate }) {
             );
             if (result.success) {
                 // Patch localStorage so header/other components reflect the change immediately
-                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
                 stored.full_name = draftFull;
                 stored.username = draftUser;
                 stored.email_address = draftEmail;
-                localStorage.setItem("currentUser", JSON.stringify(stored));
+                sessionStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Profile updated");
                 setEditingSection(null);
@@ -459,12 +459,12 @@ function DeleteAccountButton() {
     const [loading, setLoading] = useState(false);
 
     const handleDeleteAccount = async () => {
-        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
         setLoading(true);
         try {
-            const result = await deleteInvestor(currentUser?.user_id);
+            const result = await deleteExpert(currentUser?.user_id);
             if (result.success) {
-                localStorage.removeItem("currentUser");
+                sessionStorage.removeItem("currentUser");
                 navigate("/");
             } else {
                 alert(result.message || "Failed to delete account");
@@ -525,7 +525,7 @@ function DeleteAccountButton() {
 
 function VerifiedCard({ expertInfo, onUpdate }) {
     const status = expertInfo?.verification_status?.toLowerCase();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
     // ── Verification form state ──
     const [linkedIn, setLinkedIn] = useState(expertInfo?.linked_in_url || "");
@@ -856,7 +856,7 @@ function VerifiedCard({ expertInfo, onUpdate }) {
 function ExpertProfilePage() {
     const [activeTab, setActiveTab] = useState("personal");
     const [expertInfo, setExpertInfo] = useState(null);
-    const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser")));
+    const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser")));
     const userId = currentUser?.user_id;
 
     const fetchExpertInfo = () => {

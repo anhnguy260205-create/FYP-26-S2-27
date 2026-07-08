@@ -30,7 +30,7 @@ function SellStockPage() {
   const { marketStatus, stocks, lastUpdated } = useLiveStocks();
   const stock = stocks[selectedStock];
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   const [quantity, setQuantity] = useState(1);
   const [holding, setHolding] = useState(null);

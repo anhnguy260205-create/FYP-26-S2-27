@@ -11,14 +11,14 @@ const menuItems = [
   { name: "Article Management", path: "/adminpanel/articles" },
   { name: "Subscription Management", path: "/adminpanel/subscriptions" },
   { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" },
-  { name: "Content Managment", path: "/adminpanel/contentmanagement" },
-  { name: "Notification", path: "/adminpanel/notifications" },
+  { name: "Content Management", path: "/adminpanel/contentmanagement" },
+  { name: "Notification Management", path: "/adminpanel/notifications" },
 ];
 
 function AdminLayout({ title, subtitle, children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -29,7 +29,7 @@ function AdminLayout({ title, subtitle, children }) {
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
     }
   };
@@ -71,18 +71,17 @@ function AdminLayout({ title, subtitle, children }) {
               item.path === "/adminpanel"
                 ? location.pathname === "/adminpanel"
                 : location.pathname === item.path ||
-                  location.pathname.startsWith(item.path + "/");
+                location.pathname.startsWith(item.path + "/");
 
             return (
               <Link
                 key={item.name}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`block rounded px-3 py-2 text-[11px] font-medium ${
-                  active
+                className={`block rounded px-3 py-2 text-[11px] font-medium ${active
                     ? "bg-blue-50 text-blue-600"
                     : "text-slate-700 hover:bg-slate-100"
-                }`}
+                  }`}
               >
                 {item.name}
               </Link>

@@ -195,7 +195,7 @@ function VerificationWall({ status }) {
 }
 
 function ExpertKnowledgeHub() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const isVerified = currentUser?.verification_status === "approved";
 
   const [articles, setArticles] = useState([]);

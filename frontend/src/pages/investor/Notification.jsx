@@ -42,7 +42,7 @@ function timeAgo(isoString) {
 }
 
 function Notification() {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -81,7 +81,7 @@ function Notification() {
             transition={{ duration: 0.25 }}
         >
             <GeneralHeader />
-            <main className="flex-1 p-4 md:p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", boxSizing: "border-box" }}>
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">

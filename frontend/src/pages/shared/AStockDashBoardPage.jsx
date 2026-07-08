@@ -282,7 +282,7 @@ function StatPill({ label, value }) {
 
 /* ─── Alert Board ──────────────────────────────────────────── */
 function AlertBoard({ symbol }) {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const userEmail = currentUser?.email || "";
 
@@ -598,7 +598,7 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
 /* ─── Paper Exchange Panel ──────────────────────────────────── */
 function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const isMarketOpen = marketStatus === "OPEN";
-  const userId = JSON.parse(localStorage.getItem("currentUser") || "{}").user_id;
+  const userId = JSON.parse(sessionStorage.getItem("currentUser") || "{}").user_id;
 
   const [quantity, setQuantity] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
@@ -849,7 +849,7 @@ function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
   const role = String(currentUser?.role || "").toLowerCase();
   const isExpert = role === "expert";
