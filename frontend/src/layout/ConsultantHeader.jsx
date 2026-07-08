@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
+import { getNotifications } from "../api/notificationApi.js";
 import { BellRing, Menu, X } from "lucide-react";
 
 
@@ -25,18 +26,18 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -60,7 +61,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -94,18 +95,26 @@ function ConsultantHeader() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.user_id) return;
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
+      .catch(() => {});
+  }, [currentUser?.user_id]);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {
@@ -184,7 +193,9 @@ function ConsultantHeader() {
         <div className="hidden md:flex items-center gap-3 lg:gap-8">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+            className={`flex items-center gap-2 font-medium ${
+              hasUnread ? "text-cyan-400" : "text-slate-800 hover:text-cyan-500"
+            }`}
           >
             <BellRing size={18} />
             <span className="hidden lg:inline">Notification</span>
@@ -196,7 +207,7 @@ function ConsultantHeader() {
         <div className="flex md:hidden items-center gap-3">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="text-slate-800 hover:text-cyan-500"
+            className={hasUnread ? "text-cyan-400" : "text-slate-800 hover:text-cyan-500"}
             aria-label="Notifications"
           >
             <BellRing size={20} />

@@ -74,7 +74,7 @@ function LoginPage() {
         setError(result.message || "Failed to load user profile");
         return;
       }
-      localStorage.setItem("currentUser", JSON.stringify(result.user));
+      sessionStorage.setItem("currentUser", JSON.stringify(result.user));
       const role = result.user.role;
       const isFirstLogin = !result.user.full_name;
       if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");

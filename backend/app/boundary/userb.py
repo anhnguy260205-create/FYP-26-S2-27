@@ -11,6 +11,7 @@ from app.control.controller.userc import (
     ExpertInformationController,
     UpdateInformationController,
     DeleteInvestorController,
+    DeleteExpertController,
     FirebaseLoginController,
 )
 from app.control.controller.investorc import (
@@ -148,6 +149,18 @@ def delete_account(
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
     result = DeleteInvestorController().delete_account(user_id)
+    if not result:
+        return {"success": False, "message": "Account not found"}
+    return {"success": True, "message": "Account deleted successfully"}
+
+
+@router.delete("/delete-expert/{user_id}")
+def delete_expert_account(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = DeleteExpertController().delete_account(user_id)
     if not result:
         return {"success": False, "message": "Account not found"}
     return {"success": True, "message": "Account deleted successfully"}

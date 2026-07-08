@@ -41,7 +41,7 @@ function statusStyle(s) {
 
 export default function ExpertQuestionsPage() {
     const navigate = useNavigate();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
     const [questions, setQuestions]   = useState([]);
     const [loading,   setLoading]     = useState(true);

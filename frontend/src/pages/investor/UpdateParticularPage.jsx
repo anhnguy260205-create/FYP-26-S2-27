@@ -19,7 +19,7 @@ const SPECIALTIES = [
 
 function UpdateParticularPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -69,7 +69,7 @@ function UpdateParticularPage() {
 
       // Patch localStorage so rest of the app sees updated values immediately
       const updated = { ...currentUser, full_name: fullName.trim(), interests: interests.join(","), risk_tolerance: riskTolerance };
-      localStorage.setItem("currentUser", JSON.stringify(updated));
+      sessionStorage.setItem("currentUser", JSON.stringify(updated));
 
       navigate("/investor");
     } catch {

@@ -36,7 +36,7 @@ function timeAgo(iso) {
   return d.toLocaleDateString();
 }
 function currentUser() {
-  try { return JSON.parse(localStorage.getItem("currentUser") || "{}"); }
+  try { return JSON.parse(sessionStorage.getItem("currentUser") || "{}"); }
   catch { return {}; }
 }
 

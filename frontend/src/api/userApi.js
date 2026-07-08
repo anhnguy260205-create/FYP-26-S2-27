@@ -113,6 +113,13 @@ export const deleteInvestor = async (userId) => {
   return response.json();
 };
 
+export const deleteExpert = async (userId) => {
+  const response = await authFetch(`${BASE_URL}/delete-expert/${userId}`, {
+    method: "DELETE",
+  });
+  return response.json();
+};
+
 export const getWatchlist = async (userId) => {
   const response = await authFetch(`${BASE_URL}/investor-watchlist/${userId}`);
   return response.json();
