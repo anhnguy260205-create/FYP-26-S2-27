@@ -106,7 +106,7 @@ function Empty({ navigate }) {
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 function TransactionHistoryPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);

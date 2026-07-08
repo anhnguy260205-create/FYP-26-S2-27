@@ -43,6 +43,23 @@ def update_password_by_email(email: str, new_password: str) -> bool:
         return False
 
 
+def delete_firebase_user_by_email(email: str) -> bool:
+    try:
+        _init()
+    except Exception as e:
+        print(f"[FIREBASE ADMIN] Init failed, skipping Firebase deletion for {email}: {e}")
+        return False
+    try:
+        user = auth.get_user_by_email(email)
+        auth.delete_user(user.uid)
+        return True
+    except auth.UserNotFoundError:
+        return True  # already gone — not an error for our purposes
+    except Exception as e:
+        print(f"[FIREBASE ADMIN] Failed to delete user {email}: {e}")
+        return False
+
+
 def verify_password_firebase(email: str, password: str) -> bool:
     api_key = os.getenv("FIREBASE_WEB_API_KEY")
     if not api_key:

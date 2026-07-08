@@ -16,7 +16,7 @@ const docTypeStyle = (type) => {
 
 function ExpertDocumentPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
   const [docs, setDocs] = useState([]);
   const [form, setForm] = useState({ name: "", url: "", type: "certification" });

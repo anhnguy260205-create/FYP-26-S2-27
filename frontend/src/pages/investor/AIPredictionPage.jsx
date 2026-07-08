@@ -968,7 +968,7 @@ function AIPredictionPage() {
   const liveStock = stocks[symbol];
   const symbolCandles = candles?.[symbol] ?? [];
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   function handleSymbolChange(s) {
     setSymbol(s);

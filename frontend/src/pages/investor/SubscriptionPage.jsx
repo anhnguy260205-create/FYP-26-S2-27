@@ -226,7 +226,7 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
 }
 
 function SubscriptionPage() {
-  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const userId = user?.user_id;
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
     user?.subscription_status || "inactive"

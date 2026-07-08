@@ -69,7 +69,7 @@ class ForumController:
     def delete_post(self, post_id, user_id=None):
         deleted = ForumRepository.delete_post(post_id, user_id)
         if not deleted:
-            return {"success": False, "message": "Post not found"}
+            return {"success": False, "message": "Post not found or you can only delete your own posts"}
         return {"success": True, "message": "Post deleted successfully", "post_id": post_id}
 
     def update_reply(self, post_id, reply_id, user_id=None, content=""):

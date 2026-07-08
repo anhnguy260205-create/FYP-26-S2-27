@@ -13,7 +13,7 @@ function PaymentSuccess() {
 
     useEffect(() => {
         const activate = async () => {
-            const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+            const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
             if (!user?.user_id) {
                 setStatus("done");
                 return;

@@ -97,11 +97,10 @@ function NotificationManagementPage() {
                 <button
                   key={a.key}
                   onClick={() => setAudience(a.key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-                    audience === a.key
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-200 text-slate-600"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold ${audience === a.key
+                    ? "bg-blue-600 text-white"
+                    : "bg-white border border-gray-200 text-slate-600"
+                    }`}
                 >
                   {a.label}
                 </button>
@@ -109,16 +108,15 @@ function NotificationManagementPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-8 mb-5">
-            <div className="flex-1 max-w-147.5">
-              <label className="text-xs font-bold text-slate-400 mb-1 block">TITLE</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Scheduled maintenance tonight"
-                className="w-full h-12 border border-gray-300 rounded-lg px-4 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          <div className="mb-5">
+
+            <label className="text-xs font-bold text-slate-400 mb-1 block">TITLE</label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Scheduled maintenance tonight"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+
           </div>
 
           <div className="mb-5">

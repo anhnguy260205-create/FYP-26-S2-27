@@ -26,18 +26,18 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -64,7 +64,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -99,7 +99,7 @@ function GeneralHeader() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
@@ -111,14 +111,14 @@ function GeneralHeader() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {

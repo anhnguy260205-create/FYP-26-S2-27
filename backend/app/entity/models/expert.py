@@ -168,6 +168,71 @@ class Expert(Base):
                 "documents": json.loads(expert.documents) if expert.documents else [],
             }
 
+    @staticmethod
+    def deleteExpert(user_id):
+        from app.entity.models.article import Article
+        from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+        from app.entity.models.forumquestion import ExpertQuestion
+        from app.entity.models.emailalert import StockAlert
+        from app.entity.models.notification import Notification
+        from app.entity.models.watchlist import Watchlist
+
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert:
+                return False
+
+            # 1. Portfolio holdings (child of portfolio)
+            portfolio_ids = [
+                p.portfolio_id for p in session.query(ExpertPortfolio).filter(
+                    ExpertPortfolio.expert_id == expert.expert_id
+                ).all()
+            ]
+            if portfolio_ids:
+                session.query(ExpertPortfolioHolding).filter(
+                    ExpertPortfolioHolding.portfolio_id.in_(portfolio_ids)
+                ).delete(synchronize_session=False)
+
+            # 2. Portfolio (child of expert)
+            session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id
+            ).delete()
+
+            # 3. Articles authored (child of expert)
+            session.query(Article).filter(
+                Article.expert_id == expert.expert_id
+            ).delete()
+
+            # 4. Questions assigned to this expert
+            session.query(ExpertQuestion).filter(
+                ExpertQuestion.expert_id == expert.expert_id
+            ).delete()
+
+            # 5. Alerts, notifications, watchlist (keyed by user_id, not expert_id)
+            session.query(StockAlert).filter(
+                StockAlert.user_id == user_id
+            ).delete()
+            session.query(Notification).filter(
+                Notification.user_id == user_id
+            ).delete()
+            session.query(Watchlist).filter(
+                Watchlist.user_id == user_id
+            ).delete()
+
+            # 6. Expert row (child of user_account)
+            session.delete(expert)
+            session.flush()
+
+            # 7. User account row
+            user = session.query(UserAccount).filter(
+                UserAccount.user_id == user_id
+            ).first()
+            if user:
+                session.delete(user)
+            return True
+
 
 def seed_expert_account():
     Expert.createAccount(
