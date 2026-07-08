@@ -1,7 +1,9 @@
 from typing import Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.control.controller.adminc import AdminUserAccountController
+from app.control.services.firebase_admin_service import delete_firebase_user_by_email
+from app.control.services.auth import require_admin
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -130,6 +132,18 @@ def delete_user_account(user_id: str, requesting_user_id: Optional[str] = None):
         "success": True,
         "message": "User account deleted successfully",
     }
+
+
+class DeleteFirebaseOrphanRequest(BaseModel):
+    email: str
+
+
+@router.post("/firebase-cleanup")
+def delete_firebase_orphan(data: DeleteFirebaseOrphanRequest, current_user: dict = Depends(require_admin)):
+    """Delete a Firebase Auth user that has no matching account in our DB —
+    for cleaning up accounts deleted before Firebase deletion was wired in."""
+    ok = delete_firebase_user_by_email(data.email.strip().lower())
+    return {"success": ok}
 
 
 @router.put("/useraccounts/{user_id}/activate")

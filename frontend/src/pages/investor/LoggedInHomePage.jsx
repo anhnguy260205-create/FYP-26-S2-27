@@ -66,7 +66,7 @@ function PortfolioStatCard({ label, value, highlighted, valueColor }) {
 
 function PortfolioSummarySection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks } = useLiveStocks();
 
@@ -212,7 +212,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -416,7 +416,7 @@ function PopularStocksSection() {
 }
 
 function WelcomeBanner() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const name = currentUser?.username || currentUser?.full_name || "Investor";
   return (
     <div>
