@@ -44,7 +44,7 @@ function StatCard({ label, value, colour }) {
 
 export default function TransactionPortalPage() {
     const navigate = useNavigate();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
     const userId = currentUser?.user_id;
 
     const [stats,   setStats]   = useState(null);

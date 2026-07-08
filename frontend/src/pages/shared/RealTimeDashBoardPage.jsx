@@ -273,20 +273,20 @@ function RealTimeDashBoardPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [interests, setInterests] = useState(() => {
-    const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     return stored.interests
       ? stored.interests.split(",").map(s => s.trim()).filter(Boolean)
       : [];
   });
   const [riskTolerance, setRiskTolerance] = useState(() => {
-    const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     return stored.risk_tolerance || "";
   });
   const [browseCategory, setBrowseCategory] = useState("All");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = stored.user_id;
     if (!userId) return;
     authFetch(`${import.meta.env.VITE_API_URL}/user/investor-information/${userId}`)
@@ -302,7 +302,7 @@ function RealTimeDashBoardPage() {
         setRiskTolerance(freshRisk);
         // keep localStorage in sync so other pages see the latest values
         const updated = { ...stored, interests: info.interests || "", risk_tolerance: freshRisk };
-        localStorage.setItem("currentUser", JSON.stringify(updated));
+        sessionStorage.setItem("currentUser", JSON.stringify(updated));
       })
       .catch(() => { });
   }, []);
@@ -386,7 +386,7 @@ function RealTimeDashBoardPage() {
       s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [stocks, searchQuery]);
-  const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
+  const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || "{}"));
   const role = String(currentUser?.role || "").toLowerCase();
 
   const isExpert = role === "expert";

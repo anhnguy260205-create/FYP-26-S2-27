@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, Eye, Ban, Trash2, Mail, Phone } from "lucide-react";
+import { Search, Filter, Eye, Ban, Mail, Phone } from "lucide-react";
 import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,6 @@ function UserAccountsPage() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const fetchUsers = async (searchKeyword = "") => {
     try {
@@ -87,31 +86,6 @@ function UserAccountsPage() {
     } catch (error) {
       console.error("Failed to activate user:", error);
       alert("Failed to activate user");
-    }
-  };
-
-  const handleDelete = async (userId) => {
-    const confirmed = window.confirm("Are you sure you want to permanently delete this account?");
-    if (!confirmed) return;
-
-    try {
-      const requestingId = currentUser?.user_id ?? "";
-      const response = await fetch(
-        `http://127.0.0.1:8000/admin/useraccounts/${userId}?requesting_user_id=${encodeURIComponent(requestingId)}`,
-        { method: "DELETE" }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert("User deleted successfully");
-        fetchUsers(keyword);
-      } else {
-        alert(data.message || "Failed to delete user");
-      }
-    } catch (error) {
-      console.error("Failed to delete user:", error);
-      alert("Failed to delete user");
     }
   };
 
@@ -259,19 +233,6 @@ function UserAccountsPage() {
                         />
                       )}
 
-                      {user.user_id === currentUser?.user_id ? (
-                        <Trash2
-                          size={18}
-                          className="text-gray-300 cursor-not-allowed"
-                          title="You cannot delete your own account"
-                        />
-                      ) : (
-                        <Trash2
-                          size={18}
-                          onClick={() => handleDelete(user.user_id)}
-                          className="text-red-600 cursor-pointer"
-                        />
-                      )}
                     </div>
                   </td>
                 </tr>
