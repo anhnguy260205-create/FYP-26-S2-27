@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime
+from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean
 from app.entity.models.investor import Investor
 from app.entity.database.base import Base
 from datetime import datetime, timedelta
@@ -20,10 +20,17 @@ class Subscription(Base):
     sub_status = Column(String(20), default="active")
     sub_renewal_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")), nullable=True)
+    renewal_reminder_sent = Column(Boolean, default=False, nullable=False)
 
     @staticmethod
     def createSubscription(transaction_id, plan_type, investor_id):
         with get_session() as session:
+            if session.query(Subscription).filter(
+                Subscription.transaction_id == transaction_id
+            ).first():
+                print("DUPLICATE TRANSACTION — already processed")
+                return False
+
             if plan_type == "basic":
                 if session.query(Subscription).filter(
                     Subscription.investor_id == investor_id,
@@ -56,3 +63,101 @@ class Subscription(Base):
             session.flush()
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id
+
+    @staticmethod
+    def getLatestByInvestorId(investor_id):
+        with get_session() as session:
+            row = (
+                session.query(Subscription)
+                .filter(Subscription.investor_id == investor_id)
+                .order_by(Subscription.sub_date.desc())
+                .first()
+            )
+            if not row:
+                return None
+            return {
+                "plan_type": row.plan_type,
+                "sub_status": row.sub_status,
+                "sub_date": row.sub_date.isoformat() if row.sub_date else None,
+                "sub_renewal_date": row.sub_renewal_date.isoformat() if row.sub_renewal_date else None,
+            }
+
+    @staticmethod
+    def getAllByInvestorId(investor_id):
+        with get_session() as session:
+            rows = (
+                session.query(Subscription)
+                .filter(Subscription.investor_id == investor_id)
+                .order_by(Subscription.sub_date.desc())
+                .all()
+            )
+            return [
+                {
+                    "plan_type": r.plan_type,
+                    "sub_status": r.sub_status,
+                    "sub_date": r.sub_date.isoformat() if r.sub_date else None,
+                    "sub_renewal_date": r.sub_renewal_date.isoformat() if r.sub_renewal_date else None,
+                }
+                for r in rows
+            ]
+
+    @staticmethod
+    def getExpiringPremium(days: int = 3):
+        """Return premium subscriptions expiring within `days` days that haven't been reminded yet."""
+        from app.entity.models.useraccount import UserAccount
+        now = datetime.now(ZoneInfo("Asia/Singapore")).replace(tzinfo=None)
+        cutoff = now + timedelta(days=days)
+        with get_session() as session:
+            rows = (
+                session.query(Subscription, Investor, UserAccount)
+                .join(Investor, Investor.investor_id == Subscription.investor_id)
+                .join(UserAccount, UserAccount.user_id == Investor.user_id)
+                .filter(
+                    Subscription.plan_type == "premium",
+                    Subscription.sub_status == "active",
+                    Subscription.renewal_reminder_sent == False,
+                    Subscription.sub_renewal_date != None,
+                    Subscription.sub_renewal_date <= cutoff,
+                )
+                .all()
+            )
+            return [
+                {
+                    "sub_id": sub.sub_id,
+                    "sub_renewal_date": sub.sub_renewal_date.isoformat() if sub.sub_renewal_date else None,
+                    "email_address": user.email_address,
+                    "username": user.username,
+                }
+                for sub, inv, user in rows
+            ]
+
+    @staticmethod
+    def markReminderSent(sub_id: str):
+        with get_session() as session:
+            sub = session.query(Subscription).filter(Subscription.sub_id == sub_id).first()
+            if sub:
+                sub.renewal_reminder_sent = True
+
+    @staticmethod
+    def cancelSubscription(investor_id: str):
+        with get_session() as session:
+            sub = (
+                session.query(Subscription)
+                .filter(
+                    Subscription.investor_id == investor_id,
+                    Subscription.sub_status == "active",
+                )
+                .order_by(Subscription.sub_date.desc())
+                .first()
+            )
+            if not sub:
+                return False
+            cancelled_plan = sub.plan_type
+            sub.sub_status = "cancelled"
+            investor = session.query(Investor).filter(
+                Investor.investor_id == investor_id
+            ).first()
+            if investor:
+                # Premium cancel reverts to basic; basic cancel goes inactive
+                investor.investor_subscription_status = "basic" if cancelled_plan == "premium" else "inactive"
+            return cancelled_plan

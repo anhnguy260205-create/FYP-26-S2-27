@@ -5,11 +5,13 @@ from app.control.controller.adminc import AdminUserAccountController
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
+
 class InvestmentArticleRequest(BaseModel):
     title: str
     category: str
     content: str
     status: str = "draft"
+
 
 class AdminUserAccountPage:
     def __init__(self):
@@ -24,12 +26,12 @@ class AdminUserAccountPage:
     def suspendUserAccount(self, user_id):
         return self.controller.suspendUserAccount(user_id)
 
-    def deleteUserAccount(self, user_id):
-        return self.controller.deleteUserAccount(user_id)
-    
+    def deleteUserAccount(self, user_id, requesting_user_id=None):
+        return self.controller.deleteUserAccount(user_id, requesting_user_id)
+
     def activateUserAccount(self, user_id):
         return self.controller.activateUserAccount(user_id)
-    
+
     def getInvestmentArticles(self):
         return self.controller.getInvestmentArticles()
 
@@ -108,11 +110,17 @@ def suspend_user_account(user_id: str):
 
 
 @router.delete("/useraccounts/{user_id}")
-def delete_user_account(user_id: str):
+def delete_user_account(user_id: str, requesting_user_id: Optional[str] = None):
     boundary = AdminUserAccountPage()
-    success = boundary.deleteUserAccount(user_id)
+    result = boundary.deleteUserAccount(user_id, requesting_user_id)
 
-    if not success:
+    if result == "self_delete":
+        return {
+            "success": False,
+            "message": "You cannot delete your own account",
+        }
+
+    if not result:
         return {
             "success": False,
             "message": "User not found",
@@ -120,8 +128,9 @@ def delete_user_account(user_id: str):
 
     return {
         "success": True,
-        "message": "User deleted successfully",
+        "message": "User account deleted successfully",
     }
+
 
 @router.put("/useraccounts/{user_id}/activate")
 def activate_user_account(user_id: str):
@@ -138,6 +147,7 @@ def activate_user_account(user_id: str):
         "success": True,
         "message": "User activated successfully",
     }
+
 
 @router.get("/articles")
 def get_investment_articles():

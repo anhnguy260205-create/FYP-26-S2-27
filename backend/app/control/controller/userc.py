@@ -4,24 +4,14 @@ from app.entity.models.useraccount import UserAccount
 
 
 class CreateAccountController:
-    def createAccount(self, role, username, full_name, email_address, password, phone_number, address, stock_level, experience_year, linked_in_url) -> bool:
+    def createAccount(self, role, username, email_address) -> bool:
         role = role.strip().lower()
 
         if role == "investor":
-            if not stock_level:
-                stock_level = "beginner"
-            return Investor.createAccount(username, full_name, email_address, password, phone_number, address, stock_level)
+            return Investor.createAccount(username=username, email_address=email_address)
         if role == "expert":
-            if experience_year in (None, ""):
-                return False
-            experience_year = int(experience_year)
-            return Expert.createAccount(username, full_name, email_address, password, phone_number, address, experience_year, linked_in_url)
+            return Expert.createAccount(username=username, email_address=email_address)
         return False
-
-
-class LoginController:
-    def login(self, username, password):
-        return UserAccount.login(username, password)
 
 
 class LogoutController:
@@ -47,3 +37,8 @@ class UpdateInformationController:
 class DeleteInvestorController:
     def delete_account(self, user_id):
         return Investor.deleteInvestor(user_id)
+
+
+class FirebaseLoginController:
+    def login(self, email: str):
+        return UserAccount.getProfileByEmail(email)
