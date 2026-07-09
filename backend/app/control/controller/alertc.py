@@ -44,6 +44,17 @@ class DeleteAlertController:
 
 
 class CheckAndTriggerAlertsController:
+
+    @staticmethod
+    def get_active_alert_symbols() -> set:
+        """Distinct symbols that have active, untriggered alerts — ONE query,
+        so the poller can skip the 500+ symbols nobody has alerts on."""
+        with get_session() as session:
+            rows = session.query(StockAlert.stock_symbol).filter_by(
+                is_active=True, is_triggered=False
+            ).distinct().all()
+            return {r[0] for r in rows}
+
     def check(self, symbol: str, current_price: float, previous_close: float | None):
         with get_session() as session:
             alerts = session.query(StockAlert).filter_by(

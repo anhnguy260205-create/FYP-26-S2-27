@@ -50,6 +50,7 @@ const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyD
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
+const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
 function S({ children }) {
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
     { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
     { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
+    { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
     { path: "/investor/payment-success", element: protect(["investor"], PaymentSuccess) },
