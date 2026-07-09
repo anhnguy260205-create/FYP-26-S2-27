@@ -10,6 +10,7 @@ import {
   CheckCheck,
   CheckCircle2,
   Bell,
+  BadgeCheck,
 } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -26,6 +27,7 @@ const iconByType = {
   subscriber: UserPlus,
   article: FileText,
   warning: AlertTriangle,
+  verification: BadgeCheck,
 };
 
 const iconBg = {
@@ -33,6 +35,7 @@ const iconBg = {
   review: "rgba(234,179,8,0.12)",
   subscriber: "rgba(34,197,94,0.12)",
   article: "rgba(168,85,247,0.12)",
+  verification: "rgba(34,197,94,0.12)",
 };
 
 const iconColor = {
@@ -40,6 +43,7 @@ const iconColor = {
   review: "#facc15",
   subscriber: "#4ade80",
   article: "#c084fc",
+  verification: "#4ade80",
 };
 
 function timeAgo(isoString) {

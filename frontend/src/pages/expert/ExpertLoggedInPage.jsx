@@ -6,7 +6,7 @@ import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import { getExpertInformation } from "../../api/userApi.js";
 import { getExpertQuestions } from "../../api/expertApi.js";
 import {
-  MessageSquare, Briefcase, GraduationCap, FileText, UserCog,
+  MessageSquare, Briefcase, GraduationCap, FileText,
   Star, ShieldCheck, Clock, CheckCircle2,
 } from "lucide-react";
 
@@ -15,7 +15,6 @@ const QUICK_ACTIONS = [
   { Icon: Briefcase, label: "My Portfolio", to: "/expert/portfolio" },
   { Icon: GraduationCap, label: "Knowledge Hub", to: "/expert/knowledge-hub" },
   { Icon: FileText, label: "Documents", to: "/expert/documents" },
-  { Icon: UserCog, label: "Edit Profile", to: "/expert/edit-profile" },
 ];
 
 function statusClass(status) {
@@ -32,11 +31,20 @@ function urgencyClass(urgency) {
   return "bg-blue-500/10 text-blue-400 border-blue-500/30";
 }
 
+// Experts only ever see 3 verification states — Unverified / Pending /
+// Approved. Rejected reads the same as never having submitted.
 function verificationClass(status) {
   const s = String(status || "").toLowerCase();
   if (s === "verified" || s === "approved") return "text-emerald-400";
-  if (s === "rejected") return "text-red-400";
-  return "text-yellow-400";
+  if (s === "pending") return "text-yellow-400";
+  return "text-slate-400";
+}
+
+function verificationLabel(status) {
+  const s = String(status || "not_submitted").toLowerCase();
+  if (s === "not_submitted" || s === "rejected") return "Unverified";
+  if (s === "pending") return "Pending Review";
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function formatDate(value) {
@@ -132,7 +140,7 @@ function ExpertStatsSection({ expertInfo, stats, loading }) {
         <StatCard
           icon={<ShieldCheck size={14} />}
           label="Verification"
-          value={expertInfo?.verification_status ?? "pending"}
+          value={verificationLabel(expertInfo?.verification_status)}
           valueClass={verificationClass(expertInfo?.verification_status)}
         />
         <StatCard icon={<Clock size={14} />} label="Pending Questions" value={stats.pending} />

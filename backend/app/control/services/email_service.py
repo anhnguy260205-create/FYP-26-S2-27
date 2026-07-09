@@ -389,6 +389,182 @@ def send_cancellation_email(to_email: str, username: str, plan_type: str):
     return _send(msg, to_email, label=f"cancellation email for {username}")
 
 
+# ── Expert verification approved ─────────────────────────────────────────────
+
+def send_expert_verified_email(to_email: str, username: str):
+    subject = "Your DeskStock Expert Account Has Been Verified"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#0f9b6b,#22c55e);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Account Verified</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Your expert credentials have been approved</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:16px;color:#e2e8f0;">Hi <b>{username}</b>,</p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                Great news — our team has reviewed your submitted credentials and approved your expert application.
+                You now appear as a <b style="color:#34d399;">Verified Expert</b> on DeskStock.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 28px;">
+              <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+                Log in to your profile to see your verified badge and start accepting consultations.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your expert application was reviewed.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label=f"expert verified email for {username}")
+
+
+# ── Expert verification cancelled ────────────────────────────────────────────
+
+def send_expert_verification_cancelled_email(to_email: str, username: str):
+    subject = "Your DeskStock Expert Verification Has Been Cancelled"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#b45309,#f97316);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Verification Cancelled</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Your expert verified status has been revoked</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:16px;color:#e2e8f0;">Hi <b>{username}</b>,</p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                An administrator has cancelled your expert verification. Your account no longer displays the
+                <b style="color:#fb923c;">Verified Expert</b> badge.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 28px;">
+              <div style="background:#1e2d5a;border-left:3px solid #f59e0b;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#fbbf24;font-weight:600;">Want to be verified again?</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                  Log in to your profile and resubmit your credentials to re-enter the review queue.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your expert verification status changed.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label=f"expert verification cancelled email for {username}")
+
+
+# ── Expert verification rejected ─────────────────────────────────────────────
+
+def send_expert_rejected_email(to_email: str, username: str):
+    subject = "Update on Your DeskStock Expert Application"
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0b1124;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1124;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#0f1b3d;border-radius:16px;overflow:hidden;
+                      border:1px solid rgba(255,255,255,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#7f1d1d,#b91c1c);padding:28px 32px;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">Application Not Approved</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Your submitted documents were reviewed</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 12px;">
+              <p style="margin:0;font-size:16px;color:#e2e8f0;">Hi <b>{username}</b>,</p>
+              <p style="margin:12px 0 0;font-size:14px;color:#94a3b8;line-height:1.6;">
+                Our team has reviewed your submitted credentials and was unable to approve your expert application at this time.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 28px;">
+              <div style="background:#1e2d5a;border-left:3px solid #f87171;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#fca5a5;font-weight:600;">You can resubmit</p>
+                <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;line-height:1.5;">
+                  Log in to your profile, update your documents in the "Update Documents" tab, and resubmit — this moves you back into the review queue.
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0b1635;padding:18px 32px;border-top:1px solid rgba(255,255,255,0.06);">
+              <p style="margin:0;font-size:11px;color:#334155;">© 2025 DeskStock · You received this because your expert application was reviewed.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    """.strip()
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"DeskStock <{GMAIL_USER}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    return _send(msg, to_email, label=f"expert rejected email for {username}")
+
+
 # ── Price alert ───────────────────────────────────────────────────────────────
 
 def send_alert_email(to_email: str, stock_symbol: str, current_price: float,
