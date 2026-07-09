@@ -477,7 +477,7 @@ export function useAIChatSession() {
     const bottomRef = useRef(null);
     const abortRef = useRef(null);
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
     const chatStorageKey = getChatStorageKey(currentUser);
     const activeUserKey = currentUser?.user_id || currentUser?.id || currentUser?.username || currentUser?.email || "guest";
 

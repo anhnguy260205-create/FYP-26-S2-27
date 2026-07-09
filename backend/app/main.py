@@ -1,8 +1,21 @@
 import os
 import certifi
-# Point Python's SSL stack at certifi's CA bundle (fixes Windows cert errors with Google APIs)
-os.environ.setdefault("SSL_CERT_FILE", certifi.where())
-os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env this early so LOCAL_CA_BUNDLE (see below) is visible before anything
+# else in this file/its imports touches SSL. connection.py loads it again later,
+# which is a harmless no-op for vars already set.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+# Point Python's SSL stack at certifi's CA bundle (fixes Windows cert errors with Google APIs).
+# LOCAL_CA_BUNDLE (set in backend/.env, gitignored) lets one machine override this — e.g.
+# antivirus software that TLS-scans outbound HTTPS and re-signs certs with its own root,
+# which isn't in certifi's public bundle. Falls back to plain certifi for everyone else.
+_ca_bundle = os.environ.get("LOCAL_CA_BUNDLE") or certifi.where()
+os.environ.setdefault("SSL_CERT_FILE", _ca_bundle)
+os.environ.setdefault("REQUESTS_CA_BUNDLE", _ca_bundle)
+os.environ.setdefault("CURL_CA_BUNDLE", _ca_bundle)
 
 import asyncio
 from contextlib import asynccontextmanager

@@ -554,7 +554,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -815,7 +815,7 @@ function PlatformFeaturesSection() {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const name = currentUser?.username || currentUser?.full_name || "Investor";
   const { stocks } = useLiveStocks();
