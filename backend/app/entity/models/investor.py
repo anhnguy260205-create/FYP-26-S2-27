@@ -20,6 +20,11 @@ class Investor(Base):
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
+    def get_all_user_ids():
+        with get_session() as session:
+            return [uid for (uid,) in session.query(Investor.user_id).all() if uid]
+
+    @staticmethod
     def createAccount(username, email_address) -> bool:
         user_id = UserAccount.createAccount(
             username=username,
@@ -204,6 +209,12 @@ class Investor(Base):
     def deleteInvestor(user_id):
         from app.entity.models.subscription import Subscription
         from app.entity.models.watchlist import Watchlist
+        from app.entity.models.transaction import Transaction
+        from app.entity.models.holding import Holding
+        from app.entity.models.order_book import OrderBook
+        from app.entity.models.predictionusage import PredictionUsage
+        from app.entity.models.emailalert import StockAlert
+        from app.entity.models.notification import Notification
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -211,20 +222,41 @@ class Investor(Base):
             if not investor:
                 return False
 
-            # 1. Delete subscriptions (child of investor)
+            # 1. FK-constrained children of investor (must go first, or the
+            # investor row can't be deleted — trading history in particular
+            # exists for almost any real account).
+            session.query(Transaction).filter(
+                Transaction.investor_id == investor.investor_id
+            ).delete()
+            session.query(Holding).filter(
+                Holding.investor_id == investor.investor_id
+            ).delete()
+            session.query(OrderBook).filter(
+                OrderBook.investor_id == investor.investor_id
+            ).delete()
+            session.query(PredictionUsage).filter(
+                PredictionUsage.investor_id == investor.investor_id
+            ).delete()
             session.query(Subscription).filter(
                 Subscription.investor_id == investor.investor_id
             ).delete()
-            # 2. Delete watchlist row
             session.query(Watchlist).filter(
                 Watchlist.investor_id == investor.investor_id
             ).delete()
 
-            # 3. Delete investor row (child of user_account)
+            # 2. Alerts and notifications (keyed by user_id, not investor_id)
+            session.query(StockAlert).filter(
+                StockAlert.user_id == user_id
+            ).delete()
+            session.query(Notification).filter(
+                Notification.user_id == user_id
+            ).delete()
+
+            # 3. Investor row (child of user_account)
             session.delete(investor)
             session.flush()
 
-            # 4. Delete user_account row
+            # 4. User account row
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id
             ).first()

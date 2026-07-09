@@ -30,7 +30,7 @@ function SellStockPage() {
   const { marketStatus, stocks, lastUpdated } = useLiveStocks();
   const stock = stocks[selectedStock];
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   const [quantity, setQuantity] = useState(1);
   const [holding, setHolding] = useState(null);
@@ -102,7 +102,7 @@ function SellStockPage() {
       }
       setPaperMoney(result.paper_money);
       alert(`Sold ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each. Total: ${formatCurrency(result.total_amount)}`);
-      navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`);
+      navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
       alert("Failed to execute sell order");
@@ -329,7 +329,7 @@ function SellStockPage() {
             {/* Action buttons */}
             <div style={{ display: "flex", gap: "12px" }}>
               <button
-                onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${selectedStock}`)}
+                onClick={() => navigate(`/realtimedashboard/astockdashboard/${selectedStock}`)}
                 style={{
                   flex: 1, padding: "14px", borderRadius: "8px",
                   border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",

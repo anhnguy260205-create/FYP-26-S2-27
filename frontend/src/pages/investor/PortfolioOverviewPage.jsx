@@ -157,7 +157,7 @@ function StatCard({ label, value, sub, highlighted = false, valueColor }) {
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 function PortfolioOverviewPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const { stocks: liveStocks } = useLiveStocks();
 
   const [transactions, setTransactions] = useState([]);
@@ -217,7 +217,7 @@ function PortfolioOverviewPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
-      <main style={{ flex: 1, padding: "28px 32px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", boxSizing: "border-box" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
@@ -281,7 +281,7 @@ function PortfolioOverviewPage() {
                     return (
                       <tr key={h.symbol}
                         style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}`, cursor: "pointer" }}
-                        onClick={() => navigate(`/investor/realtimedashboard/astockdashboard/${h.symbol}`)}
+                        onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`)}
                         onMouseEnter={e => { e.currentTarget.style.background = "rgba(55,138,221,0.05)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                       >

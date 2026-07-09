@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useCallback, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -41,15 +42,17 @@ const COMPANY_NAMES = {
 };
 
 export default function Watchlist() {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+    const role = String(currentUser?.role || "").toLowerCase();
+    const isExpert = role === "expert";
 
     const { stocks: liveStocks, candles } = useLiveStocks();
 
     const [symbols, setSymbols] = useState([]);
 
-    const isAtLimit = !isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT;
+    const isAtLimit = !isPremium && !isExpert && symbols.length >= BASIC_WATCHLIST_LIMIT;
     const [loading, setLoading] = useState(true);
     const [adding, setAdding] = useState(false);
     const [newSymbol, setNewSymbol] = useState("");
@@ -70,7 +73,7 @@ export default function Watchlist() {
             alert(`${sym} is already in your watchlist.`);
             return;
         }
-        if (!isPremium && symbols.length >= BASIC_WATCHLIST_LIMIT) {
+        if (!isPremium && !isExpert && symbols.length >= BASIC_WATCHLIST_LIMIT) {
             alert(`Basic plan is limited to ${BASIC_WATCHLIST_LIMIT} watchlist stocks. Upgrade to Premium for unlimited.`);
             return;
         }
@@ -82,7 +85,7 @@ export default function Watchlist() {
         } else {
             alert(res.message || "Failed to add stock.");
         }
-    }, [newSymbol, symbols, userId, isPremium]);
+    }, [newSymbol, symbols, userId, isPremium, isExpert]);
 
     const handleRemove = useCallback(async (sym) => {
         const res = await removeStockFromWatchlist(userId, sym);
@@ -94,7 +97,7 @@ export default function Watchlist() {
     }, [userId]);
     const navigate = useNavigate();
     const handleSelect = useCallback((symbol) => {
-        navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+        navigate(`/realtimedashboard/astockdashboard/${symbol}`);
     }, [navigate]);
     const rows = symbols.map(sym => {
         const live = liveStocks[sym];
@@ -109,13 +112,12 @@ export default function Watchlist() {
             : [50, 50, 50, 50, 50, 50, 50, 50];
         return { sym, price, change, percent, positive, spark };
     });
-
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <GeneralHeader />
+            {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
 
-            <main className="flex-1 p-4 md:p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
@@ -159,7 +161,7 @@ export default function Watchlist() {
                             )}
                         </AnimatePresence>
 
-                        {!isPremium && (
+                        {!isPremium && !isExpert && (
                             <span style={{
                                 fontFamily: "'DM Mono', monospace", fontSize: "11px",
                                 color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.4)",
@@ -351,7 +353,7 @@ export default function Watchlist() {
                 <div className="flex justify-between items-center mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
                     <span>
                         Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}
-                        {!isPremium && (
+                        {!isPremium && !isExpert && (
                             <span style={{ color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.25)", marginLeft: "8px" }}>
                                 · {symbols.length}/{BASIC_WATCHLIST_LIMIT} Basic plan slots used
                             </span>

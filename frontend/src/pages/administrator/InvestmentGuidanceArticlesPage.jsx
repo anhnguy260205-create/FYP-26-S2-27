@@ -196,9 +196,11 @@ function InvestmentGuidanceArticlesPage() {
                         </button>
                       </>
                     )}
-                    <button onClick={() => handleDelete(article.article_id)} className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs">
-                      <Trash2 size={13} /> Delete
-                    </button>
+                    {article.status === "published" && (
+                      <button onClick={() => handleDelete(article.article_id)} className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs">
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -200,6 +200,12 @@ class AdminUserAccountController:
                 "total_experts": total_experts,
             }
 
+    def getAllExperts(self):
+        return Expert.get_all_for_admin()
+
+    def setExpertVerificationStatus(self, expert_id, status):
+        return Expert.set_verification_status(expert_id, status)
+
     def getSubscriptions(self):
         with get_session() as session:
             rows = (

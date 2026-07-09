@@ -5,6 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 from app.entity.models.investor import Investor
+from app.entity.models.expert import Expert
 
 
 class Watchlist(Base):
@@ -13,7 +14,8 @@ class Watchlist(Base):
     watchlist_id = Column(String(50), primary_key=True,
                           default=lambda: f"watchlist_{uuid4()}")
     investor_id = Column(String(50), ForeignKey(
-        "investor.investor_id"), nullable=False)
+        "investor.investor_id"), nullable=True)
+    user_id = Column(String(50), nullable=True)
     stock_symbol = Column(String(20), nullable=False)
     added_at = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
@@ -26,12 +28,16 @@ class Watchlist(Base):
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
-            if not investor:
-                return {"success": False, "message": "Investor not found"}
+            expert = None if investor else session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not investor and not expert:
+                return {"success": False, "message": "User not found"}
 
-            if investor.investor_subscription_status != "premium":
+            # Experts (and premium investors) have no cap — only basic-plan investors do.
+            if investor and investor.investor_subscription_status != "premium":
                 count = session.query(Watchlist).filter(
-                    Watchlist.investor_id == investor.investor_id
+                    Watchlist.user_id == user_id
                 ).count()
                 if count >= Watchlist.BASIC_WATCHLIST_LIMIT:
                     return {
@@ -41,14 +47,15 @@ class Watchlist(Base):
                     }
 
             existing = session.query(Watchlist).filter(
-                Watchlist.investor_id == investor.investor_id,
+                Watchlist.user_id == user_id,
                 Watchlist.stock_symbol == stock_symbol.upper()
             ).first()
             if existing:
                 return {"success": False, "message": "Stock is already in your watchlist"}
 
             entry = Watchlist(
-                investor_id=investor.investor_id,
+                investor_id=investor.investor_id if investor else None,
+                user_id=user_id,
                 stock_symbol=stock_symbol.upper()
             )
             session.add(entry)
@@ -58,13 +65,8 @@ class Watchlist(Base):
     @staticmethod
     def remove_stock(user_id, stock_symbol):
         with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            if not investor:
-                return {"success": False, "message": "Investor not found"}
             entry = session.query(Watchlist).filter(
-                Watchlist.investor_id == investor.investor_id,
+                Watchlist.user_id == user_id,
                 Watchlist.stock_symbol == stock_symbol.upper()
             ).first()
             if not entry:
@@ -75,13 +77,8 @@ class Watchlist(Base):
     @staticmethod
     def get_watchlist(user_id):
         with get_session() as session:
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-            if not investor:
-                return []
             entries = session.query(Watchlist).filter(
-                Watchlist.investor_id == investor.investor_id
+                Watchlist.user_id == user_id
             ).order_by(Watchlist.added_at.desc()).all()
             return [
                 {

@@ -77,11 +77,20 @@ function EducationContent() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    setLoading(true);
+  // `silent` skips the loading spinner — used for background polling so
+  // newly-approved articles show up without the investor reloading the page.
+  const fetchArticles = ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     getArticles({ category: category === "All" ? undefined : category })
       .then(res => { if (res.success) setArticles(res.articles); })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!silent) setLoading(false); });
+  };
+
+  useEffect(() => {
+    fetchArticles();
+    const interval = setInterval(() => fetchArticles({ silent: true }), 20000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   const filtered = articles.filter(a =>
@@ -97,11 +106,11 @@ function EducationContent() {
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <GeneralHeader />
-        <main className="flex-1 p-4 md:p-7">
+        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
           <div
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24 }}>
-            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>Knowledge Hub</h1>
+            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>Educational Content</h1>
             <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>Educational articles written by verified experts</p>
           </div>
 

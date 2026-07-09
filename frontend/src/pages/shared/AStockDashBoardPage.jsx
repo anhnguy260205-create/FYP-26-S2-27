@@ -14,6 +14,7 @@ import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
+import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -281,7 +282,7 @@ function StatPill({ label, value }) {
 
 /* ─── Alert Board ──────────────────────────────────────────── */
 function AlertBoard({ symbol }) {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const userEmail = currentUser?.email || "";
 
@@ -597,7 +598,7 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
 /* ─── Paper Exchange Panel ──────────────────────────────────── */
 function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const isMarketOpen = marketStatus === "OPEN";
-  const userId = JSON.parse(localStorage.getItem("currentUser") || "{}").user_id;
+  const userId = JSON.parse(sessionStorage.getItem("currentUser") || "{}").user_id;
 
   const [quantity, setQuantity] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
@@ -848,8 +849,10 @@ function AStockDashBoardPage() {
   const { symbol } = useParams();
   const selectedStock = symbol?.toUpperCase();
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+  const role = String(currentUser?.role || "").toLowerCase();
+  const isExpert = role === "expert";
 
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
@@ -889,7 +892,7 @@ function AStockDashBoardPage() {
   const [tab, setTab] = useState("overview");
   const TABS = [
     { key: "overview", label: "Overview" },
-    { key: "trading", label: "Trading" },
+    ...(isExpert ? [] : [{ key: "trading", label: "Trading" }]),
     { key: "prediction", label: "Prediction" },
     { key: "comments", label: "Comments" },
     { key: "alerts", label: "Alerts" },
@@ -903,9 +906,9 @@ function AStockDashBoardPage() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
-        <GeneralHeader />
+        {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
 
-        <main className="flex-1 p-4 md:p-7" style={{ position: "relative", zIndex: 1 }}>
+        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", position: "relative", zIndex: 1 }}>
 
           <FirstLevel
             symbol={symbol}
@@ -962,7 +965,7 @@ function AStockDashBoardPage() {
             </div>
           )}
 
-          {tab === "trading" && (
+          {tab === "trading" && !isExpert && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>

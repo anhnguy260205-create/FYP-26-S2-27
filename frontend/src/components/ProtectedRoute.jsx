@@ -3,9 +3,9 @@ import ChatWidget from "./chat/ChatWidget.jsx";
 
 function getCurrentUser() {
   try {
-    return JSON.parse(localStorage.getItem("currentUser") || "null");
+    return JSON.parse(sessionStorage.getItem("currentUser") || "null");
   } catch {
-    localStorage.removeItem("currentUser");
+    sessionStorage.removeItem("currentUser");
     return null;
   }
 }

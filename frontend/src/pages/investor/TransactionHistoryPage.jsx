@@ -90,7 +90,7 @@ function Empty({ navigate }) {
       </svg>
       <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, margin: "0 0 4px" }}>No transactions yet</p>
       <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b", margin: "0 0 20px" }}>Start trading to see your history here</p>
-      <button onClick={() => navigate("/investor/realtimedashboard")}
+      <button onClick={() => navigate("/realtimedashboard")}
         style={{
           padding: "9px 22px", borderRadius: 8, cursor: "pointer",
           border: `1px solid rgba(55,138,221,0.4)`, background: "rgba(55,138,221,0.1)",
@@ -106,7 +106,7 @@ function Empty({ navigate }) {
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 function TransactionHistoryPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +144,7 @@ function TransactionHistoryPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
-      <main style={{ flex: 1, padding: "28px 32px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", boxSizing: "border-box" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
