@@ -3,6 +3,7 @@ backend/.env
 backend/serviceAccountKey.json
 backend/FIREBASE_SERVICE_ACCOUNT_JSON
 backend/snapshot_cache.json
+backend/local_ca_bundle.pem
 __pycache__/
 *.pyc
 node_modules
