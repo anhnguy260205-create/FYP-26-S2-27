@@ -1,27 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { BellRing, Menu, X } from "lucide-react";
-
-
-function NavDropdown({ items }) {
-  const navigate = useNavigate();
-  return (
-    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-      {items.map((item) => (
-        <button
-          key={item.title}
-          onClick={() => item.path && navigate(item.path)}
-          className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400 transition-all cursor-pointer"
-        >
-          {item.title}
-        </button>
-      ))}
-    </div>
-  );
-}
+import MarketOverviewTicker from "../components/MarketOverviewTicker.jsx";
 
 function DropDownMenu() {
   const navigate = useNavigate();
@@ -47,8 +29,8 @@ function DropDownMenu() {
   };
 
   return (
-    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       <button onClick={() => navigate("/expert/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
       </button>
@@ -92,9 +74,18 @@ function ProfileButton() {
 
 function ConsultantHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -119,30 +110,34 @@ function ConsultantHeader() {
   const navLinks = [
     {
       label: "Questions",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      activePaths: ["/expert/questions", "/expert/question"],
       onClick: () => navigate("/expert/questions"),
     },
     {
       label: "My Portfolio",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      activePaths: ["/expert/portfolio", "/expert/create-portfolio"],
       onClick: () => navigate("/expert/portfolio"),
     },
     {
       label: "Learning Content",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      activePaths: ["/expert/knowledge-hub"],
       onClick: () => navigate("/expert/knowledge-hub"),
     },
     {
       label: "Community Forum",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
     },
   ];
 
+  const isActive = (link) =>
+    link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
+  const notifActive = location.pathname.startsWith("/expert/notifications");
+
   return (
     <>
       <div
-        className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-4 md:px-8"
+        className={`w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-5 lg:px-10 transition-shadow duration-200 ${scrolled ? "shadow-[0_1px_16px_rgba(15,23,42,0.08)]" : ""}`}
         style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)" }}
       >
         <img
@@ -154,68 +149,77 @@ function ConsultantHeader() {
         />
 
         {/* Desktop nav — md and above */}
-        <div className="hidden md:flex items-center gap-5 lg:gap-8">
-          {navLinks.map((link) => (
-            <div key={link.label} className="relative group">
-              <a
-                href="#"
-                className="font-bold text-[14px] lg:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
-                style={{ backgroundImage: link.gradient }}
-                onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
-              >
-                {link.label}
-              </a>
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-              {link.submenu && <NavDropdown items={link.submenu} />}
-            </div>
-          ))}
+        <div className="hidden md:flex items-center gap-6 lg:gap-10">
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <div key={link.label} className="relative group py-2">
+                <a
+                  href="#"
+                  className={`rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[14px] lg:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
+                  onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
+                >
+                  {link.label}
+                </a>
+                <span
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-[3px] rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
+                    }`}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Desktop right — md and above */}
-        <div className="hidden md:flex items-center gap-3 lg:gap-8">
+        <div className="hidden md:flex items-center gap-3 lg:gap-6">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
-            <BellRing size={18} />
-            <span className="hidden lg:inline">Notification</span>
+            <BellRing size={20} />
+            <span className="hidden lg:inline">Notifications</span>
           </button>
           <ProfileButton />
         </div>
 
         {/* Mobile right */}
-        <div className="flex md:hidden items-center gap-3">
+        <div className="flex md:hidden items-center gap-2">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="text-slate-800 hover:text-cyan-500"
+            className={`p-2 rounded-full transition-colors duration-150 ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notifications"
           >
             <BellRing size={20} />
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="text-slate-800 p-1"
+            className="text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors duration-150"
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
+
+      <MarketOverviewTicker />
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
           <div className="px-4 py-4">
-            {navLinks.map((link) => (
-              <div key={link.label} className="mb-1">
-                <button
-                  className="w-full text-left px-4 py-3 font-bold text-slate-900 hover:bg-gray-50 rounded-xl"
-                  onClick={() => { link.onClick?.(); close(); }}
-                >
-                  {link.label}
-                </button>
-              </div>
-            ))}
+            {navLinks.map((link) => {
+              const active = isActive(link);
+              return (
+                <div key={link.label} className="mb-1">
+                  <button
+                    className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-900 hover:bg-gray-50"}`}
+                    onClick={() => { link.onClick?.(); close(); }}
+                  >
+                    {link.label}
+                  </button>
+                </div>
+              );
+            })}
 
             <div className="border-t border-gray-100 mt-3 pt-3 space-y-1">
               <button
