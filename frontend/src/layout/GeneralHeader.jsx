@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
-import { BellRing, Menu, X } from "lucide-react";
-
+import { BellRing, ChevronDown, Menu, X } from "lucide-react";
+import MarketOverviewTicker from "../components/MarketOverviewTicker.jsx";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
   return (
-    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       {items.map((item) => (
         <button
           key={item.title}
@@ -47,8 +47,8 @@ function DropDownMenu() {
   };
 
   return (
-    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
       </button>
@@ -97,8 +97,16 @@ function GeneralHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -122,8 +130,7 @@ function GeneralHeader() {
 
   const navLinks = [
     {
-      label: "DashBoard",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      label: "Dashboard",
       activePaths: ["/investor/watchlist", "/investor/realtimedashboard"],
       submenu: [
         { title: "Watchlist", path: "/investor/watchlist" },
@@ -132,7 +139,6 @@ function GeneralHeader() {
     },
     {
       label: "Knowledge Hub",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/educationcontent", "/investor/expertportfolio", "/investor/aichatbot"],
       submenu: [
         { title: "Educational Content", path: "/investor/educationcontent" },
@@ -142,13 +148,11 @@ function GeneralHeader() {
     },
     {
       label: "Forum Community",
-      gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
     },
     {
       label: "Transactions",
-      gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
       submenu: [
         { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
@@ -159,11 +163,12 @@ function GeneralHeader() {
 
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
+  const notifActive = location.pathname.startsWith("/investor/notification");
 
   return (
     <>
       <div
-        className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-4 lg:px-8"
+        className={`w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-5 lg:px-10 transition-shadow duration-200 ${scrolled ? "shadow-[0_1px_16px_rgba(15,23,42,0.08)]" : ""}`}
         style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)" }}
       >
         <img
@@ -175,21 +180,23 @@ function GeneralHeader() {
         />
 
         {/* Desktop nav — lg and above */}
-        <div className="hidden lg:flex items-center gap-4 xl:gap-8">
+        <div className="hidden lg:flex items-center gap-6 xl:gap-10">
           {navLinks.map((link) => {
             const active = isActive(link);
             return (
-              <div key={link.label} className="relative group">
+              <div key={link.label} className="relative group py-2">
                 <a
                   href="#"
-                  className="font-bold text-[13px] xl:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
-                  style={{ backgroundImage: link.gradient }}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[13px] xl:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
                   onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
                 >
                   {link.label}
+                  {link.submenu && (
+                    <ChevronDown size={14} className="opacity-60 transition-transform duration-200 group-hover:rotate-180" />
+                  )}
                 </a>
                 <span
-                  className={`absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 transition-transform duration-300 origin-left rounded-full ${active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-[3px] rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
                     }`}
                 />
                 {link.submenu && <NavDropdown items={link.submenu} />}
@@ -199,35 +206,37 @@ function GeneralHeader() {
         </div>
 
         {/* Desktop right — lg and above */}
-        <div className="hidden lg:flex items-center gap-3 xl:gap-8">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-6">
           <button
             onClick={() => navigate("/investor/notification")}
-            className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
-            <BellRing size={18} />
-            <span className="hidden xl:inline">Notification</span>
+            <BellRing size={20} />
+            <span className="hidden xl:inline">Notifications</span>
           </button>
           <ProfileButton />
         </div>
 
         {/* Mobile / tablet right */}
-        <div className="flex lg:hidden items-center gap-3">
+        <div className="flex lg:hidden items-center gap-2">
           <button
             onClick={() => navigate("/investor/notification")}
-            className="text-slate-800 hover:text-cyan-500"
+            className={`p-2 rounded-full transition-colors duration-150 ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notifications"
           >
             <BellRing size={20} />
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="text-slate-800 p-1"
+            className="text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors duration-150"
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
+
+      <MarketOverviewTicker />
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
@@ -238,7 +247,7 @@ function GeneralHeader() {
               return (
                 <div key={link.label} className="mb-1">
                   <button
-                    className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-blue-700 bg-blue-50" : "text-slate-900 hover:bg-gray-50"}`}
+                    className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-900 hover:bg-gray-50"}`}
                     onClick={() => { if (!link.submenu) { link.onClick?.(); close(); } }}
                   >
                     {link.label}
@@ -250,7 +259,7 @@ function GeneralHeader() {
                         return (
                           <button
                             key={item.title}
-                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl ${subActive ? "text-cyan-600 font-semibold bg-cyan-50" : "text-gray-600 hover:text-cyan-600 hover:bg-gray-50"}`}
+                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl ${subActive ? "text-[#00D3F2] font-semibold bg-[#00D3F2]/10" : "text-gray-600 hover:text-[#00D3F2] hover:bg-gray-50"}`}
                             onClick={() => go(item.path)}
                           >
                             {item.title}
