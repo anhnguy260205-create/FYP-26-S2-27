@@ -2,23 +2,42 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
-import { BellRing, Menu, X } from "lucide-react";
+import { getNotifications } from "../api/notificationApi.js";
+import { BellRing, ChevronDown, Menu, X } from "lucide-react";
 import MarketOverviewTicker from "../components/MarketOverviewTicker.jsx";
+
+function NavDropdown({ items }) {
+  const navigate = useNavigate();
+  return (
+    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
+      {items.map((item) => (
+        <button
+          key={item.title}
+          onClick={() => item.path && navigate(item.path)}
+          className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400 transition-all cursor-pointer"
+        >
+          {item.title}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -42,7 +61,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -78,7 +97,15 @@ function ConsultantHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.user_id) return;
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
+      .catch(() => {});
+  }, [currentUser?.user_id]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -89,14 +116,14 @@ function ConsultantHeader() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {
@@ -108,6 +135,14 @@ function ConsultantHeader() {
   const go = (path) => { navigate(path); close(); };
 
   const navLinks = [
+    {
+      label: "Dashboard",
+      activePaths: ["/watchlist", "/realtimedashboard"],
+      submenu: [
+        { title: "Watchlist", path: "/watchlist" },
+        { title: "Real-time Dashboard", path: "/realtimedashboard" },
+      ],
+    },
     {
       label: "Questions",
       activePaths: ["/expert/questions", "/expert/question"],
@@ -133,6 +168,7 @@ function ConsultantHeader() {
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
   const notifActive = location.pathname.startsWith("/expert/notifications");
+  const notifHighlighted = notifActive || hasUnread;
 
   return (
     <>
@@ -156,15 +192,19 @@ function ConsultantHeader() {
               <div key={link.label} className="relative group py-2">
                 <a
                   href="#"
-                  className={`rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[14px] lg:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[14px] lg:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
                   onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
                 >
                   {link.label}
+                  {link.submenu && (
+                    <ChevronDown size={14} className="opacity-60 transition-transform duration-200 group-hover:rotate-180" />
+                  )}
                 </a>
                 <span
                   className={`absolute -bottom-1 left-2.5 right-2.5 h-[3px] rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
                     }`}
                 />
+                {link.submenu && <NavDropdown items={link.submenu} />}
               </div>
             );
           })}
@@ -174,7 +214,7 @@ function ConsultantHeader() {
         <div className="hidden md:flex items-center gap-3 lg:gap-6">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
             <BellRing size={20} />
             <span className="hidden lg:inline">Notifications</span>
@@ -186,7 +226,7 @@ function ConsultantHeader() {
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className={`p-2 rounded-full transition-colors duration-150 ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            className={`p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notifications"
           >
             <BellRing size={20} />
@@ -213,10 +253,26 @@ function ConsultantHeader() {
                 <div key={link.label} className="mb-1">
                   <button
                     className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-900 hover:bg-gray-50"}`}
-                    onClick={() => { link.onClick?.(); close(); }}
+                    onClick={() => { if (!link.submenu) { link.onClick?.(); close(); } }}
                   >
                     {link.label}
                   </button>
+                  {link.submenu && (
+                    <div className="ml-4 border-l-2 border-gray-100 pl-3 mb-1">
+                      {link.submenu.map((item) => {
+                        const subActive = location.pathname.startsWith(item.path);
+                        return (
+                          <button
+                            key={item.title}
+                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl ${subActive ? "text-[#00D3F2] font-semibold bg-[#00D3F2]/10" : "text-gray-600 hover:text-[#00D3F2] hover:bg-gray-50"}`}
+                            onClick={() => go(item.path)}
+                          >
+                            {item.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

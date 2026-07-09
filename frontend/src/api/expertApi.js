@@ -57,28 +57,44 @@ export const createForumPost = (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const updateForumPost = (postId, payload) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
 export const replyForumPost = (postId, payload) =>
   requestJson(`${FORUM_BASE_URL}/posts/${postId}/reply`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
 
-export const toggleForumLike = (postId) =>
-  requestJson(`${FORUM_BASE_URL}/posts/${postId}/like`, { method: "POST" });
-
-export const toggleForumSave = (postId) =>
-  requestJson(`${FORUM_BASE_URL}/posts/${postId}/save`, { method: "POST" });
-
-export const deleteForumPost = (postId) =>
-  requestJson(`${FORUM_BASE_URL}/posts/${postId}`, { method: "DELETE" });
-
-export const updateForumReply = (postId, replyId, content) =>
-  requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
-    method: "PUT",
-    body: JSON.stringify({ content }),
+export const toggleForumLike = (postId, userId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/like`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId || "" }),
   });
 
-export const deleteForumReply = (postId, replyId) =>
+export const toggleForumSave = (postId, userId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/save`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId || "" }),
+  });
+
+export const deleteForumPost = (postId, userId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ user_id: userId || "" }),
+  });
+
+export const updateForumReply = (postId, replyId, content, userId) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
+    method: "PUT",
+    body: JSON.stringify({ content, user_id: userId || "" }),
+  });
+
+export const deleteForumReply = (postId, replyId, userId) =>
   requestJson(`${FORUM_BASE_URL}/posts/${postId}/replies/${replyId}`, {
     method: "DELETE",
+    body: JSON.stringify({ user_id: userId || "" }),
   });

@@ -12,9 +12,9 @@ const CATEGORIES = ["Beginner", "Technical Analysis", "Fundamental", "Risk Manag
 const STATUS_TABS = ["All", "In Review", "Published", "Rejected"];
 
 const STATUS_META = {
-  pending:   { label: "In Review", color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)"  },
-  published: { label: "Published", color: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.3)"  },
-  rejected:  { label: "Rejected",  color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
+  pending: { label: "In Review", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)" },
+  published: { label: "Published", color: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.3)" },
+  rejected: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
 };
 
 function StatusBadge({ status }) {
@@ -37,11 +37,11 @@ const inputStyle = {
 
 function ArticleForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState({
-    title:    initial?.title    ?? "",
-    summary:  initial?.summary  ?? "",
-    content:  initial?.content  ?? "",
+    title: initial?.title ?? "",
+    summary: initial?.summary ?? "",
+    content: initial?.content ?? "",
     category: initial?.category ?? "Beginner",
-    tags:     initial?.tags?.join(", ") ?? "",
+    tags: initial?.tags?.join(", ") ?? "",
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -181,9 +181,11 @@ function VerificationWall({ status }) {
           )}
 
           {isPending && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 10,
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 10,
               border: "1px solid rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)", color: "#fbbf24",
-              fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700 }}>
+              fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700
+            }}>
               ⏳ Under Review
             </div>
           )}
@@ -195,7 +197,7 @@ function VerificationWall({ status }) {
 }
 
 function ExpertKnowledgeHub() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const isVerified = currentUser?.verification_status === "approved";
 
   const [articles, setArticles] = useState([]);
@@ -216,18 +218,18 @@ function ExpertKnowledgeHub() {
   useEffect(reload, [currentUser?.user_id, isVerified]);
 
   const tabFilter = (a) => {
-    if (activeTab === "All")       return true;
+    if (activeTab === "All") return true;
     if (activeTab === "In Review") return a.status === "pending";
     if (activeTab === "Published") return a.status === "published";
-    if (activeTab === "Rejected")  return a.status === "rejected";
+    if (activeTab === "Rejected") return a.status === "rejected";
     return true;
   };
 
   const counts = {
-    All:         articles.length,
+    All: articles.length,
     "In Review": articles.filter(a => a.status === "pending").length,
-    Published:   articles.filter(a => a.status === "published").length,
-    Rejected:    articles.filter(a => a.status === "rejected").length,
+    Published: articles.filter(a => a.status === "published").length,
+    Rejected: articles.filter(a => a.status === "rejected").length,
   };
 
   const filtered = articles.filter(tabFilter);
@@ -265,7 +267,7 @@ function ExpertKnowledgeHub() {
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <ConsultantHeader />
-        <main className="flex-1 p-4 md:p-7">
+        <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>

@@ -45,7 +45,7 @@ const PLATFORM_FEATURES = [
     Icon: Wallet,
     title: "Paper Trading Exchange",
     description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
-    to: "/investor/realtimedashboard",
+    to: "/realtimedashboard",
     badge: "Live market prices",
     cta: "Start trading",
     accent: "cyan",
@@ -317,7 +317,7 @@ function Hero({ name, portfolioData }) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-        <PrimaryButton size="lg" icon={LineChart} onClick={() => navigate("/investor/realtimedashboard")}>
+        <PrimaryButton size="lg" icon={LineChart} onClick={() => navigate("/realtimedashboard")}>
           {hasHoldings ? "Continue Trading" : "Start Trading"}
         </PrimaryButton>
 
@@ -568,7 +568,7 @@ function WatchlistSection() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleSelect = (symbol) => navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
 
   return (
     <section>
@@ -579,7 +579,7 @@ function WatchlistSection() {
             <MarketStatusPill marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
         </div>
-        <ViewAllLink onClick={() => navigate("/investor/watchlist")}>View Full Watchlist →</ViewAllLink>
+        <ViewAllLink onClick={() => navigate("/watchlist")}>View Full Watchlist →</ViewAllLink>
       </div>
 
       <div className={`${CARD_DOMINANT} overflow-hidden`}>
@@ -612,7 +612,7 @@ function WatchlistSection() {
             <p className="text-sm text-slate-500 mb-6 max-w-sm">
               Track stocks you're interested in and receive AI insights on how they're moving.
             </p>
-            <PrimaryButton onClick={() => navigate("/investor/watchlist")}>+ Add Stocks</PrimaryButton>
+            <PrimaryButton onClick={() => navigate("/watchlist")}>+ Add Stocks</PrimaryButton>
             <div className="mt-8 w-full">
               <p className="text-xs uppercase tracking-wide text-slate-600 mb-3">Suggested for you</p>
               <div className="flex flex-wrap justify-center gap-2">
@@ -644,7 +644,7 @@ function WatchlistSection() {
       {symbols.length > 6 && (
         <p className="text-xs text-slate-500 mt-3 text-center">
           Showing 6 of {symbols.length} —{" "}
-          <button onClick={() => navigate("/investor/watchlist")} className="underline text-[#00D3F2] cursor-pointer">
+          <button onClick={() => navigate("/watchlist")} className="underline text-[#00D3F2] cursor-pointer">
             view all
           </button>
         </p>
@@ -735,7 +735,7 @@ function PopularStocksSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleSelect = (symbol) => navigate(`/investor/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
 
   return (
     <section>

@@ -18,3 +18,4 @@ slowapi
 pip-system-certs
 firebase
 groq
+pytest

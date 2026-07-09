@@ -27,6 +27,7 @@ class UserAccount(Base):
     last_login = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
     is_active = Column(Boolean, default=False)
+    has_welcomed = Column(Boolean, default=False)
     profile = relationship("UserProfile", back_populates="users")
 
     @staticmethod
@@ -94,6 +95,7 @@ class UserAccount(Base):
     @staticmethod
     def getProfileByEmail(email_address: str) -> dict:
         from app.entity.models.expert import Expert
+        from app.entity.models.expertverification import ExpertVerification
         from app.entity.models.investor import Investor
 
         email_address = email_address.strip().lower()
@@ -108,6 +110,9 @@ class UserAccount(Base):
             user.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
             user.is_active = True
             user.account_status = "active"
+
+            first_login = not user.has_welcomed
+            user.has_welcomed = True
 
             profile_name = user.profile.profile_name if user.profile else None
             investor = session.query(Investor).filter(
@@ -133,7 +138,8 @@ class UserAccount(Base):
                 "subscription_status": investor.investor_subscription_status if investor else "inactive",
                 "interests": investor.interests if investor else None,
                 "risk_tolerance": investor.risk_tolerance if investor else None,
-                "verification_status": expert.verification_status if expert else None,
+                "verification_status": ExpertVerification.get_for_expert(expert.expert_id)["verification_status"] if expert else None,
+                "_first_login": first_login,
             }
 
     @staticmethod

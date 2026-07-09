@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
+import { getNotifications } from "../api/notificationApi.js";
 import { BellRing, ChevronDown, Menu, X } from "lucide-react";
 import MarketOverviewTicker from "../components/MarketOverviewTicker.jsx";
+import ChatDock from "../components/chat/ChatDock.jsx";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -25,18 +27,18 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -63,7 +65,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -99,7 +101,15 @@ function GeneralHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.user_id) return;
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
+      .catch(() => {});
+  }, [currentUser?.user_id]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -110,14 +120,14 @@ function GeneralHeader() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {
@@ -131,10 +141,10 @@ function GeneralHeader() {
   const navLinks = [
     {
       label: "Dashboard",
-      activePaths: ["/investor/watchlist", "/investor/realtimedashboard"],
+      activePaths: ["/watchlist", "/realtimedashboard"],
       submenu: [
-        { title: "Watchlist", path: "/investor/watchlist" },
-        { title: "Real-time Dashboard", path: "/investor/realtimedashboard" },
+        { title: "Watchlist", path: "/watchlist" },
+        { title: "Real-time Dashboard", path: "/realtimedashboard" },
       ],
     },
     {
@@ -164,6 +174,7 @@ function GeneralHeader() {
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
   const notifActive = location.pathname.startsWith("/investor/notification");
+  const notifHighlighted = notifActive || hasUnread;
 
   return (
     <>
@@ -209,7 +220,7 @@ function GeneralHeader() {
         <div className="hidden lg:flex items-center gap-3 xl:gap-6">
           <button
             onClick={() => navigate("/investor/notification")}
-            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
             <BellRing size={20} />
             <span className="hidden xl:inline">Notifications</span>
@@ -221,7 +232,7 @@ function GeneralHeader() {
         <div className="flex lg:hidden items-center gap-2">
           <button
             onClick={() => navigate("/investor/notification")}
-            className={`p-2 rounded-full transition-colors duration-150 ${notifActive ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            className={`p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notifications"
           >
             <BellRing size={20} />
@@ -295,6 +306,9 @@ function GeneralHeader() {
           </div>
         </div>
       )}
+
+      {/* Floating messenger — renders only for logged-in investors */}
+      <ChatDock />
     </>
   );
 }

@@ -1,11 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authFetch } from "../../api/apiClient.js";
-import { FileText, Plus, Trash2 } from "lucide-react";
+import { FileText, Plus, Trash2, Clock, CheckCircle2 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
+
+// Experts only ever see 3 verification states — Unverified / Pending /
+// Approved. A "rejected" status (admin-side only) falls back to Unverified
+// below since there's no entry for it here.
+const STATUS_CONFIG = {
+  not_submitted: { label: "Unverified", icon: FileText,     style: { color: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" } },
+  pending:       { label: "Pending Review", icon: Clock,       style: { color: "#eab308", bg: "rgba(234,179,8,0.12)",  border: "rgba(234,179,8,0.3)"  } },
+  approved:      { label: "Approved",       icon: CheckCircle2, style: { color: "#22c55e", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)"  } },
+};
 
 const docTypeStyle = (type) => {
   if (type === "certification") return { color: "#a855f7", bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.3)" };
@@ -16,12 +25,29 @@ const docTypeStyle = (type) => {
 
 function ExpertDocumentPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
   const [docs, setDocs] = useState([]);
   const [form, setForm] = useState({ name: "", url: "", type: "certification" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("not_submitted");
+
+  useEffect(() => {
+    if (!currentUser.user_id) return;
+    (async () => {
+      try {
+        const res = await authFetch(`${API_BASE}/user/expert-information/${currentUser.user_id}`);
+        const data = await res.json();
+        if (data.success) {
+          const info = data.expert_information;
+          setDocs(info.documents || []);
+          setStatus(info.verification_status || "not_submitted");
+        }
+      } catch { /* prefill is best-effort — an empty form still works */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addDoc = () => {
     if (!form.name.trim() || !form.url.trim()) return;
@@ -43,8 +69,10 @@ function ExpertDocumentPage() {
         body: JSON.stringify({ user_id: currentUser.user_id, documents: docs }),
       });
       const data = await res.json();
-      if (data.success) navigate("/expert");
-      else setError(data.message || "Failed to save documents.");
+      if (data.success) {
+        setStatus(docs.length > 0 ? "pending" : "not_submitted");
+        navigate("/expert");
+      } else setError(data.message || "Failed to save documents.");
     } catch {
       setError("Could not reach backend. Please try again.");
     } finally {
@@ -73,6 +101,18 @@ function ExpertDocumentPage() {
           <p className="text-gray-500 text-[14px]">
             Add links to your certificates, degrees, or employment letters for admin verification.
           </p>
+          {(() => {
+            const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.not_submitted;
+            const StatusIcon = cfg.icon;
+            return (
+              <span
+                className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-bold"
+                style={{ color: cfg.style.color, background: cfg.style.bg, border: `1px solid ${cfg.style.border}` }}
+              >
+                <StatusIcon size={12} /> {cfg.label}
+              </span>
+            );
+          })()}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

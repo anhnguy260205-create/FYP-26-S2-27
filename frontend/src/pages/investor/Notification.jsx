@@ -1,10 +1,8 @@
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { useNavigate } from "react-router-dom";
 
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     CheckCircle,
     AlertTriangle,
@@ -12,68 +10,71 @@ import {
     MessageSquare,
     CreditCard,
     Trash2,
-    CheckCheck
+    CheckCheck,
+    Bell,
+    BookOpen,
 } from "lucide-react";
+import {
+    getNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification as deleteNotificationApi,
+} from "../../api/notificationApi.js";
+
+const ICON_BY_TYPE = {
+    stock: TrendingUp,
+    consultation: MessageSquare,
+    subscription: CreditCard,
+    warning: AlertTriangle,
+    article: BookOpen,
+};
+
+function timeAgo(isoString) {
+    if (!isoString) return "";
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const minutes = Math.floor(diffMs / 60000);
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes} min${minutes !== 1 ? "s" : ""} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    return new Date(isoString).toLocaleDateString();
+}
+
 function Notification() {
-    const NOTIFICATIONS = [
-        {
-            id: 1,
-            type: "stock",
-            title: "AAPL reached your target price",
-            message: "Apple Inc. has reached $200.00.",
-            time: "5 mins ago",
-            unread: true,
-            icon: TrendingUp
-        },
-        {
-            id: 2,
-            type: "consultation",
-            title: "Expert replied to your question",
-            message: "Dr. Raymond responded to your consultation request.",
-            time: "1 hour ago",
-            unread: true,
-            icon: MessageSquare
-        },
-        {
-            id: 3,
-            type: "subscription",
-            title: "Premium subscription renewed",
-            message: "Your Premium membership has been renewed successfully.",
-            time: "Yesterday",
-            unread: false,
-            icon: CreditCard
-        },
-        {
-            id: 4,
-            type: "warning",
-            title: "High volatility detected",
-            message: "TSLA experienced unusual price fluctuations today.",
-            time: "2 days ago",
-            unread: false,
-            icon: AlertTriangle
-        }
-    ];
-    const [notifications, setNotifications] = useState(NOTIFICATIONS);
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!currentUser?.user_id) { setLoading(false); return; }
+        getNotifications(currentUser.user_id)
+            .then((res) => { if (res.success) setNotifications(res.notifications); })
+            .finally(() => setLoading(false));
+    }, [currentUser?.user_id]);
 
     const markAllRead = () => {
+        setNotifications(prev => prev.map(item => ({ ...item, is_unread: false })));
+        markAllNotificationsRead();
+    };
+
+    const markOneRead = (id) => {
         setNotifications(prev =>
-            prev.map(item => ({
-                ...item,
-                unread: false
-            }))
+            prev.map(item => item.notification_id === id ? { ...item, is_unread: false } : item)
         );
+        markNotificationRead(id);
     };
 
     const deleteNotification = (id) => {
-        setNotifications(prev =>
-            prev.filter(item => item.id !== id)
-        );
+        setNotifications(prev => prev.filter(item => item.notification_id !== id));
+        deleteNotificationApi(id);
     };
 
     const unreadCount = notifications.filter(
-        n => n.unread
+        n => n.is_unread
     ).length;
-    const navigate = useNavigate();
     return (
         <motion.div
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -82,7 +83,7 @@ function Notification() {
             transition={{ duration: 0.25 }}
         >
             <GeneralHeader />
-            <main className="flex-1 p-4 md:p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", boxSizing: "border-box" }}>
 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
@@ -161,7 +162,17 @@ function Notification() {
                         overflow: "hidden"
                     }}
                 >
-                    {notifications.length === 0 ? (
+                    {loading ? (
+                        <div
+                            style={{
+                                padding: "50px",
+                                textAlign: "center",
+                                color: "rgba(255,255,255,0.4)"
+                            }}
+                        >
+                            Loading notifications...
+                        </div>
+                    ) : notifications.length === 0 ? (
                         <div
                             style={{
                                 padding: "50px",
@@ -173,17 +184,17 @@ function Notification() {
                         </div>
                     ) : (
                         notifications.map((item) => {
-                            const Icon = item.icon;
+                            const Icon = ICON_BY_TYPE[item.type] || Bell;
 
                             return (
                                 <div
-                                    key={item.id}
+                                    key={item.notification_id}
                                     className="flex justify-between items-center"
                                     style={{
                                         padding: "20px",
                                         borderBottom:
                                             "1px solid rgba(255,255,255,0.05)",
-                                        background: item.unread
+                                        background: item.is_unread
                                             ? "rgba(21,93,252,0.06)"
                                             : "transparent"
                                     }}
@@ -218,7 +229,7 @@ function Notification() {
                                                     {item.title}
                                                 </h3>
 
-                                                {item.unread && (
+                                                {item.is_unread && (
                                                     <span
                                                         style={{
                                                             width: "8px",
@@ -249,7 +260,7 @@ function Notification() {
                                                         "rgba(255,255,255,0.3)"
                                                 }}
                                             >
-                                                {item.time}
+                                                {timeAgo(item.created_at)}
                                             </span>
                                         </div>
                                     </div>
@@ -257,6 +268,7 @@ function Notification() {
                                     <div className="flex gap-2">
 
                                         <button
+                                            onClick={() => markOneRead(item.notification_id)}
                                             style={{
                                                 width: "40px",
                                                 height: "40px",
@@ -280,7 +292,7 @@ function Notification() {
 
                                         <button
                                             onClick={() =>
-                                                deleteNotification(item.id)
+                                                deleteNotification(item.notification_id)
                                             }
                                             style={{
                                                 width: "40px",

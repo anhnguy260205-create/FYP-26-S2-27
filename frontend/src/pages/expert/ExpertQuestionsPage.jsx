@@ -1,123 +1,226 @@
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, CheckCircle2, Search, Eye, AlertTriangle, MessageSquare, XCircle } from "lucide-react";
+import { Eye, MessageCircle, ListTodo } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertQuestions } from "../../api/expertApi.js";
+import ChatPanel from "../../components/chat/ChatPanel.jsx";
 
-const STORAGE_KEY = "rocketTradeExpertQuestions";
-
-const DEFAULT_QUESTIONS = [
-  { id: "question_demo_nvda", question_id: "question_demo_nvda", investor_name: "Sarah Chen", investor_email: "sarah.chen@email.com", title: "Should I rebalance my NVDA-heavy portfolio?", question_type: "Portfolio Review", tickers: ["NVDA", "MSFT", "AAPL"], urgency: "High", status: "Pending", investment_goal: "Long-term growth", risk_profile: "Moderate-Aggressive", portfolio_value: 52000, content: "My portfolio is now heavily concentrated in NVDA after the recent rally. Should I trim some gains and rebalance into other technology or defensive stocks?", submitted_at: "2026-05-06T09:30:00+08:00" },
-  { id: "question_demo_dbs", question_id: "question_demo_dbs", investor_name: "Marcus Rivera", investor_email: "marcus.rivera@email.com", title: "DBS entry price and dividend strategy", question_type: "Stock Analysis", tickers: ["DBS.SI", "UOB.SI"], urgency: "Medium", status: "Pending", investment_goal: "Dividend income", risk_profile: "Moderate", portfolio_value: 30000, content: "I am considering DBS for dividend income. Is the current price still attractive, or should I wait for a pullback before entering?", submitted_at: "2026-05-05T14:15:00+08:00" },
-  { id: "question_demo_defensive", question_id: "question_demo_defensive", investor_name: "Priya Nair", investor_email: "priya.nair@email.com", title: "How do I make my portfolio less volatile?", question_type: "Risk Management", tickers: ["AAPL", "KO", "JNJ"], urgency: "Low", status: "Pending", investment_goal: "Capital preservation", risk_profile: "Conservative", portfolio_value: 18000, content: "I am worried about market volatility. What type of defensive allocation should I add so my portfolio moves less aggressively?", submitted_at: "2026-05-04T16:45:00+08:00" },
-];
+const STORAGE_KEY = "rocketTradeExpertQuestions_v2"; // new key to avoid stale old data
 
 function normaliseQuestion(q) {
-  const id = q.question_id || q.id;
-  return { ...q, id, question_id: id, tickers: Array.isArray(q.tickers) ? q.tickers : String(q.tickers || "").split(",").map((t) => t.trim()).filter(Boolean) };
-}
-
-function statusClass(status) {
-  const s = String(status || "").toLowerCase();
-  if (s === "answered") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (s === "closed") return "bg-slate-100 text-slate-600 border-slate-200";
-  return "bg-orange-50 text-orange-700 border-orange-200";
-}
-
-function urgencyClass(urgency) {
-  const u = String(urgency || "").toLowerCase();
-  if (u === "high") return "bg-red-50 text-red-700 border-red-200";
-  if (u === "medium") return "bg-yellow-50 text-yellow-700 border-yellow-200";
-  return "bg-blue-50 text-blue-700 border-blue-200";
+    const id = q?.question_id || q?.id;
+    return {
+        ...q,
+        id,
+        question_id: id,
+        tickers: Array.isArray(q?.tickers)
+            ? q.tickers
+            : String(q?.tickers || "").split(",").map((t) => t.trim()).filter(Boolean),
+    };
 }
 
 function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("en-GB", {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+    });
 }
 
-function StatCard({ icon, label, value }) {
-  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{label}</p><div className="rounded-xl bg-cyan-50 p-2 text-cyan-700">{icon}</div></div><p className="mt-3 text-2xl font-bold text-slate-950">{value}</p></div>;
+function urgencyStyle(u) {
+    if (u === "High")   return { background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.3)" };
+    if (u === "Medium") return { background:"rgba(251,191,36,0.12)",  color:"#fbbf24", border:"1px solid rgba(251,191,36,0.3)" };
+    return                     { background:"rgba(52,211,153,0.12)",  color:"#34d399", border:"1px solid rgba(52,211,153,0.3)" };
+}
+function statusStyle(s) {
+    if (s === "Answered") return { background:"rgba(52,211,153,0.12)", color:"#34d399", border:"1px solid rgba(52,211,153,0.3)" };
+    return                       { background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.5)", border:"1px solid rgba(255,255,255,0.1)" };
 }
 
 export default function ExpertQuestionsPage() {
-  const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-  const [questions, setQuestions] = useState(DEFAULT_QUESTIONS.map(normaliseQuestion));
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("All");
+    const navigate = useNavigate();
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try { setQuestions(JSON.parse(saved).map(normaliseQuestion)); } catch { /* ignore */ }
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_QUESTIONS));
-    }
-    getExpertQuestions(currentUser?.user_id).then((data) => {
-      if (data?.success && Array.isArray(data.questions)) {
-        const normalised = data.questions.map(normaliseQuestion);
-        setQuestions(normalised);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalised));
-      }
-    }).catch(() => { });
-  }, [currentUser?.user_id]);
+    const [questions, setQuestions]   = useState([]);
+    const [loading,   setLoading]     = useState(true);
+    const [query,     setQuery]       = useState("");
+    const [filter,    setFilter]      = useState("All");
+    const [tab,       setTab]         = useState("questions"); // "questions" | "messages"
+    const [chatUnread, setChatUnread] = useState(0);
 
-  const filteredQuestions = questions.filter((q) => {
-    const search = query.toLowerCase().trim();
-    const matchesSearch = !search || [q.title, q.investor_name, q.question_type, q.investment_goal, ...(q.tickers || [])].some((v) => String(v || "").toLowerCase().includes(search));
-    const matchesFilter = filter === "All" || String(q.status).toLowerCase() === filter.toLowerCase();
-    return matchesSearch && matchesFilter;
-  });
+    useEffect(() => {
+        setLoading(true);
 
-  const stats = useMemo(() => ({
-    total: questions.length,
-    pending: questions.filter((q) => String(q.status).toLowerCase() === "pending").length,
-    answered: questions.filter((q) => String(q.status).toLowerCase() === "answered").length,
-    closed: questions.filter((q) => String(q.status).toLowerCase() === "closed").length,
-  }), [questions]);
+        // Show cached version immediately while fetching
+        try {
+            const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            if (cached.length > 0) setQuestions(cached.map(normaliseQuestion));
+        } catch {}
 
-  return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <ConsultantHeader />
-      <main className="flex-1 px-6 py-8 lg:px-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-cyan-300">Expert</p>
-            <h1 className="text-3xl font-bold text-white">Submitted Question Forms</h1>
-            <p className="mt-1 text-sm text-slate-300">Track pending, answered and closed questions submitted by premium users.</p>
-          </div>
+        // Always fetch fresh from backend — this is the source of truth
+        getExpertQuestions(currentUser?.user_id)
+            .then((data) => {
+                if (data?.success && Array.isArray(data.questions) && data.questions.length > 0) {
+                    const fresh = data.questions.map(normaliseQuestion);
+                    setQuestions(fresh);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+                }
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, [currentUser?.user_id]);
 
-          <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard icon={<MessageSquare size={18} />} label="Total Questions" value={stats.total} />
-            <StatCard icon={<Clock size={18} />} label="Pending" value={stats.pending} />
-            <StatCard icon={<CheckCircle2 size={18} />} label="Answered" value={stats.answered} />
-            <StatCard icon={<XCircle size={18} />} label="Closed" value={stats.closed} />
-          </div>
+    const filtered = questions.filter((q) => {
+        const matchFilter = filter === "All" || q.status === filter;
+        const matchQuery  = !query || [q.title, q.investor_name, ...(q.tickers || [])].some(
+            (v) => String(v || "").toLowerCase().includes(query.toLowerCase())
+        );
+        return matchFilter && matchQuery;
+    });
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="relative max-w-lg flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by title, investor, type or ticker" className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-cyan-500" /></div>
-              <div className="flex flex-wrap gap-2">{["All", "Pending", "Answered", "Closed"].map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-xl px-4 py-2 text-sm font-bold ${filter === item ? "bg-slate-950 text-white" : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"}`}>{item}</button>)}</div>
-            </div>
+    return (
+        <motion.div
+            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+        >
+            <ConsultantHeader />
+            <main className="flex-1 p-4 md:p-7 max-w-6xl mx-auto w-full">
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Question Type</th><th className="px-4 py-3">Tickers</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Urgency</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Submitted Date</th><th className="px-4 py-3">Action</th></tr></thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {filteredQuestions.map((q) => <tr key={q.id} className="hover:bg-slate-50"><td className="px-4 py-4 font-bold text-slate-900">{q.title}</td><td className="px-4 py-4 text-slate-600">{q.question_type}</td><td className="px-4 py-4"><div className="flex flex-wrap gap-1">{(q.tickers || []).map((t) => <span key={t} className="rounded-full bg-cyan-50 px-2 py-1 text-xs font-bold text-cyan-700">{t}</span>)}</div></td><td className="px-4 py-4 text-slate-600">{q.investor_name}</td><td className="px-4 py-4"><span className={`rounded-full border px-3 py-1 text-xs font-bold ${urgencyClass(q.urgency)}`}>{q.urgency}</span></td><td className="px-4 py-4"><span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass(q.status)}`}>{q.status}</span></td><td className="px-4 py-4 text-slate-600">{formatDate(q.submitted_at)}</td><td className="px-4 py-4"><button onClick={() => navigate(`/expert/question/${q.id}`)} className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white hover:bg-cyan-700"><Eye size={14} /> View</button></td></tr>)}
-                </tbody>
-              </table>
-              {filteredQuestions.length === 0 && <div className="p-8 text-center text-sm text-slate-500">No questions found.</div>}
-            </div>
-          </section>
-        </div>
-      </main>
-      <Footer />
-    </motion.div>
-  );
+                {/* Header */}
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
+                    <div>
+                        <h1 style={{ fontFamily:"'DM Mono', monospace", fontSize:26, fontWeight:700, letterSpacing:"0.02em", color:"#e2e8f0", margin:0 }}>
+                            {tab === "questions" ? "Investor Questions" : "Messages"}
+                        </h1>
+                        <p style={{ marginTop:6, fontSize:13, color:"rgba(255,255,255,0.45)" }}>
+                            {tab === "questions"
+                                ? `${questions.length} question${questions.length !== 1 ? "s" : ""} assigned to you`
+                                : "Chat one-on-one with premium investors."}
+                        </p>
+                    </div>
+                    {tab === "questions" && (
+                        <div className="flex gap-2.5 flex-wrap">
+                            <input
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Search questions…"
+                                className="w-52"
+                                style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none" }}
+                            />
+                            <select
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none", cursor:"pointer" }}
+                            >
+                                <option value="All">All</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Answered">Answered</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6">
+                    {[
+                        { id: "questions", label: "Questions", Icon: ListTodo },
+                        { id: "messages",  label: "Messages",  Icon: MessageCircle },
+                    ].map(({ id, label, Icon }) => {
+                        const activeTab = tab === id;
+                        return (
+                            <button key={id} onClick={() => setTab(id)}
+                                className="flex items-center gap-2"
+                                style={{
+                                    padding: "9px 18px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+                                    cursor: "pointer", position: "relative",
+                                    background: activeTab ? "linear-gradient(90deg,#0092b8,#155dfc)" : "rgba(255,255,255,0.05)",
+                                    border: activeTab ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
+                                    color: activeTab ? "#fff" : "rgba(255,255,255,0.55)",
+                                }}>
+                                <Icon size={14} /> {label}
+                                {id === "messages" && chatUnread > 0 && (
+                                    <span style={{
+                                        minWidth: 17, height: 17, borderRadius: 9, padding: "0 4px",
+                                        background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 700,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}>{chatUnread}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {tab === "messages" ? (
+                    <ChatPanel height={560} onUnreadChange={setChatUnread} />
+                ) : loading && questions.length === 0 ? (
+                    <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>Loading questions…</div>
+                ) : filtered.length === 0 ? (
+                    <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>
+                        {questions.length === 0 ? "No questions assigned yet." : "No questions match your search."}
+                    </div>
+                ) : (
+                    <div className="rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr style={{ background:"rgba(255,255,255,0.03)", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+                                    {["Title", "Type", "Tickers", "Investor", "Urgency", "Status", "Submitted", ""].map((h) => (
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide" style={{ color:"rgba(255,255,255,0.45)" }}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((q, i) => (
+                                    <tr key={q.id}
+                                        className="cursor-pointer transition-colors"
+                                        style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)" }}
+                                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                    >
+                                        <td className="px-4 py-3.5 font-semibold max-w-60" style={{ color:"#e2e8f0" }}>
+                                            <div className="truncate">{q.title}</div>
+                                        </td>
+                                        <td className="px-4 py-3.5" style={{ color:"rgba(255,255,255,0.6)" }}>{q.question_type}</td>
+                                        <td className="px-4 py-3.5">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(q.tickers || []).map((t) => (
+                                                    <span key={t} className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background:"rgba(0,211,243,0.12)", color:"#22d3ee", border:"1px solid rgba(0,211,243,0.25)" }}>{t}</span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3.5" style={{ color:"rgba(255,255,255,0.6)" }}>{q.investor_name}</td>
+                                        <td className="px-4 py-3.5">
+                                            <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={urgencyStyle(q.urgency)}>{q.urgency}</span>
+                                        </td>
+                                        <td className="px-4 py-3.5">
+                                            <span className="rounded-full px-2.5 py-1 text-xs font-bold" style={statusStyle(q.status)}>{q.status}</span>
+                                        </td>
+                                        <td className="px-4 py-3.5 text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>{formatDate(q.submitted_at)}</td>
+                                        <td className="px-4 py-3.5">
+                                            <button
+                                                onClick={() => navigate(`/expert/question/${q.id}`)}
+                                                className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors"
+                                                style={{ background:"rgba(0,211,243,0.12)", border:"1px solid rgba(0,211,243,0.25)", color:"#22d3ee" }}
+                                                onMouseEnter={e => e.currentTarget.style.background="rgba(0,211,243,0.22)"}
+                                                onMouseLeave={e => e.currentTarget.style.background="rgba(0,211,243,0.12)"}
+                                            >
+                                                <Eye size={13} /> View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </main>
+            <Footer />
+        </motion.div>
+    );
 }

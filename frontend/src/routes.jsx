@@ -8,11 +8,11 @@ const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"))
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
-const RealTimeDashBoardPage = lazy(() => import("./pages/investor/RealTimeDashBoardPage.jsx"));
+const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
 const QuantRatingPage = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
 const ForumPage = lazy(() => import("./pages/shared/ForumPage.jsx"));
 const ChangePasswordPage = lazy(() => import("./pages/shared/ChangePasswordPage.jsx"));
-const AStockDashBoardPage = lazy(() => import("./pages/investor/AStockDashBoardPage.jsx"));
+const AStockDashBoardPage = lazy(() => import("./pages/shared/AStockDashBoardPage.jsx"));
 const AdminPanelPage = lazy(() => import("./pages/administrator/AdminPanelPage.jsx"));
 const UserAccountsPage = lazy(() => import("./pages/administrator/UserAccountsPage.jsx"));
 const UserAccountDetailsPage = lazy(() => import("./pages/administrator/UserAccountDetailsPage.jsx"));
@@ -25,7 +25,7 @@ const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.js
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
 const PaymentFail = lazy(() => import("./pages/investor/PaymentFail.jsx"));
 const InvestorProfilePage = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
-const Watchlist = lazy(() => import("./pages/investor/Watchlist.jsx"));
+const Watchlist = lazy(() => import("./pages/shared/Watchlist.jsx"));
 const Notification = lazy(() => import("./pages/investor/Notification.jsx"));
 const ExpertAdvice = lazy(() => import("./pages/investor/ExpertAdvice.jsx"));
 const ExpertPortfolio = lazy(() => import("./pages/investor/ExpertPortfolio.jsx"));
@@ -49,6 +49,8 @@ const ExpertNotificationPage = lazy(() => import("./pages/expert/ExpertNotificat
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
+const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
+const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
 function S({ children }) {
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
@@ -74,16 +76,17 @@ export const router = createBrowserRouter([
     { path: "/investor/portfolio-overview", element: protect(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
     { path: "/investor", element: protect(["investor"], LoggedInHomePage) },
-    { path: "/investor/realtimedashboard", element: protect(["investor"], RealTimeDashBoardPage) },
-    { path: "/investor/realtimedashboard/astockdashboard/:symbol", element: protect(["investor"], AStockDashBoardPage) },
+    { path: "/realtimedashboard", element: protect(["investor", "expert"], RealTimeDashBoardPage) },
+    { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
     { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
+    { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
     { path: "/investor/payment-success", element: protect(["investor"], PaymentSuccess) },
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
-    { path: "/investor/watchlist", element: protect(["investor"], Watchlist) },
+    { path: "/watchlist", element: protect(["investor", "expert"], Watchlist) },
     { path: "/investor/notification", element: protect(["investor"], Notification) },
     { path: "/investor/expertportfolio", element: protect(["investor"], ExpertPortfolio) },
     { path: "/investor/expertadvice", element: protect(["investor"], ExpertAdvice) },
@@ -101,6 +104,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
     { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
+    { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
     { path: "/expert", element: protect(["expert"], ExpertLoggedInPage) },

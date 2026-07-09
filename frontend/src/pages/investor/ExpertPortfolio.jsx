@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { authFetch } from "../../api/apiClient.js";
+import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Search,
     Users,
@@ -13,14 +16,23 @@ import {
     ChevronRight,
 } from "lucide-react";
 
-const EXPERTS = [
-    { name: "Dr. Raymond", role: "Portfolio Strategist", market: "Global Markets", risk: "High", followers: "3.2K", rating: 4.8, avatar: "DR" },
-    { name: "James Wong", role: "Portfolio Strategist", market: "US Markets", risk: "Moderate", followers: "2.9K", rating: 4.6, avatar: "JW" },
-    { name: "Elena V", role: "Portfolio Strategist", market: "Income & Dividend", risk: "Low", followers: "1.8K", rating: 4.5, avatar: "EV" },
-    { name: "Michael Roberts", role: "Portfolio Strategist", market: "Multi Asset", risk: "Moderate", followers: "2.7K", rating: 4.7, avatar: "MR" },
-    { name: "Sarah Patel", role: "Portfolio Strategist", market: "Growth & Mid Cap", risk: "High", followers: "1.6K", rating: 4.6, avatar: "SP" },
-    { name: "David Lee", role: "Portfolio Strategist", market: "Global Sector", risk: "Moderate", followers: "1.3K", rating: 4.4, avatar: "DL" },
-];
+// Experts are loaded from the backend (/expert/public-list) and mapped to
+// this display shape. The risk badge reflects the expert's risk_tolerance.
+const RISK_MAP = { Aggressive: "High", Moderate: "Moderate", Conservative: "Low" };
+
+function toDisplayExpert(e) {
+    const name = e.full_name || "Expert";
+    return {
+        user_id: e.user_id,
+        name,
+        role: e.experience_years ? `${e.experience_years} yrs experience` : "Verified Expert",
+        market: "Global Markets",
+        risk: RISK_MAP[e.risk_tolerance] || "Moderate",
+        followers: "—",
+        rating: Number(e.rating || 0),
+        avatar: name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
+    };
+}
 
 const PAGE_SIZE = 6;
 
@@ -75,10 +87,21 @@ const STATS = [
 ];
 
 export default function ExpertPortfolio() {
+    const navigate = useNavigate();
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
+    const [experts, setExperts] = useState([]);
 
-    const filtered = EXPERTS.filter(e =>
+    useEffect(() => {
+        authFetch(`${import.meta.env.VITE_API_URL}/expert/public-list`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) setExperts((res.experts || []).map(toDisplayExpert));
+            })
+            .catch(() => {});
+    }, []);
+
+    const filtered = experts.filter(e =>
         e.name.toLowerCase().includes(query.toLowerCase()) ||
         e.market.toLowerCase().includes(query.toLowerCase())
     );
@@ -94,7 +117,7 @@ export default function ExpertPortfolio() {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
             <GeneralHeader />
 
-            <main className="flex-1 p-4 md:p-7">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
                 {/* Header */}
                 <div className="mb-6">
                     <h1
@@ -329,6 +352,7 @@ export default function ExpertPortfolio() {
 
                             <div className="flex gap-2">
                                 <button
+                                    onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`)}
                                     style={{
                                         padding:
                                             "8px 14px",
@@ -349,6 +373,7 @@ export default function ExpertPortfolio() {
                                 </button>
 
                                 <button
+                                    onClick={() => openChatWith({ user_id: expert.user_id, full_name: expert.name, role: "expert" })}
                                     style={{
                                         padding:
                                             "8px 14px",
@@ -387,7 +412,7 @@ export default function ExpertPortfolio() {
                                 fontSize: "12px",
                             }}
                         >
-                            Showing 1 to 6 of 18 experts
+                            Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} experts
                         </span>
 
                         <div className="flex gap-2">
