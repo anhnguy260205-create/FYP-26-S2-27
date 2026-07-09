@@ -11,7 +11,8 @@ import {
     CreditCard,
     Trash2,
     CheckCheck,
-    Bell
+    Bell,
+    BookOpen,
 } from "lucide-react";
 import {
     getNotifications,
@@ -25,6 +26,7 @@ const ICON_BY_TYPE = {
     consultation: MessageSquare,
     subscription: CreditCard,
     warning: AlertTriangle,
+    article: BookOpen,
 };
 
 function timeAgo(isoString) {

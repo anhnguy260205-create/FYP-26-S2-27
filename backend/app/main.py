@@ -19,6 +19,7 @@ from app.entity.models.userprofile import seed_profiles
 from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account, seed_jordan_account
+from app.entity.models.expertverification import ExpertVerification
 from app.entity.models.subscription import Subscription
 from app.entity.models.watchlist import Watchlist
 from app.entity.models.holding import Holding
@@ -86,6 +87,7 @@ def ensure_all_schemas(engine):
     patches = [
         ("investor",     "risk_tolerance",        "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
         ("expert",       "risk_tolerance",        "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
+        ("expert",       "interests",             "ALTER TABLE expert ADD COLUMN interests VARCHAR(255) NULL"),
         ("subscription", "renewal_reminder_sent", "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0"),
         ("transaction",  "realized_pnl",          "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL"),
         ("article",      "author_type",           "ALTER TABLE article ADD COLUMN author_type VARCHAR(20) NOT NULL DEFAULT 'expert'"),
@@ -123,6 +125,36 @@ def ensure_all_schemas(engine):
                 print("[SCHEMA] Added user_account.has_welcomed (existing accounts backfilled)")
         except Exception as e:
             print(f"[SCHEMA] Skipped user_account.has_welcomed: {e}")
+
+        # Verification/application data (status, documents, approved_date) used to
+        # live directly on the expert table. It's now split into its own
+        # expert_verification table, separating "who this expert is" from "where
+        # their application stands". One-time backfill for legacy rows: copy any
+        # expert that predates the split into expert_verification, normalizing the
+        # old inconsistent status casing ("Not Submitted" -> "not_submitted") and
+        # stale defaults ("pending" with no documents ever submitted -> "not_submitted").
+        # Safe to run every startup — only inserts rows not already migrated.
+        try:
+            if _col_exists(conn, "expert", "verification_status"):
+                conn.execute(text(
+                    "INSERT INTO expert_verification "
+                    "(verification_id, expert_id, verification_status, documents, approved_date) "
+                    "SELECT CONCAT('ever_', e.expert_id), e.expert_id, "
+                    "CASE "
+                    "  WHEN LOWER(REPLACE(COALESCE(e.verification_status, ''), ' ', '_')) = 'pending' "
+                    "       AND (e.documents IS NULL OR e.documents = '' OR e.documents = '[]') "
+                    "  THEN 'not_submitted' "
+                    "  ELSE LOWER(REPLACE(COALESCE(e.verification_status, 'not_submitted'), ' ', '_')) "
+                    "END, "
+                    "e.documents, e.approved_date "
+                    "FROM expert e "
+                    "WHERE NOT EXISTS ("
+                    "  SELECT 1 FROM expert_verification ev WHERE ev.expert_id = e.expert_id"
+                    ")"
+                ))
+                conn.commit()
+        except Exception as e:
+            print(f"[SCHEMA] Skipped expert_verification backfill: {e}")
 
         # watchlist.investor_id must become nullable (experts have no investor row),
         # and existing rows need user_id backfilled from their investor's user_id.
