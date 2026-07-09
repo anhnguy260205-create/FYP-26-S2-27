@@ -124,6 +124,7 @@ class Expert(Base):
                 result.append({
                     "expert_id": e.expert_id,
                     "user_id": e.user_id,
+                    "rating": e.rating,
                     "full_name": user.full_name or (user.username if user else ""),
                     "email_address": user.email_address if user else "",
                     "phone_number": user.phone_number if user else "",

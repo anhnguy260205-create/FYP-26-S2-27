@@ -63,6 +63,28 @@ def check_email(request: Request, email: str):
     return {"exists": exists}
 
 
+@router.get("/email-by-username")
+@limiter.limit("20/minute")
+def email_by_username(request: Request, username: str):
+    """Resolve a username to its account email (Firebase sign-in needs the
+    email). Used by the login page's username-based flow."""
+    from app.entity.models.useraccount import UserAccount
+    from app.entity.database.session import get_session
+    name = username.strip()
+    with get_session() as session:
+        user = session.query(UserAccount).filter(
+            UserAccount.username == name
+        ).first()
+        if not user:
+            # Convenience: allow logging in with the email address directly
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == name.lower()
+            ).first()
+        if not user:
+            return {"success": False, "message": "No account found with this username"}
+        return {"success": True, "email": user.email_address}
+
+
 # ── Auth: login/logout ─────────────────────────────────────────────────────────
 
 @router.post("/firebase-login")

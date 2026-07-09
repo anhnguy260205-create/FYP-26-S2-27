@@ -4,6 +4,7 @@ import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { getNotifications } from "../api/notificationApi.js";
 import { BellRing, Menu, X } from "lucide-react";
+import ChatDock from "../components/chat/ChatDock.jsx";
 
 
 function NavDropdown({ items }) {
@@ -297,6 +298,9 @@ function GeneralHeader() {
           </div>
         </div>
       )}
+
+      {/* Floating messenger — renders only for logged-in investors */}
+      <ChatDock />
     </>
   );
 }
