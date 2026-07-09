@@ -1,31 +1,26 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 
 const API = `${import.meta.env.VITE_API_URL}/admin/experts`;
 
 const statusConfig = {
-  pending:  { label: "Pending Review", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  approved: { label: "Approved",       color: "bg-green-100 text-green-700",  icon: CheckCircle },
-  rejected: { label: "Rejected",       color: "bg-red-100 text-red-700",      icon: XCircle },
-};
-
-const scoreColor = (score) => {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-yellow-600";
-  return "text-red-600";
+  not_submitted: { label: "Unverified", color: "bg-gray-100 text-gray-500", icon: FileText },
+  pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  approved: { label: "Approved", color: "bg-green-100 text-green-700", icon: CheckCircle },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-700", icon: XCircle },
 };
 
 const docTypeColor = (type) => {
   if (type === "certification") return "bg-purple-100 text-purple-700";
-  if (type === "degree")        return "bg-blue-100 text-blue-700";
-  if (type === "employment")    return "bg-orange-100 text-orange-700";
+  if (type === "degree") return "bg-blue-100 text-blue-700";
+  if (type === "employment") return "bg-orange-100 text-orange-700";
   return "bg-gray-100 text-gray-700";
 };
 
-function DetailView({ application, onBack, onApprove, onReject }) {
-  const { label, color, icon: StatusIcon } = statusConfig[application.verification_status] || statusConfig.pending;
+function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
+  const { label, color, icon: StatusIcon } = statusConfig[application.verification_status] || statusConfig.not_submitted;
   const initials = (application.full_name || "??").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 
   return (
@@ -38,7 +33,7 @@ function DetailView({ application, onBack, onApprove, onReject }) {
         {/* Header */}
         <div className="flex items-start justify-between pb-6 border-b">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center text-xl font-bold">
+            <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center text-xl font-bold">
               {initials}
             </div>
             <div>
@@ -50,12 +45,6 @@ function DetailView({ application, onBack, onApprove, onReject }) {
                 </span>
               </div>
             </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-400 uppercase font-bold mb-1">Verification Score</p>
-            <p className={`text-4xl font-black ${scoreColor(application.verification_score)}`}>
-              {application.verification_score}<span className="text-lg font-medium text-slate-400">/100</span>
-            </p>
           </div>
         </div>
 
@@ -119,16 +108,27 @@ function DetailView({ application, onBack, onApprove, onReject }) {
         </div>
 
         {/* Action Buttons */}
-        {application.verification_status === "pending" && (
-          <div className="flex gap-4 pt-4 border-t">
-            <button onClick={() => onApprove(application.expert_id)} className="flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700">
-              <CheckCircle size={18} /> Approve
+        <div className="flex gap-4 pt-4 border-t">
+          {application.verification_status === "pending" && (
+            <>
+              <button onClick={() => onApprove(application.expert_id)} className="flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700">
+                <CheckCircle size={18} /> Approve
+              </button>
+              <button onClick={() => onReject(application.expert_id)} className="flex items-center gap-2 bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700">
+                <XCircle size={18} /> Reject
+              </button>
+            </>
+          )}
+          {application.verification_status === "approved" ? (
+            <button onClick={() => onCancel(application.expert_id)} className="flex items-center gap-2 bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-700">
+              <Ban size={18} /> Cancel Verification
             </button>
-            <button onClick={() => onReject(application.expert_id)} className="flex items-center gap-2 bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700">
-              <XCircle size={18} /> Reject
+          ) : (
+            <button disabled title="Only approved experts can have their verification cancelled" className="flex items-center gap-2 bg-gray-200 text-gray-400 px-8 py-3 rounded-lg font-semibold cursor-not-allowed">
+              <Ban size={18} /> Cancel Verification
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -140,36 +140,85 @@ function VerifyDocumentationPage() {
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  const fetchExperts = async () => {
-    setLoading(true);
+  // `silent` skips the loading spinner — used for background polling so the
+  // table doesn't flicker while an admin is actively reviewing it.
+  const fetchExperts = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const res = await authFetch(API);
       const data = await res.json();
-      if (data.success) setExperts(data.experts);
+      if (data.success) {
+        setExperts(data.experts);
+        // Keep an open detail view in sync if the expert just submitted
+        // new/updated documents from their own session.
+        setSelected(prev => {
+          if (!prev) return prev;
+          return data.experts.find(e => e.expert_id === prev.expert_id) || prev;
+        });
+      }
     } catch { }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   };
 
-  useEffect(() => { fetchExperts(); }, []);
+  useEffect(() => {
+    fetchExperts();
+    const interval = setInterval(() => fetchExperts({ silent: true }), 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleApprove = async (expertId) => {
     if (!window.confirm("Approve this expert?")) return;
-    await authFetch(`${API}/${expertId}/approve`, { method: "POST" });
-    setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "approved" } : e));
-    setSelected(prev => ({ ...prev, verification_status: "approved" }));
+    try {
+      const res = await authFetch(`${API}/${expertId}/approve`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to approve expert. Please try again.");
+        return;
+      }
+      setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "approved" } : e));
+      setSelected(prev => prev && { ...prev, verification_status: "approved" });
+    } catch {
+      alert("Could not reach backend. Please try again.");
+    }
   };
 
   const handleReject = async (expertId) => {
     if (!window.confirm("Reject this expert?")) return;
-    await authFetch(`${API}/${expertId}/reject`, { method: "POST" });
-    setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "rejected" } : e));
-    setSelected(prev => ({ ...prev, verification_status: "rejected" }));
+    try {
+      const res = await authFetch(`${API}/${expertId}/reject`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to reject expert. Please try again.");
+        return;
+      }
+      setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "rejected" } : e));
+      setSelected(prev => prev && { ...prev, verification_status: "rejected" });
+    } catch {
+      alert("Could not reach backend. Please try again.");
+    }
+  };
+
+  const handleCancel = async (expertId) => {
+    if (!window.confirm("Cancel this expert's verification? They will need to resubmit documents to be reviewed again.")) return;
+    try {
+      const res = await authFetch(`${API}/${expertId}/cancel`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.message || "Failed to cancel verification. Please try again.");
+        return;
+      }
+      setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "not_submitted" } : e));
+      setSelected(prev => prev && { ...prev, verification_status: "not_submitted" });
+    } catch {
+      alert("Could not reach backend. Please try again.");
+    }
   };
 
   const filtered = filter === "all" ? experts : experts.filter(e => e.verification_status === filter);
   const counts = {
-    all:      experts.length,
-    pending:  experts.filter(e => e.verification_status === "pending").length,
+    all: experts.length,
+    not_submitted: experts.filter(e => e.verification_status === "not_submitted").length,
+    pending: experts.filter(e => e.verification_status === "pending").length,
     approved: experts.filter(e => e.verification_status === "approved").length,
     rejected: experts.filter(e => e.verification_status === "rejected").length,
   };
@@ -177,7 +226,7 @@ function VerifyDocumentationPage() {
   if (selected) {
     return (
       <AdminLayout title="Expert Application Review" subtitle="Review expert credentials and supporting documents">
-        <DetailView application={selected} onBack={() => setSelected(null)} onApprove={handleApprove} onReject={handleReject} />
+        <DetailView application={selected} onBack={() => setSelected(null)} onApprove={handleApprove} onReject={handleReject} onCancel={handleCancel} />
       </AdminLayout>
     );
   }
@@ -186,10 +235,11 @@ function VerifyDocumentationPage() {
     <AdminLayout title="Expert Verification" subtitle="Review and verify expert account applications">
       <div className="space-y-5">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { key: "all",      label: "Total",    color: "border-blue-200 bg-blue-50 text-blue-700" },
-            { key: "pending",  label: "Pending",  color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
+            { key: "all", label: "Total", color: "border-blue-200 bg-blue-50 text-blue-700" },
+            { key: "not_submitted", label: "Unverified", color: "border-gray-200 bg-gray-50 text-gray-600" },
+            { key: "pending", label: "Pending", color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
             { key: "approved", label: "Approved", color: "border-green-200 bg-green-50 text-green-700" },
             { key: "rejected", label: "Rejected", color: "border-red-200 bg-red-50 text-red-700" },
           ].map(({ key, label, color }) => (
@@ -213,20 +263,19 @@ function VerifyDocumentationPage() {
                   <th className="px-6 py-4">Expert</th>
                   <th className="px-6 py4">Experience</th>
                   <th className="px-6 py-4">Documents</th>
-                  <th className="px-6 py-4">Score</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((app) => {
-                  const { label, color, icon: StatusIcon } = statusConfig[app.verification_status] || statusConfig.pending;
+                  const { label, color, icon: StatusIcon } = statusConfig[app.verification_status] || statusConfig.not_submitted;
                   const initials = (app.full_name || "??").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
                   return (
                     <tr key={app.expert_id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center text-sm font-bold">{initials}</div>
+                          <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center text-sm font-bold">{initials}</div>
                           <div>
                             <p className="font-bold text-slate-900">{app.full_name || "—"}</p>
                             <p className="text-xs text-slate-400">{app.email_address}</p>
@@ -240,24 +289,32 @@ function VerifyDocumentationPage() {
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`font-black text-lg ${scoreColor(app.verification_score)}`}>{app.verification_score}</span>
-                        <span className="text-xs text-slate-400">/100</span>
-                      </td>
-                      <td className="px-6 py-5">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${color}`}>
                           <StatusIcon size={11} /> {label}
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <button onClick={() => setSelected(app)} className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:underline">
-                          <Eye size={15} /> Review
-                        </button>
+                        <div className="flex items-center gap-3 w-fit">
+                          <button onClick={() => setSelected(app)} className="flex items-center gap-1.5 text-blue-600 text-sm font-medium hover:text-blue-700 hover:underline underline-offset-2">
+                            <Eye size={14} /> Review
+                          </button>
+                          <span className="h-4 w-px bg-gray-200" />
+                          {app.verification_status === "approved" ? (
+                            <button onClick={() => handleCancel(app.expert_id)} className="flex items-center gap-1.5 text-orange-600 text-sm font-medium hover:text-orange-700 hover:underline underline-offset-2">
+                              <Ban size={14} /> Cancel
+                            </button>
+                          ) : (
+                            <button disabled title="Only approved experts can have their verification cancelled" className="flex items-center gap-1.5 text-gray-300 text-sm font-medium cursor-not-allowed">
+                              <Ban size={14} /> Cancel
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No applications found.</td></tr>
+                  <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400">No applications found.</td></tr>
                 )}
               </tbody>
             </table>

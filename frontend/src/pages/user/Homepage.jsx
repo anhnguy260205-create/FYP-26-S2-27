@@ -318,10 +318,14 @@ function usePlanContent() {
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
 }
 
-function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
+function PlanCard({ badge, badgeClass, plan, features, highlighted, onClick }) {
   return (
     <div
-      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 cursor-pointer ${highlighted
         ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
         : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
         }`}
@@ -359,6 +363,7 @@ function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
 
 function PricingSection() {
   const { freeFeatures, premiumFeatures, freePlan, premiumPlan } = usePlanContent();
+  const navigate = useNavigate();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
@@ -366,8 +371,8 @@ function PricingSection() {
         <p className="text-slate-400 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an investor account to get started.</p>
       </div>
       <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
-        <PlanCard badge="Free" badgeClass="bg-blue-500/20 text-blue-300" plan={freePlan} features={freeFeatures} />
-        <PlanCard badge="⭐ Premium" badgeClass="bg-yellow-400/20 text-yellow-300" plan={premiumPlan} features={premiumFeatures} highlighted />
+        <PlanCard badge="Free" badgeClass="bg-blue-500/20 text-blue-300" plan={freePlan} features={freeFeatures} onClick={() => navigate("/login")} />
+        <PlanCard badge="⭐ Premium" badgeClass="bg-yellow-400/20 text-yellow-300" plan={premiumPlan} features={premiumFeatures} highlighted onClick={() => navigate("/login")} />
       </div>
     </div>
   );
