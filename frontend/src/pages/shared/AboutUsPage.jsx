@@ -173,7 +173,7 @@ function AboutUsPage() {
         
         {/* Our People */}
         <section className="mt-20">
-        <div className="text-center">
+        <div className="text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-5 py-2 text-xs font-bold tracking-wider text-cyan-400">
             <Users size={14} />
             OUR PEOPLE
@@ -183,7 +183,7 @@ function AboutUsPage() {
             Meet the Team Behind Rocket Trade
             </h2>
 
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
             A collaborative team bringing together technology, data, and innovation
             to build a smarter and more accessible investment platform.
             </p>
@@ -216,7 +216,6 @@ function AboutUsPage() {
                 key={member.name}
                 className="group rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-950/60 to-slate-950/80 p-6 text-center shadow-xl transition duration-300 hover:-translate-y-2 hover:border-cyan-400/50 hover:shadow-[0_15px_40px_rgba(34,211,238,0.1)]"
             >
-                {/* Profile Avatar */}
                 <div className="relative mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-xl font-bold text-cyan-300 shadow-[0_0_25px_rgba(34,211,238,0.18)] transition duration-300 group-hover:shadow-[0_0_35px_rgba(34,211,238,0.3)]">
                 {member.initials}
 
