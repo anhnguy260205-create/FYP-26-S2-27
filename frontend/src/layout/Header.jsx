@@ -6,7 +6,9 @@ import { Menu, X } from "lucide-react";
 const LINKS = [
   {
     label: "Support",
-    gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+    path: "/support",
+    gradient:
+      "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
   },
   {
     label: "About Us",

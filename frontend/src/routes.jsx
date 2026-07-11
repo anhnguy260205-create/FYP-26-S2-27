@@ -8,6 +8,7 @@ const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"))
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const AboutUsPage = lazy(() => import("./pages/shared/AboutUsPage.jsx"));
+const SupportPage = lazy(() => import("./pages/shared/SupportPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
 const QuantRatingPage = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
@@ -67,6 +68,7 @@ function protect(roles, Component) {
 export const router = createBrowserRouter([
     { path: "/", element: wrap(HomePage) },
     { path: "/about-us", element: wrap(AboutUsPage) },
+    { path: "/support", element: wrap(SupportPage) },
     { path: "/register", element: wrap(RegistrationPage) },
     { path: "/login", element: wrap(LoginPage) },
     { path: "/reset-password", element: wrap(ResetPasswordPage) },
