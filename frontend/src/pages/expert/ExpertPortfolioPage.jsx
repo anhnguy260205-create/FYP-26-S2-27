@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Briefcase, PieChart, Search, Share2, Edit3, TrendingUp, Wallet, Layers, Clock3 } from "lucide-react";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertPortfolio } from "../../api/expertApi.js";
 
@@ -120,7 +120,7 @@ export default function ExpertPortfolioPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
-      <ConsultantHeader />
+      <ExpertHeader />
       <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
         <div className="mx-auto max-w">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

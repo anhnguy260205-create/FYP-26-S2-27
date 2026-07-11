@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../../layout/Footer.jsx";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import { getExpertInformation } from "../../api/userApi.js";
-import { getExpertQuestions, getExpertPortfolio } from "../../api/expertApi.js";
+import { getExpertPortfolio } from "../../api/expertApi.js";
 import { getMyArticles } from "../../api/knowledgeHubApi.js";
 import {
   MessageSquare, Briefcase, GraduationCap, FileText, UserCog,
-  Star, ShieldCheck, Clock, CheckCircle2, MessagesSquare,
-  Wallet, PieChart, ArrowRight, Inbox,
+  Star, ShieldCheck, MessagesSquare,
+  Wallet, PieChart, ArrowRight,
 } from "lucide-react";
 import {
-  CARD, CARD_COMPACT, CARD_DOMINANT, CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
+  CARD, CARD_DOMINANT, CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   Skeleton, SectionHeader, ViewAllLink, PrimaryButton,
 } from "../../components/dashboard/DashboardKit.jsx";
 
@@ -69,20 +69,6 @@ const TOOLS = [
   },
 ];
 
-function statusClass(status) {
-  const s = String(status || "").toLowerCase();
-  if (s === "answered") return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-  if (s === "closed") return "bg-slate-500/10 text-slate-400 border-slate-500/30";
-  return "bg-orange-500/10 text-orange-400 border-orange-500/30";
-}
-
-function urgencyClass(urgency) {
-  const u = String(urgency || "").toLowerCase();
-  if (u === "high") return "bg-red-500/10 text-red-400 border-red-500/30";
-  if (u === "medium") return "bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
-  return "bg-blue-500/10 text-blue-400 border-blue-500/30";
-}
-
 function verificationTone(status) {
   const s = String(status || "").toLowerCase();
   if (s === "verified" || s === "approved") return { text: "text-emerald-400", bg: "bg-emerald-400/10" };
@@ -90,45 +76,13 @@ function verificationTone(status) {
   return { text: "text-amber-400", bg: "bg-amber-400/10" };
 }
 
-function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
 function fmt$(n) {
   const v = Number(n) || 0;
   return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function normaliseQuestion(q) {
-  const id = q.question_id || q.id;
-  return { ...q, id };
-}
-
-const STATUS_RANK = { pending: 0, answered: 1, closed: 2 };
-const URGENCY_RANK = { high: 0, medium: 1, low: 2 };
-
-function questionSortKey(q) {
-  return [
-    STATUS_RANK[String(q.status).toLowerCase()] ?? 1,
-    URGENCY_RANK[String(q.urgency).toLowerCase()] ?? 1,
-  ];
-}
-
-function sortQuestions(list) {
-  return [...list].sort((a, b) => {
-    const [aStatus, aUrgency] = questionSortKey(a);
-    const [bStatus, bUrgency] = questionSortKey(b);
-    if (aStatus !== bStatus) return aStatus - bStatus;
-    if (aUrgency !== bUrgency) return aUrgency - bUrgency;
-    return new Date(b.submitted_at) - new Date(a.submitted_at);
-  });
-}
-
 function useExpertData(userId) {
   const [expertInfo, setExpertInfo] = useState(null);
-  const [questions, setQuestions] = useState([]);
   const [portfolio, setPortfolio] = useState(null);
   const [articleCount, setArticleCount] = useState(null);
   const [loading, setLoading] = useState(!!userId);
@@ -137,15 +91,11 @@ function useExpertData(userId) {
     if (!userId) return;
     Promise.all([
       getExpertInformation(userId).catch(() => null),
-      getExpertQuestions(userId).catch(() => null),
       getExpertPortfolio(userId).catch(() => null),
       getMyArticles(userId).catch(() => null),
     ])
-      .then(([infoRes, questionsRes, portfolioRes, articlesRes]) => {
+      .then(([infoRes, portfolioRes, articlesRes]) => {
         if (infoRes?.success) setExpertInfo(infoRes.expert_information);
-        if (questionsRes?.success && Array.isArray(questionsRes.questions)) {
-          setQuestions(sortQuestions(questionsRes.questions.map(normaliseQuestion)));
-        }
         if (portfolioRes?.success && portfolioRes.portfolio) setPortfolio(portfolioRes.portfolio);
         if (articlesRes?.success && Array.isArray(articlesRes.articles)) {
           setArticleCount(articlesRes.articles.filter((a) => a.status === "published").length);
@@ -154,17 +104,11 @@ function useExpertData(userId) {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const stats = useMemo(() => ({
-    pending: questions.filter((q) => String(q.status).toLowerCase() === "pending").length,
-    answered: questions.filter((q) => String(q.status).toLowerCase() === "answered").length,
-  }), [questions]);
-
-  return { loading, expertInfo, questions, portfolio, articleCount, stats };
+  return { loading, expertInfo, portfolio, articleCount };
 }
 
-function Hero({ name, loading, pendingCount }) {
+function Hero({ name, loading }) {
   const navigate = useNavigate();
-  const hasPending = !loading && pendingCount > 0;
 
   return (
     <section className="flex flex-col gap-5">
@@ -176,16 +120,14 @@ function Hero({ name, loading, pendingCount }) {
           <div className="h-5 w-64 max-w-full rounded bg-white/5 animate-pulse mt-2" />
         ) : (
           <p className="mt-2 text-base text-slate-400">
-            {hasPending
-              ? `You have ${pendingCount} investor question${pendingCount === 1 ? "" : "s"} waiting for a reply.`
-              : "No pending investor questions right now — great work staying on top of things."}
+            Manage your portfolio, publish content, and connect with investors.
           </p>
         )}
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-5">
         <PrimaryButton size="lg" icon={MessageSquare} onClick={() => navigate("/expert/questions")}>
-          {hasPending ? "Answer Questions" : "Review Questions"}
+          Messages
         </PrimaryButton>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5">
@@ -205,7 +147,7 @@ function Hero({ name, loading, pendingCount }) {
   );
 }
 
-function ProfileSummarySection({ expertInfo, stats, loading, userId }) {
+function ProfileSummarySection({ expertInfo, loading, userId }) {
   const navigate = useNavigate();
 
   if (!userId) return null;
@@ -216,13 +158,7 @@ function ProfileSummarySection({ expertInfo, stats, loading, userId }) {
         <SectionHeader title="Your Profile" />
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <Skeleton className="lg:col-span-3" style={{ height: 160 }} />
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <Skeleton style={{ height: 84 }} />
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton style={{ height: 74 }} />
-              <Skeleton style={{ height: 74 }} />
-            </div>
-          </div>
+          <Skeleton className="lg:col-span-2" style={{ height: 84 }} />
         </div>
       </section>
     );
@@ -251,7 +187,7 @@ function ProfileSummarySection({ expertInfo, stats, loading, userId }) {
               </p>
               {hasRating && <span className="text-slate-500 text-lg mb-1">/ 5.0</span>}
             </div>
-            {!hasRating && <p className="text-sm text-slate-500 mt-2">Not yet rated — keep answering questions to build your reputation.</p>}
+            {!hasRating && <p className="text-sm text-slate-500 mt-2">Not yet rated — keep building your reputation with investors.</p>}
           </div>
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -264,33 +200,15 @@ function ProfileSummarySection({ expertInfo, stats, loading, userId }) {
           </div>
         </div>
 
-        {/* Secondary + compact cards */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className={`${CARD} p-6 flex-1 flex flex-col justify-center`}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-400">Verification</p>
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tone.bg}`}>
-                <ShieldCheck size={14} className={tone.text} />
-              </div>
-            </div>
-            <p className={`font-semibold text-xl capitalize ${tone.text}`}>{verification}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`${CARD_COMPACT} p-4`}>
-              <div className="flex items-center gap-1.5 text-slate-500 mb-1.5">
-                <Clock size={12} />
-                <p className="text-xs">Pending</p>
-              </div>
-              <p className="font-['DM_Mono'] font-semibold text-base text-white">{stats.pending}</p>
-            </div>
-            <div className={`${CARD_COMPACT} p-4`}>
-              <div className="flex items-center gap-1.5 text-slate-500 mb-1.5">
-                <CheckCircle2 size={12} />
-                <p className="text-xs">Answered</p>
-              </div>
-              <p className="font-['DM_Mono'] font-semibold text-base text-white">{stats.answered}</p>
+        {/* Verification card */}
+        <div className={`lg:col-span-2 ${CARD} p-6 flex flex-col justify-center`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-slate-400">Verification</p>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tone.bg}`}>
+              <ShieldCheck size={14} className={tone.text} />
             </div>
           </div>
+          <p className={`font-semibold text-xl capitalize ${tone.text}`}>{verification}</p>
         </div>
       </div>
     </section>
@@ -342,83 +260,6 @@ function ModelPortfolioSection({ portfolio, loading }) {
             {portfolio ? "Manage Portfolio →" : "Create Portfolio →"}
           </PrimaryButton>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function QuestionRow({ q, onSelect }) {
-  return (
-    <div
-      onClick={() => onSelect(q.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter") onSelect(q.id); }}
-      className="grid items-center gap-2 px-4 sm:px-6 py-4 border-b border-white/5 last:border-b-0 transition-colors duration-150 hover:bg-white/[0.03] cursor-pointer focus-visible:outline focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-[#00D3F2]"
-      style={{ gridTemplateColumns: "2.2fr 1fr 1fr 1fr" }}
-    >
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-white font-semibold text-sm truncate">{q.title}</span>
-        <span className="text-slate-500 text-xs truncate">{q.investor_name} · {q.question_type}</span>
-      </div>
-      <span className={`justify-self-start rounded-full border px-2.5 py-1 text-xs font-semibold ${urgencyClass(q.urgency)}`}>
-        {q.urgency}
-      </span>
-      <span className={`justify-self-start rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(q.status)}`}>
-        {q.status}
-      </span>
-      <span className="text-right text-slate-400 text-xs">{formatDate(q.submitted_at)}</span>
-    </div>
-  );
-}
-
-function InvestorQuestionsSection({ questions, loading }) {
-  const navigate = useNavigate();
-  const handleSelect = (id) => navigate(`/expert/question/${id}`);
-  const preview = questions.slice(0, 5);
-
-  return (
-    <section>
-      <SectionHeader
-        title="Investor Questions"
-        action={<ViewAllLink onClick={() => navigate("/expert/questions")}>View All Questions →</ViewAllLink>}
-      />
-
-      <div className={`${CARD_DOMINANT} overflow-hidden`}>
-        <div
-          className="grid gap-2 px-4 sm:px-6 py-3.5 text-xs text-slate-500 uppercase tracking-widest bg-white/[0.03]"
-          style={{ gridTemplateColumns: "2.2fr 1fr 1fr 1fr" }}
-        >
-          <span>Question</span>
-          <span>Urgency</span>
-          <span>Status</span>
-          <span className="text-right">Submitted</span>
-        </div>
-
-        {loading && Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="px-4 sm:px-6 py-4 border-b border-white/5 last:border-b-0">
-            <Skeleton style={{ height: 34 }} />
-          </div>
-        ))}
-
-        {!loading && preview.length === 0 && (
-          <div className="px-6 py-14 flex flex-col items-center text-center">
-            <div className="relative w-16 h-16 mb-5">
-              <div className="absolute inset-0 rounded-full bg-white/[0.03]" />
-              <div className="absolute inset-[7px] rounded-full bg-white/[0.05] flex items-center justify-center">
-                <Inbox size={22} className="text-slate-400" />
-              </div>
-            </div>
-            <p className="text-white font-semibold text-base mb-1.5">No investor questions yet</p>
-            <p className="text-sm text-slate-500 max-w-sm">
-              Questions investors submit to you will show up here — verified experts get more visibility across the platform.
-            </p>
-          </div>
-        )}
-
-        {!loading && preview.map((q) => (
-          <QuestionRow key={q.id} q={q} onSelect={handleSelect} />
-        ))}
       </div>
     </section>
   );
@@ -481,7 +322,7 @@ function ExpertLoggedInPage() {
   const userId = currentUser?.user_id;
   const name = currentUser?.username || currentUser?.full_name || "Expert";
 
-  const { loading, expertInfo, questions, portfolio, articleCount, stats } = useExpertData(userId);
+  const { loading, expertInfo, portfolio, articleCount } = useExpertData(userId);
 
   return (
     <motion.div
@@ -490,12 +331,11 @@ function ExpertLoggedInPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <ConsultantHeader />
+      <ExpertHeader />
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/[0.06]">
-        <Hero name={name} loading={loading} pendingCount={stats.pending} />
+        <Hero name={name} loading={loading} />
         <ModelPortfolioSection portfolio={portfolio} loading={loading} />
-        <ProfileSummarySection expertInfo={expertInfo} stats={stats} loading={loading} userId={userId} />
-        <InvestorQuestionsSection questions={questions} loading={loading} />
+        <ProfileSummarySection expertInfo={expertInfo} loading={loading} userId={userId} />
         <ToolsSection articleCount={articleCount} />
       </main>
       <Footer />
