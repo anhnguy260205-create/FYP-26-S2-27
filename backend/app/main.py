@@ -42,7 +42,7 @@ from app.entity.models.article import Article, seed_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
 from app.entity.models.forumquestion import (
     ForumPost, ForumReply, ForumPostLike, ForumPostSave,
-    ExpertQuestion, ForumReplyLike, ForumPostView,
+    ForumReplyLike, ForumPostView,
     seed_forum_posts, ensure_forum_schema,
 )
 from app.entity.models.contentmanagement import ContentManagement, seed_landing_content

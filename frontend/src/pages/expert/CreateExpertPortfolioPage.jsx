@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertPortfolio, saveExpertPortfolio } from "../../api/expertApi.js";
 
@@ -171,7 +171,7 @@ export default function CreateExpertPortfolioPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <ConsultantHeader />
+      <ExpertHeader />
       <main className="flex-1 px-6 py-8 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <button onClick={() => navigate("/expert/portfolio")} className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-cyan-300 hover:text-cyan-900">

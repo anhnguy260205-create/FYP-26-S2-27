@@ -21,23 +21,6 @@ export const saveExpertPortfolio = (userId, portfolio) =>
     body: JSON.stringify(portfolio),
   });
 
-export const getExpertQuestions = (userId) =>
-  requestJson(`${EXPERT_BASE_URL}/questions/${userId || "demo"}`);
-
-export const getExpertQuestionDetail = (questionId) =>
-  requestJson(`${EXPERT_BASE_URL}/questions/detail/${questionId}`);
-
-export const replyExpertQuestion = (questionId, replyText) =>
-  requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
-    method: "POST",
-    body: JSON.stringify({ reply_text: replyText }),
-  });
-
-export const deleteExpertQuestionReply = (questionId) =>
-  requestJson(`${EXPERT_BASE_URL}/questions/${questionId}/reply`, {
-    method: "DELETE",
-  });
-
 // ── Forum (public reads use plain fetch; writes use authFetch via requestJson) ──
 
 export const getForumPosts = (userId) => {

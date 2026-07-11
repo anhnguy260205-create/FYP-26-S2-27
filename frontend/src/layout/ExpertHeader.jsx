@@ -4,7 +4,6 @@ import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { getNotifications } from "../api/notificationApi.js";
 import { BellRing, ChevronDown, Menu, X } from "lucide-react";
-import MarketOverviewTicker from "../components/MarketOverviewTicker.jsx";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -91,7 +90,7 @@ function ProfileButton() {
   );
 }
 
-function ConsultantHeader() {
+function ExpertHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -104,7 +103,7 @@ function ConsultantHeader() {
     if (!currentUser?.user_id) return;
     getNotifications(currentUser.user_id)
       .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
-      .catch(() => {});
+      .catch(() => { });
   }, [currentUser?.user_id]);
 
   useEffect(() => {
@@ -144,8 +143,8 @@ function ConsultantHeader() {
       ],
     },
     {
-      label: "Questions",
-      activePaths: ["/expert/questions", "/expert/question"],
+      label: "Messages",
+      activePaths: ["/expert/questions"],
       onClick: () => navigate("/expert/questions"),
     },
     {
@@ -201,7 +200,7 @@ function ConsultantHeader() {
                   )}
                 </a>
                 <span
-                  className={`absolute -bottom-1 left-2.5 right-2.5 h-[3px] rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
                     }`}
                 />
                 {link.submenu && <NavDropdown items={link.submenu} />}
@@ -214,10 +213,12 @@ function ConsultantHeader() {
         <div className="hidden md:flex items-center gap-3 lg:gap-6">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className={`flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
-            <BellRing size={20} />
-            <span className="hidden lg:inline">Notifications</span>
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <ProfileButton />
         </div>
@@ -226,10 +227,13 @@ function ConsultantHeader() {
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className={`p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
-            aria-label="Notifications"
+            className={`group relative p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            aria-label="Notification"
           >
-            <BellRing size={20} />
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -241,7 +245,6 @@ function ConsultantHeader() {
         </div>
       </div>
 
-      <MarketOverviewTicker />
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
@@ -298,4 +301,4 @@ function ConsultantHeader() {
   );
 }
 
-export default ConsultantHeader;
+export default ExpertHeader;

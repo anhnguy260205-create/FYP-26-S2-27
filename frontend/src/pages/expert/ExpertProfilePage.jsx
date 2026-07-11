@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { getExpertInformation, deleteExpert } from "../../api/userApi.js";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
@@ -1075,7 +1075,7 @@ function ExpertProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
         >
-            <ConsultantHeader />
+            <ExpertHeader />
             <main className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-10">
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
