@@ -1,5 +1,4 @@
 import { Navigate } from "react-router-dom";
-import ChatWidget from "./chat/ChatWidget.jsx";
 
 function getCurrentUser() {
   try {
@@ -21,12 +20,7 @@ function ProtectedRoute({ allowedRoles, children }) {
     return <Navigate to="/" replace />;
   }
 
-  return (
-    <>
-      {children}
-      {currentUser.role === "investor" && <ChatWidget />}
-    </>
-  );
+  return children;
 }
 
 export default ProtectedRoute;

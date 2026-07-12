@@ -7,7 +7,7 @@ import {
     Check, Plus, MoreHorizontal, ChevronDown,
 } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import {
     createForumPost, updateForumPost, deleteForumPost, deleteForumReply,
@@ -436,7 +436,7 @@ export default function ForumPage() {
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
+            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 

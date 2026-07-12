@@ -12,7 +12,7 @@ import {
   Bell,
   BadgeCheck,
 } from "lucide-react";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import {
   getNotifications,
@@ -111,7 +111,7 @@ function ExpertNotificationPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <ConsultantHeader />
+      <ExpertHeader />
 
       <main className="flex-1 p-4 md:p-7 max-w-4xl mx-auto w-full">
         <div className="flex justify-between items-center mb-8">

@@ -33,11 +33,11 @@ function ChatWidget() {
                         transition={{ duration: 0.2, ease: "easeOut" }}
                         role="dialog"
                         aria-label="AI Assistant chat"
-                        className="fixed bottom-24 right-5 sm:right-6 z-[60] w-[min(380px,92vw)] h-[min(560px,75vh)] flex flex-col overflow-hidden rounded-2xl shadow-2xl shadow-black/40 ring-1 ring-white/10 text-white"
+                        className="fixed bottom-24 right-5 sm:right-6 z-60 w-[min(380px,92vw)] h-[min(560px,75vh)] flex flex-col overflow-hidden rounded-2xl shadow-2xl shadow-black/40 ring-1 ring-white/10 text-white"
                         style={{ background: "#0b1220" }}
                     >
                         {/* Header */}
-                        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/10 shrink-0 bg-white/[0.03]">
+                        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/10 shrink-0 bg-white/3">
                             <div
                                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                                 style={{ background: "linear-gradient(135deg,#155dfc,#0092b8)" }}
@@ -111,7 +111,7 @@ function ChatWidget() {
                                         key={label}
                                         onClick={() => sendMessage(label)}
                                         disabled={loading}
-                                        className="text-[11px] px-2.5 py-1.5 rounded-full text-slate-300 bg-white/5 border border-white/[0.08] transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                                        className="text-[11px] px-2.5 py-1.5 rounded-full text-slate-300 bg-white/5 border border-white/8] transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                     >
                                         {label}
                                     </button>
@@ -159,7 +159,7 @@ function ChatWidget() {
                 whileTap={{ scale: 0.94 }}
                 title="AI Assistant"
                 aria-label={isOpen ? "Close AI chat" : "Open AI chat"}
-                className="fixed bottom-5 right-5 sm:right-6 z-[60] w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-black/40 cursor-pointer transition-shadow duration-200 hover:shadow-xl"
+                className="fixed bottom-5 right-5 sm:right-6 z-60 w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-black/40 cursor-pointer transition-shadow duration-200 hover:shadow-xl"
                 style={{ background: "linear-gradient(135deg,#155dfc,#0092b8)" }}
             >
                 <AnimatePresence mode="wait" initial={false}>

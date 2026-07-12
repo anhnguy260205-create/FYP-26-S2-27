@@ -198,7 +198,7 @@ export default function InteractiveChart({
         const nextStatus = result.subscription_status || "inactive";
         setCurrentSubscriptionStatus(nextStatus);
         const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-        localStorage.setItem(
+        sessionStorage.setItem(
           "currentUser",
           JSON.stringify({ ...currentUser, subscription_status: nextStatus })
         );

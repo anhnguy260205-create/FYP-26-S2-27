@@ -27,6 +27,7 @@ import ExpertPortfolio from "./pages/investor/ExpertPortfolio.jsx";
 import EducationContent from "./pages/investor/EducationContent.jsx";
 import AIChatbot from "./pages/investor/AIChatbot.jsx";
 import ExpertDetails from "./pages/investor/ExpertDetail.jsx";
+import UpdateParticularPage from "./pages/investor/UpdateParticularPage.jsx";
 
 import ExpertProfilePage from "./pages/expert/ExpertProfilePage.jsx";
 import ExpertLoggedInPage from "./pages/expert/ExpertLoggedInPage.jsx";
@@ -204,12 +205,8 @@ export const router = createBrowserRouter([
         path: "/expert/notifications",
         element: <ProtectedRoute allowedRoles={["expert"]}><ExpertNotificationPage /></ProtectedRoute>
     },
-
-
-
+    {
+        path: "/investor/update-particular",
+        element: <ProtectedRoute allowedRoles={["investor"]}><UpdateParticularPage /></ProtectedRoute>
+    },
 ]);
-        {
-            path: "/investor/update-particular",
-            element: <ProtectedRoute allowedRoles={["investor"]}><UpdateParticularPage /></ProtectedRoute>
-        },
-        {
