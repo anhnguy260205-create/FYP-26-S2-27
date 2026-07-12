@@ -11,6 +11,7 @@ from app.control.controller.userc import (
     ExpertInformationController,
     UpdateInformationController,
     DeleteInvestorController,
+    DeleteExpertController,
     FirebaseLoginController,
 )
 from app.control.controller.investorc import (
@@ -60,6 +61,28 @@ def check_email(request: Request, email: str):
     from app.entity.models.useraccount import UserAccount
     exists = UserAccount.emailExists(email.strip().lower())
     return {"exists": exists}
+
+
+@router.get("/email-by-username")
+@limiter.limit("20/minute")
+def email_by_username(request: Request, username: str):
+    """Resolve a username to its account email (Firebase sign-in needs the
+    email). Used by the login page's username-based flow."""
+    from app.entity.models.useraccount import UserAccount
+    from app.entity.database.session import get_session
+    name = username.strip()
+    with get_session() as session:
+        user = session.query(UserAccount).filter(
+            UserAccount.username == name
+        ).first()
+        if not user:
+            # Convenience: allow logging in with the email address directly
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == name.lower()
+            ).first()
+        if not user:
+            return {"success": False, "message": "No account found with this username"}
+        return {"success": True, "email": user.email_address}
 
 
 # ── Auth: login/logout ─────────────────────────────────────────────────────────
@@ -148,6 +171,18 @@ def delete_account(
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
     result = DeleteInvestorController().delete_account(user_id)
+    if not result:
+        return {"success": False, "message": "Account not found"}
+    return {"success": True, "message": "Account deleted successfully"}
+
+
+@router.delete("/delete-expert/{user_id}")
+def delete_expert_account(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_id"] != user_id and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    result = DeleteExpertController().delete_account(user_id)
     if not result:
         return {"success": False, "message": "Account not found"}
     return {"success": True, "message": "Account deleted successfully"}

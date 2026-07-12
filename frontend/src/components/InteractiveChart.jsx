@@ -181,7 +181,7 @@ export default function InteractiveChart({
   fetchCompareData,
 }) {
   // Take user subscription status from localStorage 
-  const user = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const userId = user?.user_id;
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState(
     user?.subscription_status || "inactive"
@@ -197,7 +197,7 @@ export default function InteractiveChart({
 
         const nextStatus = result.subscription_status || "inactive";
         setCurrentSubscriptionStatus(nextStatus);
-        const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
         localStorage.setItem(
           "currentUser",
           JSON.stringify({ ...currentUser, subscription_status: nextStatus })

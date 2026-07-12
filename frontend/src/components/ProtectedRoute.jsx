@@ -1,10 +1,11 @@
 import { Navigate } from "react-router-dom";
+import ChatWidget from "./chat/ChatWidget.jsx";
 
 function getCurrentUser() {
   try {
-    return JSON.parse(localStorage.getItem("currentUser") || "null");
+    return JSON.parse(sessionStorage.getItem("currentUser") || "null");
   } catch {
-    localStorage.removeItem("currentUser");
+    sessionStorage.removeItem("currentUser");
     return null;
   }
 }
@@ -20,7 +21,12 @@ function ProtectedRoute({ allowedRoles, children }) {
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      {currentUser.role === "investor" && <ChatWidget />}
+    </>
+  );
 }
 
 export default ProtectedRoute;

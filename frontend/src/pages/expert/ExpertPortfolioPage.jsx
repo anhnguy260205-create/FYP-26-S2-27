@@ -80,7 +80,7 @@ function AllocationBar({ holdings }) {
 
 export default function ExpertPortfolioPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const loggedInName = currentUser?.full_name || currentUser?.name || currentUser?.username || currentUser?.email || "Consultant";
   const [portfolio, setPortfolio] = useState(DEFAULT_PORTFOLIO);
   const [search, setSearch] = useState("");
@@ -121,7 +121,7 @@ export default function ExpertPortfolioPage() {
   return (
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}>
       <ConsultantHeader />
-      <main className="flex-1 p-4 md:p-7">
+      <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
         <div className="mx-auto max-w">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>

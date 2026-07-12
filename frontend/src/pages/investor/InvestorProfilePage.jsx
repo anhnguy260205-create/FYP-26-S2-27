@@ -222,12 +222,12 @@ function DeleteAccountButton() {
     const [loading, setLoading] = useState(false);
 
     const handleDeleteAccount = async () => {
-        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
         setLoading(true);
         try {
             const result = await deleteInvestor(currentUser?.user_id);
             if (result.success) {
-                localStorage.removeItem("currentUser");
+                sessionStorage.removeItem("currentUser");
                 navigate("/");
             } else {
                 alert(result.message || "Failed to delete account");
@@ -326,11 +326,11 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 
             if (result.success) {
                 // Patch localStorage so header/other components reflect the change immediately
-                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
                 stored.full_name = draftFull;
                 stored.username = draftUser;
                 stored.email_address = draftEmail;
-                localStorage.setItem("currentUser", JSON.stringify(stored));
+                sessionStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Profile updated");
                 setEditingSection(null);
@@ -561,7 +561,7 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
     const [selectedRisk, setSelectedRisk] = useState(
         () => investorInfo?.risk_tolerance || ""
     );
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
     const role = currentUser?.role;
     const userId = currentUser?.user_id;
     const isEditing = (section) => editingSection === section;
@@ -595,10 +595,10 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                 selectedRisk ? updateRiskTolerance(userId, selectedRisk) : Promise.resolve({ success: true }),
             ]);
             if (interestResult.success && riskResult.success) {
-                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
                 stored.interests = selectedInterests.join(",");
                 stored.risk_tolerance = selectedRisk;
-                localStorage.setItem("currentUser", JSON.stringify(stored));
+                sessionStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Account settings updated");
                 setEditingSection(null);
@@ -854,7 +854,7 @@ function SecurityCard({ investorInfo }) {
 
 function PaperMoneyCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
     const MAX_BALANCE = 10000;
@@ -1073,7 +1073,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 }
 function SubscriptionCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const plan = investorInfo?.investor_subscription_status?.toLowerCase() || "inactive";
 
@@ -1098,10 +1098,10 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             const result = await cancelSubscription(userId);
             if (result.success) {
                 const newStatus = result.new_status || "basic";
-                const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
+                const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
                 stored.subscription_status = newStatus;
                 stored.investor_subscription_status = newStatus;
-                localStorage.setItem("currentUser", JSON.stringify(stored));
+                sessionStorage.setItem("currentUser", JSON.stringify(stored));
                 setShowCancelConfirm(false);
                 onUpdate();
             } else {
@@ -1374,7 +1374,7 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
 function InvestorProfilePage() {
     const [activeTab, setActiveTab] = useState("personal");
     const [investorInfo, setInvestorInfo] = useState(null);
-    const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser")));
+    const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser")));
     const userId = currentUser?.user_id;
 
     const fetchInvestorInfo = () => {

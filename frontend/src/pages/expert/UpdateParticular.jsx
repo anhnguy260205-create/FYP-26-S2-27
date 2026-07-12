@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 function UpdateParticularPage() {
     const navigate = useNavigate();
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
     const [fullName, setFullName] = useState("");
     const [phone, setPhone] = useState("");
@@ -52,7 +52,7 @@ function UpdateParticularPage() {
 
             // Patch localStorage
             const updated = { ...currentUser, full_name: fullName.trim() };
-            localStorage.setItem("currentUser", JSON.stringify(updated));
+            sessionStorage.setItem("currentUser", JSON.stringify(updated));
 
             // Go to document submission page next
             navigate("/expert/documents");

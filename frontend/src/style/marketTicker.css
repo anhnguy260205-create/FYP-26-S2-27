@@ -1,0 +1,15 @@
+/* Kept as a static stylesheet (not an inline <style> re-rendered per component)
+   so live price updates never touch this rule and restart the marquee animation. */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(var(--ticker-shift, -50%)); }
+}
+.ticker-track {
+  display: inline-flex;
+  gap: 0;
+  animation: ticker-scroll 32s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye } from "lucide-react";
+import { Eye, MessageCircle, ListTodo } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertQuestions } from "../../api/expertApi.js";
+import ChatPanel from "../../components/chat/ChatPanel.jsx";
 
 const STORAGE_KEY = "rocketTradeExpertQuestions_v2"; // new key to avoid stale old data
 
@@ -47,6 +48,8 @@ export default function ExpertQuestionsPage() {
     const [loading,   setLoading]     = useState(true);
     const [query,     setQuery]       = useState("");
     const [filter,    setFilter]      = useState("All");
+    const [tab,       setTab]         = useState("questions"); // "questions" | "messages"
+    const [chatUnread, setChatUnread] = useState(0);
 
     useEffect(() => {
         setLoading(true);
@@ -92,33 +95,69 @@ export default function ExpertQuestionsPage() {
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-7">
                     <div>
                         <h1 style={{ fontFamily:"'DM Mono', monospace", fontSize:26, fontWeight:700, letterSpacing:"0.02em", color:"#e2e8f0", margin:0 }}>
-                            Investor Questions
+                            {tab === "questions" ? "Investor Questions" : "Messages"}
                         </h1>
                         <p style={{ marginTop:6, fontSize:13, color:"rgba(255,255,255,0.45)" }}>
-                            {questions.length} question{questions.length !== 1 ? "s" : ""} assigned to you
+                            {tab === "questions"
+                                ? `${questions.length} question${questions.length !== 1 ? "s" : ""} assigned to you`
+                                : "Chat one-on-one with premium investors."}
                         </p>
                     </div>
-                    <div className="flex gap-2.5 flex-wrap">
-                        <input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search questions…"
-                            className="w-52"
-                            style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none" }}
-                        />
-                        <select
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none", cursor:"pointer" }}
-                        >
-                            <option value="All">All</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Answered">Answered</option>
-                        </select>
-                    </div>
+                    {tab === "questions" && (
+                        <div className="flex gap-2.5 flex-wrap">
+                            <input
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Search questions…"
+                                className="w-52"
+                                style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none" }}
+                            />
+                            <select
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", color:"#e2e8f0", fontSize:13, outline:"none", cursor:"pointer" }}
+                            >
+                                <option value="All">All</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Answered">Answered</option>
+                            </select>
+                        </div>
+                    )}
                 </div>
 
-                {loading && questions.length === 0 ? (
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6">
+                    {[
+                        { id: "questions", label: "Questions", Icon: ListTodo },
+                        { id: "messages",  label: "Messages",  Icon: MessageCircle },
+                    ].map(({ id, label, Icon }) => {
+                        const activeTab = tab === id;
+                        return (
+                            <button key={id} onClick={() => setTab(id)}
+                                className="flex items-center gap-2"
+                                style={{
+                                    padding: "9px 18px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+                                    cursor: "pointer", position: "relative",
+                                    background: activeTab ? "linear-gradient(90deg,#0092b8,#155dfc)" : "rgba(255,255,255,0.05)",
+                                    border: activeTab ? "1px solid transparent" : "1px solid rgba(255,255,255,0.1)",
+                                    color: activeTab ? "#fff" : "rgba(255,255,255,0.55)",
+                                }}>
+                                <Icon size={14} /> {label}
+                                {id === "messages" && chatUnread > 0 && (
+                                    <span style={{
+                                        minWidth: 17, height: 17, borderRadius: 9, padding: "0 4px",
+                                        background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 700,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}>{chatUnread}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {tab === "messages" ? (
+                    <ChatPanel height={560} onUnreadChange={setChatUnread} />
+                ) : loading && questions.length === 0 ? (
                     <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>Loading questions…</div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-16" style={{ color:"rgba(255,255,255,0.4)" }}>

@@ -304,8 +304,10 @@ SNAPSHOT_TTL = 30.0  # seconds
 _spark_cache: Dict[str, list] = {}    # symbol -> daily bars (on-connect sparklines)
 _batch_refresh_lock = asyncio.Lock()
 _batch_last_refresh: Optional[float] = None   # monotonic ts of last successful refresh
-BATCH_REFRESH_INTERVAL = 55.0  # seconds; just under the 60s broadcast cycle
-SPARK_BARS = 30                # ~6 weeks of daily bars per sparkline
+# Refresh cadence: each refresh is ~503 Yahoo requests, so keep it modest or
+# Yahoo rate-limits and symbols start "failing" (they keep their cached values).
+BATCH_REFRESH_INTERVAL = 240.0  # seconds between full-pool downloads
+SPARK_BARS = 30                 # ~6 weeks of daily bars per sparkline
 
 # ── Cache persistence ──────────────────────────────────────────────────────────
 # The batch caches are saved to disk after every refresh, so a restarted
@@ -417,6 +419,17 @@ def get_market_status() -> str:
 
 # ── Batch pool refresh (one download for all 500+ symbols) ─────────────────────
 
+# Set on server shutdown so an in-flight batch download aborts between chunks
+# instead of blocking uvicorn's "Waiting for background tasks to complete".
+_shutting_down = False
+_BATCH_CHUNK = 100  # symbols per yf.download call
+
+
+def request_shutdown() -> None:
+    global _shutting_down
+    _shutting_down = True
+
+
 def refresh_pool_snapshots() -> None:
     """Populate the snapshot + sparkline caches for the ENTIRE pool with a
     single batched yf.download (3 months of daily bars).
@@ -428,21 +441,35 @@ def refresh_pool_snapshots() -> None:
         per-symbol 1-minute history; full-resolution charts stay on demand).
 
     Runs in a worker thread (blocking I/O)."""
-    df = yf.download(
-        tickers=stock_pool, period="3mo", interval="1d",
-        group_by="ticker", auto_adjust=False, threads=True, progress=False,
-    )
-    if df is None or df.empty:
+    now = time.monotonic()
+    frames = {}  # symbol -> per-symbol DataFrame
+
+    # Download in chunks so a server shutdown can abort between chunks
+    for i in range(0, len(stock_pool), _BATCH_CHUNK):
+        if _shutting_down:
+            return
+        chunk = stock_pool[i:i + _BATCH_CHUNK]
+        try:
+            df = yf.download(
+                tickers=chunk, period="3mo", interval="1d",
+                group_by="ticker", auto_adjust=False, threads=True, progress=False,
+            )
+        except Exception as e:
+            print(f"Batch chunk download failed ({chunk[0]}…{chunk[-1]}): {e}")
+            continue
+        if df is None or df.empty:
+            continue
+        multi = hasattr(df.columns, "levels")  # MultiIndex when >1 ticker
+        for symbol in chunk:
+            try:
+                frames[symbol] = df[symbol] if multi else df
+            except KeyError:
+                continue
+
+    if not frames:
         raise RuntimeError("yf.download returned no data for the stock pool")
 
-    now = time.monotonic()
-    multi = hasattr(df.columns, "levels")  # MultiIndex when >1 ticker
-
-    for symbol in stock_pool:
-        try:
-            sub = df[symbol] if multi else df
-        except KeyError:
-            continue
+    for symbol, sub in frames.items():
         sub = sub.dropna(subset=["Close"])
         if sub.empty:
             continue
@@ -513,7 +540,8 @@ def refresh_pool_snapshots() -> None:
                 "Conservative" if v <= lo else "Moderate" if v <= hi else "Aggressive"
             )
 
-    _save_cache_to_disk()
+    if not _shutting_down:
+        _save_cache_to_disk()
 
 
 async def ensure_snapshots_fresh(force: bool = False) -> None:
@@ -1009,7 +1037,9 @@ async def periodic_snapshot_broadcast():
         if not clients:
             return
         try:
-            await ensure_snapshots_fresh(force=True)
+            # Non-forced: actual downloads happen at most every
+            # BATCH_REFRESH_INTERVAL; in between we rebroadcast cached data.
+            await ensure_snapshots_fresh()
             quotes = [_snapshot_cache[s] for s in stock_pool if s in _snapshot_cache]
             if quotes:
                 msg = json.dumps(clean_json_value({
