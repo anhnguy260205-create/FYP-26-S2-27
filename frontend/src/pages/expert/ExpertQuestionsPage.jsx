@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, MessageCircle, ListTodo } from "lucide-react";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertQuestions } from "../../api/expertApi.js";
 import ChatPanel from "../../components/chat/ChatPanel.jsx";
@@ -88,7 +88,7 @@ export default function ExpertQuestionsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
         >
-            <ConsultantHeader />
+            <ExpertHeader />
             <main className="flex-1 p-4 md:p-7 max-w-6xl mx-auto w-full">
 
                 {/* Header */}
