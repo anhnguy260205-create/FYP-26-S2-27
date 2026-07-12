@@ -20,7 +20,7 @@ const APP_VERSION = "v1.0.0";
 const DEFAULT = {
   brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
   product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "/investor/subscription" }],
-  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }],
+  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }, { title: "Reviews", description: "/reviews" }],
   contact: [{ title: "support@deskstock.ai", description: "" }, { title: "Help Center", description: "#" }, { title: "Terms of Service", description: "#" }, { title: "Privacy Policy", description: "#" }],
 };
 
@@ -87,6 +87,10 @@ function Footer() {
                   <FooterLink href={item.description}>{item.title}</FooterLink>
                 </li>
               ))}
+              {/* Reviews — always shown regardless of CMS content */}
+              <li>
+                <FooterLink href="/reviews">Reviews</FooterLink>
+              </li>
             </ul>
           </div>
 

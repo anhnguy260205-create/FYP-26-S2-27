@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../../layout/Footer.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
-import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
+import { fetchStockSnapshot } from "../../api/stockApi.js";
+import { getReviewStats, getReviews } from "../../api/reviewApi.js";
 import {
   Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
   Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown, Play, Award,
   UserPlus, Mail, Rocket, DollarSign,
 } from "lucide-react";
+
+const TICKER_SYMBOLS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "META", "JPM", "V", "DIS"];
 
 const FAQS = [
   {
@@ -82,6 +85,84 @@ function getFeatureIcon(title = "") {
   const lower = title.toLowerCase();
   const found = FEATURE_ICONS.find((f) => lower.includes(f.match));
   return found ? found.Icon : Star;
+}
+
+function MarketTicker() {
+  const [quotes, setQuotes] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      TICKER_SYMBOLS.map((symbol) =>
+        fetchStockSnapshot(symbol)
+          .then((res) => (res.success ? res.data : null))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      setQuotes(results.filter(Boolean));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (quotes.length === 0) return <div style={{ height: 56 }} />;
+
+  const track = [...quotes, ...quotes];
+
+  return (
+    <div className="ticker-wrap">
+      <div className="ticker-track">
+        {track.map((q, i) => {
+          const change = q.previousClose ? ((q.p - q.previousClose) / q.previousClose) * 100 : 0;
+          const up = change >= 0;
+          return (
+            <div key={`${q.s}-${i}`} className="ticker-item">
+              <span className="ticker-symbol">{q.s}</span>
+              <span className="ticker-price">${q.p.toFixed(2)}</span>
+              <span className={up ? "ticker-up" : "ticker-down"}>
+                {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .ticker-wrap {
+          width: 100%;
+          overflow: hidden;
+          border-top: 1px solid rgba(59,130,246,0.2);
+          border-bottom: 1px solid rgba(59,130,246,0.2);
+          background: rgba(2,6,23,0.5);
+          -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+        }
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerScroll 40s linear infinite;
+        }
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+        .ticker-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.85rem 1.5rem;
+          white-space: nowrap;
+          font-size: 0.85rem;
+          border-right: 1px solid rgba(148,163,184,0.12);
+        }
+        .ticker-symbol { font-weight: 700; color: #e2e8f0; }
+        .ticker-price { color: #94a3b8; }
+        .ticker-up { color: #4ade80; font-weight: 600; }
+        .ticker-down { color: #f87171; font-weight: 600; }
+        @keyframes tickerScroll {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 function Hero() {
@@ -627,6 +708,179 @@ function RegistrationGuide() {
   );
 }
 
+function TestimonialAvatar({ name }) {
+  const colours = ["#155dfc", "#0092b8", "#7c3aed", "#059669", "#d97706", "#dc2626"];
+  let hash = 0;
+  for (const c of String(name || "")) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+  const initials = String(name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <div
+      style={{
+        width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+        background: colours[hash % colours.length], display: "flex",
+        alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: "white",
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+function TestimonialStars({ value }) {
+  return (
+    <div style={{ display: "flex", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} size={14} fill={i <= Math.round(value) ? "#fbbf24" : "none"} color={i <= Math.round(value) ? "#fbbf24" : "#334155"} />
+      ))}
+    </div>
+  );
+}
+
+function roleLabel(role) {
+  if (role === "expert") return "Expert";
+  if (role === "premium") return "Premium Member";
+  return "Member";
+}
+
+function TestimonialsSection() {
+  const navigate = useNavigate();
+  const [stats,   setStats]   = useState({ average: 0, total: 0 });
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    getReviewStats().then((d) => { if (d?.success || d?.average != null) setStats(d); }).catch(() => {});
+    getReviews({ sort: "helpful", pageSize: 6 }).then((d) => {
+      if (d?.success) setReviews(d.reviews || []);
+    }).catch(() => {});
+  }, []);
+
+  const avg = Number(stats?.average || 0).toFixed(1);
+
+  // Don't render section at all if no reviews yet
+  if (reviews.length === 0) return null;
+
+  function StarRow({ value, size = 14 }) {
+    return (
+      <div style={{ display: "flex", gap: 2 }}>
+        {[1,2,3,4,5].map(i => (
+          <Star key={i} size={size}
+            fill={i <= Math.round(Number(value)) ? "#fbbf24" : "none"}
+            color={i <= Math.round(Number(value)) ? "#fbbf24" : "rgba(255,255,255,0.2)"}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  function AvatarCircle({ name }) {
+    const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
+    let h = 0;
+    for (const c of String(name || "")) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+    const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+    return (
+      <div style={{ width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+        background: palette[h % palette.length], display: "flex", alignItems: "center",
+        justifyContent: "center", fontWeight: 700, fontSize: 14, color: "white" }}>
+        {initials}
+      </div>
+    );
+  }
+
+  function rolePill(role) {
+    const r = String(role || "").toLowerCase();
+    if (r === "expert")  return { label: "Expert",  style: { background: "rgba(0,211,242,0.12)", color: "#22d3ee", border: "1px solid rgba(0,211,242,0.25)" } };
+    if (r === "premium") return { label: "Premium", style: { background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" } };
+    return                      { label: "Member",  style: { background: "rgba(255,255,255,0.06)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.12)" } };
+  }
+
+  return (
+    <section style={{ background: "#060f23", padding: "80px 24px 90px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+
+        {/* Heading */}
+        <div style={{ textAlign: "center", marginBottom: 52 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px",
+            borderRadius: 20, background: "rgba(55,138,221,0.12)", border: "1px solid rgba(55,138,221,0.25)",
+            color: "#60a5fa", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
+            textTransform: "uppercase", marginBottom: 16 }}>
+            ★ Community Reviews
+          </div>
+          <h2 style={{ fontSize: 34, fontWeight: 800, color: "white", margin: "0 0 16px", lineHeight: 1.2 }}>
+            Trusted by investors and market experts
+          </h2>
+          {/* Aggregate score bar */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 12,
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 50, padding: "10px 22px" }}>
+            <StarRow value={avg} size={18} />
+            <span style={{ fontSize: 20, fontWeight: 800, color: "white" }}>{avg}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+              from {stats.total} review{stats.total !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+
+        {/* Review cards grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 18, marginBottom: 48 }}>
+          {reviews.slice(0, 6).map((review) => {
+            const pill = rolePill(review.author_role);
+            return (
+              <div key={review.review_id} style={{
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 16, padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12,
+              }}>
+                <StarRow value={review.rating} />
+                {review.title && (
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "white", margin: 0, lineHeight: 1.3 }}>
+                    {review.title}
+                  </h3>
+                )}
+                <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, margin: 0, flex: 1 }}>
+                  {review.comment.length > 200 ? review.comment.slice(0, 200) + "…" : review.comment}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: "auto", paddingTop: 10,
+                  borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <AvatarCircle name={review.author} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {review.author}
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
+                      padding: "2px 7px", borderRadius: 20, ...pill.style }}>
+                      {pill.label}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CTA */}
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>
+            Join thousands of users already investing smarter with RocketTrade
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => navigate("/register")} style={{
+              padding: "12px 28px", borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: "pointer", border: "none",
+              background: "linear-gradient(135deg,#155dfc,#0092b8)", color: "white",
+              boxShadow: "0 4px 20px rgba(21,93,252,0.35)" }}>
+              Get started free →
+            </button>
+            <button onClick={() => navigate("/login")} style={{
+              padding: "12px 28px", borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: "pointer",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)" }}>
+              Read all reviews
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function HomePage() {
   const [activeRole, setActiveRole] = useState("investor");
 
@@ -638,7 +892,7 @@ function HomePage() {
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <MarketOverviewTicker />
+      <MarketTicker />
       <main className="flex-1 flex flex-col">
         <Hero />
         <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>
@@ -681,6 +935,7 @@ function HomePage() {
             />
           </div>
         )}
+        <TestimonialsSection />
         <div className="bg-white">
           <RegistrationGuide />
         </div>

@@ -12,6 +12,7 @@ const menuItems = [
   { name: "Subscription Management", path: "/adminpanel/subscriptions" },
   { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" },
   { name: "Content Management", path: "/adminpanel/contentmanagement" },
+  { name: "Review Management", path: "/adminpanel/reviews" },
   { name: "Notification Management", path: "/adminpanel/notifications" },
 ];
 
