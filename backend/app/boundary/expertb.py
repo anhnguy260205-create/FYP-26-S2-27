@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.control.controller.expertc import ExpertPortfolioController, ExpertQuestionsController
+from app.control.controller.expertc import ExpertPortfolioController
 from app.entity.models.expert import Expert
 from app.entity.models.expertprofileview import ExpertProfileView
 from app.control.services.auth import get_current_user
@@ -101,10 +101,6 @@ class PortfolioRequest(BaseModel):
     holdings: List[Dict[str, Any]] = []
 
 
-class ReplyQuestionRequest(BaseModel):
-    reply_text: str
-
-
 @router.get("/portfolio/{user_id}")
 def get_portfolio(user_id: str, current_user: dict = Depends(get_current_user)):
     return ExpertPortfolioController().get_portfolio(user_id)
@@ -119,35 +115,6 @@ def save_portfolio(
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
     return ExpertPortfolioController().save_portfolio(user_id, data.dict())
-
-
-@router.get("/questions/{user_id}")
-def get_questions(user_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user["user_id"] != user_id and current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Access denied")
-    return ExpertQuestionsController().list_questions(user_id)
-
-
-@router.get("/questions/detail/{question_id}")
-def get_question_detail(question_id: str, current_user: dict = Depends(get_current_user)):
-    return ExpertQuestionsController().get_question(question_id)
-
-
-@router.post("/questions/{question_id}/reply")
-def reply_question(
-    question_id: str,
-    data: ReplyQuestionRequest,
-    current_user: dict = Depends(get_current_user),
-):
-    return ExpertQuestionsController().reply_question(question_id, data.reply_text)
-
-
-@router.delete("/questions/{question_id}/reply")
-def delete_question_reply(
-    question_id: str,
-    current_user: dict = Depends(get_current_user),
-):
-    return ExpertQuestionsController().delete_reply(question_id)
 
 
 # ── Expert profile & documents ─────────────────────────────────────────────────

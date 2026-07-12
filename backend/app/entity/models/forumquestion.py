@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
-from app.entity.models.expert import Expert
 from app.entity.models.useraccount import UserAccount
 
 try:
@@ -120,27 +119,6 @@ class ForumPostView(Base):
     created_at = Column(DateTime, default=_now)
 
 
-class ExpertQuestion(Base):
-    __tablename__ = "expert_question"
-
-    question_id     = Column(String(50), primary_key=True, default=lambda: f"question_{uuid4()}")
-    expert_id       = Column(String(50), ForeignKey("expert.expert_id"), nullable=True)
-    investor_name   = Column(String(100), default="Premium Investor")
-    investor_email  = Column(String(140), nullable=True)
-    title           = Column(String(180), nullable=False)
-    question_type   = Column(String(80), default="Portfolio Review")
-    tickers         = Column(String(180), default="")
-    urgency         = Column(String(30), default="Medium")
-    status          = Column(String(30), default="Pending")
-    investment_goal = Column(String(180), default="Long-term growth")
-    risk_profile    = Column(String(80), default="Moderate")
-    portfolio_value = Column(Float, default=0.0)
-    content         = Column(Text, nullable=False)
-    reply_text      = Column(Text, nullable=True)
-    submitted_at    = Column(DateTime, default=_now)
-    answered_at     = Column(DateTime, nullable=True)
-
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _resolve_user_name(session, user_id):
@@ -151,15 +129,6 @@ def _resolve_user_name(session, user_id):
         return "RocketTrade User", "investor"
     role = user.profile.profile_name if getattr(user, "profile", None) else "user"
     return user.full_name or user.username, role or "user"
-
-
-def _resolve_expert_id(session, user_id=None):
-    expert = None
-    if user_id:
-        expert = session.query(Expert).filter(Expert.user_id == user_id).first()
-    if not expert:
-        expert = session.query(Expert).first()
-    return expert.expert_id if expert else None
 
 
 def _safe_dt(value):
@@ -249,26 +218,6 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
         "replies":         [_serialise_reply(r, user_id=user_id, session=session) for r in sorted_replies] if include_replies else [],
     }
 
-
-def _serialise_question(question):
-    return {
-        "question_id":    question.question_id,
-        "id":             question.question_id,
-        "investor_name":  question.investor_name,
-        "investor_email": question.investor_email,
-        "title":          question.title,
-        "question_type":  question.question_type,
-        "tickers":        [t.strip() for t in (question.tickers or "").split(",") if t.strip()],
-        "urgency":        question.urgency,
-        "status":         question.status,
-        "investment_goal": question.investment_goal,
-        "risk_profile":   question.risk_profile,
-        "portfolio_value": question.portfolio_value,
-        "content":        question.content,
-        "reply_text":     question.reply_text,
-        "submitted_at":   _safe_dt(question.submitted_at),
-        "answered_at":    _safe_dt(question.answered_at),
-    }
 
 
 # ── Seed data ─────────────────────────────────────────────────────────────────
@@ -762,63 +711,3 @@ class ForumRepository:
                 "total_likes":   session.query(ForumPostLike).count(),
                 "total_saves":   session.query(ForumPostSave).count(),
             }
-
-
-# ── ExpertQuestion Repository ─────────────────────────────────────────────────
-
-class ExpertQuestionRepository:
-    @staticmethod
-    def seed_for_expert(user_id=None):
-        with get_session() as session:
-            expert_id = _resolve_expert_id(session, user_id)
-            if not expert_id:
-                return []
-            existing = session.query(ExpertQuestion).filter(ExpertQuestion.expert_id == expert_id).count()
-            if existing > 0:
-                return [_serialise_question(q) for q in session.query(ExpertQuestion).filter(
-                    ExpertQuestion.expert_id == expert_id
-                ).order_by(ExpertQuestion.submitted_at.desc()).all()]
-
-            demo = [
-                ExpertQuestion(question_id="question_demo_nvda", expert_id=expert_id, investor_name="Sarah Chen", investor_email="sarah.chen@email.com", title="Should I rebalance my NVDA-heavy portfolio?", question_type="Portfolio Review", tickers="NVDA,MSFT,AAPL", urgency="High", status="Pending", investment_goal="Long-term growth", risk_profile="Moderate-Aggressive", portfolio_value=52000, content="My portfolio is now heavily concentrated in NVDA after the recent rally. Should I trim some gains and rebalance into other technology or defensive stocks?"),
-                ExpertQuestion(question_id="question_demo_dbs", expert_id=expert_id, investor_name="Marcus Rivera", investor_email="marcus.rivera@email.com", title="DBS entry price and dividend strategy", question_type="Stock Analysis", tickers="DBS.SI,UOB.SI", urgency="Medium", status="Pending", investment_goal="Dividend income", risk_profile="Moderate", portfolio_value=30000, content="I am considering DBS for dividend income. Is the current price still attractive, or should I wait for a pullback before entering?"),
-                ExpertQuestion(question_id="question_demo_defensive", expert_id=expert_id, investor_name="Priya Nair", investor_email="priya.nair@email.com", title="How do I make my portfolio less volatile?", question_type="Risk Management", tickers="AAPL,KO,JNJ", urgency="Low", status="Pending", investment_goal="Capital preservation", risk_profile="Conservative", portfolio_value=18000, content="I am worried about market volatility. What type of defensive allocation should I add so my portfolio moves less aggressively?"),
-            ]
-            for q in demo:
-                session.add(q)
-            session.flush()
-            return [_serialise_question(q) for q in demo]
-
-    @staticmethod
-    def list_for_expert(user_id=None):
-        return ExpertQuestionRepository.seed_for_expert(user_id)
-
-    @staticmethod
-    def get(question_id):
-        with get_session() as session:
-            q = session.query(ExpertQuestion).filter(ExpertQuestion.question_id == question_id).first()
-            return _serialise_question(q) if q else None
-
-    @staticmethod
-    def reply(question_id, reply_text):
-        with get_session() as session:
-            q = session.query(ExpertQuestion).filter(ExpertQuestion.question_id == question_id).first()
-            if not q:
-                return None
-            q.reply_text = reply_text
-            q.status = "Answered"
-            q.answered_at = _now()
-            session.flush()
-            return _serialise_question(q)
-
-    @staticmethod
-    def delete_reply(question_id):
-        with get_session() as session:
-            q = session.query(ExpertQuestion).filter(ExpertQuestion.question_id == question_id).first()
-            if not q:
-                return None
-            q.reply_text = None
-            q.status = "Pending"
-            q.answered_at = None
-            session.flush()
-            return _serialise_question(q)

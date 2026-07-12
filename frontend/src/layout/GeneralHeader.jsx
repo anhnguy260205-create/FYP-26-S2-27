@@ -4,6 +4,14 @@ import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { BellRing, Menu, X } from "lucide-react";
 
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import logo from "../images/logo.png";
+import { logoutAccount } from "../api/userApi";
+import { getNotifications } from "../api/notificationApi.js";
+import { BellRing, ChevronDown, Menu, MessageCircle, X } from "lucide-react";
+
+import ChatDock from "../components/chat/ChatDock.jsx";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -191,7 +199,7 @@ function GeneralHeader() {
                   {link.label}
                 </a>
                 <span
-                  className={`absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 transition-transform duration-300 origin-left rounded-full ${active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
                     }`}
                 />
                 {link.submenu && <NavDropdown items={link.submenu} />}
@@ -201,25 +209,64 @@ function GeneralHeader() {
         </div>
 
         {/* Desktop right — lg and above */}
-        <div className="hidden lg:flex items-center gap-3 xl:gap-8">
-          <button
-            onClick={() => navigate("/investor/notification")}
-            className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
-          >
-            <BellRing size={18} />
-            <span className="hidden xl:inline">Notification</span>
-          </button>
+        <div className="hidden lg:flex items-center gap-1" ref={desktopRightRef}>
+          <div className="flex items-center gap-1">
+            <button
+              data-chat-trigger
+              onClick={() => chatDockRef.current?.toggleOpen(desktopRightRef.current.getBoundingClientRect())}
+              className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${chatUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+              aria-label="Messenger"
+            >
+              <MessageCircle size={25} />
+              <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+                Messenger
+              </span>
+              {chatUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                  {chatUnread > 99 ? "99+" : chatUnread}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => navigate("/investor/notification")}
+              className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            >
+              <BellRing size={25} />
+              <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+                Notification
+              </span>
+            </button>
+          </div>
           <ProfileButton />
         </div>
 
         {/* Mobile / tablet right */}
-        <div className="flex lg:hidden items-center gap-3">
+        <div className="flex lg:hidden items-center gap-1">
+          <button
+            data-chat-trigger
+            onClick={(e) => chatDockRef.current?.toggleOpen(e.currentTarget.getBoundingClientRect())}
+            className={`group relative p-2 rounded-full transition-colors duration-150 ${chatUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            aria-label="Messenger"
+          >
+            <MessageCircle size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Messenger
+            </span>
+            {chatUnread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                {chatUnread > 99 ? "99+" : chatUnread}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => navigate("/investor/notification")}
-            className="text-slate-800 hover:text-cyan-500"
-            aria-label="Notifications"
+            className={`group relative p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            aria-label="Notification"
           >
-            <BellRing size={20} />
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -231,63 +278,9 @@ function GeneralHeader() {
         </div>
       </div>
 
-      {/* Mobile menu overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
-          <div className="px-4 py-4">
-            {navLinks.map((link) => {
-              const active = isActive(link);
-              return (
-                <div key={link.label} className="mb-1">
-                  <button
-                    className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-blue-700 bg-blue-50" : "text-slate-900 hover:bg-gray-50"}`}
-                    onClick={() => { if (!link.submenu) { link.onClick?.(); close(); } }}
-                  >
-                    {link.label}
-                  </button>
-                  {link.submenu && (
-                    <div className="ml-4 border-l-2 border-gray-100 pl-3 mb-1">
-                      {link.submenu.map((item) => {
-                        const subActive = location.pathname.startsWith(item.path);
-                        return (
-                          <button
-                            key={item.title}
-                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl ${subActive ? "text-cyan-600 font-semibold bg-cyan-50" : "text-gray-600 hover:text-cyan-600 hover:bg-gray-50"}`}
-                            onClick={() => go(item.path)}
-                          >
-                            {item.title}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
 
-            <div className="border-t border-gray-100 mt-3 pt-3 space-y-1">
-              <button
-                onClick={() => go("/investor/edit-profile")}
-                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
-              >
-                Profile
-              </button>
-              <button
-                onClick={() => go("/investor/subscription")}
-                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
-              >
-                Subscription
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Messenger panel — triggered from the nav bar icon, renders only for logged-in investors */}
+      <ChatDock ref={chatDockRef} hideBubble onUnreadChange={setChatUnread} />
     </>
   );
 }

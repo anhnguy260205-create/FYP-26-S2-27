@@ -35,7 +35,7 @@ function PaymentSuccess() {
             try {
                 const result = await getSubscriptionStatus(user.user_id);
                 if (result.success) {
-                    localStorage.setItem(
+                    sessionStorage.setItem(
                         "currentUser",
                         JSON.stringify({ ...user, subscription_status: result.subscription_status })
                     );

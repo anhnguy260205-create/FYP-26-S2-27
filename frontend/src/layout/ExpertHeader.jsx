@@ -4,6 +4,8 @@ import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { BellRing, Menu, X } from "lucide-react";
 
+import { getNotifications } from "../api/notificationApi.js";
+import { BellRing, ChevronDown, Menu, X } from "lucide-react";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -91,11 +93,26 @@ function ProfileButton() {
   );
 }
 
-function ConsultantHeader() {
+function ExpertHeader() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.user_id) return;
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
+      .catch(() => { });
+  }, [currentUser?.user_id]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -165,31 +182,41 @@ function ConsultantHeader() {
         />
 
         {/* Desktop nav — md and above */}
-        <div className="hidden md:flex items-center gap-5 lg:gap-8">
-          {navLinks.map((link) => (
-            <div key={link.label} className="relative group">
-              <a
-                href="#"
-                className="font-bold text-[14px] lg:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
-                style={{ backgroundImage: link.gradient }}
-                onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
-              >
-                {link.label}
-              </a>
-              <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-              {link.submenu && <NavDropdown items={link.submenu} />}
-            </div>
-          ))}
+        <div className="hidden md:flex items-center gap-6 lg:gap-10">
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <div key={link.label} className="relative group py-2">
+                <a
+                  href="#"
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[14px] lg:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
+                  onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
+                >
+                  {link.label}
+                  {link.submenu && (
+                    <ChevronDown size={14} className="opacity-60 transition-transform duration-200 group-hover:rotate-180" />
+                  )}
+                </a>
+                <span
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
+                    }`}
+                />
+                {link.submenu && <NavDropdown items={link.submenu} />}
+              </div>
+            );
+          })}
         </div>
 
         {/* Desktop right — md and above */}
         <div className="hidden md:flex items-center gap-3 lg:gap-8">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="flex items-center gap-2 text-slate-800 hover:text-cyan-500 font-medium"
+            className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
           >
-            <BellRing size={18} />
-            <span className="hidden lg:inline">Notification</span>
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <ProfileButton />
         </div>
@@ -198,10 +225,13 @@ function ConsultantHeader() {
         <div className="flex md:hidden items-center gap-3">
           <button
             onClick={() => navigate("/expert/notifications")}
-            className="text-slate-800 hover:text-cyan-500"
-            aria-label="Notifications"
+            className={`group relative p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            aria-label="Notification"
           >
-            <BellRing size={20} />
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -212,6 +242,7 @@ function ConsultantHeader() {
           </button>
         </div>
       </div>
+
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
@@ -249,4 +280,4 @@ function ConsultantHeader() {
   );
 }
 
-export default ConsultantHeader;
+export default ExpertHeader;

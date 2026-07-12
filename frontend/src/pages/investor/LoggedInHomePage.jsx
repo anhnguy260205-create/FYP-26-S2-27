@@ -10,8 +10,8 @@ import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
 import { fetchRating } from "../../api/ratingApi.js";
 import {
-  LineChart, Sparkles, Users, Bot, GraduationCap,
-  Wallet, BrainCircuit, MessagesSquare, MessageCircleQuestion,
+  Bot, GraduationCap,
+  Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
 } from "lucide-react";
 import {
@@ -87,15 +87,6 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
-  },
-  {
-    Icon: MessageCircleQuestion,
-    title: "Ask the Experts",
-    description: "Submit your investing questions directly to verified experts and get personalized answers.",
-    to: "/investor/expertadvice",
-    badge: "Verified experts",
-    cta: "Explore",
-    accent: "rose",
   },
 ];
 
@@ -286,7 +277,6 @@ function PortfolioSparkline({ up }) {
 }
 
 function Hero({ name, portfolioData }) {
-  const navigate = useNavigate();
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
   const up = todaysPnL >= 0;
@@ -315,25 +305,6 @@ function Hero({ name, portfolioData }) {
             You haven't made any trades yet — jump in and start building your portfolio.
           </p>
         )}
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-        <PrimaryButton size="lg" icon={LineChart} onClick={() => navigate("/realtimedashboard")}>
-          {hasHoldings ? "Continue Trading" : "Start Trading"}
-        </PrimaryButton>
-
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5">
-          {SECONDARY_LINKS.map(({ Icon, label, to }) => (
-            <button
-              key={label}
-              onClick={() => navigate(to)}
-              className={`inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition-colors duration-150 hover:text-[#00D3F2] cursor-pointer rounded ${FOCUS_RING}`}
-            >
-              <Icon size={15} />
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -375,7 +346,7 @@ function AIInsightsSection({ portfolioData }) {
         title="Today's AI Insights"
         subtitle={loading ? "Personalized signals from RocketTrade's prediction models" : RISK_TAGLINE[portfolioRisk]}
       />
-      <div className="rounded-2xl bg-[#00D3F2]/[0.05] shadow-lg shadow-black/20 ring-1 ring-[#00D3F2]/20 p-5 md:p-6">
+      <div className="rounded-2xl bg-[#00D3F2]/5 shadow-lg shadow-black/20 ring-1 ring-[#00D3F2]/20 p-5 md:p-6">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -526,9 +497,9 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
     <div
       onClick={() => onSelect(symbol)}
       role="button"
-      tabIndex={0}
+      tabIndex={0}focus-visible:outline
       onKeyDown={(e) => { if (e.key === "Enter") onSelect(symbol); }}
-      className="grid grid-cols-[2.2fr_1fr_1fr_1.2fr] items-center gap-2 px-4 sm:px-6 py-4 border-b border-white/5 last:border-b-0 transition-colors duration-150 hover:bg-white/[0.03] cursor-pointer focus-visible:outline focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-[#00D3F2]"
+      className="grid grid-cols-[2.2fr_1fr_1fr_1.2fr] items-center gap-2 px-4 sm:px-6 py-4 border-b border-white/5 last:border-b-0 transition-colors duration-150 hover:bg-white/3 cursor-pointer  focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-[#00D3F2]"
     >
       <div className="flex items-center gap-3 min-w-0">
         <StockAvatar symbol={symbol} />
@@ -555,7 +526,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -584,7 +555,7 @@ function WatchlistSection() {
       </div>
 
       <div className={`${CARD_DOMINANT} overflow-hidden`}>
-        <div className="grid grid-cols-[2.2fr_1fr_1fr_1.2fr] gap-2 px-4 sm:px-6 py-3.5 text-xs text-slate-500 uppercase tracking-widest bg-white/[0.03]">
+        <div className="grid grid-cols-[2.2fr_1fr_1fr_1.2fr] gap-2 px-4 sm:px-6 py-3.5 text-xs text-slate-500 uppercase tracking-widest bg-white/3">
           <span>Symbol</span>
           <span className="text-right">Price</span>
           <span className="text-right">% Change</span>
@@ -604,8 +575,8 @@ function WatchlistSection() {
         {!loading && userId && symbols.length === 0 && (
           <div className="px-6 py-14 flex flex-col items-center text-center">
             <div className="relative w-16 h-16 mb-5">
-              <div className="absolute inset-0 rounded-full bg-white/[0.03]" />
-              <div className="absolute inset-[7px] rounded-full bg-white/[0.05] flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-white/3" />
+              <div className="absolute inset-1.75 rounded-full bg-white/5 flex items-center justify-center">
                 <Eye size={22} className="text-slate-400" />
               </div>
             </div>
@@ -621,7 +592,7 @@ function WatchlistSection() {
                   <button
                     key={sym}
                     onClick={() => handleSelect(sym)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white/[0.04] text-slate-300 ring-1 ring-white/5 transition-colors duration-150 hover:bg-white/[0.08] hover:text-[#00D3F2] cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white/4 text-slate-300 ring-1 ring-white/5 transition-colors duration-150 hover:bg-white/8 hover:text-[#00D3F2] cursor-pointer"
                   >
                     {sym}
                   </button>
@@ -669,7 +640,7 @@ function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") onSelect(symbol); }}
-      className={`group flex flex-col gap-3 shrink-0 w-[216px] cursor-pointer ${CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} hover:ring-[#00D3F2]/30 p-5 ${FOCUS_RING}`}
+      className={`group flex flex-col gap-3 shrink-0 w-54 cursor-pointer ${CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} hover:ring-[#00D3F2]/30 p-5 ${FOCUS_RING}`}
     >
       <div className="flex items-center gap-3">
         <StockAvatar symbol={symbol} size={34} />
@@ -816,7 +787,7 @@ function PlatformFeaturesSection() {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const name = currentUser?.username || currentUser?.full_name || "Investor";
   const { stocks } = useLiveStocks();
@@ -830,7 +801,7 @@ function LoggedInHomePage() {
       transition={{ duration: 0.25 }}
     >
       <GeneralHeader />
-      <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/[0.06]">
+      <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/6">
         <Hero name={name} portfolioData={portfolioData} />
         <AIInsightsSection portfolioData={portfolioData} />
         <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />

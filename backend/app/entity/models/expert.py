@@ -156,7 +156,6 @@ class Expert(Base):
     def deleteExpert(user_id):
         from app.entity.models.article import Article
         from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
-        from app.entity.models.forumquestion import ExpertQuestion
         from app.entity.models.emailalert import StockAlert
         from app.entity.models.notification import Notification
         from app.entity.models.watchlist import Watchlist
@@ -189,12 +188,7 @@ class Expert(Base):
                 Article.expert_id == expert.expert_id
             ).delete()
 
-            # 4. Questions assigned to this expert
-            session.query(ExpertQuestion).filter(
-                ExpertQuestion.expert_id == expert.expert_id
-            ).delete()
-
-            # 5. Alerts, notifications, watchlist (keyed by user_id, not expert_id)
+            # 4. Alerts, notifications, watchlist (keyed by user_id, not expert_id)
             session.query(StockAlert).filter(
                 StockAlert.user_id == user_id
             ).delete()
@@ -205,10 +199,10 @@ class Expert(Base):
                 Watchlist.user_id == user_id
             ).delete()
 
-            # 6. Verification record (child of expert)
+            # 5. Verification record (child of expert)
             ExpertVerification.delete_for_expert(session, expert.expert_id)
 
-            # 7. Expert row (child of user_account)
+            # 6. Expert row (child of user_account)
             session.delete(expert)
             session.flush()
 
