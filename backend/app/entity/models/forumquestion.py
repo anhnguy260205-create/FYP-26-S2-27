@@ -637,6 +637,9 @@ class ForumRepository:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
                 return False
+            uid = str(user_id or "").strip()
+            if not uid or not post.user_id or str(post.user_id).strip() != uid:
+                return False
             session.query(ForumPostLike).filter(ForumPostLike.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostSave).filter(ForumPostSave.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostView).filter(ForumPostView.post_id == post_id).delete(synchronize_session=False)

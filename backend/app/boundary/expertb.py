@@ -4,9 +4,75 @@ from pydantic import BaseModel
 
 from app.control.controller.expertc import ExpertPortfolioController, ExpertQuestionsController
 from app.entity.models.expert import Expert
+from app.entity.models.expertprofileview import ExpertProfileView
 from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
+
+
+# ── Public expert directory & profiles (investor-facing) ────────────────────
+
+@router.get("/public-list")
+def public_expert_list(current_user: dict = Depends(get_current_user)):
+    """Approved experts with their core info, for the Expert Portfolio page."""
+    experts = Expert.get_all_for_admin()
+
+    def _pub(e):
+        return {
+            "user_id": e["user_id"],
+            "full_name": e["full_name"],
+            "experience_years": e["experience_years"],
+            "rating": e.get("rating"),
+            "risk_tolerance": e["risk_tolerance"],
+            "verification_status": e["verification_status"],
+        }
+
+    approved = [_pub(e) for e in experts
+                if e["verification_status"] in ("approved", "active")]
+    # fall back to all experts if none are marked approved yet (dev data)
+    out = approved or [_pub(e) for e in experts]
+    return {"success": True, "experts": out}
+
+
+@router.get("/public-profile/{user_id}")
+def public_expert_profile(user_id: str,
+                          current_user: dict = Depends(get_current_user)):
+    """Expert profile (core info) with the basic-plan view limit.
+
+    Basic investors may view up to 3 distinct expert profiles (lifetime);
+    re-viewing an unlocked profile is free. Premium/experts are unlimited."""
+    quota = ExpertProfileView.check_and_consume(current_user["user_id"], user_id)
+    if not quota["allowed"]:
+        return {
+            "success": False,
+            "limit_reached": True,
+            "views_used": quota["views_used"],
+            "views_limit": quota["limit"],
+            "message": "Free profile view limit reached. Upgrade to Premium for unlimited access.",
+        }
+
+    info = Expert.get_expert_information(user_id)
+    if not info:
+        return {"success": False, "message": "Expert not found"}
+
+    return {
+        "success": True,
+        "views_used": quota["views_used"],
+        "views_limit": quota["limit"],
+        "premium": quota["premium"],
+        "profile": {
+            "user_id": user_id,
+            "username": info.get("username"),
+            "full_name": info.get("full_name"),
+            "email_address": info.get("email_address"),
+            "experience_years": info.get("experience_years"),
+            "rating": info.get("rating"),
+            "linked_in_url": info.get("linked_in_url"),
+            "risk_tolerance": info.get("risk_tolerance"),
+            "verification_status": info.get("verification_status"),
+            "address": info.get("address"),
+        },
+    }
 
 
 class HoldingRequest(BaseModel):
@@ -96,6 +162,7 @@ class UpdateExpertProfileRequest(BaseModel):
     experience_years: Optional[int] = None
     linked_in_url: Optional[str] = None
     risk_tolerance: Optional[str] = None
+    interests: Optional[str] = None
 
 
 @router.post("/update-profile")
@@ -108,6 +175,7 @@ def update_expert_profile(
         data.experience_years,
         data.linked_in_url,
         data.risk_tolerance,
+        data.interests,
     )
     if not ok:
         return {"success": False, "message": "Expert not found"}

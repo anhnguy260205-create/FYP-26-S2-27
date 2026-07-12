@@ -55,6 +55,7 @@ function DropDownMenu() {
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Subscription
       </button>
+
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
       </button>
@@ -64,7 +65,7 @@ function DropDownMenu() {
 
 function Profile() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
+  const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
 
@@ -79,7 +80,7 @@ function Profile() {
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
       </div>
-      <span className="hidden xl:inline">{currentUser?.username || currentUser?.user_name || "Guest"}</span>
+      <span className="hidden xl:inline">{currentUser?.full_name || currentUser?.username || currentUser?.user_name || "User"}</span>
     </button>
   );
 }
@@ -155,6 +156,7 @@ function GeneralHeader() {
         { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },
+
   ];
 
   const isActive = (link) =>

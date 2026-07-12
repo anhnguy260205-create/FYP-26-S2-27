@@ -1,131 +1,107 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
   Star,
   UserPlus,
-  CheckCircle,
   AlertTriangle,
   FileText,
   Trash2,
   CheckCheck,
   CheckCircle2,
   Bell,
+  BadgeCheck,
 } from "lucide-react";
 import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification as deleteNotificationApi,
+} from "../../api/notificationApi.js";
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "question",
-    title: "New question submitted",
-    message: "Sarah Chen submitted a new portfolio review question: Should I rebalance my NVDA-heavy portfolio?",
-    time: "5 mins ago",
-    unread: true,
-    icon: MessageSquare,
-  },
-  {
-    id: 2,
-    type: "question",
-    title: "Urgent question assigned",
-    message: "Marcus Rivera marked his question on DBS entry price as High urgency.",
-    time: "32 mins ago",
-    unread: true,
-    icon: AlertTriangle,
-  },
-  {
-    id: 3,
-    type: "review",
-    title: "New review received",
-    message: "Priya Nair left you a 5-star review: Excellent advice on retirement planning!",
-    time: "2 hours ago",
-    unread: true,
-    icon: Star,
-  },
-  {
-    id: 4,
-    type: "subscriber",
-    title: "New investor subscribed to your portfolio",
-    message: "Jason Tan started following your investment portfolio.",
-    time: "Yesterday",
-    unread: false,
-    icon: UserPlus,
-  },
-  {
-    id: 5,
-    type: "question",
-    title: "Question marked as resolved",
-    message: "Priya Nair closed her question on reducing portfolio volatility — no further action needed.",
-    time: "Yesterday",
-    unread: false,
-    icon: CheckCircle,
-  },
-  {
-    id: 6,
-    type: "article",
-    title: "Your article was published",
-    message: "Admin approved and published your article: Top 5 Defensive Stocks for 2026.",
-    time: "2 days ago",
-    unread: false,
-    icon: FileText,
-  },
-  {
-    id: 7,
-    type: "subscriber",
-    title: "Investor unsubscribed from your portfolio",
-    message: "A subscriber has removed your portfolio from their watchlist.",
-    time: "3 days ago",
-    unread: false,
-    icon: UserPlus,
-  },
-];
+const iconByType = {
+  consultation: MessageSquare,
+  review: Star,
+  subscriber: UserPlus,
+  article: FileText,
+  warning: AlertTriangle,
+  verification: BadgeCheck,
+};
 
 const iconBg = {
-  question: "rgba(21,93,252,0.12)",
+  consultation: "rgba(21,93,252,0.12)",
   review: "rgba(234,179,8,0.12)",
   subscriber: "rgba(34,197,94,0.12)",
   article: "rgba(168,85,247,0.12)",
+  verification: "rgba(34,197,94,0.12)",
 };
 
 const iconColor = {
-  question: "#60a5fa",
+  consultation: "#60a5fa",
   review: "#facc15",
   subscriber: "#4ade80",
   article: "#c084fc",
+  verification: "#4ade80",
 };
 
+function timeAgo(isoString) {
+  if (!isoString) return "";
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min${minutes !== 1 ? "s" : ""} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(isoString).toLocaleDateString();
+}
+
 function ExpertNotificationPage() {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  useEffect(() => {
+    if (!currentUser?.user_id) { setLoading(false); return; }
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setNotifications(res.notifications); })
+      .finally(() => setLoading(false));
+  }, [currentUser?.user_id]);
 
-  const markRead = (id) =>
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_unread: false })));
+    markAllNotificationsRead();
+  };
+
+  const markRead = (id) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
+      prev.map((n) => (n.notification_id === id ? { ...n, is_unread: false } : n))
     );
+    markNotificationRead(id);
+  };
 
-  const deleteNotification = (id) =>
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = (id) => {
+    setNotifications((prev) => prev.filter((n) => n.notification_id !== id));
+    deleteNotificationApi(id);
+  };
 
   const filtered =
     filter === "all"
       ? notifications
       : filter === "unread"
-      ? notifications.filter((n) => n.unread)
-      : notifications.filter((n) => n.type === filter);
+        ? notifications.filter((n) => n.is_unread)
+        : notifications.filter((n) => n.type === filter);
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.is_unread).length;
 
   const filterTabs = [
     { key: "all", label: "All" },
     { key: "unread", label: `Unread (${unreadCount})` },
-    { key: "question", label: "Questions" },
-    { key: "review", label: "Reviews" },
-    { key: "subscriber", label: "Subscribers" },
-    { key: "article", label: "Articles" },
   ];
 
   return (
@@ -141,7 +117,7 @@ function ExpertNotificationPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <div className="flex items-center gap-3">
-              <Bell size={26} color="#e2e8f0" />
+
               <h1
                 style={{
                   fontFamily: "'DM Mono', monospace",
@@ -228,7 +204,17 @@ function ExpertNotificationPage() {
             overflow: "hidden",
           }}
         >
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div
+              style={{
+                padding: "60px",
+                textAlign: "center",
+                color: "rgba(255,255,255,0.4)",
+              }}
+            >
+              Loading notifications...
+            </div>
+          ) : filtered.length === 0 ? (
             <div
               style={{
                 padding: "60px",
@@ -240,15 +226,15 @@ function ExpertNotificationPage() {
             </div>
           ) : (
             filtered.map((item) => {
-              const Icon = item.icon;
+              const Icon = iconByType[item.type] ?? Bell;
               return (
                 <div
-                  key={item.id}
+                  key={item.notification_id}
                   className="flex justify-between items-center"
                   style={{
                     padding: "20px",
                     borderBottom: "1px solid rgba(255,255,255,0.05)",
-                    background: item.unread
+                    background: item.is_unread
                       ? "rgba(21,93,252,0.06)"
                       : "transparent",
                   }}
@@ -275,7 +261,7 @@ function ExpertNotificationPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 style={{ fontWeight: 600 }}>{item.title}</h3>
-                        {item.unread && (
+                        {item.is_unread && (
                           <span
                             style={{
                               width: "8px",
@@ -305,15 +291,15 @@ function ExpertNotificationPage() {
                           color: "rgba(255,255,255,0.3)",
                         }}
                       >
-                        {item.time}
+                        {timeAgo(item.created_at)}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex gap-2 ml-4 shrink-0">
-                    {item.unread && (
+                    {item.is_unread && (
                       <button
-                        onClick={() => markRead(item.id)}
+                        onClick={() => markRead(item.notification_id)}
                         title="Mark as read"
                         style={{
                           width: "40px",
@@ -332,7 +318,7 @@ function ExpertNotificationPage() {
                     )}
 
                     <button
-                      onClick={() => deleteNotification(item.id)}
+                      onClick={() => deleteNotification(item.notification_id)}
                       title="Delete"
                       style={{
                         width: "40px",

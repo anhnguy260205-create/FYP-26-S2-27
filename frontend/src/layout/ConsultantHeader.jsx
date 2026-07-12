@@ -52,6 +52,7 @@ function DropDownMenu() {
       <button onClick={() => navigate("/expert/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
       </button>
+
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
       </button>
@@ -61,7 +62,7 @@ function DropDownMenu() {
 
 function Profile() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
+  const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
 
@@ -76,7 +77,7 @@ function Profile() {
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
       </div>
-      <span className="hidden xl:inline">{currentUser?.username || currentUser?.user_name || "Guest"}</span>
+      <span className="hidden xl:inline">{currentUser?.full_name || currentUser?.username || currentUser?.user_name || "User"}</span>
     </button>
   );
 }
@@ -146,6 +147,7 @@ function ConsultantHeader() {
       gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       onClick: () => navigate("/forum"),
     },
+
   ];
 
   return (

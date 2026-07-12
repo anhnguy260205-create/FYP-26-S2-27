@@ -1,5 +1,6 @@
 from app.entity.models.article import Article
 from app.entity.models.expert import Expert
+from app.entity.models.expertverification import ExpertVerification
 
 
 def _get_expert_id(user_id):
@@ -30,7 +31,8 @@ class CreateArticleController:
         expert = _get_expert(user_id)
         if not expert:
             return {"success": False, "message": "Expert account not found"}
-        if expert.verification_status != "approved":
+        verification = ExpertVerification.get_for_expert(expert.expert_id)
+        if verification["verification_status"] != "approved":
             return {"success": False, "message": "Only verified experts can create articles", "unverified": True}
         article_id = Article.create(expert.expert_id, title, summary, content, category, tags)
         return {"success": True, "article_id": article_id}
@@ -89,6 +91,11 @@ class AdminUpdateArticleController:
 
 class AdminDeleteArticleController:
     def delete(self, article_id):
+        article = Article.getById(article_id)
+        if not article:
+            return {"success": False, "message": "Article not found"}
+        if article["status"] != "published":
+            return {"success": False, "message": "Only published articles can be deleted — approve or reject it first."}
         ok = Article.admin_delete(article_id)
         if not ok:
             return {"success": False, "message": "Article not found"}

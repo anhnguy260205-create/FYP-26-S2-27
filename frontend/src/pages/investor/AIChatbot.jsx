@@ -34,6 +34,19 @@ const QUICK_PROMPTS = [
     { label: "What is market capitalisation?", icon: <Brain size={14} /> },
 ];
 
+// Platform "how do I…" help prompts — shown in their own sidebar section so
+// users can quickly get unstuck on using RocketTrade itself, not just markets.
+const PLATFORM_HELP_PROMPTS = [
+    { label: "How do I buy my first stock?", icon: <MessageSquare size={14} /> },
+    { label: "How does paper trading work?", icon: <MessageSquare size={14} /> },
+    { label: "What do I get with Premium?", icon: <MessageSquare size={14} /> },
+    { label: "How accurate are the AI predictions?", icon: <MessageSquare size={14} /> },
+    { label: "How do I set a price alert?", icon: <MessageSquare size={14} /> },
+    { label: "How do I ask a verified expert a question?", icon: <MessageSquare size={14} /> },
+    { label: "What is the Quant Rating score?", icon: <MessageSquare size={14} /> },
+    { label: "How do I leave a review of RocketTrade?", icon: <MessageSquare size={14} /> },
+];
+
 // ── Follow-up suggestion rules ────────────────────────────────────────────────
 // Each rule has a priority score — higher = matched first when multiple rules fire.
 // This prevents vague keywords like "market" from overriding specific ones like "alibaba".
@@ -68,6 +81,15 @@ const FOLLOW_UP_MAP = [
     { priority: 5, keywords: ["earnings","revenue","eps","quarterly"], suggestions: ["What is EPS in stocks?", "How do I read an earnings report?", "What is free cash flow?"] },
     { priority: 5, keywords: ["short selling","short squeeze","shorting"], suggestions: ["How does short selling work?", "What is a short squeeze?", "What are the risks of shorting?"] },
     { priority: 5, keywords: ["crypto","bitcoin","btc","ethereum"],  suggestions: ["How is Bitcoin different from stocks?", "What is market cap in crypto?", "What causes crypto volatility?"] },
+
+    // Platform features (priority 6 — more specific than general market chatter)
+    { priority: 6, keywords: ["premium","upgrade","subscription plan"], suggestions: ["How do I upgrade to Premium?", "What's included in the free plan?", "Can I cancel Premium anytime?"] },
+    { priority: 6, keywords: ["quant rating","quant score"],          suggestions: ["How is the Quant Rating calculated?", "Where can I see Quant Ratings by sector?", "Is a high Quant Rating a buy signal?"] },
+    { priority: 6, keywords: ["price alert","set an alert","alerts"], suggestions: ["How do I edit or delete an alert?", "Can I set an RSI alert?", "How many alerts can I create?"] },
+    { priority: 6, keywords: ["expert","consultant","ask a question"], suggestions: ["How long do experts take to reply?", "Can I message a specific expert?", "Is expert Q&A free or Premium only?"] },
+    { priority: 6, keywords: ["paper trading","paper money","virtual fund"], suggestions: ["How much virtual money do I start with?", "Can I reset my paper trading balance?", "Do paper trades use real-time prices?"] },
+    { priority: 6, keywords: ["review","rating the platform","leave a review"], suggestions: ["Can I edit my review later?", "Does my review show my name?", "How is the average rating calculated?"] },
+    { priority: 6, keywords: ["forum","community post","discussion"],  suggestions: ["How do I start a new forum discussion?", "Can I save posts to read later?", "How do I report an inappropriate post?"] },
 
     // General market (priority 2 — matched last so specific topics win)
     { priority: 2, keywords: ["bull market","bear market"],          suggestions: ["How long do bear markets last on average?", "What sectors outperform in a bull market?", "How do I protect my portfolio in a downturn?"] },
@@ -540,10 +562,22 @@ Tell me your risk level and time horizon, and I’ll help you narrow down what t
 
 Educational only, not financial advice."
 
+RocketTrade platform reference (use this to answer "how do I…" and feature questions accurately):
+- Paper Trading: buy/sell stocks with virtual funds at live market prices — zero real-money risk, available to all users.
+- AI Predictions: multi-day price direction forecasts on the AI Prediction page — a decision-support signal, not a guarantee.
+- Quant Rating: a 0–100 score per stock/sector blending fundamentals and momentum, found on the Quant Rating page.
+- Price Alerts: users can set alerts on a stock's price/RSI from its dashboard; alerts fire as notifications.
+- Expert Q&A: users can ask verified experts portfolio/stock questions from the Expert Advice page; experts reply from their dashboard.
+- Community Forum: users can post and discuss trading ideas, categorised by topic, with likes/saves/comments.
+- Reviews: any non-admin user can leave one platform review (with a star rating) from the Reviews page, and edit or delete it anytime.
+- Free plan: paper trading, limited AI chat questions per day, community forum, basic charts.
+- Premium plan: unlimited AI chat, full AI Predictions and Quant Rating access, priority expert access, and advanced portfolio tools.
+- If a user directly asks what Premium includes, or how to upgrade, answer factually and briefly (a few bullets), then note they can upgrade from the Subscription page. This is different from gatekeeping — only answer this when asked directly, and don't bring up tiers unprompted in unrelated answers.
+
 Scope:
 - Help with stocks, investing, trading strategies, technical/fundamental analysis, market terms, and RocketTrade platform features.
 - Politely redirect unrelated topics back to finance or RocketTrade.
-- Do not explain feature availability by account type. Do not say that the user is Basic or Premium.
+- Do not mention the asker's own account tier or say "since you're Basic/Premium" — but do answer direct factual questions about what each plan includes.
 ${stockContext}`;
 }
 
@@ -759,6 +793,12 @@ function AIChatbot() {
             const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
             return parseInt(sessionStorage.getItem(key) || "0", 10);
         } catch { return 0; }
+    });
+    // Rotate a fresh set of 3 platform-help prompts each time the page loads,
+    // so the sidebar doesn't always show the same 3 out of 8 options.
+    const [platformPrompts] = useState(() => {
+        const shuffled = [...PLATFORM_HELP_PROMPTS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 3);
     });
 
     // Save the chat for the current logged-in browser session so users can leave the page,
@@ -982,6 +1022,32 @@ function AIChatbot() {
                                 <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED</p>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                                     {QUICK_PROMPTS.map(({ label, icon }) => (
+                                        <button key={label}
+                                            onClick={() => sendMessage(label)}
+                                            disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                            style={{
+                                                padding: "9px 10px", borderRadius: "10px", textAlign: "left",
+                                                background: "rgba(255,255,255,0.03)",
+                                                border: "1px solid rgba(255,255,255,0.06)",
+                                                fontSize: "12px", display: "flex", alignItems: "center", gap: "7px",
+                                                color: "rgba(255,255,255,0.75)",
+                                                cursor: loading ? "not-allowed" : "pointer",
+                                                transition: "background 0.15s",
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                                            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                                        >
+                                            {icon}{label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Platform help — "how do I…" questions about RocketTrade itself */}
+                            <div>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>PLATFORM HELP</p>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    {platformPrompts.map(({ label, icon }) => (
                                         <button key={label}
                                             onClick={() => sendMessage(label)}
                                             disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}

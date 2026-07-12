@@ -35,6 +35,7 @@ from app.entity.models.contentmanagement import ContentManagement, seed_landing_
 from app.entity.models.emailalert import StockAlert
 from app.entity.models.order_book import OrderBook
 from app.entity.models.predictionusage import PredictionUsage
+from app.entity.models.review import Review, ReviewHelpful, seed_reviews
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
@@ -53,6 +54,7 @@ from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
 from app.boundary.chatbotb import router as chatbot_router
+from app.boundary.reviewb import router as review_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 from app.control.services.email_service import send_renewal_reminder_email
@@ -206,6 +208,7 @@ seed_jordan_account()
 seed_articles()
 seed_landing_content()
 seed_forum_posts()
+seed_reviews()
 try:
     seed_all_firebase_accounts()
 except Exception as _e:
@@ -226,6 +229,7 @@ app.include_router(expert_router)
 app.include_router(consultant_forum_router)
 app.include_router(content_router)
 app.include_router(chatbot_router)
+app.include_router(review_router)
 
 
 @app.get("/")

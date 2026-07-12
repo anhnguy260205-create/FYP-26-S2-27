@@ -77,11 +77,20 @@ function EducationContent() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    setLoading(true);
+  // `silent` skips the loading spinner — used for background polling so
+  // newly-approved articles show up without the investor reloading the page.
+  const fetchArticles = ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     getArticles({ category: category === "All" ? undefined : category })
       .then(res => { if (res.success) setArticles(res.articles); })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!silent) setLoading(false); });
+  };
+
+  useEffect(() => {
+    fetchArticles();
+    const interval = setInterval(() => fetchArticles({ silent: true }), 20000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   const filtered = articles.filter(a =>

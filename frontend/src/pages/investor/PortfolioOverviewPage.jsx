@@ -157,7 +157,7 @@ function StatCard({ label, value, sub, highlighted = false, valueColor }) {
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 function PortfolioOverviewPage() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const { stocks: liveStocks } = useLiveStocks();
 
   const [transactions, setTransactions] = useState([]);
