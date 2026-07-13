@@ -100,7 +100,7 @@ function Hero() {
   }, []);
 
   return (
-    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
+    <div className="hero-section relative w-full h-190 text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
       {/* Background glow */}
       <div
         className="absolute inset-0"
@@ -239,9 +239,14 @@ function usePlanContent() {
 }
 
 function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
+  const navigate = useNavigate();
   return (
     <div
-      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate("/login")}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate("/login"); }}
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 cursor-pointer ${highlighted
         ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
         : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
         }`}
@@ -325,6 +330,7 @@ function FAQItem({ q, a, open, onToggle }) {
 }
 
 function FAQSection() {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState(0);
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
@@ -342,6 +348,16 @@ function FAQSection() {
             onToggle={() => setOpenIndex(openIndex === index ? -1 : index)}
           />
         ))}
+      </div>
+
+      <div className="mt-10 text-center">
+        <button
+          onClick={() => navigate("/support")}
+          className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 px-6 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 cursor-pointer"
+        >
+          Visit Help Center
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );
