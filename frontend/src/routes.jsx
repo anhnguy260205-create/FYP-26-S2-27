@@ -7,8 +7,8 @@ const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticula
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
-const AboutUsPage = lazy(() => import("./pages/shared/AboutUsPage.jsx"));
-const SupportPage = lazy(() => import("./pages/shared/SupportPage.jsx"));
+const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
+const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
 const QuantRatingPage = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
