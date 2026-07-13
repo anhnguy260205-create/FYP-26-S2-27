@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 // Lazy-loaded pages — each becomes its own chunk at build time
@@ -53,6 +53,11 @@ const NotificationManagementPage = lazy(() => import("./pages/administrator/Noti
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
 function S({ children }) {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
+
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
 }
 

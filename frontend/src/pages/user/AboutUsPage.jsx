@@ -52,7 +52,7 @@ function AboutUsPage() {
 
         <main className="mx-auto w-full max-w-6xl px-5 py-16 md:px-8 md:py-20">
           {/* Heading */}
-          <section className="mb-14 text-center" style={{ marginTop: 100 }}>
+          <section className="mb-14 text-center" style={{ marginTop: 130 }}>
             <h1 className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-7xl">
               Smarter Investing.
               <br />
@@ -64,13 +64,13 @@ function AboutUsPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]" />
             </div>
             <div className="mx-auto mt-6 max-w-3xl text-center">
-              <p className="mb-4 text-sm leading-7 text-slate-400 md:text-base">
+              <p className="mb-4 text-sm leading-7 text-slate-300 md:text-base">
                 Our mission is to make intelligent investing more accessible
                 through AI-driven analytics, real-time market information, and
                 intuitive financial tools.
               </p>
 
-              <p className="text-sm leading-7 text-slate-400 md:text-base">
+              <p className="text-sm leading-7 text-slate-300 md:text-base">
                 Rocket Trade is committed to providing a secure, reliable, and
                 transparent platform that enables investors to evaluate market
                 opportunities and make data-informed decisions with greater
@@ -162,7 +162,7 @@ function AboutUsPage() {
                   <div className="relative mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-xl font-bold text-cyan-700 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition duration-300 group-hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]">
                     {member.initials}
 
-                    <span className="absolute inset-[-5px] rounded-full border border-cyan-400/10" />
+                    <span className="absolute inset-1.25 rounded-full border border-cyan-400/10" />
                   </div>
 
                   <h3 className="text-base font-semibold leading-6 text-slate-800">
