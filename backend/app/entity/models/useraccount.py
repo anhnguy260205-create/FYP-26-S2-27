@@ -95,6 +95,7 @@ class UserAccount(Base):
     @staticmethod
     def getProfileByEmail(email_address: str) -> dict:
         from app.entity.models.expert import Expert
+        from app.entity.models.expertverification import ExpertVerification
         from app.entity.models.investor import Investor
 
         email_address = email_address.strip().lower()
@@ -137,7 +138,7 @@ class UserAccount(Base):
                 "subscription_status": investor.investor_subscription_status if investor else "inactive",
                 "interests": investor.interests if investor else None,
                 "risk_tolerance": investor.risk_tolerance if investor else None,
-                "verification_status": expert.verification_status if expert else None,
+                "verification_status": ExpertVerification.get_for_expert(expert.expert_id)["verification_status"] if expert else None,
                 "_first_login": first_login,
             }
 

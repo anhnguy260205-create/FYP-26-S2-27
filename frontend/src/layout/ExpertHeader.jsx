@@ -1,11 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
 import { getNotifications } from "../api/notificationApi.js";
-import { BellRing, ChevronDown, Menu, MessageCircle, X } from "lucide-react";
-
-import ChatDock from "../components/chat/ChatDock.jsx";
+import { BellRing, ChevronDown, Menu, X } from "lucide-react";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -51,11 +49,8 @@ function DropDownMenu() {
   return (
     <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
                      group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
-      <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+      <button onClick={() => navigate("/expert/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
-      </button>
-      <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
-        Subscription
       </button>
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
@@ -76,7 +71,7 @@ function Profile() {
       style={{ height: "41px", padding: "0 8px", color: "black", fontSize: "14px", fontWeight: 600 }}
     >
       <div style={{
-        width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
+        width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #4338ca, #7e22ce)",
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
@@ -95,7 +90,7 @@ function ProfileButton() {
   );
 }
 
-function GeneralHeader() {
+function ExpertHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -103,9 +98,6 @@ function GeneralHeader() {
 
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const [hasUnread, setHasUnread] = useState(false);
-  const chatDockRef = useRef(null);
-  const desktopRightRef = useRef(null);
-  const [chatUnread, setChatUnread] = useState(0);
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
@@ -151,32 +143,30 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Knowledge Hub",
-      activePaths: ["/investor/educationcontent", "/investor/expertportfolio", "/investor/aichatbot"],
-      submenu: [
-        { title: "Educational Content", path: "/investor/educationcontent" },
-        { title: "Expert Portfolio", path: "/investor/expertportfolio" },
-        { title: "AI Chatbot", path: "/investor/aichatbot" },
-      ],
+      label: "Messages",
+      activePaths: ["/expert/questions"],
+      onClick: () => navigate("/expert/questions"),
     },
     {
-      label: "Forum Community",
+      label: "My Portfolio",
+      activePaths: ["/expert/portfolio", "/expert/create-portfolio"],
+      onClick: () => navigate("/expert/portfolio"),
+    },
+    {
+      label: "Learning Content",
+      activePaths: ["/expert/knowledge-hub"],
+      onClick: () => navigate("/expert/knowledge-hub"),
+    },
+    {
+      label: "Community Forum",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
-    },
-    {
-      label: "Transactions",
-      activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
-      submenu: [
-        { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
-        { title: "Transaction History", path: "/investor/transaction-history" },
-      ],
     },
   ];
 
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
-  const notifActive = location.pathname.startsWith("/investor/notification");
+  const notifActive = location.pathname.startsWith("/expert/notifications");
   const notifHighlighted = notifActive || hasUnread;
 
   return (
@@ -188,20 +178,20 @@ function GeneralHeader() {
         <img
           alt="logo"
           src={logo}
-          onClick={() => navigate("/investor")}
+          onClick={() => navigate("/expert")}
           className="cursor-pointer w-17.5 md:w-25 lg:w-30"
           style={{ height: "auto" }}
         />
 
-        {/* Desktop nav — lg and above */}
-        <div className="hidden lg:flex items-center gap-6 xl:gap-10">
+        {/* Desktop nav — md and above */}
+        <div className="hidden md:flex items-center gap-6 lg:gap-10">
           {navLinks.map((link) => {
             const active = isActive(link);
             return (
               <div key={link.label} className="relative group py-2">
                 <a
                   href="#"
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[13px] xl:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[14px] lg:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
                   onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
                 >
                   {link.label}
@@ -219,58 +209,24 @@ function GeneralHeader() {
           })}
         </div>
 
-        {/* Desktop right — lg and above */}
-        <div className="hidden lg:flex items-center gap-1" ref={desktopRightRef}>
-          <div className="flex items-center gap-1">
-            <button
-              data-chat-trigger
-              onClick={() => chatDockRef.current?.toggleOpen(desktopRightRef.current.getBoundingClientRect())}
-              className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${chatUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
-              aria-label="Messenger"
-            >
-              <MessageCircle size={25} />
-              <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
-                Messenger
-              </span>
-              {chatUnread > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
-                  {chatUnread > 99 ? "99+" : chatUnread}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => navigate("/investor/notification")}
-              className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
-            >
-              <BellRing size={25} />
-              <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
-                Notification
-              </span>
-            </button>
-          </div>
+        {/* Desktop right — md and above */}
+        <div className="hidden md:flex items-center gap-3 lg:gap-6">
+          <button
+            onClick={() => navigate("/expert/notifications")}
+            className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+          >
+            <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
+          </button>
           <ProfileButton />
         </div>
 
-        {/* Mobile / tablet right */}
-        <div className="flex lg:hidden items-center gap-1">
+        {/* Mobile right */}
+        <div className="flex md:hidden items-center gap-2">
           <button
-            data-chat-trigger
-            onClick={(e) => chatDockRef.current?.toggleOpen(e.currentTarget.getBoundingClientRect())}
-            className={`group relative p-2 rounded-full transition-colors duration-150 ${chatUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
-            aria-label="Messenger"
-          >
-            <MessageCircle size={25} />
-            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
-              Messenger
-            </span>
-            {chatUnread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
-                {chatUnread > 99 ? "99+" : chatUnread}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => navigate("/investor/notification")}
+            onClick={() => navigate("/expert/notifications")}
             className={`group relative p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notification"
           >
@@ -292,7 +248,7 @@ function GeneralHeader() {
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
           <div className="px-4 py-4">
             {navLinks.map((link) => {
               const active = isActive(link);
@@ -326,16 +282,10 @@ function GeneralHeader() {
 
             <div className="border-t border-gray-100 mt-3 pt-3 space-y-1">
               <button
-                onClick={() => go("/investor/edit-profile")}
+                onClick={() => go("/expert/edit-profile")}
                 className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
               >
                 Profile
-              </button>
-              <button
-                onClick={() => go("/investor/subscription")}
-                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
-              >
-                Subscription
               </button>
               <button
                 onClick={handleLogout}
@@ -347,11 +297,8 @@ function GeneralHeader() {
           </div>
         </div>
       )}
-
-      {/* Messenger panel — triggered from the nav bar icon, renders only for logged-in investors */}
-      <ChatDock ref={chatDockRef} hideBubble onUnreadChange={setChatUnread} />
     </>
   );
 }
 
-export default GeneralHeader;
+export default ExpertHeader;

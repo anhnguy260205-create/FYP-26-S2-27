@@ -1,268 +1,328 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../../layout/Footer.jsx";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import { getExpertInformation } from "../../api/userApi.js";
-import { getExpertQuestions } from "../../api/expertApi.js";
+import { getExpertPortfolio } from "../../api/expertApi.js";
+import { getMyArticles } from "../../api/knowledgeHubApi.js";
 import {
   MessageSquare, Briefcase, GraduationCap, FileText, UserCog,
-  Star, ShieldCheck, Clock, CheckCircle2,
+  Star, ShieldCheck, MessagesSquare,
+  Wallet, PieChart, ArrowRight,
 } from "lucide-react";
+import {
+  CARD, CARD_DOMINANT, CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
+  Skeleton, SectionHeader, ViewAllLink, PrimaryButton,
+} from "../../components/dashboard/DashboardKit.jsx";
 
-const QUICK_ACTIONS = [
-  { Icon: MessageSquare, label: "Answer Questions", to: "/expert/questions" },
+const SECONDARY_LINKS = [
   { Icon: Briefcase, label: "My Portfolio", to: "/expert/portfolio" },
   { Icon: GraduationCap, label: "Knowledge Hub", to: "/expert/knowledge-hub" },
   { Icon: FileText, label: "Documents", to: "/expert/documents" },
-  { Icon: UserCog, label: "Edit Profile", to: "/expert/edit-profile" },
 ];
 
-function statusClass(status) {
+const ACCENTS = {
+  cyan: { icon: "bg-[#00D3F2]/10 text-[#00D3F2]", badge: "bg-[#00D3F2]/10 text-[#00D3F2]", ring: "hover:ring-[#00D3F2]/30" },
+  violet: { icon: "bg-violet-400/10 text-violet-300", badge: "bg-violet-400/10 text-violet-300", ring: "hover:ring-violet-400/30" },
+  emerald: { icon: "bg-emerald-400/10 text-emerald-300", badge: "bg-emerald-400/10 text-emerald-300", ring: "hover:ring-emerald-400/30" },
+  amber: { icon: "bg-amber-400/10 text-amber-300", badge: "bg-amber-400/10 text-amber-300", ring: "hover:ring-amber-400/30" },
+  rose: { icon: "bg-rose-400/10 text-rose-300", badge: "bg-rose-400/10 text-rose-300", ring: "hover:ring-rose-400/30" },
+};
+
+const TOOLS = [
+  {
+    Icon: Briefcase,
+    title: "Model Portfolio",
+    description: "Publish and rebalance the model portfolio investors follow — holdings, allocation, and rationale.",
+    to: "/expert/portfolio",
+    accent: "cyan",
+    primary: true,
+  },
+  {
+    Icon: GraduationCap,
+    title: "Knowledge Hub",
+    description: "Write and publish educational articles for investors, from beginner basics to advanced strategy.",
+    to: "/expert/knowledge-hub",
+    accent: "violet",
+  },
+  {
+    Icon: MessagesSquare,
+    title: "Community Forum",
+    description: "Join discussions with investors and fellow experts on markets, strategy, and platform news.",
+    to: "/forum",
+    accent: "emerald",
+  },
+  {
+    Icon: FileText,
+    title: "Documents",
+    description: "Manage the verification and credential documents tied to your expert account.",
+    to: "/expert/documents",
+    accent: "amber",
+  },
+  {
+    Icon: UserCog,
+    title: "Edit Profile",
+    description: "Update your bio, experience, and contact details investors see on your profile.",
+    to: "/expert/edit-profile",
+    accent: "rose",
+  },
+];
+
+function verificationTone(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "answered") return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-  if (s === "closed") return "bg-slate-500/10 text-slate-400 border-slate-500/30";
-  return "bg-orange-500/10 text-orange-400 border-orange-500/30";
+  if (s === "verified" || s === "approved") return { text: "text-emerald-400", bg: "bg-emerald-400/10" };
+  if (s === "rejected") return { text: "text-red-400", bg: "bg-red-400/10" };
+  return { text: "text-amber-400", bg: "bg-amber-400/10" };
 }
 
-function urgencyClass(urgency) {
-  const u = String(urgency || "").toLowerCase();
-  if (u === "high") return "bg-red-500/10 text-red-400 border-red-500/30";
-  if (u === "medium") return "bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
-  return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+function fmt$(n) {
+  const v = Number(n) || 0;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function verificationClass(status) {
-  const s = String(status || "").toLowerCase();
-  if (s === "verified" || s === "approved") return "text-emerald-400";
-  if (s === "rejected") return "text-red-400";
-  return "text-yellow-400";
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function StatCard({ icon, label, value, valueClass, small }) {
-  return (
-    <div
-      className="rounded-2xl px-4 py-4"
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-    >
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-xs text-gray-400">{label}</p>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,211,243,0.1)" }}>
-          <span className="text-cyan-400">{icon}</span>
-        </div>
-      </div>
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: small ? 15 : 20, fontWeight: 700 }} className={valueClass ?? "text-white"}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Skeleton({ className, style }) {
-  return <div className={`animate-pulse rounded-lg bg-white/5 ${className ?? ""}`} style={style} />;
-}
-
-function WelcomeBanner({ name, pendingCount }) {
-  return (
-    <div>
-      <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(22px, 5vw, 30px)", fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1.2 }}>
-        Welcome back, {name}
-      </h1>
-      <p className="text-sm text-gray-400 mt-2">
-        {pendingCount > 0
-          ? `You have ${pendingCount} investor question${pendingCount === 1 ? "" : "s"} waiting for a reply.`
-          : "No pending investor questions right now — great work staying on top of things."}
-      </p>
-    </div>
-  );
-}
-
-function QuickActions() {
-  const navigate = useNavigate();
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-      {QUICK_ACTIONS.map(({ Icon, label, to }) => (
-        <button
-          key={label}
-          onClick={() => navigate(to)}
-          className="flex flex-col items-center gap-2 rounded-2xl py-4 px-2 cursor-pointer transition-all duration-200 hover:bg-white/5 hover:border-cyan-400/40 hover:-translate-y-0.5"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-        >
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(0,211,243,0.1)" }}>
-            <Icon size={18} className="text-cyan-400" />
-          </div>
-          <span className="text-xs font-medium text-gray-300 text-center">{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function ExpertStatsSection({ expertInfo, stats, loading }) {
-  const rating = Number(expertInfo?.rating ?? 0);
-
-  if (loading) {
-    return (
-      <section>
-        <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: "0 0 12px" }}>
-          Your Profile
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} style={{ height: 76 }} />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section>
-      <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: "0 0 12px" }}>
-        Your Profile
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Star size={14} />} label="Rating" value={rating > 0 ? rating.toFixed(1) : "Not yet rated"} small={rating <= 0} />
-        <StatCard
-          icon={<ShieldCheck size={14} />}
-          label="Verification"
-          value={expertInfo?.verification_status ?? "pending"}
-          valueClass={verificationClass(expertInfo?.verification_status)}
-        />
-        <StatCard icon={<Clock size={14} />} label="Pending Questions" value={stats.pending} />
-        <StatCard icon={<CheckCircle2 size={14} />} label="Answered Questions" value={stats.answered} />
-      </div>
-    </section>
-  );
-}
-
-function QuestionRow({ q, onSelect }) {
-  return (
-    <div
-      onClick={() => onSelect(q.id)}
-      className="grid items-center gap-2 px-4 sm:px-6 py-3.5 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
-      style={{ gridTemplateColumns: "2.2fr 1fr 1fr 1fr" }}
-    >
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-white font-semibold text-sm truncate">{q.title}</span>
-        <span className="text-gray-500 text-xs truncate">{q.investor_name} · {q.question_type}</span>
-      </div>
-      <span className={`justify-self-start rounded-full border px-2.5 py-1 text-xs font-semibold ${urgencyClass(q.urgency)}`}>
-        {q.urgency}
-      </span>
-      <span className={`justify-self-start rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(q.status)}`}>
-        {q.status}
-      </span>
-      <span className="text-right text-gray-400 text-xs">{formatDate(q.submitted_at)}</span>
-    </div>
-  );
-}
-
-function InvestorQuestionsSection({ questions, loading }) {
-  const navigate = useNavigate();
-  const handleSelect = (id) => navigate(`/expert/question/${id}`);
-  const preview = questions.slice(0, 5);
-
-  return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>
-          Investor Questions
-        </h2>
-        <button
-          onClick={() => navigate("/expert/questions")}
-          className="text-sm font-semibold"
-          style={{ color: "#00D3F2", background: "none", border: "none", cursor: "pointer" }}
-        >
-          View All Questions →
-        </button>
-      </div>
-
-      <div className="rounded-xl overflow-hidden border border-white/10">
-        <div
-          className="grid gap-2 px-4 sm:px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
-          style={{ gridTemplateColumns: "2.2fr 1fr 1fr 1fr" }}
-        >
-          <span>Question</span>
-          <span>Urgency</span>
-          <span>Status</span>
-          <span className="text-right">Submitted</span>
-        </div>
-
-        {loading && Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="px-4 sm:px-6 py-3.5 border-b border-white/5">
-            <Skeleton style={{ height: 34 }} />
-          </div>
-        ))}
-
-        {!loading && preview.length === 0 && (
-          <div className="px-6 py-10 text-center text-sm text-gray-500">No investor questions yet.</div>
-        )}
-
-        {!loading && preview.map((q) => (
-          <QuestionRow key={q.id} q={q} onSelect={handleSelect} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function normaliseQuestion(q) {
-  const id = q.question_id || q.id;
-  return { ...q, id };
-}
-
-const STATUS_RANK = { pending: 0, answered: 1, closed: 2 };
-const URGENCY_RANK = { high: 0, medium: 1, low: 2 };
-
-function questionSortKey(q) {
-  return [
-    STATUS_RANK[String(q.status).toLowerCase()] ?? 1,
-    URGENCY_RANK[String(q.urgency).toLowerCase()] ?? 1,
-  ];
-}
-
-function sortQuestions(list) {
-  return [...list].sort((a, b) => {
-    const [aStatus, aUrgency] = questionSortKey(a);
-    const [bStatus, bUrgency] = questionSortKey(b);
-    if (aStatus !== bStatus) return aStatus - bStatus;
-    if (aUrgency !== bUrgency) return aUrgency - bUrgency;
-    return new Date(b.submitted_at) - new Date(a.submitted_at);
-  });
-}
-
-function ExpertLoggedInPage() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
-  const userId = currentUser?.user_id;
-  const name = currentUser?.username || currentUser?.full_name || "Expert";
-
+function useExpertData(userId) {
   const [expertInfo, setExpertInfo] = useState(null);
-  const [questions, setQuestions] = useState([]);
+  const [portfolio, setPortfolio] = useState(null);
+  const [articleCount, setArticleCount] = useState(null);
   const [loading, setLoading] = useState(!!userId);
 
   useEffect(() => {
     if (!userId) return;
-    Promise.all([getExpertInformation(userId), getExpertQuestions(userId)])
-      .then(([infoRes, questionsRes]) => {
+    Promise.all([
+      getExpertInformation(userId).catch(() => null),
+      getExpertPortfolio(userId).catch(() => null),
+      getMyArticles(userId).catch(() => null),
+    ])
+      .then(([infoRes, portfolioRes, articlesRes]) => {
         if (infoRes?.success) setExpertInfo(infoRes.expert_information);
-        if (questionsRes?.success && Array.isArray(questionsRes.questions)) {
-          setQuestions(sortQuestions(questionsRes.questions.map(normaliseQuestion)));
+        if (portfolioRes?.success && portfolioRes.portfolio) setPortfolio(portfolioRes.portfolio);
+        if (articlesRes?.success && Array.isArray(articlesRes.articles)) {
+          setArticleCount(articlesRes.articles.filter((a) => a.status === "published").length);
         }
       })
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const stats = useMemo(() => ({
-    pending: questions.filter((q) => String(q.status).toLowerCase() === "pending").length,
-    answered: questions.filter((q) => String(q.status).toLowerCase() === "answered").length,
-  }), [questions]);
+  return { loading, expertInfo, portfolio, articleCount };
+}
+
+function Hero({ name, loading }) {
+  const navigate = useNavigate();
+
+  return (
+    <section className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-white font-bold text-[36px] leading-[1.15] tracking-tight">
+          Welcome back, {name} <span aria-hidden="true">👋</span>
+        </h1>
+        {loading ? (
+          <div className="h-5 w-64 max-w-full rounded bg-white/5 animate-pulse mt-2" />
+        ) : (
+          <p className="mt-2 text-base text-slate-400">
+            Manage your portfolio, publish content, and connect with investors.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+        <PrimaryButton size="lg" icon={MessageSquare} onClick={() => navigate("/expert/questions")}>
+          Messages
+        </PrimaryButton>
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5">
+          {SECONDARY_LINKS.map(({ Icon, label, to }) => (
+            <button
+              key={label}
+              onClick={() => navigate(to)}
+              className={`inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition-colors duration-150 hover:text-[#00D3F2] cursor-pointer rounded ${FOCUS_RING}`}
+            >
+              <Icon size={15} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProfileSummarySection({ expertInfo, loading, userId }) {
+  const navigate = useNavigate();
+
+  if (!userId) return null;
+
+  if (loading) {
+    return (
+      <section>
+        <SectionHeader title="Your Profile" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <Skeleton className="lg:col-span-3" style={{ height: 160 }} />
+          <Skeleton className="lg:col-span-2" style={{ height: 84 }} />
+        </div>
+      </section>
+    );
+  }
+
+  const rating = Number(expertInfo?.rating ?? 0);
+  const hasRating = rating > 0;
+  const verification = expertInfo?.verification_status ?? "pending";
+  const tone = verificationTone(verification);
+
+  return (
+    <section>
+      <SectionHeader
+        title="Your Profile"
+        action={<ViewAllLink onClick={() => navigate("/expert/edit-profile")}>Edit Profile →</ViewAllLink>}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Dominant card — rating */}
+        <div className={`lg:col-span-3 ${CARD_DOMINANT} p-7 flex flex-col justify-between gap-6`}>
+          <div>
+            <p className="text-sm text-slate-400 mb-2">Your Rating</p>
+            <div className="flex items-end gap-3">
+              <p className="font-['DM_Mono'] font-bold text-white text-[42px] leading-none tracking-tight">
+                {hasRating ? rating.toFixed(1) : "—"}
+              </p>
+              {hasRating && <span className="text-slate-500 text-lg mb-1">/ 5.0</span>}
+            </div>
+            {!hasRating && <p className="text-sm text-slate-500 mt-2">Not yet rated — keep building your reputation with investors.</p>}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                size={18}
+                className={i < Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-slate-700"}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Verification card */}
+        <div className={`lg:col-span-2 ${CARD} p-6 flex flex-col justify-center`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-slate-400">Verification</p>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${tone.bg}`}>
+              <ShieldCheck size={14} className={tone.text} />
+            </div>
+          </div>
+          <p className={`font-semibold text-xl capitalize ${tone.text}`}>{verification}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PortfolioStat({ icon: Icon, label, value }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-[#00D3F2]/10">
+          <Icon size={14} className="text-[#00D3F2]" />
+        </div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+      </div>
+      <p className="text-white font-semibold text-lg leading-tight truncate">{value}</p>
+    </div>
+  );
+}
+
+function ModelPortfolioSection({ portfolio, loading }) {
+  const navigate = useNavigate();
+
+  return (
+    <section>
+      <SectionHeader
+        title="Model Portfolio"
+        subtitle={portfolio ? `${portfolio.portfolio_name} — status: ${portfolio.status ?? "Active"}` : "The portfolio investors follow"}
+      />
+      <div className="rounded-2xl bg-[#00D3F2]/[0.05] shadow-lg shadow-black/20 ring-1 ring-[#00D3F2]/20 p-5 md:p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} style={{ height: 60 }} />
+            ))}
+          </div>
+        ) : portfolio ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-5">
+            <PortfolioStat icon={PieChart} label="Holdings" value={portfolio.total_holdings ?? 0} />
+            <PortfolioStat icon={Wallet} label="Invested" value={fmt$(portfolio.total_invested)} />
+            <PortfolioStat icon={Wallet} label="Cash Balance" value={fmt$(portfolio.cash_balance)} />
+            <PortfolioStat icon={ShieldCheck} label="Risk Level" value={portfolio.risk_level ?? "—"} />
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">You haven't set up a model portfolio yet.</p>
+        )}
+        <div className="mt-5 pt-5 border-t border-white/10 flex justify-end">
+          <PrimaryButton onClick={() => navigate("/expert/portfolio")}>
+            {portfolio ? "Manage Portfolio →" : "Create Portfolio →"}
+          </PrimaryButton>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ToolCard({ Icon, title, description, to, accent, primary, badge }) {
+  const navigate = useNavigate();
+  const a = ACCENTS[accent];
+  return (
+    <div
+      onClick={() => navigate(to)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate(to); }}
+      className={`group flex flex-col justify-between cursor-pointer ${primary ? CARD_DOMINANT : CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} ${a.ring} ${FOCUS_RING} ${primary ? "lg:col-span-2 p-7" : "p-6"}`}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className={`flex items-center justify-center rounded-xl ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
+            <Icon size={primary ? 22 : 19} />
+          </div>
+          {badge && (
+            <span className={`text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <h3 className={`text-white font-semibold mb-1.5 ${primary ? "text-xl" : "text-lg"}`}>{title}</h3>
+        <p className="text-[15px] text-slate-400 leading-relaxed">{description}</p>
+      </div>
+      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
+        Open <ArrowRight size={14} />
+      </div>
+    </div>
+  );
+}
+
+function ToolsSection({ articleCount }) {
+  const tools = TOOLS.map((tool) => {
+    if (tool.title === "Knowledge Hub" && articleCount != null) {
+      return { ...tool, badge: `${articleCount} published` };
+    }
+    return tool;
+  });
+
+  return (
+    <section>
+      <SectionHeader title="Your Tools" subtitle="Everything you need to publish, answer, and grow your reach" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tools.map((tool) => (
+          <ToolCard key={tool.title} {...tool} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ExpertLoggedInPage() {
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const userId = currentUser?.user_id;
+  const name = currentUser?.username || currentUser?.full_name || "Expert";
+
+  const { loading, expertInfo, portfolio, articleCount } = useExpertData(userId);
 
   return (
     <motion.div
@@ -271,12 +331,12 @@ function ExpertLoggedInPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <ConsultantHeader />
-      <main className="flex-1 p-4 md:p-7 flex flex-col gap-8">
-        <WelcomeBanner name={name} pendingCount={stats.pending} />
-        <QuickActions />
-        <ExpertStatsSection expertInfo={expertInfo} stats={stats} loading={loading} />
-        <InvestorQuestionsSection questions={questions} loading={loading} />
+      <ExpertHeader />
+      <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/[0.06]">
+        <Hero name={name} loading={loading} />
+        <ModelPortfolioSection portfolio={portfolio} loading={loading} />
+        <ProfileSummarySection expertInfo={expertInfo} loading={loading} userId={userId} />
+        <ToolsSection articleCount={articleCount} />
       </main>
       <Footer />
     </motion.div>

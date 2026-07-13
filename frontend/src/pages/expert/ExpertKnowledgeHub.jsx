@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getMyArticles, createArticle, updateArticle, deleteArticle } from "../../api/knowledgeHubApi.js";
 
@@ -12,9 +12,9 @@ const CATEGORIES = ["Beginner", "Technical Analysis", "Fundamental", "Risk Manag
 const STATUS_TABS = ["All", "In Review", "Published", "Rejected"];
 
 const STATUS_META = {
-  pending:   { label: "In Review", color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)"  },
-  published: { label: "Published", color: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.3)"  },
-  rejected:  { label: "Rejected",  color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
+  pending: { label: "In Review", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)" },
+  published: { label: "Published", color: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.3)" },
+  rejected: { label: "Rejected", color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
 };
 
 function StatusBadge({ status }) {
@@ -37,11 +37,11 @@ const inputStyle = {
 
 function ArticleForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState({
-    title:    initial?.title    ?? "",
-    summary:  initial?.summary  ?? "",
-    content:  initial?.content  ?? "",
+    title: initial?.title ?? "",
+    summary: initial?.summary ?? "",
+    content: initial?.content ?? "",
     category: initial?.category ?? "Beginner",
-    tags:     initial?.tags?.join(", ") ?? "",
+    tags: initial?.tags?.join(", ") ?? "",
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -150,7 +150,7 @@ function VerificationWall({ status }) {
   return (
     <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-      <ConsultantHeader />
+      <ExpertHeader />
       <main className="flex-1 flex items-center justify-center p-6">
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
           style={{ maxWidth: 520, width: "100%", background: "linear-gradient(145deg,rgba(15,23,42,0.9),rgba(30,41,59,0.75))", border: "1px solid rgba(99,179,237,0.15)", borderRadius: 18, padding: "44px 40px", textAlign: "center" }}>
@@ -181,9 +181,11 @@ function VerificationWall({ status }) {
           )}
 
           {isPending && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 10,
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 10,
               border: "1px solid rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)", color: "#fbbf24",
-              fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700 }}>
+              fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700
+            }}>
               ⏳ Under Review
             </div>
           )}
@@ -216,18 +218,18 @@ function ExpertKnowledgeHub() {
   useEffect(reload, [currentUser?.user_id, isVerified]);
 
   const tabFilter = (a) => {
-    if (activeTab === "All")       return true;
+    if (activeTab === "All") return true;
     if (activeTab === "In Review") return a.status === "pending";
     if (activeTab === "Published") return a.status === "published";
-    if (activeTab === "Rejected")  return a.status === "rejected";
+    if (activeTab === "Rejected") return a.status === "rejected";
     return true;
   };
 
   const counts = {
-    All:         articles.length,
+    All: articles.length,
     "In Review": articles.filter(a => a.status === "pending").length,
-    Published:   articles.filter(a => a.status === "published").length,
-    Rejected:    articles.filter(a => a.status === "rejected").length,
+    Published: articles.filter(a => a.status === "published").length,
+    Rejected: articles.filter(a => a.status === "rejected").length,
   };
 
   const filtered = articles.filter(tabFilter);
@@ -264,8 +266,8 @@ function ExpertKnowledgeHub() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <ConsultantHeader />
-        <main className="flex-1 p-4 md:p-7">
+        <ExpertHeader />
+        <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>

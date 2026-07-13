@@ -14,7 +14,7 @@ import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -906,7 +906,7 @@ function AStockDashBoardPage() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
-        {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
+        {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", position: "relative", zIndex: 1 }}>
 
