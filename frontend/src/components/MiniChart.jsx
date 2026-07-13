@@ -2,7 +2,7 @@ import { memo, useId, useMemo } from "react";
 
 const MAX_SPARKLINE_POINTS = 32;
 
-function MiniChart({ candles, width = 120, height = 40 }) {
+function MiniChart({ candles, width = 120, height = 40, responsive = false }) {
   const reactId = useId();
   const gradientId = `spark-grad-${reactId.replace(/:/g, "")}`;
   const prices = useMemo(() => {
@@ -28,7 +28,12 @@ function MiniChart({ candles, width = 120, height = 40 }) {
   // ── Need at least 2 points to draw a line ──────────────────────────────────
   if (prices.length < 2) {
     return (
-      <svg width={width} height={height}>
+      <svg
+        width={responsive ? "100%" : width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio={responsive ? "none" : undefined}
+      >
         <line
           x1={0} y1={height / 2}
           x2={width} y2={height / 2}
@@ -74,9 +79,10 @@ function MiniChart({ candles, width = 120, height = 40 }) {
 
   return (
     <svg
-      width={width}
+      width={responsive ? "100%" : width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio={responsive ? "none" : undefined}
       overflow="visible"
       style={{ display: "block" }}
     >

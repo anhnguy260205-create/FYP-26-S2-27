@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-const linkClass = "text-gray-400 hover:text-cyan-400 transition-colors";
+const linkClass = "text-sm text-slate-400 hover:text-[#00D3F2] transition-colors duration-150";
 
 function FooterLink({ href, children }) {
   if (!href || href === "#") return <a href="#" className={linkClass}>{children}</a>;
   if (href.startsWith("/")) return <Link to={href} className={linkClass}>{children}</Link>;
   return <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>{children}</a>;
 }
+
+// Static, CMS-independent — always shown regardless of what /content/landing returns.
+const RESOURCES = [
+  { title: "GitHub Repository", href: "#" },
+  { title: "Documentation", href: "#" },
+  { title: "API Status", href: "#" },
+];
+const APP_VERSION = "v1.0.0";
 
 const DEFAULT = {
   brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
@@ -41,22 +49,27 @@ function Footer() {
   }, []);
 
   return (
-    <footer className="border-t border-blue-900/30 bg-slate-950/50 backdrop-blur-md">
-      <div className="max-w-300 mx-auto px-8 py-5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+    <footer className="border-t border-white/10 bg-slate-950/50 backdrop-blur-md">
+      <div className="max-w-300 mx-auto px-6 lg:px-8 py-14 md:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-10 md:gap-12 mb-10">
 
           {/* Brand */}
-          <div>
-            <span className="text-xl font-bold bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              {brand.title}
-            </span>
-            <p className="text-gray-400 mt-4">{brand.description}</p>
+          <div className="sm:col-span-2 xl:col-span-1">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-white tracking-tight">
+                {brand.title}
+              </span>
+              <span className="text-[10px] font-semibold text-slate-500 bg-white/5 rounded-full px-2 py-0.5">
+                {APP_VERSION}
+              </span>
+            </div>
+            <p className="text-sm text-slate-400 mt-3 leading-relaxed max-w-xs">{brand.description}</p>
           </div>
 
           {/* Product */}
           <div>
-            <h4 className="font-bold mb-4 text-white">Product</h4>
-            <ul className="space-y-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Product</h4>
+            <ul className="space-y-2.5">
               {product.map((item) => (
                 <li key={item.content_id ?? item.title}>
                   <FooterLink href={item.description}>{item.title}</FooterLink>
@@ -67,8 +80,8 @@ function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="font-bold mb-4 text-white">Company</h4>
-            <ul className="space-y-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Company</h4>
+            <ul className="space-y-2.5">
               {company.map((item) => (
                 <li key={item.content_id ?? item.title}>
                   <FooterLink href={item.description}>{item.title}</FooterLink>
@@ -77,14 +90,26 @@ function Footer() {
             </ul>
           </div>
 
+          {/* Resources */}
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Resources</h4>
+            <ul className="space-y-2.5">
+              {RESOURCES.map((item) => (
+                <li key={item.title}>
+                  <FooterLink href={item.href}>{item.title}</FooterLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Contact */}
           <div>
-            <h4 className="font-bold mb-4 text-white">Contact</h4>
-            <ul className="space-y-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Contact</h4>
+            <ul className="space-y-2.5">
               {contact.map((item) => (
                 <li key={item.content_id ?? item.title}>
                   {!item.description || item.description === "" ? (
-                    <span className="text-gray-400">{item.title}</span>
+                    <span className="text-sm text-slate-400">{item.title}</span>
                   ) : (
                     <FooterLink href={item.description}>{item.title}</FooterLink>
                   )}
@@ -93,6 +118,11 @@ function Footer() {
             </ul>
           </div>
 
+        </div>
+
+        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} {brand.title}. All rights reserved.</p>
+          <p className="text-xs text-slate-600">Paper trading platform — not real-money investment advice.</p>
         </div>
       </div>
     </footer>

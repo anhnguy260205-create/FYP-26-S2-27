@@ -242,7 +242,7 @@ function SubscriptionPage() {
 
       const nextStatus = result.subscription_status || "inactive";
       setCurrentSubscriptionStatus(nextStatus);
-      localStorage.setItem(
+      sessionStorage.setItem(
         "currentUser",
         JSON.stringify({ ...user, subscription_status: nextStatus })
       );

@@ -20,6 +20,11 @@ class Investor(Base):
     investor_subscription_status = Column(String(20), default="inactive")
 
     @staticmethod
+    def get_all_user_ids():
+        with get_session() as session:
+            return [uid for (uid,) in session.query(Investor.user_id).all() if uid]
+
+    @staticmethod
     def createAccount(username, email_address) -> bool:
         user_id = UserAccount.createAccount(
             username=username,

@@ -1,5 +1,5 @@
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -22,6 +22,10 @@ const GICS_SECTORS = [
 // backend: 3-month volatility tertiles → Conservative/Moderate/Aggressive)
 // matches the user's risk tolerance rank first, then by 1-month momentum.
 const RECOMMEND_COUNT = 8;
+// Top Picks gets its own cap so it can't eat the whole RECOMMEND_COUNT
+// budget — with 500+ stocks in the pool, risk-matched candidates alone
+// routinely exceed 8, which used to starve "For You" completely.
+const TOP_PICKS_COUNT = 4;
 
 function SearchBar({ onSearch, loading }) {
   const [inputValue, setInputValue] = useState("");
@@ -284,16 +288,25 @@ function RealTimeDashBoardPage() {
   });
   const [browseCategory, setBrowseCategory] = useState("All");
   const navigate = useNavigate();
+  const editProfilePath = JSON.parse(sessionStorage.getItem("currentUser") || "{}").role === "expert"
+    ? "/expert/edit-profile"
+    : "/investor/edit-profile";
 
   useEffect(() => {
     const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = stored.user_id;
     if (!userId) return;
-    authFetch(`${import.meta.env.VITE_API_URL}/user/investor-information/${userId}`)
+    // This dashboard is shared between investors and experts — each role's
+    // interests/risk tolerance live on a different record, so fetch the
+    // right one instead of always assuming investor.
+    const isExpert = stored.role === "expert";
+    const endpoint = isExpert ? "expert-information" : "investor-information";
+    const infoKey = isExpert ? "expert_information" : "investor_information";
+    authFetch(`${import.meta.env.VITE_API_URL}/user/${endpoint}/${userId}`)
       .then(r => r.json())
       .then(data => {
-        if (!data?.investor_information) return;
-        const info = data.investor_information;
+        const info = data?.[infoKey];
+        if (!info) return;
         const freshInterests = info.interests
           ? info.interests.split(",").map(s => s.trim()).filter(Boolean)
           : [];
@@ -319,12 +332,12 @@ function RealTimeDashBoardPage() {
     const riskSet = new Set(riskMatched.map(s => s.symbol));
     const others = pool.filter(s => !riskSet.has(s.symbol)).sort(byMomentum);
 
-    // Risk-matched picks first, momentum-ranked; fill up to 8 with the rest
-    const picks = [...riskMatched, ...others].slice(0, RECOMMEND_COUNT);
-    return {
-      topPicks: picks.filter(s => riskSet.has(s.symbol)),
-      forYou: picks.filter(s => !riskSet.has(s.symbol)),
-    };
+    // Top Picks (risk-matched) and For You (rest of the sector pool) each
+    // get their own slice, so a large risk-matched pool can't crowd out
+    // For You entirely.
+    const topPicks = riskMatched.slice(0, TOP_PICKS_COUNT);
+    const forYou = others.slice(0, RECOMMEND_COUNT - topPicks.length);
+    return { topPicks, forYou };
   }, [stocks, interests, riskTolerance]);
 
   async function handleSearch(sym) {
@@ -398,7 +411,7 @@ function RealTimeDashBoardPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
-      {isExpert ? <ConsultantHeader /> : <GeneralHeader />}
+      {isExpert ? <ExpertHeader /> : <GeneralHeader />}
       <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
         {/* ── Page header ────────────────────────────────────── */}
@@ -428,17 +441,14 @@ function RealTimeDashBoardPage() {
               {riskTolerance && (
                 <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)" }}>{riskTolerance} Risk</span>
               )}
-              <button onClick={() => navigate("/investor/edit-profile")}
-                style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                Edit profile
-              </button>
+
             </div>
           </div>
 
           {interests.length === 0 ? (
             <div style={{ padding: "32px", borderRadius: "16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
               <p className="text-gray-400 text-sm">No sector interests set yet.</p>
-              <button onClick={() => navigate("/investor/edit-profile")}
+              <button onClick={() => navigate(editProfilePath)}
                 className="mt-3 text-sm font-semibold"
                 style={{ color: "#00D3F2", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                 Set your interests and risk tolerance →
