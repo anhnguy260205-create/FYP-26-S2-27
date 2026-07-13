@@ -231,7 +231,7 @@ function SupportPage() {
       <RoleHeader />
 
       {/* Hero — full-width banner */}
-      <section className="relative w-full h-140 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
+      <section className="relative w-full h-200 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
         <img
           alt=""
           src={helpCenterImg}
@@ -240,7 +240,7 @@ function SupportPage() {
         <div className="absolute inset-0 bg-blue-950/80" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-5 py-14 md:px-8 md:py-20">
-          <div className="max-w-3xl text-center" style={{ marginTop: 40 }}>
+          <div className="max-w-3xl text-center" style={{ marginTop: 80 }}>
 
             <h1 className="text-4xl font-bold tracking-tight [text-shadow:0_2px_12px_rgba(0,0,0,0.6)] md:text-6xl">
               How can we{" "}
