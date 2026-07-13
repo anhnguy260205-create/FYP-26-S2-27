@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   UserRound,
   CreditCard,
@@ -8,50 +8,40 @@ import {
   ShieldCheck,
   Search,
   ChevronDown,
-  Mail,
-  ArrowRight,
-  Headphones,
+
   CircleHelp,
 } from "lucide-react";
 
-import Header from "../../layout/Header.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import helpCenterImg from "../../images/help_center.jpg";
 
 const categories = [
   {
     title: "Account & Login",
-    description:
-      "Manage your account, password, profile information, and login issues.",
+
     icon: UserRound,
   },
   {
     title: "Subscription & Payments",
-    description:
-      "Find information about plans, billing, cancellations, and failed payments.",
+
     icon: CreditCard,
   },
   {
     title: "Stock Trading",
-    description:
-      "Learn about buying, selling, portfolios, and transaction history.",
+
     icon: ChartCandlestick,
   },
   {
     title: "AI Predictions",
-    description:
-      "Understand how our AI-powered analysis and prediction tools work.",
     icon: BrainCircuit,
   },
   {
     title: "Community Forum",
-    description:
-      "Learn how to create posts, reply to users, and receive notifications.",
     icon: MessagesSquare,
   },
   {
     title: "Privacy & Security",
-    description:
-      "Review account protection, privacy practices, and security guidance.",
     icon: ShieldCheck,
   },
 ];
@@ -176,6 +166,8 @@ function SupportPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [openFaq, setOpenFaq] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const faqSectionRef = useRef(null);
 
   const filteredFaqs = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -195,32 +187,63 @@ function SupportPage() {
     });
   }, [selectedCategory, searchTerm]);
 
+  const searchSuggestions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return [];
+    return faqs
+      .filter(
+        (faq) =>
+          faq.question.toLowerCase().includes(normalizedSearch) ||
+          faq.answer.toLowerCase().includes(normalizedSearch) ||
+          faq.category.toLowerCase().includes(normalizedSearch)
+      )
+      .slice(0, 5);
+  }, [searchTerm]);
+
   const selectCategory = (category) => {
     setSelectedCategory(category);
+    setSearchTerm("");
+    setShowSuggestions(false);
     setOpenFaq(null);
+    requestAnimationFrame(() => {
+      faqSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const goToFaq = (faq) => {
+    setSelectedCategory(faq.category);
+    setSearchTerm(faq.question);
+    setShowSuggestions(false);
+    setOpenFaq(0);
+    requestAnimationFrame(() => {
+      faqSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_50%_20%,rgba(29,78,216,0.2),transparent_32%),linear-gradient(135deg,#020817_0%,#061630_50%,#020817_100%)] text-white">
-      <Header />
+    <div className="min-h-screen bg-white text-white">
+      <RoleHeader />
 
-      <main className="mx-auto w-full max-w-6xl px-5 py-14 md:px-8 md:py-20">
-        {/* Hero */}
-        <section className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-5 py-2 text-xs font-bold tracking-wider text-cyan-400">
-              <Headphones size={15} />
-              SUPPORT CENTRE
-            </div>
+      {/* Hero — full-width banner */}
+      <section className="relative w-full h-140 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
+        <img
+          alt=""
+          src={helpCenterImg}
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+        />
+        <div className="absolute inset-0 bg-blue-950/80" />
 
-            <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-5 py-14 md:px-8 md:py-20">
+          <div className="max-w-3xl text-center" style={{ marginTop: 40 }}>
+
+            <h1 className="text-4xl font-bold tracking-tight [text-shadow:0_2px_12px_rgba(0,0,0,0.6)] md:text-6xl">
               How can we{" "}
               <span className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 help you?
               </span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] md:text-lg">
               Find answers, explore support topics, or contact our team for
               further assistance.
             </p>
@@ -237,66 +260,45 @@ function SupportPage() {
                 onChange={(event) => {
                   setSearchTerm(event.target.value);
                   setOpenFaq(null);
+                  setShowSuggestions(true);
                 }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setShowSuggestions(false)}
                 placeholder="Search for help..."
-                className="h-14 w-full rounded-xl border border-blue-500/40 bg-slate-950/60 pl-14 pr-5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400/70 focus:shadow-[0_0_25px_rgba(34,211,238,0.12)]"
-              />
-            </div>
-          </div>
-
-          {/* Support visual */}
-          <div className="relative hidden min-h-[300px] items-center justify-center lg:flex">
-            <div className="absolute h-[260px] w-[260px] rounded-full bg-blue-500/20 blur-3xl" />
-
-            <div className="relative grid h-[210px] w-[210px] place-items-center rounded-full border border-cyan-400/30 bg-blue-950/50 shadow-[0_0_60px_rgba(34,211,238,0.18)]">
-              <Headphones
-                size={105}
-                strokeWidth={1.25}
-                className="text-cyan-400"
+                className="h-14 w-full rounded-3xl border border-blue-500/40 bg-slate-950/85 shadow-lg shadow-black/40 pl-14 pr-5 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-400/70 focus:shadow-[0_0_25px_rgba(34,211,238,0.2)]"
               />
 
-              <div className="absolute -left-10 top-8 grid h-16 w-16 place-items-center rounded-2xl border border-blue-400/30 bg-blue-950/90 text-cyan-400 shadow-xl">
-                <CircleHelp size={30} />
-              </div>
-
-              <div className="absolute -right-9 bottom-8 grid h-16 w-16 place-items-center rounded-2xl border border-blue-400/30 bg-blue-950/90 text-cyan-400 shadow-xl">
-                <MessagesSquare size={29} />
-              </div>
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onMouseDown={() => setShowSuggestions(false)}
+                  />
+                  <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/40">
+                    {searchSuggestions.map((faq) => (
+                      <button
+                        key={faq.question}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => goToFaq(faq)}
+                        className="flex w-full flex-col items-start gap-0.5 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+                      >
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-cyan-600">
+                          {faq.category}
+                        </span>
+                        <span className="text-sm font-medium text-slate-800">
+                          {faq.question}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </section>
 
-        {/* Categories */}
-        <section className="mt-20">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-5 py-2 text-xs font-bold tracking-wider text-cyan-400">
-                <CircleHelp size={14} />
-                HELP CATEGORIES
-              </div>
-
-              <h2 className="mt-5 text-3xl font-bold">
-                Explore Help Categories
-              </h2>
-
-              <p className="mt-3 text-sm leading-7 text-slate-400 md:text-base">
-                Select a category to view the most relevant questions and
-                answers.
-              </p>
-            </div>
-
-            {selectedCategory !== "All" && (
-              <button
-                type="button"
-                onClick={() => selectCategory("All")}
-                className="self-start rounded-lg border border-cyan-400/40 px-4 py-2 text-sm font-medium text-cyan-400 transition hover:bg-cyan-400/10 sm:self-auto"
-              >
-                View all categories
-              </button>
-            )}
-          </div>
-
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Categories */}
+          <div className="mt-8 flex w-full flex-nowrap justify-center gap-1">
             {categories.map((category) => {
               const Icon = category.icon;
               const isSelected = selectedCategory === category.title;
@@ -306,48 +308,34 @@ function SupportPage() {
                   key={category.title}
                   type="button"
                   onClick={() => selectCategory(category.title)}
-                  className={`group relative min-h-[220px] rounded-2xl border p-6 text-left shadow-xl transition duration-300 hover:-translate-y-1.5 ${
-                    isSelected
-                      ? "border-cyan-400/70 bg-cyan-400/10 shadow-[0_0_30px_rgba(34,211,238,0.12)]"
-                      : "border-blue-500/20 bg-linear-to-br from-blue-950/60 to-slate-950/80 hover:border-cyan-400/45"
-                  }`}
+                  className={`group flex w-fit shrink-0 items-center gap-2 rounded-xl border bg-white px-2.5 py-2.5 text-left shadow-md transition duration-300 hover:-translate-y-0.5 hover:shadow-lg ${isSelected
+                    ? "border-cyan-400 shadow-[0_0_0_2px_rgba(34,211,238,0.25),0_10px_25px_-5px_rgba(34,211,238,0.25)]"
+                    : "border-slate-200"
+                    }`}
                 >
-                  <div className="mb-5 grid h-14 w-14 place-items-center rounded-full border border-cyan-400/40 bg-cyan-400/5 text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.12)]">
-                    <Icon size={27} strokeWidth={1.8} />
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
+                    <Icon size={16} strokeWidth={1.8} />
                   </div>
 
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-sm font-semibold text-slate-800 whitespace-nowrap">
                     {category.title}
                   </h3>
-
-                  <p className="mt-3 pr-5 text-sm leading-6 text-slate-400">
-                    {category.description}
-                  </p>
-
-                  <ArrowRight
-                    size={20}
-                    className="absolute bottom-6 right-6 text-cyan-400 transition-transform group-hover:translate-x-1"
-                  />
                 </button>
               );
             })}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FAQ and Contact */}
-        <section className="mt-20 grid items-start gap-8 lg:grid-cols-[1.45fr_0.75fr]">
-          {/* FAQ */}
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-5 py-2 text-xs font-bold tracking-wider text-cyan-400">
-              <CircleHelp size={14} />
-              FAQ
-            </div>
-
-            <h2 className="mt-5 text-3xl font-bold">
+      <main className="mx-auto w-full max-w-6xl px-5 py-14 md:px-8 md:py-20">
+        {/* FAQ */}
+        <section className="mt-20 flex justify-center">
+          <div ref={faqSectionRef} className="w-full max-w-3xl">
+            <h2 className="text-center text-3xl font-bold text-slate-900">
               Frequently Asked Questions
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-slate-400 md:text-base">
+            <p className="mt-3 text-center text-sm leading-7 text-slate-600 md:text-base">
               {selectedCategory === "All"
                 ? "Browse frequently asked questions across all support topics."
                 : `Showing questions related to ${selectedCategory}.`}
@@ -361,11 +349,10 @@ function SupportPage() {
                   return (
                     <article
                       key={`${faq.category}-${faq.question}`}
-                      className={`overflow-hidden rounded-xl border transition ${
-                        isOpen
-                          ? "border-cyan-400/50 bg-blue-950/70"
-                          : "border-blue-500/20 bg-slate-950/50"
-                      }`}
+                      className={`overflow-hidden rounded-xl border bg-white shadow-md transition ${isOpen
+                        ? "border-cyan-400 shadow-[0_0_0_2px_rgba(34,211,238,0.2),0_10px_25px_-5px_rgba(34,211,238,0.2)]"
+                        : "border-slate-200"
+                        }`}
                     >
                       <button
                         type="button"
@@ -375,33 +362,31 @@ function SupportPage() {
                         className="flex w-full items-center justify-between gap-5 px-5 py-4 text-left"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="font-bold text-cyan-400">
+                          <span className="font-bold text-cyan-600">
                             Q.
                           </span>
 
-                          <span className="text-sm font-medium text-slate-100 md:text-base">
+                          <span className="text-sm font-medium text-slate-800 md:text-base">
                             {faq.question}
                           </span>
                         </div>
 
                         <ChevronDown
                           size={20}
-                          className={`shrink-0 text-cyan-400 transition-transform duration-300 ${
-                            isOpen ? "rotate-180" : ""
-                          }`}
+                          className={`shrink-0 text-cyan-600 transition-transform duration-300 ${isOpen ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
 
                       <div
-                        className={`grid transition-all duration-300 ${
-                          isOpen
-                            ? "grid-rows-[1fr]"
-                            : "grid-rows-[0fr]"
-                        }`}
+                        className={`grid transition-all duration-300 ${isOpen
+                          ? "grid-rows-[1fr]"
+                          : "grid-rows-[0fr]"
+                          }`}
                       >
                         <div className="overflow-hidden">
-                          <div className="border-t border-blue-500/20 px-5 py-5">
-                            <p className="text-sm leading-7 text-slate-400">
+                          <div className="border-t border-slate-100 px-5 py-5">
+                            <p className="text-sm leading-7 text-slate-600">
                               {faq.answer}
                             </p>
                           </div>
@@ -411,17 +396,17 @@ function SupportPage() {
                   );
                 })
               ) : (
-                <div className="rounded-2xl border border-blue-500/20 bg-slate-950/50 p-8 text-center">
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-md">
                   <CircleHelp
                     size={36}
-                    className="mx-auto text-cyan-400"
+                    className="mx-auto text-cyan-600"
                   />
 
-                  <h3 className="mt-4 text-lg font-semibold">
+                  <h3 className="mt-4 text-lg font-semibold text-slate-800">
                     No matching questions found
                   </h3>
 
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="mt-2 text-sm text-slate-600">
                     Try using a different search term or select another
                     category.
                   </p>
@@ -429,58 +414,26 @@ function SupportPage() {
               )}
             </div>
           </div>
+        </section>
 
-          {/* Contact */}
-          <aside className="rounded-2xl border border-blue-500/25 bg-linear-to-br from-blue-950/70 to-slate-950/90 p-7 shadow-2xl lg:sticky lg:top-24">
-            <div className="grid h-14 w-14 place-items-center rounded-full border border-cyan-400/40 bg-cyan-400/5 text-cyan-400 shadow-[0_0_22px_rgba(34,211,238,0.13)]">
-              <Headphones size={27} />
-            </div>
+        <div className="mx-auto mt-12 max-w-3xl border-t border-blue-500/20" />
 
-            <h2 className="mt-5 text-2xl font-bold">
-              Contact Us
-            </h2>
+        {/* Contact CTA */}
+        <section className="mt-12 text-center">
+          <h2 className="text-3xl font-bold text-slate-900">
+            Didn't find an answer to your questions?
+          </h2>
 
-            <h3 className="mt-4 font-semibold text-cyan-400">
-              We’re here to help.
-            </h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
+            Get in touch with us for more details
+          </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Contact our team when you cannot find the answer you need in
-              the support centre.
-            </p>
-
-            <div className="my-6 border-t border-blue-500/20" />
-
-            <a
-              className="group flex items-center gap-4 rounded-xl p-3 transition hover:bg-white/5"
-            >
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-cyan-400/40 bg-cyan-400/5 text-cyan-400">
-                <Mail size={22} />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  Email Us
-                </p>
-
-                <p className="mt-1 break-all text-sm text-slate-400 transition group-hover:text-cyan-400">
-                  kim@gmail.com
-                </p>
-              </div>
-            </a>
-
-            <a
-              href="mailto:kim@gmail.com"
-              className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-400 to-blue-500 text-sm font-bold text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.2)] transition hover:brightness-110"
-            >
-              Contact Support
-              <ArrowRight size={18} />
-            </a>
-
-            <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-              Typical response time: within 1–2 business days.
-            </p>
-          </aside>
+          <a
+            href="mailto:kim@gmail.com"
+            className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-400 to-blue-500 px-8 text-sm font-bold text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.2)] transition hover:brightness-110"
+          >
+            Contact Support
+          </a>
         </section>
       </main>
 
