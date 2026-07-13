@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   UserRound,
   CreditCard,
@@ -221,7 +222,12 @@ function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-white">
+    <motion.div
+      className="min-h-screen bg-white text-white"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
       <RoleHeader />
 
       {/* Hero — full-width banner */}
@@ -438,7 +444,7 @@ function SupportPage() {
       </main>
 
       <Footer />
-    </div>
+    </motion.div>
   );
 }
 
