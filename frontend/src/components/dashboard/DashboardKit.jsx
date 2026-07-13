@@ -13,12 +13,12 @@ export function Skeleton({ className, style }) {
   return <div className={`animate-pulse rounded-lg bg-white/5 ${className ?? ""}`} style={style} />;
 }
 
-export function SectionHeader({ title, subtitle, action }) {
+export function SectionHeader({ title, subtitle, action, dark = true }) {
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between mb-5">
       <div>
-        <h2 className="text-[26px] font-bold text-white tracking-tight leading-snug">{title}</h2>
-        {subtitle && <p className="text-[15px] text-slate-500 mt-1 leading-relaxed">{subtitle}</p>}
+        <h2 className={`text-[26px] font-bold tracking-tight leading-snug ${dark ? "text-white" : "text-slate-900"}`}>{title}</h2>
+        {subtitle && <p className={`text-[15px] mt-1 leading-relaxed ${dark ? "text-slate-500" : "text-slate-600"}`}>{subtitle}</p>}
       </div>
       {action}
     </div>
