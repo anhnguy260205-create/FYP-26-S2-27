@@ -6,11 +6,15 @@ import { Menu, X } from "lucide-react";
 const LINKS = [
   {
     label: "Support",
-    gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+    path: "/support",
+    gradient:
+      "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
   },
   {
     label: "About Us",
-    gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+    path: "/about-us",
+    gradient:
+      "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
   },
 ];
 
@@ -36,13 +40,14 @@ function Header() {
         <div className="hidden sm:flex items-center gap-8">
           {LINKS.map((link) => (
             <div key={link.label} className="relative group">
-              <a
-                href="#"
-                className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
+              <button
+                type="button"
+                className="font-bold text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap cursor-pointer"
                 style={{ backgroundImage: link.gradient }}
+                onClick={() => navigate(link.path)}
               >
                 {link.label}
-              </a>
+              </button>
               <span className="absolute bottom-0 left-0 h-0.5 w-full bg-blue-950 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
             </div>
           ))}
@@ -63,14 +68,17 @@ function Header() {
         <div className="sm:hidden fixed inset-x-0 top-15 z-40 bg-white border-t border-gray-200 shadow-lg">
           <div className="px-4 py-3 space-y-1">
             {LINKS.map((link) => (
-              <a
+              <button
                 key={link.label}
-                href="#"
-                className="block px-4 py-3 font-bold text-slate-800 hover:bg-gray-50 rounded-xl"
-                onClick={() => setMobileOpen(false)}
+                type="button"
+                className="block w-full text-left px-4 py-3 font-bold text-slate-800 hover:bg-gray-50 rounded-xl"
+                onClick={() => {
+                  navigate(link.path);
+                  setMobileOpen(false);
+                }}
               >
                 {link.label}
-              </a>
+              </button>
             ))}
           </div>
         </div>
