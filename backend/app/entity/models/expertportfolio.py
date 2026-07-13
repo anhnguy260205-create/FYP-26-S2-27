@@ -46,7 +46,7 @@ class ExpertPortfolio(Base):
 class ExpertPortfolioHolding(Base):
     __tablename__ = "expert_portfolio_holding"
 
-    holding_id = Column(String(50), primary_key=True, default=lambda: f"portfolio_holding_{uuid4()}")
+    holding_id = Column(String(50), primary_key=True, default=lambda: f"holding_{uuid4()}")
     portfolio_id = Column(String(50), ForeignKey("expert_portfolio.portfolio_id"), nullable=False)
     ticker = Column(String(20), nullable=False)
     company_name = Column(String(120), nullable=False)
@@ -158,7 +158,7 @@ class ExpertPortfolioRepository:
             portfolio.holdings[:] = []
             for item in payload.get("holdings") or []:
                 portfolio.holdings.append(ExpertPortfolioHolding(
-                    holding_id=f"portfolio_holding_{uuid4()}",
+                    holding_id=f"holding_{uuid4()}",
                     ticker=(item.get("ticker") or item.get("symbol") or "").upper(),
                     company_name=item.get("company_name") or item.get("company") or "Unknown Company",
                     asset_class=item.get("asset_class") or "Equity",
@@ -190,27 +190,27 @@ class ExpertPortfolioRepository:
         )
         portfolio.holdings = [
             ExpertPortfolioHolding(
-                holding_id=f"portfolio_holding_{uuid4()}", ticker="AAPL", company_name="Apple Inc.", asset_class="Equity", sector="Technology",
+                holding_id=f"holding_{uuid4()}", ticker="AAPL", company_name="Apple Inc.", asset_class="Equity", sector="Technology",
                 units=30, average_buy_price=172.5, current_price=181.6, total_invested=5175, allocation_percentage=20,
                 purchase_rationale="Strong brand loyalty, stable cash generation and potential upside from services growth."
             ),
             ExpertPortfolioHolding(
-                holding_id=f"portfolio_holding_{uuid4()}", ticker="MSFT", company_name="Microsoft Corporation", asset_class="Equity", sector="Technology",
+                holding_id=f"holding_{uuid4()}", ticker="MSFT", company_name="Microsoft Corporation", asset_class="Equity", sector="Technology",
                 units=18, average_buy_price=395, current_price=412.8, total_invested=7110, allocation_percentage=25,
                 purchase_rationale="Cloud and AI exposure with diversified enterprise revenue streams."
             ),
             ExpertPortfolioHolding(
-                holding_id=f"portfolio_holding_{uuid4()}", ticker="DBS.SI", company_name="DBS Group Holdings", asset_class="Equity", sector="Financials",
+                holding_id=f"holding_{uuid4()}", ticker="DBS.SI", company_name="DBS Group Holdings", asset_class="Equity", sector="Financials",
                 units=220, average_buy_price=36.2, current_price=38.1, total_invested=7964, allocation_percentage=25,
                 purchase_rationale="Local banking leader with attractive dividends and resilient earnings."
             ),
             ExpertPortfolioHolding(
-                holding_id=f"portfolio_holding_{uuid4()}", ticker="JNJ", company_name="Johnson & Johnson", asset_class="Equity", sector="Healthcare",
+                holding_id=f"holding_{uuid4()}", ticker="JNJ", company_name="Johnson & Johnson", asset_class="Equity", sector="Healthcare",
                 units=35, average_buy_price=151.2, current_price=156.8, total_invested=5292, allocation_percentage=15,
                 purchase_rationale="Defensive healthcare exposure to reduce cyclical volatility."
             ),
             ExpertPortfolioHolding(
-                holding_id=f"portfolio_holding_{uuid4()}", ticker="KO", company_name="The Coca-Cola Company", asset_class="Equity", sector="Consumer Staples",
+                holding_id=f"holding_{uuid4()}", ticker="KO", company_name="The Coca-Cola Company", asset_class="Equity", sector="Consumer Staples",
                 units=70, average_buy_price=61.1, current_price=63.4, total_invested=4277, allocation_percentage=15,
                 purchase_rationale="Defensive consumer staples holding with dividend stability."
             ),
