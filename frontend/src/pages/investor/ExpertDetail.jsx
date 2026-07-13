@@ -101,7 +101,16 @@ function AllocationBar({ holdings }) {
     );
 }
 
-function PortfolioSection({ portfolio }) {
+function PortfolioSection({ portfolio, error }) {
+    if (error) {
+        return (
+            <div style={{ ...CARD, padding: 24 }} className="mt-6 text-center">
+                <p style={{ fontSize: 13, color: "#f87171" }}>
+                    Could not load this expert's portfolio: {error}
+                </p>
+            </div>
+        );
+    }
     if (!portfolio) return null;
     const holdings = Array.isArray(portfolio.holdings) ? portfolio.holdings : [];
     const totalInvested = holdings.reduce((s, h) => s + Number(h.total_invested || 0), 0);
@@ -276,6 +285,7 @@ function ExpertDetails() {
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState(null);
     const [portfolio, setPortfolio] = useState(null);   // expert-created portfolio
+    const [portfolioError, setPortfolioError] = useState("");
     const [quota, setQuota] = useState({});      // views_used / views_limit
     const [limitReached, setLimitReached] = useState(false);
     const [error, setError] = useState("");
@@ -294,8 +304,14 @@ function ExpertDetails() {
                     // Load the expert-created portfolio only after the profile
                     // view is allowed (keeps the basic-plan limit meaningful).
                     getExpertPortfolio(userId)
-                        .then(p => { if (p?.success && p.portfolio) setPortfolio(p.portfolio); })
-                        .catch(() => {});
+                        .then(p => {
+                            if (p?.success && p.portfolio) setPortfolio(p.portfolio);
+                            else setPortfolioError(p?.message || "Portfolio not available.");
+                        })
+                        .catch(err => {
+                            console.error("[ExpertDetail] portfolio load failed:", err);
+                            setPortfolioError(err?.message || "Request failed.");
+                        });
                 } else {
                     setError(res.message || "Expert not found.");
                 }
@@ -440,7 +456,7 @@ function ExpertDetails() {
                     </div>
 
                     {/* Expert-created portfolio */}
-                    <PortfolioSection portfolio={portfolio} />
+                    <PortfolioSection portfolio={portfolio} error={portfolioError} />
                     </>
                 )}
             </main>
