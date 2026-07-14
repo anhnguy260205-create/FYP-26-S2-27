@@ -5,13 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
 import { fetchStockSnapshot } from "../../api/stockApi.js";
 import { getReviewStats, getReviews } from "../../api/reviewApi.js";
+import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
 import {
   Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
   Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown, Play, Award,
   UserPlus, Mail, Rocket, DollarSign,
 } from "lucide-react";
-
-const TICKER_SYMBOLS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "META", "JPM", "V", "DIS"];
 
 const FAQS = [
   {
@@ -87,84 +86,6 @@ function getFeatureIcon(title = "") {
   return found ? found.Icon : Star;
 }
 
-function MarketTicker() {
-  const [quotes, setQuotes] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all(
-      TICKER_SYMBOLS.map((symbol) =>
-        fetchStockSnapshot(symbol)
-          .then((res) => (res.success ? res.data : null))
-          .catch(() => null)
-      )
-    ).then((results) => {
-      if (cancelled) return;
-      setQuotes(results.filter(Boolean));
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (quotes.length === 0) return <div style={{ height: 56 }} />;
-
-  const track = [...quotes, ...quotes];
-
-  return (
-    <div className="ticker-wrap">
-      <div className="ticker-track">
-        {track.map((q, i) => {
-          const change = q.previousClose ? ((q.p - q.previousClose) / q.previousClose) * 100 : 0;
-          const up = change >= 0;
-          return (
-            <div key={`${q.s}-${i}`} className="ticker-item">
-              <span className="ticker-symbol">{q.s}</span>
-              <span className="ticker-price">${q.p.toFixed(2)}</span>
-              <span className={up ? "ticker-up" : "ticker-down"}>
-                {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)}%
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <style>{`
-        .ticker-wrap {
-          width: 100%;
-          overflow: hidden;
-          border-top: 1px solid rgba(59,130,246,0.2);
-          border-bottom: 1px solid rgba(59,130,246,0.2);
-          background: rgba(2,6,23,0.5);
-          -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
-        }
-        .ticker-track {
-          display: flex;
-          width: max-content;
-          animation: tickerScroll 40s linear infinite;
-        }
-        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
-        .ticker-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.85rem 1.5rem;
-          white-space: nowrap;
-          font-size: 0.85rem;
-          border-right: 1px solid rgba(148,163,184,0.12);
-        }
-        .ticker-symbol { font-weight: 700; color: #e2e8f0; }
-        .ticker-price { color: #94a3b8; }
-        .ticker-up { color: #4ade80; font-weight: 600; }
-        .ticker-down { color: #f87171; font-weight: 600; }
-        @keyframes tickerScroll {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
 function Hero() {
   const navigate = useNavigate();
   const [hero, setHero] = useState({ title: "Discover the Future of Smart Investing", description: "Explore powerful tools floating around your financial universe." });
@@ -181,7 +102,7 @@ function Hero() {
   }, []);
 
   return (
-    <div className="hero-section relative w-full text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
+    <div className="hero-section relative w-full h-190 text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
       {/* Background glow */}
       <div
         className="absolute inset-0"
@@ -320,9 +241,14 @@ function usePlanContent() {
 }
 
 function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
+  const navigate = useNavigate();
   return (
     <div
-      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 ${highlighted
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate("/login")}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate("/login"); }}
+      className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-1 cursor-pointer ${highlighted
         ? "border-yellow-400/50 bg-yellow-500/25 shadow-[0_0_40px_rgba(250,204,21,0.15)] hover:shadow-[0_0_55px_rgba(250,204,21,0.25)] h-120"
         : "border-cyan-400/30 bg-[rgba(37,99,235,0.25)] shadow-[0_0_30px_rgba(34,211,238,0.08)] hover:border-cyan-400/50 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
         }`}
@@ -406,6 +332,7 @@ function FAQItem({ q, a, open, onToggle }) {
 }
 
 function FAQSection() {
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState(0);
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
@@ -423,6 +350,16 @@ function FAQSection() {
             onToggle={() => setOpenIndex(openIndex === index ? -1 : index)}
           />
         ))}
+      </div>
+
+      <div className="mt-10 text-center">
+        <button
+          onClick={() => navigate("/support")}
+          className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 px-6 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 cursor-pointer"
+        >
+          Visit Help Center
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );
@@ -892,7 +829,7 @@ function HomePage() {
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <MarketTicker />
+      <MarketOverviewTicker />
       <main className="flex-1 flex flex-col">
         <Hero />
         <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>

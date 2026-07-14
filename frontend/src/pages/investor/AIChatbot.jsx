@@ -1,37 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef } from "react";
 import {
     Bot, Send, MessageSquare, TrendingUp, Brain,
-    BarChart3, ChevronLeft, Loader2, User, Trash2,
-    RefreshCw, ChevronDown
+    BarChart3, Loader2, Trash2, RefreshCw, ChevronDown
 } from "lucide-react";
-import useLiveStocks from "../../api/useLiveStocks.js";
+import { useAIChatSession, QUICK_PROMPTS } from "../../hooks/useAIChatSession.js";
+import { MessageBubble, TypingDots } from "../../components/chat/ChatMessageBubble.jsx";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const API_BASE = "http://127.0.0.1:8000";
-const CHAT_STORAGE_VERSION = "chatbot-session-reset-v2";
-const CHAT_VERSION_KEY = "rocketTradeAiChatVersion";
-const CHAT_ACTIVE_USER_KEY = "rocketTradeAiChatActiveUser";
-const BASIC_QUESTION_LIMIT = 4;
-
-const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
-const COMPANY_NAMES = {
-    AAPL: "Apple", MSFT: "Microsoft", GOOGL: "Alphabet/Google", AMZN: "Amazon",
-    NVDA: "NVIDIA", META: "Meta", TSLA: "Tesla", AVGO: "Broadcom",
-    ORCL: "Oracle", AMD: "AMD",
-};
-
-const QUICK_PROMPTS = [
-    { label: "Analyze NVDA for me", icon: <TrendingUp size={14} /> },
-    { label: "What is the RSI indicator?", icon: <Brain size={14} /> },
-    { label: "Explain portfolio diversification", icon: <BarChart3 size={14} /> },
-    { label: "What is a bull vs bear market?", icon: <TrendingUp size={14} /> },
-    { label: "How do I read a candlestick chart?", icon: <BarChart3 size={14} /> },
-    { label: "What is market capitalisation?", icon: <Brain size={14} /> },
+const QUICK_PROMPT_ICONS = [
+    <TrendingUp size={14} key="tu1" />, <Brain size={14} key="br1" />, <BarChart3 size={14} key="bc1" />,
+    <TrendingUp size={14} key="tu2" />, <BarChart3 size={14} key="bc2" />, <Brain size={14} key="br2" />,
 ];
 
 // Platform "how do I…" help prompts — shown in their own sidebar section so
@@ -751,11 +731,11 @@ function MessageBubble({ msg }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 function AIChatbot() {
-    const navigate = useNavigate();
-    const stockContext = useLiveStocks() || {};
-    const liveStocks = stockContext.stocks || {};
-    const liveCandles = stockContext.candles || {};
-    const bottomRef = useRef(null);
+    const {
+        messages, input, setInput, loading, error,
+        sendMessage, endChat, handleKeyDown, handleScroll, showScroll,
+        bottomRef,
+    } = useAIChatSession();
     const inputRef = useRef(null);
     const abortRef = useRef(null);
 
@@ -950,30 +930,6 @@ function AIChatbot() {
         >
             <GeneralHeader />
 
-            {/* Live ticker strip — auto-scrolling marquee */}
-            {liveStrip.length > 0 && (
-                <div style={{
-                    background: "rgba(0,0,0,0.3)",
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    padding: "6px 0",
-                    overflow: "hidden",
-                    position: "relative",
-                }}>
-                    <div className="ticker-track">
-                        {[...liveStrip, ...liveStrip].map(({ sym, price, pct }, i) => (
-                            <span key={`${sym}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", whiteSpace: "nowrap" }}>
-                                <span style={{ color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{sym}</span>
-                                <span style={{ color: "#e2e8f0" }}>${price.toFixed(2)}</span>
-                                <span style={{ color: pct >= 0 ? "#34d399" : "#f87171" }}>
-                                    {pct >= 0 ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%
-                                </span>
-                                <span style={{ color: "rgba(255,255,255,0.12)", margin: "0 10px" }}>•</span>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <main className="flex-1 p-5" style={{ minHeight: 0 }}>
                 <div style={{
                     display: "grid",
@@ -1021,10 +977,10 @@ function AIChatbot() {
                             <div>
                                 <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED</p>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    {QUICK_PROMPTS.map(({ label, icon }) => (
+                                    {QUICK_PROMPTS.map(({ label }, i) => (
                                         <button key={label}
                                             onClick={() => sendMessage(label)}
-                                            disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                            disabled={loading}
                                             style={{
                                                 padding: "9px 10px", borderRadius: "10px", textAlign: "left",
                                                 background: "rgba(255,255,255,0.03)",
@@ -1037,7 +993,7 @@ function AIChatbot() {
                                             onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
                                             onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
                                         >
-                                            {icon}{label}
+                                            {QUICK_PROMPT_ICONS[i]}{label}
                                         </button>
                                     ))}
                                 </div>
@@ -1069,41 +1025,32 @@ function AIChatbot() {
                                 </div>
                             </div>
 
-                            {/* Dynamic follow-up suggestions */}
+                            {/* Topics */}
                             <div style={{ marginTop: "auto" }}>
-                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>SUGGESTED FOLLOW-UPS</p>
-                                {getFollowUps(messages).map((prompt) => (
-                                    <button key={prompt} onClick={() => sendMessage(prompt)}
-                                        disabled={!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT}
-                                        style={{
-                                            display: "flex", alignItems: "flex-start", gap: "7px",
-                                            padding: "6px 0", fontSize: "11.5px", lineHeight: "1.4",
-                                            color: "rgba(255,255,255,0.55)", background: "none",
-                                            border: "none", cursor: "pointer", width: "100%",
-                                            textAlign: "left", transition: "color 0.15s",
-                                        }}
-                                        onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.color = "white"; }}
-                                        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
-                                    >
-                                        <span style={{ color: "rgba(55,138,221,0.7)", marginTop: "1px", flexShrink: 0 }}>›</span>
-                                        {prompt}
-                                    </button>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>TOPICS</p>
+                                {[
+                                    { icon: <TrendingUp size={13} />, label: "Stock Analysis" },
+                                    { icon: <Brain size={13} />, label: "AI & Predictions" },
+                                    { icon: <BarChart3 size={13} />, label: "Technical Analysis" },
+                                    { icon: <MessageSquare size={13} />, label: "Investing Basics" },
+                                ].map(({ icon, label }) => (
+                                    <div key={label} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>
+                                        {icon}{label}
+                                    </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* End chat — premium only */}
-                        {isPremium && (
-                            <button onClick={endChat}
-                                style={{
-                                    display: "flex", alignItems: "center", gap: "3px", flexShrink: 0,
-                                    padding: "8px 12px", borderRadius: "10px", fontSize: "12px",
-                                    background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
-                                    color: "rgba(248,113,113,0.8)", cursor: "pointer",
-                                }}>
-                                <Trash2 size={13} /> End chat
-                            </button>
-                        )}
+                        {/* End chat */}
+                        <button onClick={endChat}
+                            style={{
+                                display: "flex", alignItems: "center", gap: "3px", flexShrink: 0,
+                                padding: "8px 12px", borderRadius: "10px", fontSize: "12px",
+                                background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)",
+                                color: "rgba(248,113,113,0.8)", cursor: "pointer",
+                            }}>
+                            <Trash2 size={13} /> End chat
+                        </button>
                     </div>
 
                     {/* ── CHAT AREA ── */}
@@ -1134,12 +1081,10 @@ function AIChatbot() {
                                     Ask about stocks, market trends, technical analysis, and more
                                 </p>
                             </div>
-                            {isPremium && (
-                                <button onClick={endChat} title="End chat"
-                                    style={{ padding: "8px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
-                                    <RefreshCw size={15} />
-                                </button>
-                            )}
+                            <button onClick={endChat} title="End chat"
+                                style={{ padding: "8px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
+                                <RefreshCw size={15} />
+                            </button>
                         </div>
 
                         {/* Messages */}
@@ -1205,41 +1150,6 @@ function AIChatbot() {
                             )}
                         </AnimatePresence>
 
-                        {/* Basic user upgrade wall */}
-                        {!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT && (
-                            <div style={{
-                                margin: "0 20px 12px",
-                                padding: "20px",
-                                borderRadius: 16,
-                                background: "linear-gradient(135deg,rgba(21,93,252,0.15),rgba(0,146,184,0.1))",
-                                border: "1px solid rgba(21,93,252,0.3)",
-                                textAlign: "center",
-                            }}>
-                                <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
-                                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6, color: "white" }}>
-                                    You have used all {BASIC_QUESTION_LIMIT} free questions
-                                </div>
-                                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 14 }}>
-                                    Upgrade to Premium for unlimited AI chat, advanced predictions, expert portfolios, and more.
-                                </div>
-                                <button
-                                    onClick={() => navigate("/investor/subscription")}
-                                    style={{
-                                        padding: "10px 24px", borderRadius: 50,
-                                        background: "linear-gradient(135deg,#155dfc,#0092b8)",
-                                        border: "none", color: "white", fontWeight: 700,
-                                        fontSize: 14, cursor: "pointer",
-                                        boxShadow: "0 4px 16px rgba(21,93,252,0.4)",
-                                    }}
-                                >
-                                    Upgrade to Premium →
-                                </button>
-                                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>
-                                    Your {BASIC_QUESTION_LIMIT} messages above are still visible
-                                </div>
-                            </div>
-                        )}
-
                         {/* Input */}
                         <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                             <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
@@ -1248,7 +1158,7 @@ function AIChatbot() {
                                     value={input}
                                     onChange={e => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                    disabled={loading}
                                     placeholder="Ask about a stock, indicator, strategy… (Enter to send, Shift+Enter for newline)"
                                     rows={1}
                                     style={{
@@ -1268,10 +1178,10 @@ function AIChatbot() {
                                 />
                                 <button
                                     onClick={() => sendMessage()}
-                                    disabled={loading || !input.trim() || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                    disabled={loading || !input.trim()}
                                     style={{
                                         width: 46, height: 46, borderRadius: "12px",
-                                        background: loading || !input.trim() || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)
+                                        background: loading || !input.trim()
                                             ? "rgba(255,255,255,0.08)"
                                             : "linear-gradient(135deg,#155dfc,#0092b8)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -1287,7 +1197,7 @@ function AIChatbot() {
                                 </button>
                             </div>
                             <p style={{ textAlign: "center", marginTop: "8px", fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>
-                                {!isPremium ? `${Math.min(basicQuestionCount, BASIC_QUESTION_LIMIT)}/${BASIC_QUESTION_LIMIT} free questions · ` : ""}For educational purposes only · Not financial advice · Powered by RocketTrade AI
+                                For educational purposes only · Not financial advice · Powered by RocketTrade AI
                             </p>
                         </div>
                     </div>
@@ -1298,14 +1208,6 @@ function AIChatbot() {
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-                .ticker-track {
-                    display: inline-flex;
-                    gap: 0;
-                    animation: ticker-scroll 28s linear infinite;
-                    will-change: transform;
-                }
-                .ticker-track:hover { animation-play-state: paused; }
                 textarea::placeholder { color: rgba(255,255,255,0.3); }
                 ::-webkit-scrollbar { width: 5px; }
                 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }

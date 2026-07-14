@@ -10,8 +10,8 @@ import ChatDock from "../components/chat/ChatDock.jsx";
 function NavDropdown({ items }) {
   const navigate = useNavigate();
   return (
-    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+    <div className="absolute top-full left-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       {items.map((item) => (
         <button
           key={item.title}
@@ -49,15 +49,22 @@ function DropDownMenu() {
   };
 
   return (
-    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-cyan-500/20 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible
-                     group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+    <div className="absolute right-0 mt-3 w-52 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden opacity-0 invisible -translate-y-1.5
+                     group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
       </button>
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Subscription
       </button>
-
+      <div className="border-t border-white/10" />
+      <button onClick={() => navigate("/about-us")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        About Us
+      </button>
+      <button onClick={() => navigate("/support")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Help Center
+      </button>
+      <div className="border-t border-white/10" />
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
       </button>
@@ -102,17 +109,25 @@ function GeneralHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [chatUnread, setChatUnread] = useState(0);
   const [hasUnread, setHasUnread] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const chatDockRef = useRef(null);
   const desktopRightRef = useRef(null);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
     getNotifications(currentUser.user_id)
       .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
-      .catch(() => {});
+      .catch(() => { });
   }, [currentUser?.user_id]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -136,8 +151,7 @@ function GeneralHeader() {
 
   const navLinks = [
     {
-      label: "DashBoard",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      label: "Dashboard",
       activePaths: ["/watchlist", "/realtimedashboard"],
       submenu: [
         { title: "Watchlist", path: "/watchlist" },
@@ -146,7 +160,6 @@ function GeneralHeader() {
     },
     {
       label: "Knowledge Hub",
-      gradient: "linear-gradient(174.615deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/educationcontent", "/investor/expertportfolio", "/investor/aichatbot"],
       submenu: [
         { title: "Educational Content", path: "/investor/educationcontent" },
@@ -155,14 +168,12 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Community Forum",
-      gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
+      label: "Forum Community",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
     },
     {
       label: "Transactions",
-      gradient: "linear-gradient(173.863deg, rgb(2,6,24) 7.9473%, rgb(22,36,86) 50%, rgb(15,23,43) 92.053%)",
       activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
       submenu: [
         { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
@@ -180,7 +191,7 @@ function GeneralHeader() {
   return (
     <>
       <div
-        className="w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-4 lg:px-8"
+        className={`w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-5 lg:px-10 transition-shadow duration-200 ${scrolled ? "shadow-[0_1px_16px_rgba(15,23,42,0.08)]" : ""}`}
         style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)" }}
       >
         <img
@@ -192,18 +203,20 @@ function GeneralHeader() {
         />
 
         {/* Desktop nav — lg and above */}
-        <div className="hidden lg:flex items-center gap-4 xl:gap-8">
+        <div className="hidden lg:flex items-center gap-6 xl:gap-10">
           {navLinks.map((link) => {
             const active = isActive(link);
             return (
-              <div key={link.label} className="relative group">
+              <div key={link.label} className="relative group py-2">
                 <a
                   href="#"
-                  className="font-bold text-[13px] xl:text-[16px] bg-clip-text text-transparent leading-6 whitespace-nowrap"
-                  style={{ backgroundImage: link.gradient }}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 -mx-2.5 font-bold text-[13px] xl:text-[15px] leading-6 whitespace-nowrap transition-colors duration-200 ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-600 hover:text-slate-900"}`}
                   onClick={(e) => { e.preventDefault(); link.onClick?.(); }}
                 >
                   {link.label}
+                  {link.submenu && (
+                    <ChevronDown size={14} className="opacity-60 transition-transform duration-200 group-hover:rotate-180" />
+                  )}
                 </a>
                 <span
                   className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
@@ -277,14 +290,72 @@ function GeneralHeader() {
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="text-slate-800 p-1"
+            className="text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors duration-150"
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
+
+      {/* Mobile menu overlay */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 top-15 z-40 bg-white overflow-y-auto">
+          <div className="px-4 py-4">
+            {navLinks.map((link) => {
+              const active = isActive(link);
+              return (
+                <div key={link.label} className="mb-1">
+                  <button
+                    className={`w-full text-left px-4 py-3 font-bold rounded-xl ${active ? "text-[#00D3F2] bg-[#00D3F2]/10" : "text-slate-900 hover:bg-gray-50"}`}
+                    onClick={() => { if (!link.submenu) { link.onClick?.(); close(); } }}
+                  >
+                    {link.label}
+                  </button>
+                  {link.submenu && (
+                    <div className="ml-4 border-l-2 border-gray-100 pl-3 mb-1">
+                      {link.submenu.map((item) => {
+                        const subActive = location.pathname.startsWith(item.path);
+                        return (
+                          <button
+                            key={item.title}
+                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl ${subActive ? "text-[#00D3F2] font-semibold bg-[#00D3F2]/10" : "text-gray-600 hover:text-[#00D3F2] hover:bg-gray-50"}`}
+                            onClick={() => go(item.path)}
+                          >
+                            {item.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <div className="border-t border-gray-100 mt-3 pt-3 space-y-1">
+              <button
+                onClick={() => go("/investor/edit-profile")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
+                Profile
+              </button>
+              <button
+                onClick={() => go("/investor/subscription")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
+                Subscription
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Messenger panel — triggered from the nav bar icon, renders only for logged-in investors */}
       <ChatDock ref={chatDockRef} hideBubble onUnreadChange={setChatUnread} />

@@ -106,6 +106,18 @@ function Footer() {
             </ul>
           </div>
 
+          {/* Resources */}
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Resources</h4>
+            <ul className="space-y-2.5">
+              {RESOURCES.map((item) => (
+                <li key={item.title}>
+                  <FooterLink href={item.href}>{item.title}</FooterLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Contact */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Contact</h4>
