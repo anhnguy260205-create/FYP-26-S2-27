@@ -58,6 +58,14 @@ function DropDownMenu() {
       <button onClick={() => navigate("/reviews")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Reviews
       </button>
+      <div className="border-t border-white/10" />
+      <button onClick={() => navigate("/about-us")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        About Us
+      </button>
+      <button onClick={() => navigate("/support")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Help Center
+      </button>
+      <div className="border-t border-white/10" />
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout
       </button>
@@ -102,7 +110,7 @@ function ExpertHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled,   setScrolled]   = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // localStorage first — sessionStorage clears on tab close
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
@@ -154,7 +162,7 @@ function ExpertHeader() {
       ],
     },
     {
-      label: "Questions",
+      label: "Messages",
       activePaths: ["/expert/questions"],
       onClick: () => navigate("/expert/questions"),
     },
@@ -194,7 +202,7 @@ function ExpertHeader() {
           style={{ height: "auto" }}
         />
 
-        {/* Desktop nav */}
+        {/* Desktop nav — md and above */}
         <div className="hidden md:flex items-center gap-6 lg:gap-10">
           {navLinks.map((link) => {
             const active = isActive(link);
@@ -219,7 +227,7 @@ function ExpertHeader() {
           })}
         </div>
 
-        {/* Desktop right */}
+        {/* Desktop right — md and above */}
         <div className="hidden md:flex items-center gap-3 lg:gap-6">
           <button
             onClick={() => navigate("/expert/notifications")}
@@ -241,6 +249,9 @@ function ExpertHeader() {
             aria-label="Notification"
           >
             <BellRing size={25} />
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
+              Notification
+            </span>
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -251,6 +262,7 @@ function ExpertHeader() {
           </button>
         </div>
       </div>
+
 
       {/* Mobile menu overlay */}
       {mobileOpen && (
@@ -287,13 +299,22 @@ function ExpertHeader() {
             })}
 
             <div className="border-t border-gray-100 mt-3 pt-3 space-y-1">
-              <button onClick={() => go("/expert/edit-profile")} className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl">
+              <button
+                onClick={() => go("/expert/edit-profile")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
                 Profile
               </button>
-              <button onClick={() => go("/reviews")} className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl">
+              <button
+                onClick={() => go("/reviews")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
                 Reviews
               </button>
-              <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl"
+              >
                 Logout
               </button>
             </div>

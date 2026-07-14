@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 // Lazy-loaded pages — each becomes its own chunk at build time
@@ -8,9 +8,10 @@ const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"))
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
+const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
+const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
-const QuantRatingPage = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
 const ForumPage = lazy(() => import("./pages/shared/ForumPage.jsx"));
 const ChangePasswordPage = lazy(() => import("./pages/shared/ChangePasswordPage.jsx"));
 const AStockDashBoardPage = lazy(() => import("./pages/shared/AStockDashBoardPage.jsx"));
@@ -50,8 +51,15 @@ const SubscriptionManagementPage = lazy(() => import("./pages/administrator/Subs
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
+const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
+const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
 function S({ children }) {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
+
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
 }
 
@@ -65,6 +73,8 @@ function protect(roles, Component) {
 
 export const router = createBrowserRouter([
     { path: "/", element: wrap(HomePage) },
+    { path: "/about-us", element: wrap(AboutUsPage) },
+    { path: "/support", element: wrap(SupportPage) },
     { path: "/register", element: wrap(RegistrationPage) },
     { path: "/login", element: wrap(LoginPage) },
     { path: "/reset-password", element: wrap(ResetPasswordPage) },
@@ -77,9 +87,9 @@ export const router = createBrowserRouter([
     { path: "/investor", element: protect(["investor"], LoggedInHomePage) },
     { path: "/realtimedashboard", element: protect(["investor", "expert"], RealTimeDashBoardPage) },
     { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
-    { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
     { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
+    { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
     { path: "/investor/payment-success", element: protect(["investor"], PaymentSuccess) },
@@ -103,6 +113,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
+    { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
     { path: "/expert", element: protect(["expert"], ExpertLoggedInPage) },

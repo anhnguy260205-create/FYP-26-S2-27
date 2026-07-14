@@ -114,7 +114,7 @@ function Hero({ name, loading }) {
     <section className="flex flex-col gap-5">
       <div>
         <h1 className="text-white font-bold text-[36px] leading-[1.15] tracking-tight">
-          Welcome back, {name}
+          Welcome back, {name} <span aria-hidden="true">👋</span>
         </h1>
         {loading ? (
           <div className="h-5 w-64 max-w-full rounded bg-white/5 animate-pulse mt-2" />
