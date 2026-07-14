@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
@@ -60,6 +60,23 @@ class ReviewFlag(Base):
     user_id    = Column(String(50), nullable=False)
     reason     = Column(String(200), default="Inappropriate content")
     created_at = Column(DateTime, default=_now)
+
+
+class ReviewRemoval(Base):
+    """
+    Records an admin-removed review so the original author can still see why
+    their review was taken down, even after the Review row itself is deleted.
+    Kept separate from Review (no FK to it) since the review no longer exists
+    by the time this is queried.
+    """
+    __tablename__ = "review_removal"
+
+    id             = Column(String(50), primary_key=True, default=lambda: f"rr_{uuid4()}")
+    user_id        = Column(String(50), nullable=False)  # original review author
+    review_title   = Column(String(200), nullable=True)
+    reason         = Column(String(300), nullable=False)
+    removed_at     = Column(DateTime, default=_now)
+    acknowledged   = Column(Boolean, default=False)  # user has seen/dismissed the notice
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -245,6 +262,9 @@ class ReviewRepository:
             session.query(ReviewHelpful).filter(
                 ReviewHelpful.review_id == review_id
             ).delete(synchronize_session=False)
+            session.query(ReviewFlag).filter(
+                ReviewFlag.review_id == review_id
+            ).delete(synchronize_session=False)
             session.delete(review)
             session.flush()
             return True
@@ -295,6 +315,49 @@ class ReviewRepository:
             return {"flagged": True, "review_id": review_id, "reason": reason}
 
     # ── Admin moderation ────────────────────────────────────────────────────
+
+    @staticmethod
+    def create_removal_record(user_id, review_title, reason):
+        """Log a review removal so the author can see why their review was taken down."""
+        with get_session() as session:
+            record = ReviewRemoval(
+                user_id=user_id,
+                review_title=review_title,
+                reason=reason,
+            )
+            session.add(record)
+            session.flush()
+            return record.id
+
+    @staticmethod
+    def get_unacknowledged_removal(user_id):
+        """Return the user's most recent un-dismissed removal notice, if any."""
+        with get_session() as session:
+            record = session.query(ReviewRemoval).filter(
+                ReviewRemoval.user_id == user_id,
+                ReviewRemoval.acknowledged == False,
+            ).order_by(ReviewRemoval.removed_at.desc()).first()
+            if not record:
+                return None
+            return {
+                "id": record.id,
+                "review_title": record.review_title,
+                "reason": record.reason,
+                "removed_at": _safe_dt(record.removed_at),
+            }
+
+    @staticmethod
+    def acknowledge_removal(removal_id, user_id):
+        """Mark a removal notice as seen/dismissed by the user."""
+        with get_session() as session:
+            record = session.query(ReviewRemoval).filter(
+                ReviewRemoval.id == removal_id,
+                ReviewRemoval.user_id == user_id,
+            ).first()
+            if not record:
+                return False
+            record.acknowledged = True
+            return True
 
     @staticmethod
     def get_review_by_id(review_id):

@@ -16,17 +16,28 @@ async function requestJson(url, options = {}) {
 export const getReviewStats = () =>
   fetch(`${REVIEW_BASE_URL}/stats`).then((r) => r.json());
 
-export const getReviews = ({ sort = "latest", page = 1, pageSize = 10, rating, userId } = {}) => {
+export const getReviews = ({ sort = "latest", page = 1, pageSize = 10, rating } = {}) => {
   const params = new URLSearchParams({ sort, page: String(page), page_size: String(pageSize) });
   if (rating) params.set("rating", String(rating));
-  if (userId) params.set("user_id", userId);
-  return fetch(`${REVIEW_BASE_URL}?${params.toString()}`).then((r) => r.json());
+  // Uses authFetch (not plain fetch) so the backend can identify the logged-in user
+  // and correctly mark "is_mine" on their own review — while still working for guests,
+  // since authFetch sends no Authorization header when nobody's logged in.
+  return requestJson(`${REVIEW_BASE_URL}?${params.toString()}`);
 };
 
 // ── Authenticated user actions ─────────────────────────────────────────────────
 
 export const getMyReview = () =>
   requestJson(`${REVIEW_BASE_URL}/mine`);
+
+export const getRemovalNotice = () =>
+  requestJson(`${REVIEW_BASE_URL}/removal-notice`);
+
+export const acknowledgeRemoval = (removalId) =>
+  requestJson(`${REVIEW_BASE_URL}/removal-notice/acknowledge`, {
+    method: "POST",
+    body: JSON.stringify({ removal_id: removalId }),
+  });
 
 export const createReview = (payload) =>
   requestJson(REVIEW_BASE_URL, {

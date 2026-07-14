@@ -10,7 +10,7 @@ import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
 import { fetchRating } from "../../api/ratingApi.js";
 import {
-  Bot, GraduationCap,
+  Bot, GraduationCap, LineChart, Sparkles, Users,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
 } from "lucide-react";
@@ -276,6 +276,22 @@ function PortfolioSparkline({ up }) {
   return <MiniChart candles={series} width={600} height={80} responsive />;
 }
 
+function ProfileAvatar({ name, size = 48 }) {
+  const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
+  let hash = 0;
+  for (const c of String(name || "")) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const bg = palette[hash % palette.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{ fontSize: size * 0.36, fontWeight: 700, color: "white" }}>{initials}</span>
+    </div>
+  );
+}
+
 function Hero({ name, portfolioData }) {
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
@@ -284,10 +300,12 @@ function Hero({ name, portfolioData }) {
 
   return (
     <section className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-white font-bold text-[36px] leading-[1.15] tracking-tight">
-          Welcome back, {name} <span aria-hidden="true">👋</span>
-        </h1>
+      <div className="flex items-center gap-4">
+        <ProfileAvatar name={name} />
+        <div>
+          <h1 className="text-white font-bold text-[36px] leading-[1.15] tracking-tight">
+            Welcome back, {name}
+          </h1>
 
         {loading ? (
           <div className="h-5 w-64 max-w-full rounded bg-white/5 animate-pulse mt-2" />
@@ -305,6 +323,7 @@ function Hero({ name, portfolioData }) {
             You haven't made any trades yet — jump in and start building your portfolio.
           </p>
         )}
+        </div>
       </div>
     </section>
   );
@@ -526,7 +545,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -787,9 +806,9 @@ function PlatformFeaturesSection() {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
-  const name = currentUser?.username || currentUser?.full_name || "Investor";
+  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
 

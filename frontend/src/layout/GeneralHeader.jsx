@@ -1,9 +1,3 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import logo from "../images/logo.png";
-import { logoutAccount } from "../api/userApi";
-import { BellRing, Menu, X } from "lucide-react";
-
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
@@ -33,7 +27,7 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -72,7 +66,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
   const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -106,8 +100,19 @@ function GeneralHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+  const [hasUnread, setHasUnread] = useState(false);
+  const chatDockRef = useRef(null);
+  const desktopRightRef = useRef(null);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+
+  useEffect(() => {
+    if (!currentUser?.user_id) return;
+    getNotifications(currentUser.user_id)
+      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
+      .catch(() => {});
+  }, [currentUser?.user_id]);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
@@ -169,6 +174,8 @@ function GeneralHeader() {
 
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
+  const notifActive = location.pathname.startsWith("/investor/notification");
+  const notifHighlighted = notifActive || hasUnread;
 
   return (
     <>

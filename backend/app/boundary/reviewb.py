@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.control.controller.reviewc import ReviewController
-from app.control.services.auth import get_current_user, require_admin
+from app.control.services.auth import get_current_user, get_current_user_optional, require_admin
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
@@ -33,9 +33,13 @@ def get_stats():
 
 @router.get("")
 def list_reviews(sort: str = "latest", page: int = 1, page_size: int = 10,
-                  rating: Optional[int] = None, user_id: Optional[str] = None):
+                  rating: Optional[int] = None,
+                  current_user: Optional[dict] = Depends(get_current_user_optional)):
+    # user_id is resolved from the auth token (if present) — never trust a client-supplied
+    # user_id query param here, since that would let anyone claim ownership of any review.
+    resolved_user_id = current_user["user_id"] if current_user else None
     return ReviewController().list_reviews(
-        user_id=user_id, sort=sort, page=page, page_size=page_size, rating_filter=rating
+        user_id=resolved_user_id, sort=sort, page=page, page_size=page_size, rating_filter=rating
     )
 
 
@@ -44,6 +48,20 @@ def list_reviews(sort: str = "latest", page: int = 1, page_size: int = 10,
 @router.get("/mine")
 def get_my_review(current_user: dict = Depends(get_current_user)):
     return ReviewController().get_my_review(current_user["user_id"])
+
+
+@router.get("/removal-notice")
+def get_removal_notice(current_user: dict = Depends(get_current_user)):
+    return ReviewController().get_removal_notice(current_user["user_id"])
+
+
+class AcknowledgeRemovalRequest(BaseModel):
+    removal_id: str
+
+
+@router.post("/removal-notice/acknowledge")
+def acknowledge_removal(data: AcknowledgeRemovalRequest, current_user: dict = Depends(get_current_user)):
+    return ReviewController().acknowledge_removal(data.removal_id, current_user["user_id"])
 
 
 @router.post("")

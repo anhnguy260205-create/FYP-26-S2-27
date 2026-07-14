@@ -13,6 +13,14 @@ class ReviewController:
         )
         return {"success": True, **result}
 
+    def get_removal_notice(self, user_id):
+        notice = ReviewRepository.get_unacknowledged_removal(user_id)
+        return {"success": True, "notice": notice}
+
+    def acknowledge_removal(self, removal_id, user_id):
+        ok = ReviewRepository.acknowledge_removal(removal_id, user_id)
+        return {"success": ok}
+
     def get_my_review(self, user_id):
         review = ReviewRepository.get_my_review(user_id)
         return {"success": True, "review": review}
@@ -47,6 +55,11 @@ class ReviewController:
         return {"success": True, "message": "Review deleted."}
 
     def toggle_helpful(self, review_id, user_id):
+        existing = ReviewRepository.get_review_by_id(review_id)
+        if not existing:
+            return {"success": False, "message": "Review not found."}
+        if str(existing.get("user_id")) == str(user_id):
+            return {"success": False, "message": "You can't mark your own review as helpful."}
         review = ReviewRepository.toggle_helpful(review_id, user_id)
         if not review:
             return {"success": False, "message": "Unable to update helpful vote."}
@@ -55,6 +68,11 @@ class ReviewController:
     def flag_review(self, review_id, user_id, reason):
         if not user_id:
             return {"success": False, "message": "Must be logged in to report a review."}
+        review = ReviewRepository.get_review_by_id(review_id)
+        if not review:
+            return {"success": False, "message": "Review not found."}
+        if str(review.get("user_id")) == str(user_id):
+            return {"success": False, "message": "You can't report your own review."}
         result = ReviewRepository.flag_review(review_id, user_id, reason)
         if not result:
             return {"success": False, "message": "Review not found."}
@@ -71,29 +89,44 @@ class ReviewController:
         return {"success": True, "reviews": reviews, "total": len(reviews)}
 
     def admin_delete_review(self, review_id, admin_user_id=None, reason="Violated community guidelines"):
-        # Get review owner before deleting so we can notify them
+        # Get review owner + title before deleting so we can notify them and log a removal record
         review = ReviewRepository.get_review_by_id(review_id)
+        print(f"[REVIEW DELETE] review_id={review_id}, review_found={review is not None}")
         if not review:
             return {"success": False, "message": "Review not found."}
+
+        owner_id = review.get("user_id")
+        review_title = review.get("title") or ""
+        print(f"[REVIEW DELETE] owner_id={owner_id}, reason={reason}")
 
         deleted = ReviewRepository.delete_review(review_id, is_admin=True)
         if not deleted:
             return {"success": False, "message": "Failed to delete review."}
 
+        # Log a removal record so the author can see why their review was taken down
+        # even after it's gone from the reviews list
+        if owner_id:
+            try:
+                ReviewRepository.create_removal_record(owner_id, review_title, reason)
+            except Exception as e:
+                print(f"[REVIEW DELETE] Removal record FAILED: {e}")
+
         # Notify the review author
-        owner_id = review.get("user_id")
         if owner_id:
             try:
                 from app.control.controller.notificationc import create_notification
-                create_notification(
+                notif_id = create_notification(
                     user_id=owner_id,
                     type="moderation",
                     title="Your review has been removed",
                     message=f"Your platform review was removed by our moderation team. Reason: {reason}. "
                             f"If you believe this was a mistake, please contact support.",
                 )
+                print(f"[REVIEW DELETE] Notification created: notif_id={notif_id} for user={owner_id}")
             except Exception as e:
-                print(f"[REVIEW] Notification failed: {e}")
+                print(f"[REVIEW DELETE] Notification FAILED: {e}")
+        else:
+            print(f"[REVIEW DELETE] No owner_id — notification skipped")
 
         return {
             "success": True,

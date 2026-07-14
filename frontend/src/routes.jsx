@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
