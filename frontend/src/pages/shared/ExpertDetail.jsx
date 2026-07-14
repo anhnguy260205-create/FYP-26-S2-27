@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -19,7 +20,8 @@ import {
  *     re-viewing an already-unlocked profile is free
  *   - premium investors / experts: unlimited
  * Premium users get an "Ask Question" button that jumps to the Messages
- * section (Forum > Messages) with this expert's conversation open.
+ * section (Forum > Messages) with this expert's conversation open. Expert
+ * viewers never see this button — subscription plans are an investor concept.
  */
 
 const CARD = {
@@ -280,6 +282,8 @@ function ExpertDetails() {
     const userId = searchParams.get("user_id");
 
     const me = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+    const role = String(me?.role || "").toLowerCase();
+    const isExpert = role === "expert";
     const isPremium = String(me?.subscription_status || "").toLowerCase() === "premium";
 
     const [loading, setLoading] = useState(true);
@@ -337,7 +341,7 @@ function ExpertDetails() {
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
         >
-            <GeneralHeader />
+            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
             <main className="flex-1 p-8">
                 {/* Back Button */}
@@ -354,7 +358,7 @@ function ExpertDetails() {
                     Back
                 </button>
 
-                {/* Free-quota banner (basic users only) */}
+                {/* Free-quota banner (basic investors only — experts/premium get unlimited views) */}
                 {!limitReached && quota.views_limit != null && (
                     <div className="mb-4 px-4 py-2.5 rounded-lg text-xs"
                         style={{ color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
@@ -399,22 +403,25 @@ function ExpertDetails() {
                                 </div>
                             </div>
 
-                            {/* Ask Question — premium jumps into Messages */}
-                            <button onClick={askQuestion}
-                                className="flex items-center gap-2"
-                                style={{
-                                    padding: "12px 22px", borderRadius: 12, border: "none",
-                                    cursor: "pointer", color: "#fff", fontWeight: 600, fontSize: 14,
-                                    background: isPremium
-                                        ? "linear-gradient(90deg, #0092b8, #155dfc)"
-                                        : "linear-gradient(90deg, #d4a017, #b8860b)",
-                                    boxShadow: isPremium
-                                        ? "0 10px 20px rgba(0,184,219,0.25)"
-                                        : "0 10px 20px rgba(212,160,23,0.25)",
-                                }}>
-                                <MessageSquare size={16} />
-                                {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
-                            </button>
+                            {/* Ask Question — premium jumps into Messages. Subscription plans
+                                are an investor concept, so experts never see this. */}
+                            {!isExpert && (
+                                <button onClick={askQuestion}
+                                    className="flex items-center gap-2"
+                                    style={{
+                                        padding: "12px 22px", borderRadius: 12, border: "none",
+                                        cursor: "pointer", color: "#fff", fontWeight: 600, fontSize: 14,
+                                        background: isPremium
+                                            ? "linear-gradient(90deg, #0092b8, #155dfc)"
+                                            : "linear-gradient(90deg, #d4a017, #b8860b)",
+                                        boxShadow: isPremium
+                                            ? "0 10px 20px rgba(0,184,219,0.25)"
+                                            : "0 10px 20px rgba(212,160,23,0.25)",
+                                    }}>
+                                    <MessageSquare size={16} />
+                                    {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
+                                </button>
+                            )}
                         </div>
 
                         {/* Stats */}

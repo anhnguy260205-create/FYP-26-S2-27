@@ -356,7 +356,7 @@ function FAQSection() {
           className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 px-6 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 cursor-pointer"
         >
           Visit Help Center
-          <ArrowRight size={16} />
+
         </button>
       </div>
     </div>
