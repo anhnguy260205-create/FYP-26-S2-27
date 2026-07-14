@@ -20,7 +20,7 @@ const APP_VERSION = "v1.0.0";
 const DEFAULT = {
   brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
   product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "/investor/subscription" }],
-  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }, { title: "Reviews", description: "/reviews" }],
+  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }],
   contact: [{ title: "support@deskstock.ai", description: "" }, { title: "Help Center", description: "#" }, { title: "Terms of Service", description: "#" }, { title: "Privacy Policy", description: "#" }],
 };
 
@@ -91,18 +91,6 @@ function Footer() {
               <li>
                 <FooterLink href="/reviews">Reviews</FooterLink>
               </li>
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Resources</h4>
-            <ul className="space-y-2.5">
-              {RESOURCES.map((item) => (
-                <li key={item.title}>
-                  <FooterLink href={item.href}>{item.title}</FooterLink>
-                </li>
-              ))}
             </ul>
           </div>
 
