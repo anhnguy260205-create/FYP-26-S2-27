@@ -294,8 +294,8 @@ function Hero({ name, portfolioData }) {
 
         <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
           Welcome back,{" "}
-          <span className="bg-clip-text text-transparent bg-linear-to-r from-[#00D3F2] to-cyan-300">{name}</span>{" "}
-          <span aria-hidden="true">👋</span>
+          <span className="bg-clip-text text-transparent bg-linear-to-r from-[#068fffcb] to-[#0075f2]">{name}</span>{" "}
+         
         </h1>
 
         {loading ? (
@@ -754,18 +754,20 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
     >
       <div>
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className={`flex items-center justify-center rounded-xl ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
-            <Icon size={primary ? 22 : 19} />
+          <div className={`flex items-center justify-center rounded-xl ring-1 ring-inset ring-white/10 ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
+            <Icon size={primary ? 24 : 21} strokeWidth={3} />
           </div>
-          <span className={`text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
-            {badge}
-          </span>
+          {badge && (
+            <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
+              {badge}
+            </span>
+          )}
         </div>
-        <h3 className={`text-slate-900 font-semibold mb-1.5 ${primary ? "text-xl" : "text-lg"}`}>{title}</h3>
-        <p className="text-[15px] text-slate-600 leading-relaxed">{description}</p>
+        <h3 className={`text-slate-900 font-bold mb-1.5 ${primary ? "text-2xl" : "text-lg"}`}>{title}</h3>
+        <p className="text-[15px] font-medium text-slate-600 leading-relaxed">{description}</p>
       </div>
-      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
-        {cta} <ArrowRight size={14} />
+      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
+        {cta}
       </div>
     </div>
   );

@@ -895,7 +895,8 @@ function AStockDashBoardPage() {
     ...(isExpert ? [] : [{ key: "trading", label: "Trading" }]),
     { key: "prediction", label: "Prediction" },
     { key: "comments", label: "Comments" },
-    { key: "alerts", label: "Alerts" },
+    ...(isExpert ? [] : [{ key: "alerts", label: "Alerts" }]),
+
   ];
 
 

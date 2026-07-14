@@ -155,20 +155,26 @@ function ExpertHeader() {
       activePaths: ["/expert/questions"],
       onClick: () => navigate("/expert/questions"),
     },
+
     {
-      label: "My Portfolio",
-      activePaths: ["/expert/portfolio", "/expert/create-portfolio"],
-      onClick: () => navigate("/expert/portfolio"),
+      label: "Browse Experts",
+      activePaths: ["/investor/expertportfolio", "/investor/expertdetails"],
+      onClick: () => navigate("/investor/expertportfolio"),
     },
     {
-      label: "Learning Content",
-      activePaths: ["/expert/knowledge-hub"],
-      onClick: () => navigate("/expert/knowledge-hub"),
+      label: "Educational Content",
+      activePaths: ["/investor/educationcontent"],
+      onClick: () => navigate("/investor/educationcontent"),
     },
     {
       label: "Community Forum",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
+    },
+    {
+      label: "Compensation",
+      activePaths: ["/expert/compensation"],
+      onClick: () => navigate("/expert/compensation"),
     },
   ];
 

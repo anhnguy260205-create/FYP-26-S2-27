@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -88,6 +89,11 @@ const STATS = [
 
 export default function ExpertPortfolio() {
     const navigate = useNavigate();
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+    const role = String(currentUser?.role || "").toLowerCase();
+    const isExpert = role === "expert";
+    const canManage = isExpert && currentUser?.verification_status === "approved";
+
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
     const [experts, setExperts] = useState([]);
@@ -115,30 +121,51 @@ export default function ExpertPortfolio() {
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
-            <GeneralHeader />
+            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
                 {/* Header */}
-                <div className="mb-6">
-                    <h1
-                        style={{
-                            fontSize: "28px",
-                            fontWeight: 700,
-                            color: "#f8fafc",
-                        }}
-                    >
-                        Expert Portfolio
-                    </h1>
+                <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
+                    <div>
+                        <h1
+                            style={{
+                                fontSize: "28px",
+                                fontWeight: 700,
+                                color: "#f8fafc",
+                            }}
+                        >
+                            Expert Portfolio
+                        </h1>
 
-                    <p
-                        style={{
-                            color: "rgba(255,255,255,0.45)",
-                            marginTop: "4px",
-                            fontSize: "14px",
-                        }}
-                    >
-                        Explore and invest in portfolios managed by our expert consultants.
-                    </p>
+                        <p
+                            style={{
+                                color: "rgba(255,255,255,0.45)",
+                                marginTop: "4px",
+                                fontSize: "14px",
+                            }}
+                        >
+                            Explore and invest in portfolios managed by our expert consultants.
+                        </p>
+                    </div>
+
+                    {canManage && (
+                        <button
+                            onClick={() => navigate("/expert/portfolio")}
+                            style={{
+                                padding: "10px 20px",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                background: "rgba(59,130,246,0.12)",
+                                border: "1px solid rgba(59,130,246,0.3)",
+                                color: "#60a5fa",
+                                fontWeight: 600,
+                                fontSize: 14,
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            My Portfolio
+                        </button>
+                    )}
                 </div>
                 <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
 
@@ -372,27 +399,29 @@ export default function ExpertPortfolio() {
                                     View Profile
                                 </button>
 
-                                <button
-                                    onClick={() => openChatWith({ user_id: expert.user_id, full_name: expert.name, role: "expert" })}
-                                    style={{
-                                        padding:
-                                            "8px 14px",
-                                        borderRadius:
-                                            "8px",
-                                        background:
-                                            "rgba(0,211,243,0.12)",
-                                        border:
-                                            "1px solid rgba(0,211,243,0.3)",
-                                        color:
-                                            "#00D3F2",
-                                        fontSize:
-                                            "12px",
-                                        cursor: "pointer"
+                                {!isExpert && (
+                                    <button
+                                        onClick={() => openChatWith({ user_id: expert.user_id, full_name: expert.name, role: "expert" })}
+                                        style={{
+                                            padding:
+                                                "8px 14px",
+                                            borderRadius:
+                                                "8px",
+                                            background:
+                                                "rgba(0,211,243,0.12)",
+                                            border:
+                                                "1px solid rgba(0,211,243,0.3)",
+                                            color:
+                                                "#00D3F2",
+                                            fontSize:
+                                                "12px",
+                                            cursor: "pointer"
 
-                                    }}
-                                >
-                                    Ask Question
-                                </button>
+                                        }}
+                                    >
+                                        Ask Question
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
