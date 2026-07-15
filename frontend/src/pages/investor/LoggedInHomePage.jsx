@@ -37,7 +37,16 @@ const RISK_TONE = {
 };
 
 const PLATFORM_FEATURES = [
-  
+  {
+    Icon: Wallet,
+    title: "Paper Trading Exchange",
+    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
+    to: "/realtimedashboard",
+    badge: "Live market prices",
+    cta: "Start trading",
+    accent: "cyan",
+    primary: true,
+  },
   {
     Icon: BrainCircuit,
     title: "AI Stock Predictions",
@@ -58,8 +67,8 @@ const PLATFORM_FEATURES = [
   },
   {
     Icon: Bot,
-    title: "AI Chatbot ",
-    description: "Get instant answers from our AI assistant",
+    title: "AI Chatbot & Expert Consultants",
+    description: "Get instant answers from our AI assistant, or browse and connect with verified market experts.",
     to: "/investor/aichatbot",
     badge: "Ask anything",
     cta: "Explore",
@@ -73,24 +82,6 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
-  },
-  {
-    Icon: Users,
-    title: "Expert Portfolios",
-    description: "Browse verified experts' live portfolios and strategies to see how seasoned investors allocate their capital.",
-    to: "/investor/expertportfolio",
-    badge: "Follow the pros",
-    cta: "Explore",
-    accent: "rose",
-  },
-  {
-    Icon: ListChecks,
-    title: "Watchlist",
-    description: "Track the stocks you care about most and get a quick pulse on price moves before you decide to trade.",
-    to: "/watchlist",
-    badge: "Stay on top of it",
-    cta: "View Watchlist",
-    accent: "cyan",
   },
 ];
 
@@ -278,6 +269,22 @@ function StockAvatar({ symbol, size = 36 }) {
 function PortfolioSparkline({ up }) {
   const series = useMemo(() => buildSparklineSeries(up), [up]);
   return <MiniChart candles={series} width={600} height={80} responsive />;
+}
+
+function ProfileAvatar({ name, size = 48 }) {
+  const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
+  let hash = 0;
+  for (const c of String(name || "")) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const bg = palette[hash % palette.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{ fontSize: size * 0.36, fontWeight: 700, color: "white" }}>{initials}</span>
+    </div>
+  );
 }
 
 function Hero({ name, portfolioData }) {
@@ -535,7 +542,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -634,7 +641,7 @@ function WatchlistSection() {
   );
 }
 
-function PopularStockCard({ symbol, snapshot, candles, onSelect }) {
+function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
   const price = snapshot?.p ?? null;
   const prev = snapshot?.previousClose ?? null;
   const change = price != null && prev != null ? price - prev : null;
@@ -658,6 +665,12 @@ function PopularStockCard({ symbol, snapshot, candles, onSelect }) {
           <p className="text-slate-500 text-xs">{symbol}</p>
         </div>
       </div>
+      {confidence != null && (
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-slate-500 font-medium">AI Confidence</span>
+          <span className="text-[#00D3F2] font-semibold">{confidence}%</span>
+        </div>
+      )}
       <div>
         <p className={`font-['DM_Mono'] font-semibold text-lg leading-tight ${color}`}>
           {price != null ? `$${price.toFixed(2)}` : "—"}
@@ -680,27 +693,31 @@ function PopularStocksSection() {
   const navigate = useNavigate();
   const [snapshots, setSnapshots] = useState({});
   const [candles, setCandles] = useState({});
+  const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all(
       POPULAR_SYMBOLS.map((symbol) =>
-        Promise.all([fetchStockSnapshot(symbol), fetchStockCandles(symbol, "1D")])
-          .then(([snapRes, candlesRes]) => ({
+        Promise.all([fetchStockSnapshot(symbol), fetchStockCandles(symbol, "1D"), fetchRating(symbol)])
+          .then(([snapRes, candlesRes, ratingRes]) => ({
             symbol,
             snapshot: snapRes.success ? snapRes.data : null,
             candles: candlesRes.success ? candlesRes.candles : [],
+            rating: ratingRes?.success ? ratingRes : null,
           }))
-          .catch(() => ({ symbol, snapshot: null, candles: [] }))
+          .catch(() => ({ symbol, snapshot: null, candles: [], rating: null }))
       )
     ).then((results) => {
       if (cancelled) return;
       const nextSnapshots = {};
       const nextCandles = {};
-      results.forEach((r) => { nextSnapshots[r.symbol] = r.snapshot; nextCandles[r.symbol] = r.candles; });
+      const nextRatings = {};
+      results.forEach((r) => { nextSnapshots[r.symbol] = r.snapshot; nextCandles[r.symbol] = r.candles; nextRatings[r.symbol] = r.rating; });
       setSnapshots(nextSnapshots);
       setCandles(nextCandles);
+      setRatings(nextRatings);
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -727,6 +744,7 @@ function PopularStocksSection() {
                 symbol={symbol}
                 snapshot={snapshots[symbol]}
                 candles={candles[symbol]}
+                confidence={ratings[symbol]?.buyProbability != null ? Math.round(ratings[symbol].buyProbability * 100) : null}
                 onSelect={handleSelect}
               />
             ))}
@@ -878,9 +896,9 @@ function PricingTeaserSection() {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
-  const name = currentUser?.username || currentUser?.full_name || "Investor";
+  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
 

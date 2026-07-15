@@ -40,6 +40,7 @@ from app.entity.models.transaction import Transaction
 from app.entity.models.password_reset import PasswordReset
 from app.entity.models.article import Article, seed_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+from app.entity.models.review import Review, ReviewHelpful, ReviewFlag, ReviewRemoval, seed_reviews
 from app.entity.models.forumquestion import (
     ForumPost, ForumReply, ForumPostLike, ForumPostSave,
     ForumReplyLike, ForumPostView,
@@ -69,6 +70,7 @@ from app.boundary.expertb import router as expert_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
 from app.boundary.chatbotb import router as chatbot_router
+from app.boundary.reviewb import router as review_router
 from app.boundary.chatb import router as chat_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
@@ -282,6 +284,7 @@ seed_jordan_account()
 seed_articles()
 seed_landing_content()
 seed_forum_posts()
+seed_reviews()
 try:
     seed_all_firebase_accounts()
 except Exception as _e:
@@ -303,6 +306,7 @@ app.include_router(expert_router)
 app.include_router(consultant_forum_router)
 app.include_router(content_router)
 app.include_router(chatbot_router)
+app.include_router(review_router)
 app.include_router(chat_router)
 
 

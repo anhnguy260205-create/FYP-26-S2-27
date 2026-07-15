@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
 const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));
@@ -49,6 +50,8 @@ const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensat
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
+const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
+const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
@@ -86,6 +89,7 @@ export const router = createBrowserRouter([
     { path: "/realtimedashboard", element: protect(["investor", "expert"], RealTimeDashBoardPage) },
     { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
+    { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
     { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
@@ -109,6 +113,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
     { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
+    { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
