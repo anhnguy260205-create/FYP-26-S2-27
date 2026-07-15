@@ -634,112 +634,8 @@ function WatchlistSection() {
   );
 }
 
-function PopularStockCard({ symbol, snapshot, candles, onSelect }) {
-  const price = snapshot?.p ?? null;
-  const prev = snapshot?.previousClose ?? null;
-  const change = price != null && prev != null ? price - prev : null;
-  const percent = change != null && prev ? (change / prev) * 100 : null;
-  const isUp = change === null ? true : change >= 0;
-  const color = isUp ? "text-emerald-400" : "text-red-400";
-  const TrendIcon = isUp ? TrendingUp : TrendingDown;
 
-  return (
-    <div
-      onClick={() => onSelect(symbol)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter") onSelect(symbol); }}
-      className={`group flex flex-col gap-3 shrink-0 w-54 cursor-pointer ${CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} hover:ring-[#00D3F2]/30 p-5 ${FOCUS_RING}`}
-    >
-      <div className="flex items-center gap-3">
-        <StockAvatar symbol={symbol} size={34} />
-        <div className="min-w-0">
-          <p className="text-white font-semibold text-sm leading-tight truncate">{shortCompanyName(symbol)}</p>
-          <p className="text-slate-500 text-xs">{symbol}</p>
-        </div>
-      </div>
-      <div>
-        <p className={`font-['DM_Mono'] font-semibold text-lg leading-tight ${color}`}>
-          {price != null ? `$${price.toFixed(2)}` : "—"}
-        </p>
-        <p className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${color}`}>
-          {percent != null && <TrendIcon size={14} />}
-          {percent != null ? `${percent > 0 ? "+" : ""}${percent.toFixed(2)}%` : "—"}
-        </p>
-      </div>
-      <div className="transition-transform duration-200 ease-out group-hover:scale-[1.03]">
-        {candles?.length > 0
-          ? <MiniChart candles={candles} width={176} height={44} />
-          : <div style={{ height: 44 }} />}
-      </div>
-    </div>
-  );
-}
 
-function PopularStocksSection() {
-  const navigate = useNavigate();
-  const [snapshots, setSnapshots] = useState({});
-  const [candles, setCandles] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all(
-      POPULAR_SYMBOLS.map((symbol) =>
-        Promise.all([fetchStockSnapshot(symbol), fetchStockCandles(symbol, "1D")])
-          .then(([snapRes, candlesRes]) => ({
-            symbol,
-            snapshot: snapRes.success ? snapRes.data : null,
-            candles: candlesRes.success ? candlesRes.candles : [],
-          }))
-          .catch(() => ({ symbol, snapshot: null, candles: [] }))
-      )
-    ).then((results) => {
-      if (cancelled) return;
-      const nextSnapshots = {};
-      const nextCandles = {};
-      results.forEach((r) => { nextSnapshots[r.symbol] = r.snapshot; nextCandles[r.symbol] = r.candles; });
-      setSnapshots(nextSnapshots);
-      setCandles(nextCandles);
-      setLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
-
-  return (
-    <section>
-      <SectionHeader title="Popular Stocks" subtitle="Trending picks investors are watching right now" />
-
-      {loading ? (
-        <div className="flex gap-4 overflow-hidden pb-1">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="shrink-0" style={{ width: 216, height: 172, borderRadius: 16 }} />
-          ))}
-        </div>
-      ) : (
-        <div className="relative">
-          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {POPULAR_SYMBOLS.map((symbol) => (
-              <PopularStockCard
-                key={symbol}
-                symbol={symbol}
-                snapshot={snapshots[symbol]}
-                candles={candles[symbol]}
-                onSelect={handleSelect}
-              />
-            ))}
-          </div>
-          <div
-            className="pointer-events-none absolute top-0 right-0 h-full w-12"
-            style={{ background: "linear-gradient(to right, transparent, rgba(8,15,35,0.9))" }}
-          />
-        </div>
-      )}
-    </section>
-  );
-}
 
 function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary, accent }) {
   const navigate = useNavigate();
@@ -900,7 +796,7 @@ function LoggedInHomePage() {
           <AIInsightsSection portfolioData={portfolioData} />
           <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
           <WatchlistSection />
-          <PopularStocksSection />
+    
 
 
           </div>
