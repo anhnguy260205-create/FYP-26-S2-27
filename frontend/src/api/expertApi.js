@@ -21,6 +21,22 @@ export const saveExpertPortfolio = (userId, portfolio) =>
     body: JSON.stringify(portfolio),
   });
 
+// ── Follow / unfollow an expert ──────────────────────────────────────────────
+
+export const getFollowerStatus = (expertUserId) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/followers`);
+
+export const followExpert = (expertUserId) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/follow`, { method: "POST" });
+
+export const unfollowExpert = (expertUserId) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/follow`, { method: "DELETE" });
+
+// ── Compensation ──────────────────────────────────────────────────────────────
+
+export const getExpertCompensationSummary = () =>
+  requestJson(`${EXPERT_BASE_URL}/compensation/summary`);
+
 // ── Forum (public reads use plain fetch; writes use authFetch via requestJson) ──
 
 export const getForumPosts = (userId) => {

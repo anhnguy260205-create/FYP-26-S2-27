@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Send, Trash2, Pencil } from "lucide-react";
-import ConsultantHeader from "../../layout/ConsultantHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import {
     deleteExpertQuestionReply,
@@ -37,7 +37,7 @@ function formatDate(value) {
 
 function getLoggedInName() {
     try {
-        const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+        const user = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
         return user.full_name || user.name || user.username || user.email || "Consultant";
     } catch { return "Consultant"; }
 }
@@ -172,7 +172,7 @@ export default function ExpertQuestionDetailPage() {
     if (loading && !question) {
         return (
             <div className={PAGE_BG}>
-                <ConsultantHeader />
+                <RoleHeader />
                 <main className="flex-1 flex items-center justify-center" style={{ color:"rgba(255,255,255,0.4)" }}>Loading question…</main>
                 <Footer />
             </div>
@@ -182,7 +182,7 @@ export default function ExpertQuestionDetailPage() {
     if (!question) {
         return (
             <div className={PAGE_BG}>
-                <ConsultantHeader />
+                <RoleHeader />
                 <main className="flex-1 flex flex-col items-center justify-center gap-4">
                     <p style={{ color:"rgba(255,255,255,0.5)" }}>Question not found.</p>
                     <button onClick={() => navigate("/expert/questions")}
@@ -200,7 +200,7 @@ export default function ExpertQuestionDetailPage() {
 
     return (
         <motion.div className={PAGE_BG} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <ConsultantHeader />
+            <RoleHeader />
             <main className="flex-1 p-4 md:p-7 max-w-4xl mx-auto w-full">
 
                 {/* Back */}

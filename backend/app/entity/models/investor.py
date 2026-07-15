@@ -215,6 +215,7 @@ class Investor(Base):
         from app.entity.models.predictionusage import PredictionUsage
         from app.entity.models.emailalert import StockAlert
         from app.entity.models.notification import Notification
+        from app.entity.models.expertfollow import ExpertFollow
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -241,7 +242,10 @@ class Investor(Base):
                 Subscription.investor_id == investor.investor_id
             ).delete()
             session.query(Watchlist).filter(
-                Watchlist.investor_id == investor.investor_id
+                Watchlist.user_id == user_id
+            ).delete()
+            session.query(ExpertFollow).filter(
+                ExpertFollow.investor_id == investor.investor_id
             ).delete()
 
             # 2. Alerts and notifications (keyed by user_id, not investor_id)

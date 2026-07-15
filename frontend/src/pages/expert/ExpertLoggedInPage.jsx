@@ -5,7 +5,7 @@ import Footer from "../../layout/Footer.jsx";
 import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import professorPageImg from "../../images/professorpage.jpg";
 import { getExpertInformation } from "../../api/userApi.js";
-import { getExpertPortfolio } from "../../api/expertApi.js";
+import { getExpertPortfolio, getExpertCompensationSummary } from "../../api/expertApi.js";
 import { getMyArticles } from "../../api/knowledgeHubApi.js";
 import {
   MessageSquare, Briefcase, GraduationCap, FileText,
@@ -83,10 +83,6 @@ function isVerifiedStatus(status) {
   return s === "verified" || s === "approved";
 }
 
-// Mirrors ExpertCompensationPage.jsx's mock SUMMARY.pendingPayout — no
-// compensation backend exists yet, so this is kept in sync by hand.
-const PENDING_PAYOUT = 842.50;
-
 function fmt$(n) {
   const v = Number(n) || 0;
   return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -96,6 +92,7 @@ function useExpertData(userId) {
   const [expertInfo, setExpertInfo] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
   const [articleCount, setArticleCount] = useState(null);
+  const [compensation, setCompensation] = useState(null);
   const [loading, setLoading] = useState(!!userId);
 
   useEffect(() => {
@@ -104,18 +101,20 @@ function useExpertData(userId) {
       getExpertInformation(userId).catch(() => null),
       getExpertPortfolio(userId).catch(() => null),
       getMyArticles(userId).catch(() => null),
+      getExpertCompensationSummary().catch(() => null),
     ])
-      .then(([infoRes, portfolioRes, articlesRes]) => {
+      .then(([infoRes, portfolioRes, articlesRes, compensationRes]) => {
         if (infoRes?.success) setExpertInfo(infoRes.expert_information);
         if (portfolioRes?.success && portfolioRes.portfolio) setPortfolio(portfolioRes.portfolio);
         if (articlesRes?.success && Array.isArray(articlesRes.articles)) {
           setArticleCount(articlesRes.articles.filter((a) => a.status === "published").length);
         }
+        if (compensationRes?.success) setCompensation(compensationRes);
       })
       .finally(() => setLoading(false));
   }, [userId]);
 
-  return { loading, expertInfo, portfolio, articleCount };
+  return { loading, expertInfo, portfolio, articleCount, compensation };
 }
 
 function Hero({ name, loading }) {
@@ -143,7 +142,7 @@ function Hero({ name, loading }) {
   );
 }
 
-function ProfileSummarySection({ expertInfo, loading, userId }) {
+function ProfileSummarySection({ expertInfo, loading, userId, compensation }) {
   const navigate = useNavigate();
 
   if (!userId) return null;
@@ -229,8 +228,10 @@ function ProfileSummarySection({ expertInfo, loading, userId }) {
             </div>
             {verified ? (
               <>
-                <p className="font-semibold text-xl text-white">{fmt$(PENDING_PAYOUT)}</p>
-                <p className="text-xs text-slate-500 mt-1">Pending payout</p>
+                <p className="font-semibold text-xl text-white">{fmt$(compensation?.pending_payout)}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {compensation?.eligible ? "Pending payout" : `Need ${(compensation?.follower_threshold ?? 1000).toLocaleString()} followers to earn`}
+                </p>
               </>
             ) : (
               <>
@@ -407,7 +408,7 @@ function ExpertLoggedInPage() {
   const userId = currentUser?.user_id;
   const name = currentUser?.username || currentUser?.full_name || "Expert";
 
-  const { loading, expertInfo, portfolio, articleCount } = useExpertData(userId);
+  const { loading, expertInfo, portfolio, articleCount, compensation } = useExpertData(userId);
 
   return (
     <motion.div
@@ -424,7 +425,7 @@ function ExpertLoggedInPage() {
           style={{ marginTop: -15, marginBottom: 30 }}
         >
           <ModelPortfolioSection portfolio={portfolio} loading={loading} />
-          <ProfileSummarySection expertInfo={expertInfo} loading={loading} userId={userId} />
+          <ProfileSummarySection expertInfo={expertInfo} loading={loading} userId={userId} compensation={compensation} />
         </div>
         <ToolsSection articleCount={articleCount} verified={isVerifiedStatus(expertInfo?.verification_status)} />
         <DocumentsSection verification={expertInfo?.verification_status ?? "pending"} loading={loading} />

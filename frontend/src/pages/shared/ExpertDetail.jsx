@@ -5,11 +5,12 @@ import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
-import { getExpertPortfolio } from "../../api/expertApi.js";
+import { getExpertPortfolio, followExpert, unfollowExpert } from "../../api/expertApi.js";
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
     Mail, Link2, MapPin, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
+    Users, UserPlus, UserCheck,
 } from "lucide-react";
 
 /*
@@ -293,6 +294,9 @@ function ExpertDetails() {
     const [quota, setQuota] = useState({});      // views_used / views_limit
     const [limitReached, setLimitReached] = useState(false);
     const [error, setError] = useState("");
+    const [following, setFollowing] = useState(false);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followBusy, setFollowBusy] = useState(false);
 
     useEffect(() => {
         if (!userId) { setError("No expert selected."); setLoading(false); return; }
@@ -305,6 +309,8 @@ function ExpertDetails() {
                 } else if (res.success) {
                     setProfile(res.profile);
                     setQuota({ views_used: res.views_used, views_limit: res.views_limit });
+                    setFollowing(!!res.profile?.is_following);
+                    setFollowerCount(res.profile?.follower_count ?? 0);
                     // Load the expert-created portfolio only after the profile
                     // view is allowed (keeps the basic-plan limit meaningful).
                     getExpertPortfolio(userId)
@@ -323,6 +329,25 @@ function ExpertDetails() {
             .catch(() => setError("Could not reach backend."))
             .finally(() => setLoading(false));
     }, [userId]);
+
+    const handleFollowToggle = async () => {
+        if (followBusy || !userId) return;
+        setFollowBusy(true);
+        try {
+            const res = following ? await unfollowExpert(userId) : await followExpert(userId);
+            if (res.success) {
+                setFollowing(res.following);
+                setFollowerCount(res.follower_count);
+            } else {
+                alert(res.message || "Could not update follow status.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] follow toggle failed:", err);
+            alert("Could not update follow status. Check your connection and try again.");
+        } finally {
+            setFollowBusy(false);
+        }
+    };
 
     const askQuestion = () => {
         if (isPremium) {
@@ -403,29 +428,47 @@ function ExpertDetails() {
                                 </div>
                             </div>
 
-                            {/* Ask Question — premium jumps into Messages. Subscription plans
-                                are an investor concept, so experts never see this. */}
+                            {/* Follow / Ask Question — both investor-only actions.
+                                Subscription plans are an investor concept, so experts never see these. */}
                             {!isExpert && (
-                                <button onClick={askQuestion}
-                                    className="flex items-center gap-2"
-                                    style={{
-                                        padding: "12px 22px", borderRadius: 12, border: "none",
-                                        cursor: "pointer", color: "#fff", fontWeight: 600, fontSize: 14,
-                                        background: isPremium
-                                            ? "linear-gradient(90deg, #0092b8, #155dfc)"
-                                            : "linear-gradient(90deg, #d4a017, #b8860b)",
-                                        boxShadow: isPremium
-                                            ? "0 10px 20px rgba(0,184,219,0.25)"
-                                            : "0 10px 20px rgba(212,160,23,0.25)",
-                                    }}>
-                                    <MessageSquare size={16} />
-                                    {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
-                                </button>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <button onClick={handleFollowToggle} disabled={followBusy}
+                                        className="flex items-center gap-2"
+                                        style={{
+                                            padding: "12px 20px", borderRadius: 12,
+                                            cursor: followBusy ? "not-allowed" : "pointer",
+                                            fontWeight: 600, fontSize: 14,
+                                            opacity: followBusy ? 0.7 : 1,
+                                            color: following ? "#e2e8f0" : "#0f172a",
+                                            background: following ? "rgba(255,255,255,0.08)" : "#fff",
+                                            border: following ? "1px solid rgba(255,255,255,0.2)" : "none",
+                                        }}>
+                                        {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                                        {following ? "Following" : "Follow"}
+                                    </button>
+                                    <button onClick={askQuestion}
+                                        className="flex items-center gap-2"
+                                        style={{
+                                            padding: "12px 22px", borderRadius: 12, border: "none",
+                                            cursor: "pointer", color: "#fff", fontWeight: 600, fontSize: 14,
+                                            background: isPremium
+                                                ? "linear-gradient(90deg, #0092b8, #155dfc)"
+                                                : "linear-gradient(90deg, #d4a017, #b8860b)",
+                                            boxShadow: isPremium
+                                                ? "0 10px 20px rgba(0,184,219,0.25)"
+                                                : "0 10px 20px rgba(212,160,23,0.25)",
+                                        }}>
+                                        <MessageSquare size={16} />
+                                        {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
+                                    </button>
+                                </div>
                             )}
                         </div>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mt-8">
+                            <StatCard icon={Users} color="#a855f7"
+                                value={followerCount.toLocaleString()} label="Followers" />
                             <StatCard icon={Star} color="#f59e0b"
                                 value={profile.rating ? Number(profile.rating).toFixed(1) : "—"} label="Rating" />
                             <StatCard icon={Briefcase} color="#60a5fa"
