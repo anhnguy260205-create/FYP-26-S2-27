@@ -25,10 +25,12 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+  // localStorage first — sessionStorage clears on tab close
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
+      localStorage.removeItem("currentUser");
       sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
@@ -36,6 +38,7 @@ function DropDownMenu() {
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
+        localStorage.removeItem("currentUser");
         sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
@@ -51,6 +54,9 @@ function DropDownMenu() {
                      group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-[opacity,transform,visibility] duration-200 ease-out z-50">
       <button onClick={() => navigate("/expert/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
+      </button>
+      <button onClick={() => navigate("/reviews")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Reviews
       </button>
       <div className="border-t border-white/10" />
       <button onClick={() => navigate("/about-us")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
@@ -68,8 +74,8 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-  const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
+  const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
 
@@ -84,7 +90,9 @@ function Profile() {
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
       </div>
-      <span className="hidden xl:inline">{currentUser?.username || currentUser?.user_name || "Guest"}</span>
+      <span className="hidden xl:inline">
+        {currentUser?.full_name || currentUser?.username || currentUser?.user_name || "User"}
+      </span>
     </button>
   );
 }
@@ -104,14 +112,15 @@ function ExpertHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  // localStorage first — sessionStorage clears on tab close
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
     getNotifications(currentUser.user_id)
       .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
-      .catch(() => { });
+      .catch(() => {});
   }, [currentUser?.user_id]);
 
   useEffect(() => {
@@ -123,6 +132,7 @@ function ExpertHeader() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
+      localStorage.removeItem("currentUser");
       sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
@@ -130,6 +140,7 @@ function ExpertHeader() {
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
+        localStorage.removeItem("currentUser");
         sessionStorage.removeItem("currentUser");
         navigate("/");
       }
@@ -155,20 +166,26 @@ function ExpertHeader() {
       activePaths: ["/expert/questions"],
       onClick: () => navigate("/expert/questions"),
     },
+
     {
-      label: "My Portfolio",
-      activePaths: ["/expert/portfolio", "/expert/create-portfolio"],
-      onClick: () => navigate("/expert/portfolio"),
+      label: "Browse Experts",
+      activePaths: ["/investor/expertportfolio", "/investor/expertdetails"],
+      onClick: () => navigate("/investor/expertportfolio"),
     },
     {
-      label: "Learning Content",
-      activePaths: ["/expert/knowledge-hub"],
-      onClick: () => navigate("/expert/knowledge-hub"),
+      label: "Educational Content",
+      activePaths: ["/investor/educationcontent"],
+      onClick: () => navigate("/investor/educationcontent"),
     },
     {
       label: "Community Forum",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
+    },
+    {
+      label: "Compensation",
+      activePaths: ["/expert/compensation"],
+      onClick: () => navigate("/expert/compensation"),
     },
   ];
 
@@ -208,8 +225,7 @@ function ExpertHeader() {
                   )}
                 </a>
                 <span
-                  className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"
-                    }`}
+                  className={`absolute -bottom-1 left-2.5 right-2.5 h-0.75 rounded-full transition-transform duration-300 ease-out origin-left ${active ? "bg-[#00D3F2] scale-x-100" : "bg-slate-300 scale-x-0 group-hover:scale-x-100"}`}
                 />
                 {link.submenu && <NavDropdown items={link.submenu} />}
               </div>
@@ -294,6 +310,12 @@ function ExpertHeader() {
                 className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
               >
                 Profile
+              </button>
+              <button
+                onClick={() => go("/reviews")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
+                Reviews
               </button>
               <button
                 onClick={handleLogout}

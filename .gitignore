@@ -7,4 +7,4 @@ backend/local_ca_bundle.pem
 __pycache__/
 *.pyc
 node_modules
-
+*.zip
