@@ -57,6 +57,9 @@ function DropDownMenu() {
       <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Subscription
       </button>
+      <button onClick={() => navigate("/reviews")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Reviews
+      </button>
       <div className="border-t border-white/10" />
       <button onClick={() => navigate("/about-us")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         About Us
@@ -345,6 +348,12 @@ function GeneralHeader() {
                 className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
               >
                 Subscription
+              </button>
+              <button
+                onClick={() => go("/reviews")}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
+                Reviews
               </button>
               <button
                 onClick={handleLogout}

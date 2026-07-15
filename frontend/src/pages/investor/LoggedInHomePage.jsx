@@ -641,6 +641,8 @@ function WatchlistSection() {
   );
 }
 
+
+
 function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
   const price = snapshot?.p ?? null;
   const prev = snapshot?.previousClose ?? null;
@@ -920,7 +922,7 @@ function LoggedInHomePage() {
           <AIInsightsSection portfolioData={portfolioData} />
           <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
           <WatchlistSection />
-          <PopularStocksSection />
+    
 
 
           </div>
