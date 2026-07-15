@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.control.controller.expertc import ExpertPortfolioController
 from app.entity.models.expert import Expert
 from app.entity.models.expertprofileview import ExpertProfileView
+from app.entity.models.expertfollow import ExpertFollow
 from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
@@ -71,8 +72,31 @@ def public_expert_profile(user_id: str,
             "risk_tolerance": info.get("risk_tolerance"),
             "verification_status": info.get("verification_status"),
             "address": info.get("address"),
+            "follower_count": ExpertFollow.get_follower_count(user_id),
+            "is_following": ExpertFollow.is_following(current_user["user_id"], user_id),
         },
     }
+
+
+# ── Follow / unfollow (investor-facing) ──────────────────────────────────────
+
+@router.get("/{expert_user_id}/followers")
+def get_follower_status(expert_user_id: str, current_user: dict = Depends(get_current_user)):
+    return {
+        "success": True,
+        "follower_count": ExpertFollow.get_follower_count(expert_user_id),
+        "is_following": ExpertFollow.is_following(current_user["user_id"], expert_user_id),
+    }
+
+
+@router.post("/{expert_user_id}/follow")
+def follow_expert(expert_user_id: str, current_user: dict = Depends(get_current_user)):
+    return ExpertFollow.follow(current_user["user_id"], expert_user_id)
+
+
+@router.delete("/{expert_user_id}/follow")
+def unfollow_expert(expert_user_id: str, current_user: dict = Depends(get_current_user)):
+    return ExpertFollow.unfollow(current_user["user_id"], expert_user_id)
 
 
 class HoldingRequest(BaseModel):

@@ -205,7 +205,7 @@ export default function StockPrediction({ symbol, livePrice }) {
           <div className="text-center">
             <div className="text-[11px] text-slate-500 uppercase tracking-wide">{days}-day target</div>
             <div className="text-lg font-bold tabular-nums" style={{ color: dirColor }}>
-              ${finalPrice.toFixed(2)}
+              ${finalPrice?.toFixed(2) ?? "—"}
             </div>
           </div>
           <div className="text-right">
@@ -225,7 +225,7 @@ export default function StockPrediction({ symbol, livePrice }) {
               return (
                 <div key={i} className="flex items-center gap-3 text-xs">
                   <span className="text-slate-500 w-14 shrink-0">Day {p.day ?? "+"}</span>
-                  <span className="text-slate-200 w-16 tabular-nums shrink-0">${p.price.toFixed(2)}</span>
+                  <span className="text-slate-200 w-16 tabular-nums shrink-0">${p.price?.toFixed(2) ?? "—"}</span>
                   <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${width}%`, background: chg >= 0 ? UP : DOWN }} />
                   </div>

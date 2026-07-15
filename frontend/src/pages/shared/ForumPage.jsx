@@ -228,7 +228,7 @@ function RoleBadge({ role }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ForumPage() {
     const navigate = useNavigate();
-    const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
+    const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}"));
     const role = String(currentUser?.role || "").toLowerCase();
     const isExpert = role === "expert";
     const userId = currentUser?.user_id || currentUser?.id || "";
