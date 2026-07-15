@@ -52,6 +52,7 @@ from app.entity.models.notification import Notification, NotificationBroadcast
 from app.entity.models.order_book import OrderBook
 from app.entity.models.predictionusage import PredictionUsage
 from app.entity.models.expertfollow import ExpertFollow
+from app.entity.models.expertportfolioreview import ExpertPortfolioReview
 from app.entity.models.expertcompensation import ExpertCompensationLedger
 from app.boundary.stock_ws import (
     router as stock_ws_router,
@@ -118,6 +119,7 @@ def ensure_all_schemas(engine):
         ("forum_reply",  "updated_at",            "ALTER TABLE forum_reply ADD COLUMN updated_at DATETIME NULL"),
         ("watchlist",    "user_id",               "ALTER TABLE watchlist ADD COLUMN user_id VARCHAR(50) NULL"),
         ("notification", "broadcast_id",           "ALTER TABLE notification ADD COLUMN broadcast_id INT NULL"),
+        ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
     ]
 
     with engine.connect() as conn:
@@ -185,6 +187,19 @@ def ensure_all_schemas(engine):
             conn.commit()
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist investor_id/user_id backfill: {e}")
+
+        # expert_follow.investor_id must become nullable (experts have no investor
+        # row, and now experts can follow other experts too), and existing rows
+        # need follower_user_id backfilled from their investor's user_id.
+        try:
+            conn.execute(text("ALTER TABLE expert_follow MODIFY investor_id VARCHAR(50) NULL"))
+            conn.execute(text(
+                "UPDATE expert_follow ef JOIN investor i ON ef.investor_id = i.investor_id "
+                "SET ef.follower_user_id = i.user_id WHERE ef.follower_user_id IS NULL"
+            ))
+            conn.commit()
+        except Exception as e:
+            print(f"[SCHEMA] Skipped expert_follow investor_id/follower_user_id backfill: {e}")
     print("[SCHEMA] All schema patches complete.")
 
 

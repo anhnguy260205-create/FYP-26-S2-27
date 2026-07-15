@@ -175,7 +175,7 @@ function ProfileSummarySection({ expertInfo, loading, userId, compensation }) {
         action={<ViewAllLink onClick={() => navigate("/expert/edit-profile")}>Edit Profile</ViewAllLink>}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 ">
         {/* Dominant card — rating */}
         <div className={`lg:col-span-3 ${CARD_DOMINANT} p-7 flex flex-col justify-between gap-6`}>
           <div>
@@ -196,6 +196,10 @@ function ProfileSummarySection({ expertInfo, loading, userId, compensation }) {
                 className={i < Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-slate-700"}
               />
             ))}
+          </div>
+          <div>
+            <p className="text-sm text-slate-400 mb-2">Followers</p>
+
           </div>
         </div>
 

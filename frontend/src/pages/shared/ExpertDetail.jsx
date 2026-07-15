@@ -5,12 +5,15 @@ import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
-import { getExpertPortfolio, followExpert, unfollowExpert } from "../../api/expertApi.js";
+import {
+    getExpertPortfolio, followExpert, unfollowExpert,
+    getPortfolioReviews, submitPortfolioReview, deletePortfolioReview,
+} from "../../api/expertApi.js";
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
     Mail, Link2, MapPin, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
-    Users, UserPlus, UserCheck,
+    Users, UserPlus, UserCheck, X, Trash2,
 } from "lucide-react";
 
 /*
@@ -71,33 +74,122 @@ function formatDate(value) {
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const SEGMENT_COLORS = ["#06b6d4", "#3b82f6", "#6366f1", "#22c55e", "#a855f7", "#f59e0b"];
+// Validated categorical palette (dark-mode steps, see dataviz skill's
+// palette.md) — only the first 4 slots clear the CVD floor once any two
+// segments can end up adjacent, so allocation folds past the top 4 holdings
+// into a neutral "Other" slice rather than adding a 5th hue.
+const ALLOCATION_COLORS = ["#3987e5", "#008300", "#d55181", "#c98500"];
+const ALLOCATION_OTHER_COLOR = "#64748b";
 
-function AllocationBar({ holdings }) {
-    const segments = holdings.filter(h => Number(h.allocation_percentage || 0) > 0);
+function AllocationPie({ holdings }) {
+    const [hovered, setHovered] = useState(null);
+
+    const sorted = [...holdings]
+        .filter(h => Number(h.allocation_percentage || 0) > 0)
+        .sort((a, b) => Number(b.allocation_percentage || 0) - Number(a.allocation_percentage || 0));
+
+    const top = sorted.slice(0, 4);
+    const otherPct = sorted.slice(4)
+        .reduce((s, h) => s + Number(h.allocation_percentage || 0), 0);
+
+    const segments = [
+        ...top.map((h, i) => ({
+            label: h.ticker,
+            pct: Number(h.allocation_percentage || 0),
+            color: ALLOCATION_COLORS[i],
+        })),
+        ...(otherPct > 0 ? [{ label: "Other", pct: otherPct, color: ALLOCATION_OTHER_COLOR }] : []),
+    ];
+    const total = segments.reduce((s, seg) => s + seg.pct, 0) || 1;
+
+    const size = 260;
+    const strokeWidth = 32;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const gap = 5;
+
+    let offset = 0;
+    const arcs = segments.map(seg => {
+        const rawLen = (seg.pct / total) * circumference;
+        const arc = {
+            ...seg,
+            dasharray: `${Math.max(rawLen - gap, 0)} ${circumference}`,
+            dashoffset: -offset,
+        };
+        offset += rawLen;
+        return arc;
+    });
+
+    const hoveredArc = hovered != null ? arcs[hovered] : null;
+
     return (
-        <div>
-            <div className="flex overflow-hidden rounded-full h-3"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                {segments.map((h, i) => (
-                    <div key={`${h.ticker}-${i}`}
-                        title={`${h.ticker} ${h.allocation_percentage}%`}
-                        style={{
-                            width: `${Number(h.allocation_percentage || 0)}%`,
-                            background: SEGMENT_COLORS[i % SEGMENT_COLORS.length],
-                        }} />
-                ))}
+        <div className="flex flex-col items-center gap-6">
+            <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+                    style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
+                    <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
+                        stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+                    {arcs.map((arc, i) => (
+                        <circle key={i} cx={size / 2} cy={size / 2} r={radius} fill="none"
+                            stroke={arc.color}
+                            strokeWidth={hovered === i ? strokeWidth + 6 : strokeWidth}
+                            strokeLinecap="round"
+                            strokeDasharray={arc.dasharray} strokeDashoffset={arc.dashoffset}
+                            style={{
+                                opacity: hovered == null || hovered === i ? 1 : 0.35,
+                                cursor: "pointer",
+                                transition: "opacity 150ms ease, stroke-width 150ms ease",
+                            }}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`${arc.label}: ${arc.pct.toFixed(1)}%`}
+                            onMouseEnter={() => setHovered(i)}
+                            onMouseLeave={() => setHovered(null)}
+                            onFocus={() => setHovered(i)}
+                            onBlur={() => setHovered(null)}>
+                            <title>{`${arc.label}: ${arc.pct.toFixed(1)}%`}</title>
+                        </circle>
+                    ))}
+                </svg>
+                <div style={{
+                    position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", pointerEvents: "none",
+                }}>
+                    {hoveredArc ? (
+                        <>
+                            <div className="text-3xl font-bold">{hoveredArc.pct.toFixed(1)}%</div>
+                            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                                {hoveredArc.label}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-3xl font-bold">{sorted.length}</div>
+                            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                                {sorted.length === 1 ? "Holding" : "Holdings"}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                {segments.map((h, i) => (
-                    <span key={`${h.ticker}-lg-${i}`} className="flex items-center gap-1.5 text-xs"
-                        style={{ color: "rgba(255,255,255,0.55)" }}>
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+                {arcs.map((arc, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs"
+                        style={{
+                            padding: "5px 10px", borderRadius: 8, cursor: "pointer",
+                            opacity: hovered == null || hovered === i ? 1 : 0.45,
+                            background: hovered === i ? "rgba(255,255,255,0.07)" : "transparent",
+                            transition: "opacity 150ms ease, background 150ms ease",
+                        }}
+                        onMouseEnter={() => setHovered(i)}
+                        onMouseLeave={() => setHovered(null)}>
                         <span style={{
-                            width: 8, height: 8, borderRadius: 2,
-                            background: SEGMENT_COLORS[i % SEGMENT_COLORS.length],
+                            width: 10, height: 10, borderRadius: 3,
+                            background: arc.color, flexShrink: 0,
                         }} />
-                        {h.ticker} {Number(h.allocation_percentage || 0).toFixed(1)}%
-                    </span>
+                        <span style={{ fontWeight: 600, color: "#f8fafc" }}>{arc.label}</span>
+                        <span style={{ color: "rgba(255,255,255,0.45)" }}>{arc.pct.toFixed(1)}%</span>
+                    </div>
                 ))}
             </div>
         </div>
@@ -122,7 +214,7 @@ function PortfolioSection({ portfolio, error }) {
     const TD = { padding: "12px 14px", fontSize: 13, color: "rgba(255,255,255,0.75)", verticalAlign: "top" };
 
     return (
-        <div style={{ ...CARD, padding: 30 }} className="mt-6">
+        <div style={{ ...CARD, padding: 30 }}>
             {/* Portfolio header */}
             <div className="flex justify-between items-start flex-wrap gap-3">
                 <div className="flex items-center gap-3">
@@ -185,7 +277,7 @@ function PortfolioSection({ portfolio, error }) {
                     <h3 className="text-sm font-bold mb-2" style={{ color: "rgba(255,255,255,0.7)" }}>
                         Allocation
                     </h3>
-                    <AllocationBar holdings={holdings} />
+                    <AllocationPie holdings={holdings} />
                 </div>
             )}
 
@@ -247,6 +339,88 @@ function PortfolioSection({ portfolio, error }) {
     );
 }
 
+function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, onRate }) {
+    return (
+        <div style={{ ...CARD, padding: 30 }}>
+            <div className="flex justify-between items-start flex-wrap gap-3">
+                <div>
+                    <h2 className="text-xl font-bold">Portfolio Reviews</h2>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                        What other investors and experts think of this portfolio
+                    </p>
+                </div>
+                {!isSelf && (
+                    <button onClick={onRate}
+                        className="flex items-center gap-2"
+                        style={{
+                            padding: "10px 18px", borderRadius: 12,
+                            cursor: "pointer", fontWeight: 600, fontSize: 14,
+                            color: "#e2e8f0", background: "rgba(255,255,255,0.08)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                        }}>
+                        <Star size={16} />
+                        {myReview ? "Edit Your Review" : "Write a Review"}
+                    </button>
+                )}
+            </div>
+
+            <div className="flex items-center gap-4 mt-5">
+                <div className="text-4xl font-bold">{stats.total ? stats.average.toFixed(1) : "—"}</div>
+                <div>
+                    <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(n => (
+                            <Star key={n} size={16}
+                                fill={stats.average >= n ? "#f59e0b" : "none"}
+                                color={stats.average >= n ? "#f59e0b" : "rgba(255,255,255,0.3)"} />
+                        ))}
+                    </div>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+                        {stats.total} review{stats.total === 1 ? "" : "s"}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+                {loading ? (
+                    <>
+                        <div className="h-16 bg-slate-800/40 rounded-xl animate-pulse" />
+                        <div className="h-16 bg-slate-800/40 rounded-xl animate-pulse" />
+                    </>
+                ) : reviews.length === 0 ? (
+                    <div className="p-6 text-center rounded-xl"
+                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+                        No reviews yet — be the first to rate this portfolio.
+                    </div>
+                ) : (
+                    reviews.map(r => (
+                        <div key={r.review_id} className="p-4 rounded-xl"
+                            style={{ background: "rgba(255,255,255,0.04)" }}>
+                            <div className="flex justify-between items-center mb-1">
+                                <span style={{ fontWeight: 600, fontSize: 14 }}>{r.reviewer_name}</span>
+                                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                                    {formatDate(r.updated_at || r.created_at)}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1 mb-2">
+                                {[1, 2, 3, 4, 5].map(n => (
+                                    <Star key={n} size={13}
+                                        fill={r.rating >= n ? "#f59e0b" : "none"}
+                                        color={r.rating >= n ? "#f59e0b" : "rgba(255,255,255,0.25)"} />
+                                ))}
+                            </div>
+                            {r.comment && (
+                                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>
+                                    {r.comment}
+                                </p>
+                            )}
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
 function LimitLock({ viewsLimit, navigate }) {
     return (
         <div style={{ ...CARD, padding: "48px 30px", textAlign: "center" }}
@@ -271,7 +445,7 @@ function LimitLock({ viewsLimit, navigate }) {
                     background: "linear-gradient(90deg, #d4a017, #b8860b)",
                     boxShadow: "0 10px 22px rgba(212,160,23,0.3)",
                 }}>
-                Upgrade to Premium →
+                Upgrade to Premium
             </button>
         </div>
     );
@@ -297,6 +471,17 @@ function ExpertDetails() {
     const [following, setFollowing] = useState(false);
     const [followerCount, setFollowerCount] = useState(0);
     const [followBusy, setFollowBusy] = useState(false);
+    const [isSelf, setIsSelf] = useState(false);
+
+    const [portfolioRating, setPortfolioRating] = useState({ average: 0, total: 0 });
+    const [showRateModal, setShowRateModal] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [myReview, setMyReview] = useState(null);
+    const [rateValue, setRateValue] = useState(5);
+    const [rateHover, setRateHover] = useState(0);
+    const [rateComment, setRateComment] = useState("");
+    const [rateBusy, setRateBusy] = useState(false);
 
     useEffect(() => {
         if (!userId) { setError("No expert selected."); setLoading(false); return; }
@@ -311,6 +496,8 @@ function ExpertDetails() {
                     setQuota({ views_used: res.views_used, views_limit: res.views_limit });
                     setFollowing(!!res.profile?.is_following);
                     setFollowerCount(res.profile?.follower_count ?? 0);
+                    setIsSelf(!!res.profile?.is_self);
+                    setPortfolioRating(res.profile?.portfolio_rating || { average: 0, total: 0 });
                     // Load the expert-created portfolio only after the profile
                     // view is allowed (keeps the basic-plan limit meaningful).
                     getExpertPortfolio(userId)
@@ -322,6 +509,7 @@ function ExpertDetails() {
                             console.error("[ExpertDetail] portfolio load failed:", err);
                             setPortfolioError(err?.message || "Request failed.");
                         });
+                    loadReviews();
                 } else {
                     setError(res.message || "Expert not found.");
                 }
@@ -349,6 +537,72 @@ function ExpertDetails() {
         }
     };
 
+    const loadReviews = async () => {
+        if (!userId) return;
+        setReviewsLoading(true);
+        try {
+            const res = await getPortfolioReviews(userId);
+            if (res.success) {
+                setReviews(res.reviews || []);
+                setPortfolioRating(res.stats || { average: 0, total: 0 });
+                setMyReview(res.my_review || null);
+                setRateValue(res.my_review?.rating || 5);
+                setRateComment(res.my_review?.comment || "");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] load reviews failed:", err);
+        } finally {
+            setReviewsLoading(false);
+        }
+    };
+
+    const openRateModal = () => setShowRateModal(true);
+
+    const handleSubmitReview = async () => {
+        if (rateBusy || !userId) return;
+        setRateBusy(true);
+        try {
+            const res = await submitPortfolioReview(userId, { rating: rateValue, comment: rateComment });
+            if (res.success) {
+                setMyReview(res.review);
+                setPortfolioRating(res.stats);
+                setReviews(prev => {
+                    const rest = prev.filter(r => r.review_id !== res.review.review_id);
+                    return [res.review, ...rest];
+                });
+            } else {
+                alert(res.message || "Could not submit review.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] submit review failed:", err);
+            alert("Could not submit review. Check your connection and try again.");
+        } finally {
+            setRateBusy(false);
+        }
+    };
+
+    const handleDeleteReview = async () => {
+        if (rateBusy || !userId || !myReview) return;
+        setRateBusy(true);
+        try {
+            const res = await deletePortfolioReview(userId);
+            if (res.success) {
+                setReviews(prev => prev.filter(r => r.review_id !== myReview.review_id));
+                setMyReview(null);
+                setPortfolioRating(res.stats);
+                setRateValue(5);
+                setRateComment("");
+            } else {
+                alert(res.message || "Could not delete review.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] delete review failed:", err);
+            alert("Could not delete review. Check your connection and try again.");
+        } finally {
+            setRateBusy(false);
+        }
+    };
+
     const askQuestion = () => {
         if (isPremium) {
             openChatWith({
@@ -361,6 +615,15 @@ function ExpertDetails() {
         }
     };
 
+    // Profile header (avatar, follow/rate, stats) stays fixed above the tabs;
+    // only the panel below switches.
+    const [tab, setTab] = useState("overview");
+    const TABS = [
+        { key: "overview", label: "Overview" },
+        { key: "portfolio", label: "Portfolio" },
+        { key: "reviews", label: "Reviews" },
+    ];
+
     return (
         <motion.div
             className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -368,7 +631,8 @@ function ExpertDetails() {
         >
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-            <main className="flex-1 p-8">
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+
                 {/* Back Button */}
                 <button
                     onClick={() => navigate("/investor/expertportfolio")}
@@ -403,49 +667,34 @@ function ExpertDetails() {
                     <div style={{ ...CARD, padding: 30 }} className="text-center text-slate-400 text-sm">{error}</div>
                 ) : profile && (
                     <>
-                    <div style={{ ...CARD, padding: 30 }}>
-                        <div className="flex justify-between items-center flex-wrap gap-4">
-                            <div className="flex items-center gap-5">
-                                <div className="flex items-center justify-center"
-                                    style={{
-                                        width: 80, height: 80, borderRadius: "50%",
-                                        background: "linear-gradient(135deg,#f59e0b,#b45309)",
-                                        fontSize: 24, fontWeight: 700,
-                                    }}>
-                                    {initials(profile.full_name || profile.username)}
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h1 className="text-3xl font-bold">{profile.full_name || profile.username}</h1>
-                                        {profile.verification_status === "approved" && (
-                                            <BadgeCheck size={22} color="#22c55e" />
-                                        )}
-                                    </div>
-                                    <p style={{ color: "rgba(255,255,255,0.5)" }}>
-                                        Verified Investment Expert
-                                        {profile.experience_years ? ` · ${profile.experience_years} years experience` : ""}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Follow / Ask Question — both investor-only actions.
-                                Subscription plans are an investor concept, so experts never see these. */}
-                            {!isExpert && (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <button onClick={handleFollowToggle} disabled={followBusy}
-                                        className="flex items-center gap-2"
+                        <div style={{ ...CARD, padding: 30 }}>
+                            <div className="flex justify-between items-center flex-wrap gap-4">
+                                <div className="flex items-center gap-5">
+                                    <div className="flex items-center justify-center"
                                         style={{
-                                            padding: "12px 20px", borderRadius: 12,
-                                            cursor: followBusy ? "not-allowed" : "pointer",
-                                            fontWeight: 600, fontSize: 14,
-                                            opacity: followBusy ? 0.7 : 1,
-                                            color: following ? "#e2e8f0" : "#0f172a",
-                                            background: following ? "rgba(255,255,255,0.08)" : "#fff",
-                                            border: following ? "1px solid rgba(255,255,255,0.2)" : "none",
+                                            width: 80, height: 80, borderRadius: "50%",
+                                            background: "linear-gradient(135deg,#f59e0b,#b45309)",
+                                            fontSize: 24, fontWeight: 700,
                                         }}>
-                                        {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                                        {following ? "Following" : "Follow"}
-                                    </button>
+                                        {initials(profile.full_name || profile.username)}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h1 className="text-3xl font-bold">{profile.full_name || profile.username}</h1>
+                                            {profile.verification_status === "approved" && (
+                                                <BadgeCheck size={22} color="#22c55e" />
+                                            )}
+                                        </div>
+                                        <p style={{ color: "rgba(255,255,255,0.5)" }}>
+                                            Verified Investment Expert
+                                            {profile.experience_years ? ` · ${profile.experience_years} years experience` : ""}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Ask Question — premium jumps into Messages. Subscription plans
+                                    are an investor concept, so experts never see this. */}
+                                {!isExpert && (
                                     <button onClick={askQuestion}
                                         className="flex items-center gap-2"
                                         style={{
@@ -461,57 +710,193 @@ function ExpertDetails() {
                                         <MessageSquare size={16} />
                                         {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
                                     </button>
+                                )}
+                            </div>
+
+                            {/* Follow / Rate — any signed-in user may follow or rate another
+                                expert's portfolio, except themselves. */}
+                            {!isSelf && (
+                                <div className="flex items-center gap-3 mt-4">
+                                    <button onClick={handleFollowToggle} disabled={followBusy}
+                                        className="flex items-center gap-2"
+                                        style={{
+                                            padding: "10px 18px", borderRadius: 12,
+                                            cursor: followBusy ? "not-allowed" : "pointer",
+                                            fontWeight: 600, fontSize: 14,
+                                            opacity: followBusy ? 0.7 : 1,
+                                            color: following ? "#e2e8f0" : "#0f172a",
+                                            background: following ? "rgba(255,255,255,0.08)" : "#fff",
+                                            border: following ? "1px solid rgba(255,255,255,0.2)" : "none",
+                                        }}>
+                                        {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                                        {following ? "Following" : "Follow"}
+                                    </button>
+                                    <button onClick={openRateModal}
+                                        className="flex items-center gap-2"
+                                        style={{
+                                            padding: "10px 18px", borderRadius: 12,
+                                            cursor: "pointer",
+                                            fontWeight: 600, fontSize: 14,
+                                            color: "#e2e8f0",
+                                            background: "rgba(255,255,255,0.08)",
+                                            border: "1px solid rgba(255,255,255,0.2)",
+                                        }}>
+                                        <Star size={16} />
+                                        {myReview ? "Edit Rating" : "Rate"}
+                                    </button>
                                 </div>
                             )}
-                        </div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mt-8">
-                            <StatCard icon={Users} color="#a855f7"
-                                value={followerCount.toLocaleString()} label="Followers" />
-                            <StatCard icon={Star} color="#f59e0b"
-                                value={profile.rating ? Number(profile.rating).toFixed(1) : "—"} label="Rating" />
-                            <StatCard icon={Briefcase} color="#60a5fa"
-                                value={profile.experience_years ? `${profile.experience_years} Years` : "—"} label="Experience" />
-                            <StatCard icon={Shield} color="#22c55e"
-                                value={profile.risk_tolerance || "—"} label="Risk Style" />
-                            <StatCard icon={BadgeCheck} color="#00D3F2"
-                                value={profile.verification_status || "—"} label="Verification" />
-                        </div>
-
-                        {/* Core info */}
-                        <div className="mt-8">
-                            <h2 className="text-lg font-bold mb-3">Core Information</h2>
-                            <div className="grid gap-3 md:grid-cols-2">
-                                <InfoCard icon={Mail} label="Email">
-                                    <div style={{ fontSize: 14 }}>{profile.email_address || "—"}</div>
-                                </InfoCard>
-                                <InfoCard icon={Link2} label="LinkedIn">
-                                    {profile.linked_in_url ? (
-                                        <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
-                                            target="_blank" rel="noreferrer"
-                                            style={{ fontSize: 14, color: "#00D3F2", wordBreak: "break-all" }}>
-                                            {profile.linked_in_url}
-                                        </a>
-                                    ) : <div style={{ fontSize: 14 }}>—</div>}
-                                </InfoCard>
-                                <InfoCard icon={MapPin} label="Location">
-                                    <div style={{ fontSize: 14 }}>{profile.address || "—"}</div>
-                                </InfoCard>
-                                <InfoCard icon={Shield} label="Username">
-                                    <div style={{ fontSize: 14 }}>@{profile.username || "—"}</div>
-                                </InfoCard>
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mt-8">
+                                <StatCard icon={Users} color="#a855f7"
+                                    value={followerCount.toLocaleString()} label="Followers" />
+                                <StatCard icon={Star} color="#f59e0b"
+                                    value={portfolioRating.total ? `${portfolioRating.average.toFixed(1)} (${portfolioRating.total})` : "—"}
+                                    label="Portfolio Rating" />
+                                <StatCard icon={Briefcase} color="#60a5fa"
+                                    value={profile.experience_years ? `${profile.experience_years} Years` : "—"} label="Experience" />
+                                <StatCard icon={Shield} color="#22c55e"
+                                    value={profile.risk_tolerance || "—"} label="Risk Style" />
+                                <StatCard icon={BadgeCheck} color="#00D3F2"
+                                    value={profile.verification_status || "—"} label="Verification" />
                             </div>
                         </div>
-                    </div>
 
-                    {/* Expert-created portfolio */}
-                    <PortfolioSection portfolio={portfolio} error={portfolioError} />
+                        {/* Tab bar — header above stays put; only the panel below switches */}
+                        <div style={{
+                            display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}>
+                            {TABS.map((t) => (
+                                <button key={t.key} onClick={() => setTab(t.key)}
+                                    style={{
+                                        padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
+                                        cursor: "pointer", color: tab === t.key ? "#fff" : "#94a3b8",
+                                        borderBottom: tab === t.key ? "2px solid #3b82f6" : "2px solid transparent",
+                                    }}>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {tab === "overview" && (
+                            <div style={{ ...CARD, padding: 30 }}>
+                                <h2 className="text-lg font-bold mb-3">Core Information</h2>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <InfoCard icon={Mail} label="Email">
+                                        <div style={{ fontSize: 14 }}>{profile.email_address || "—"}</div>
+                                    </InfoCard>
+                                    <InfoCard icon={Link2} label="LinkedIn">
+                                        {profile.linked_in_url ? (
+                                            <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
+                                                target="_blank" rel="noreferrer"
+                                                style={{ fontSize: 14, color: "#00D3F2", wordBreak: "break-all" }}>
+                                                {profile.linked_in_url}
+                                            </a>
+                                        ) : <div style={{ fontSize: 14 }}>—</div>}
+                                    </InfoCard>
+                                    <InfoCard icon={MapPin} label="Location">
+                                        <div style={{ fontSize: 14 }}>{profile.address || "—"}</div>
+                                    </InfoCard>
+                                    <InfoCard icon={Shield} label="Username">
+                                        <div style={{ fontSize: 14 }}>@{profile.username || "—"}</div>
+                                    </InfoCard>
+                                </div>
+                            </div>
+                        )}
+
+                        {tab === "portfolio" && (
+                            <PortfolioSection portfolio={portfolio} error={portfolioError} />
+                        )}
+
+                        {tab === "reviews" && (
+                            <PortfolioReviewsSection
+                                stats={portfolioRating}
+                                reviews={reviews}
+                                loading={reviewsLoading}
+                                isSelf={isSelf}
+                                myReview={myReview}
+                                onRate={openRateModal}
+                            />
+                        )}
                     </>
                 )}
             </main>
 
             <Footer />
+
+            {/* Rate this expert's portfolio — modal */}
+            {showRateModal && (
+                <div className="fixed inset-0 flex items-center justify-center p-4"
+                    style={{ background: "rgba(0,0,0,0.6)", zIndex: 50 }}
+                    onClick={() => setShowRateModal(false)}>
+                    <div style={{
+                        ...CARD, padding: 26, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto",
+                        background: "#0f172a", border: "1px solid rgba(255,255,255,0.12)",
+                        boxShadow: "0 25px 60px -15px rgba(0,0,0,0.6)",
+                    }}
+                        onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Rate this portfolio</h2>
+                            <button onClick={() => setShowRateModal(false)}
+                                style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-1 mb-4">
+                            {[1, 2, 3, 4, 5].map(n => (
+                                <Star key={n} size={28}
+                                    onClick={() => setRateValue(n)}
+                                    onMouseEnter={() => setRateHover(n)}
+                                    onMouseLeave={() => setRateHover(0)}
+                                    style={{ cursor: "pointer" }}
+                                    fill={(rateHover || rateValue) >= n ? "#f59e0b" : "none"}
+                                    color={(rateHover || rateValue) >= n ? "#f59e0b" : "rgba(255,255,255,0.3)"}
+                                />
+                            ))}
+                        </div>
+
+                        <textarea
+                            value={rateComment}
+                            onChange={e => setRateComment(e.target.value)}
+                            placeholder="Share your thoughts on this portfolio's holdings, strategy or performance…"
+                            rows={4}
+                            className="w-full mb-4"
+                            style={{
+                                padding: 12, borderRadius: 10, resize: "vertical",
+                                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                                color: "#fff", fontSize: 14,
+                            }}
+                        />
+
+                        <div className="flex items-center gap-3">
+                            <button onClick={handleSubmitReview} disabled={rateBusy}
+                                className="flex-1"
+                                style={{
+                                    padding: "10px 18px", borderRadius: 10, border: "none",
+                                    cursor: rateBusy ? "not-allowed" : "pointer", opacity: rateBusy ? 0.7 : 1,
+                                    fontWeight: 600, fontSize: 14, color: "#0f172a", background: "#fff",
+                                }}>
+                                {myReview ? "Update Review" : "Submit Review"}
+                            </button>
+                            {myReview && (
+                                <button onClick={handleDeleteReview} disabled={rateBusy}
+                                    title="Delete your review"
+                                    style={{
+                                        padding: "10px 14px", borderRadius: 10,
+                                        cursor: rateBusy ? "not-allowed" : "pointer",
+                                        background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
+                                        color: "#f87171",
+                                    }}>
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 }
