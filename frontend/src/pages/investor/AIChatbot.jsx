@@ -123,7 +123,7 @@ function AIChatbot() {
     } = useAIChatSession();
     const inputRef = useRef(null);
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
     const isPremium = currentUser?.subscription_status === "premium"
         || currentUser?.investor_subscription_status === "premium"
         || currentUser?.subscription_status === "active";

@@ -399,7 +399,7 @@ function RealTimeDashBoardPage() {
       s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [stocks, searchQuery]);
-  const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
+  const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}"));
   const role = String(currentUser?.role || "").toLowerCase();
 
   const isExpert = role === "expert";

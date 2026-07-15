@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime
+from sqlalchemy import Column, String, DateTime
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
 from datetime import datetime
@@ -13,8 +13,7 @@ class Watchlist(Base):
 
     watchlist_id = Column(String(50), primary_key=True,
                           default=lambda: f"watchlist_{uuid4()}")
-    investor_id = Column(String(50), ForeignKey(
-        "investor.investor_id"), nullable=True)
+
     user_id = Column(String(50), nullable=True)
     stock_symbol = Column(String(20), nullable=False)
     added_at = Column(DateTime, default=lambda: datetime.now(
@@ -54,7 +53,6 @@ class Watchlist(Base):
                 return {"success": False, "message": "Stock is already in your watchlist"}
 
             entry = Watchlist(
-                investor_id=investor.investor_id if investor else None,
                 user_id=user_id,
                 stock_symbol=stock_symbol.upper()
             )
