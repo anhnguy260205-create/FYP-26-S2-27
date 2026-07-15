@@ -1,0 +1,310 @@
+import { useEffect, useState } from "react";
+import { Trash2, Search, Star, X, AlertTriangle, Flag } from "lucide-react";
+import AdminLayout from "../../layout/AdminPage.jsx";
+import { adminGetAllReviews, adminDeleteReview, adminGetFlaggedReviews } from "../../api/reviewApi.js";
+
+function formatDate(value) {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function StarRow({ value }) {
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} size={13}
+                    fill={i <= Math.round(value) ? "#f59e0b" : "none"}
+                    color={i <= Math.round(value) ? "#f59e0b" : "#d1d5db"} />
+            ))}
+        </div>
+    );
+}
+
+function roleBadge(role) {
+    const r = String(role || "").toLowerCase();
+    if (r === "expert")  return "bg-cyan-100 text-cyan-700";
+    if (r === "premium") return "bg-amber-100 text-amber-700";
+    return "bg-gray-100 text-gray-600";
+}
+
+// ── Delete confirmation modal ──────────────────────────────────────────────────
+const PRESET_REASONS = [
+    "Violated community guidelines",
+    "Contains spam or promotional content",
+    "Offensive or inappropriate language",
+    "Fake or misleading review",
+    "Irrelevant to the platform",
+    "Other",
+];
+
+function DeleteModal({ review, onConfirm, onCancel, deleting }) {
+    const [reason, setReason] = useState(PRESET_REASONS[0]);
+    const [custom, setCustom] = useState("");
+    const finalReason = reason === "Other" ? custom.trim() : reason;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={20} className="text-red-600" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-900">Remove Review</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">by <span className="font-semibold">{review.author}</span></p>
+                        </div>
+                    </div>
+                    <button onClick={onCancel}><X size={18} className="text-slate-400 hover:text-slate-600" /></button>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 mb-5 text-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                        <StarRow value={review.rating} />
+                        {review.title && <span className="font-semibold text-slate-800">{review.title}</span>}
+                    </div>
+                    <p className="text-slate-600 leading-relaxed line-clamp-3">{review.comment}</p>
+                </div>
+                <div className="mb-5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Reason for removal</label>
+                    <div className="flex flex-col gap-2">
+                        {PRESET_REASONS.map((r) => (
+                            <label key={r} className="flex items-center gap-2.5 cursor-pointer">
+                                <input type="radio" name="reason" value={r}
+                                    checked={reason === r} onChange={() => setReason(r)} className="accent-red-600" />
+                                <span className={`text-sm ${reason === r ? "text-slate-900 font-semibold" : "text-slate-600"}`}>{r}</span>
+                            </label>
+                        ))}
+                    </div>
+                    {reason === "Other" && (
+                        <textarea value={custom} onChange={e => setCustom(e.target.value)}
+                            placeholder="Describe the reason…" rows={3}
+                            className="mt-3 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none resize-none" />
+                    )}
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-5 text-xs text-blue-700">
+                    <strong>Note:</strong> The user will automatically receive an in-app notification explaining the removal reason.
+                </div>
+                <div className="flex gap-3 justify-end">
+                    <button onClick={onCancel} disabled={deleting}
+                        className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-slate-600 hover:bg-gray-50">Cancel</button>
+                    <button onClick={() => onConfirm(finalReason)}
+                        disabled={deleting || (reason === "Other" && !custom.trim())}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50 transition-colors">
+                        <Trash2 size={14} /> {deleting ? "Removing…" : "Remove & Notify User"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────────
+function ReviewManagementPage() {
+    const [tab,          setTab]         = useState("all");      // "all" | "flagged"
+    const [reviews,      setReviews]     = useState([]);
+    const [flagged,      setFlagged]     = useState([]);
+    const [loading,      setLoading]     = useState(true);
+    const [keyword,      setKeyword]     = useState("");
+    const [ratingFilter, setRatingFilter] = useState("all");
+    const [toDelete,     setToDelete]    = useState(null);
+    const [deleting,     setDeleting]    = useState(false);
+    const [toast,        setToast]       = useState(null);
+
+    const fetchAll = async () => {
+        setLoading(true);
+        try {
+            const [allData, flaggedData] = await Promise.all([
+                adminGetAllReviews().catch(() => null),
+                adminGetFlaggedReviews().catch(() => null),
+            ]);
+            if (allData?.success)     setReviews(allData.reviews || []);
+            if (flaggedData?.success) setFlagged(flaggedData.reviews || []);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchAll(); }, []);
+
+    function showToast(text, type = "success") {
+        setToast({ text, type });
+        setTimeout(() => setToast(null), 4000);
+    }
+
+    const handleConfirmDelete = async (reason) => {
+        if (!toDelete) return;
+        setDeleting(true);
+        try {
+            const data = await adminDeleteReview(toDelete.review_id, reason);
+            if (data?.success) {
+                setReviews(prev => prev.filter(r => r.review_id !== toDelete.review_id));
+                setFlagged(prev => prev.filter(r => r.review_id !== toDelete.review_id));
+                setToDelete(null);
+                showToast(`Review removed. ${toDelete.author} has been notified.`);
+            } else {
+                showToast(data?.message || "Failed to delete review.", "error");
+            }
+        } catch (err) {
+            showToast(err.message || "Failed to delete review.", "error");
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const avgRating = reviews.length > 0
+        ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+        : "0.0";
+
+    const filtered = (tab === "flagged" ? flagged : reviews).filter((r) => {
+        const matchRating  = ratingFilter === "all" || r.rating === Number(ratingFilter);
+        const matchKeyword = !keyword || [r.author, r.title, r.comment].some(
+            v => String(v || "").toLowerCase().includes(keyword.toLowerCase())
+        );
+        return matchRating && matchKeyword;
+    });
+
+    return (
+        <AdminLayout title="Review Management" subtitle="View, search and moderate platform reviews">
+
+            {/* Toast */}
+            {toast && (
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-semibold ${
+                    toast.type === "success"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
+                }`}>{toast.text}</div>
+            )}
+
+            {/* Summary stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                {[
+                    { label: "Total Reviews",    value: reviews.length },
+                    { label: "Average Rating",   value: `${avgRating} / 5` },
+                    { label: "5-Star Reviews",   value: reviews.filter(r => r.rating === 5).length },
+                    { label: "Flagged Reviews",  value: flagged.length, highlight: flagged.length > 0 },
+                ].map((stat) => (
+                    <div key={stat.label} className={`bg-white rounded-lg shadow p-4 ${stat.highlight ? "border-l-4 border-red-500" : ""}`}>
+                        <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
+                        <p className={`text-2xl font-bold ${stat.highlight && stat.value > 0 ? "text-red-600" : "text-slate-900"}`}>
+                            {stat.value}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Tab bar */}
+            <div className="flex gap-2 mb-5">
+                <button onClick={() => setTab("all")}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === "all" ? "bg-blue-600 text-white" : "bg-white border border-gray-200 text-slate-600 hover:bg-gray-50"}`}>
+                    All Reviews ({reviews.length})
+                </button>
+                <button onClick={() => setTab("flagged")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold ${tab === "flagged" ? "bg-red-600 text-white" : "bg-white border border-gray-200 text-slate-600 hover:bg-gray-50"}`}>
+                    <Flag size={13} />
+                    Flagged ({flagged.length})
+                    {flagged.length > 0 && tab !== "flagged" && (
+                        <span className="ml-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">{flagged.length}</span>
+                    )}
+                </button>
+            </div>
+
+            {/* Search + filter */}
+            <div className="bg-white rounded-lg shadow p-5 mb-5">
+                <div className="flex flex-wrap gap-3 items-center">
+                    <div className="relative flex-1 min-w-48">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input value={keyword} onChange={e => setKeyword(e.target.value)}
+                            placeholder="Search by name, title or content…"
+                            className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm outline-none" />
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                        {["all", "5", "4", "3", "2", "1"].map(val => (
+                            <button key={val} onClick={() => setRatingFilter(val)}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+                                    ratingFilter === val
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-white border border-gray-200 text-slate-600 hover:bg-gray-50"
+                                }`}>
+                                {val === "all" ? "All Ratings" : `${val} ★`}
+                            </button>
+                        ))}
+                    </div>
+                    <span className="text-sm text-slate-500 whitespace-nowrap">
+                        {loading ? "Loading…" : `${filtered.length} review${filtered.length !== 1 ? "s" : ""}`}
+                    </span>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-4">Reviewer</th>
+                            <th className="px-6 py-4">Role</th>
+                            <th className="px-6 py-4">Rating</th>
+                            <th className="px-6 py-4">Title</th>
+                            <th className="px-6 py-4">Comment</th>
+                            {tab === "flagged" && <th className="px-6 py-4">Reported For</th>}
+                            <th className="px-6 py-4">{tab === "flagged" ? "Reports" : "Helpful"}</th>
+                            <th className="px-6 py-4">Date</th>
+                            <th className="px-6 py-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan="9" className="px-6 py-10 text-center text-gray-400">Loading reviews…</td></tr>
+                        ) : filtered.length === 0 ? (
+                            <tr><td colSpan="9" className="px-6 py-10 text-center text-gray-400">
+                                {tab === "flagged" ? "No flagged reviews — all clear!" : "No reviews match your filters."}
+                            </td></tr>
+                        ) : (
+                            filtered.map(review => (
+                                <tr key={review.review_id} className={`border-b border-gray-100 hover:bg-gray-50 ${tab === "flagged" ? "bg-red-50/30" : ""}`}>
+                                    <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">{review.author || "—"}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadge(review.author_role)}`}>
+                                            {review.author_role || "member"}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4"><StarRow value={review.rating} /></td>
+                                    <td className="px-6 py-4 text-slate-700 max-w-40">
+                                        <div className="truncate">{review.title || "—"}</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 max-w-64">
+                                        <div className="line-clamp-2 text-xs leading-relaxed">{review.comment}</div>
+                                    </td>
+                                    {tab === "flagged" && (
+                                        <td className="px-6 py-4 text-xs text-slate-500 max-w-48">
+                                            {(review.flags || []).map((f, i) => (
+                                                <div key={i} className="mb-1 text-red-600 font-medium">{f.reason}</div>
+                                            ))}
+                                        </td>
+                                    )}
+                                    <td className="px-6 py-4 text-slate-500 text-center">
+                                        {tab === "flagged" ? (review.flag_count || 0) : (review.helpful_count || 0)}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{formatDate(review.created_at)}</td>
+                                    <td className="px-6 py-4">
+                                        <button onClick={() => setToDelete(review)}
+                                            className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors">
+                                            <Trash2 size={12} /> Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {toDelete && (
+                <DeleteModal review={toDelete} deleting={deleting}
+                    onCancel={() => setToDelete(null)}
+                    onConfirm={handleConfirmDelete} />
+            )}
+        </AdminLayout>
+    );
+}
+
+export default ReviewManagementPage;

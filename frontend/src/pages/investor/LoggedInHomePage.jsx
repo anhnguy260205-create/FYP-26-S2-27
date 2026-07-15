@@ -37,7 +37,16 @@ const RISK_TONE = {
 };
 
 const PLATFORM_FEATURES = [
-  
+  {
+    Icon: Wallet,
+    title: "Paper Trading Exchange",
+    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
+    to: "/realtimedashboard",
+    badge: "Live market prices",
+    cta: "Start trading",
+    accent: "cyan",
+    primary: true,
+  },
   {
     Icon: BrainCircuit,
     title: "AI Stock Predictions",
@@ -58,8 +67,8 @@ const PLATFORM_FEATURES = [
   },
   {
     Icon: Bot,
-    title: "AI Chatbot ",
-    description: "Get instant answers from our AI assistant",
+    title: "AI Chatbot & Expert Consultants",
+    description: "Get instant answers from our AI assistant, or browse and connect with verified market experts.",
     to: "/investor/aichatbot",
     badge: "Ask anything",
     cta: "Explore",
@@ -73,24 +82,6 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
-  },
-  {
-    Icon: Users,
-    title: "Expert Portfolios",
-    description: "Browse verified experts' live portfolios and strategies to see how seasoned investors allocate their capital.",
-    to: "/investor/expertportfolio",
-    badge: "Follow the pros",
-    cta: "Explore",
-    accent: "rose",
-  },
-  {
-    Icon: ListChecks,
-    title: "Watchlist",
-    description: "Track the stocks you care about most and get a quick pulse on price moves before you decide to trade.",
-    to: "/watchlist",
-    badge: "Stay on top of it",
-    cta: "View Watchlist",
-    accent: "cyan",
   },
 ];
 
@@ -280,6 +271,22 @@ function PortfolioSparkline({ up }) {
   return <MiniChart candles={series} width={600} height={80} responsive />;
 }
 
+function ProfileAvatar({ name, size = 48 }) {
+  const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
+  let hash = 0;
+  for (const c of String(name || "")) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const bg = palette[hash % palette.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{ fontSize: size * 0.36, fontWeight: 700, color: "white" }}>{initials}</span>
+    </div>
+  );
+}
+
 function Hero({ name, portfolioData }) {
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
@@ -294,8 +301,8 @@ function Hero({ name, portfolioData }) {
 
         <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
           Welcome back,{" "}
-          <span className="bg-clip-text text-transparent bg-linear-to-r from-[#00D3F2] to-cyan-300">{name}</span>{" "}
-          <span aria-hidden="true">👋</span>
+          <span className="bg-clip-text text-transparent bg-linear-to-r from-[#068fffcb] to-[#0075f2]">{name}</span>{" "}
+         
         </h1>
 
         {loading ? (
@@ -535,7 +542,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -636,6 +643,123 @@ function WatchlistSection() {
 
 
 
+function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
+  const price = snapshot?.p ?? null;
+  const prev = snapshot?.previousClose ?? null;
+  const change = price != null && prev != null ? price - prev : null;
+  const percent = change != null && prev ? (change / prev) * 100 : null;
+  const isUp = change === null ? true : change >= 0;
+  const color = isUp ? "text-emerald-400" : "text-red-400";
+  const TrendIcon = isUp ? TrendingUp : TrendingDown;
+
+  return (
+    <div
+      onClick={() => onSelect(symbol)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") onSelect(symbol); }}
+      className={`group flex flex-col gap-3 shrink-0 w-54 cursor-pointer ${CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} hover:ring-[#00D3F2]/30 p-5 ${FOCUS_RING}`}
+    >
+      <div className="flex items-center gap-3">
+        <StockAvatar symbol={symbol} size={34} />
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-sm leading-tight truncate">{shortCompanyName(symbol)}</p>
+          <p className="text-slate-500 text-xs">{symbol}</p>
+        </div>
+      </div>
+      {confidence != null && (
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-slate-500 font-medium">AI Confidence</span>
+          <span className="text-[#00D3F2] font-semibold">{confidence}%</span>
+        </div>
+      )}
+      <div>
+        <p className={`font-['DM_Mono'] font-semibold text-lg leading-tight ${color}`}>
+          {price != null ? `$${price.toFixed(2)}` : "—"}
+        </p>
+        <p className={`flex items-center gap-1 text-xs font-medium mt-0.5 ${color}`}>
+          {percent != null && <TrendIcon size={14} />}
+          {percent != null ? `${percent > 0 ? "+" : ""}${percent.toFixed(2)}%` : "—"}
+        </p>
+      </div>
+      <div className="transition-transform duration-200 ease-out group-hover:scale-[1.03]">
+        {candles?.length > 0
+          ? <MiniChart candles={candles} width={176} height={44} />
+          : <div style={{ height: 44 }} />}
+      </div>
+    </div>
+  );
+}
+
+function PopularStocksSection() {
+  const navigate = useNavigate();
+  const [snapshots, setSnapshots] = useState({});
+  const [candles, setCandles] = useState({});
+  const [ratings, setRatings] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      POPULAR_SYMBOLS.map((symbol) =>
+        Promise.all([fetchStockSnapshot(symbol), fetchStockCandles(symbol, "1D"), fetchRating(symbol)])
+          .then(([snapRes, candlesRes, ratingRes]) => ({
+            symbol,
+            snapshot: snapRes.success ? snapRes.data : null,
+            candles: candlesRes.success ? candlesRes.candles : [],
+            rating: ratingRes?.success ? ratingRes : null,
+          }))
+          .catch(() => ({ symbol, snapshot: null, candles: [], rating: null }))
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      const nextSnapshots = {};
+      const nextCandles = {};
+      const nextRatings = {};
+      results.forEach((r) => { nextSnapshots[r.symbol] = r.snapshot; nextCandles[r.symbol] = r.candles; nextRatings[r.symbol] = r.rating; });
+      setSnapshots(nextSnapshots);
+      setCandles(nextCandles);
+      setRatings(nextRatings);
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+
+  return (
+    <section>
+      <SectionHeader title="Popular Stocks" subtitle="Trending picks investors are watching right now" />
+
+      {loading ? (
+        <div className="flex gap-4 overflow-hidden pb-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="shrink-0" style={{ width: 216, height: 172, borderRadius: 16 }} />
+          ))}
+        </div>
+      ) : (
+        <div className="relative">
+          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {POPULAR_SYMBOLS.map((symbol) => (
+              <PopularStockCard
+                key={symbol}
+                symbol={symbol}
+                snapshot={snapshots[symbol]}
+                candles={candles[symbol]}
+                confidence={ratings[symbol]?.buyProbability != null ? Math.round(ratings[symbol].buyProbability * 100) : null}
+                onSelect={handleSelect}
+              />
+            ))}
+          </div>
+          <div
+            className="pointer-events-none absolute top-0 right-0 h-full w-12"
+            style={{ background: "linear-gradient(to right, transparent, rgba(8,15,35,0.9))" }}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
 
 function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary, accent }) {
   const navigate = useNavigate();
@@ -650,18 +774,20 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
     >
       <div>
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className={`flex items-center justify-center rounded-xl ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
-            <Icon size={primary ? 22 : 19} />
+          <div className={`flex items-center justify-center rounded-xl ring-1 ring-inset ring-white/10 ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
+            <Icon size={primary ? 24 : 21} strokeWidth={3} />
           </div>
-          <span className={`text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
-            {badge}
-          </span>
+          {badge && (
+            <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
+              {badge}
+            </span>
+          )}
         </div>
-        <h3 className={`text-slate-900 font-semibold mb-1.5 ${primary ? "text-xl" : "text-lg"}`}>{title}</h3>
-        <p className="text-[15px] text-slate-600 leading-relaxed">{description}</p>
+        <h3 className={`text-slate-900 font-bold mb-1.5 ${primary ? "text-2xl" : "text-lg"}`}>{title}</h3>
+        <p className="text-[15px] font-medium text-slate-600 leading-relaxed">{description}</p>
       </div>
-      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
-        {cta} <ArrowRight size={14} />
+      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
+        {cta}
       </div>
     </div>
   );
@@ -772,9 +898,9 @@ function PricingTeaserSection() {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
-  const name = currentUser?.username || currentUser?.full_name || "Investor";
+  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
 

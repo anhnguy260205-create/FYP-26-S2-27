@@ -27,6 +27,8 @@ const ICON_BY_TYPE = {
     subscription: CreditCard,
     warning: AlertTriangle,
     article: BookOpen,
+    moderation: AlertTriangle,
+    announcement: Bell,
 };
 
 function timeAgo(isoString) {
@@ -44,7 +46,7 @@ function timeAgo(isoString) {
 }
 
 function Notification() {
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 

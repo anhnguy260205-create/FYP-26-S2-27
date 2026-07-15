@@ -27,18 +27,18 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      sessionStorage.removeItem("currentUser");
+      localStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        sessionStorage.removeItem("currentUser");
+        localStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -76,8 +76,8 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-  const initials = (currentUser?.username || currentUser?.user_name || currentUser?.full_name || "??")
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
+  const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
 
@@ -92,7 +92,7 @@ function Profile() {
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
       </div>
-      <span className="hidden xl:inline">{currentUser?.username || currentUser?.user_name || "Guest"}</span>
+      <span className="hidden xl:inline">{currentUser?.full_name || currentUser?.username || currentUser?.user_name || "User"}</span>
     </button>
   );
 }
@@ -110,13 +110,13 @@ function GeneralHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const [chatUnread, setChatUnread] = useState(0);
   const [hasUnread, setHasUnread] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const chatDockRef = useRef(null);
   const desktopRightRef = useRef(null);
-  const [chatUnread, setChatUnread] = useState(0);
+
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
@@ -134,14 +134,14 @@ function GeneralHeader() {
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
-      sessionStorage.removeItem("currentUser");
+      localStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
     try {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
-        sessionStorage.removeItem("currentUser");
+        localStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {
@@ -183,6 +183,7 @@ function GeneralHeader() {
         { title: "Transaction History", path: "/investor/transaction-history" },
       ],
     },
+
   ];
 
   const isActive = (link) =>

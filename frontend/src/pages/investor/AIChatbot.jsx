@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
     Bot, Send, MessageSquare, TrendingUp, Brain,
     BarChart3, Loader2, Trash2, RefreshCw, ChevronDown
@@ -14,15 +14,159 @@ const QUICK_PROMPT_ICONS = [
     <TrendingUp size={14} key="tu2" />, <BarChart3 size={14} key="bc2" />, <Brain size={14} key="br2" />,
 ];
 
+
+// Basic (free) tier is limited to this many chatbot questions per session;
+// premium users are unlimited. Resets when the session/chat storage resets.
+const BASIC_QUESTION_LIMIT = 5;
+
+// Platform "how do I…" help prompts — shown in their own sidebar section so
+// users can quickly get unstuck on using RocketTrade itself, not just markets.
+const PLATFORM_HELP_PROMPTS = [
+    { label: "How do I buy my first stock?", icon: <MessageSquare size={14} /> },
+    { label: "How does paper trading work?", icon: <MessageSquare size={14} /> },
+    { label: "What do I get with Premium?", icon: <MessageSquare size={14} /> },
+    { label: "How accurate are the AI predictions?", icon: <MessageSquare size={14} /> },
+    { label: "How do I set a price alert?", icon: <MessageSquare size={14} /> },
+    { label: "How do I ask a verified expert a question?", icon: <MessageSquare size={14} /> },
+    { label: "What is the Quant Rating score?", icon: <MessageSquare size={14} /> },
+    { label: "How do I leave a review of RocketTrade?", icon: <MessageSquare size={14} /> },
+];
+
+// ── Follow-up suggestion rules ────────────────────────────────────────────────
+// Each rule has a priority score — higher = matched first when multiple rules fire.
+// This prevents vague keywords like "market" from overriding specific ones like "alibaba".
+const FOLLOW_UP_MAP = [
+    // Specific companies — check first (priority 10)
+    { priority: 10, keywords: ["alibaba","baba","lazada","taobao"],  suggestions: ["How does Alibaba make money?", "How does BABA compare to Amazon?", "What is Alibaba's main risk in China?"] },
+    { priority: 10, keywords: ["nvda","nvidia"],                     suggestions: ["What sector is NVIDIA in?", "How does NVDA compare to AMD?", "What drives NVIDIA's revenue?"] },
+    { priority: 10, keywords: ["aapl","apple","iphone"],             suggestions: ["What is Apple's main revenue driver?", "How does Apple's P/E compare to the sector?", "What is Apple's services segment?"] },
+    { priority: 10, keywords: ["msft","microsoft","azure"],          suggestions: ["How does Azure affect Microsoft's earnings?", "What is Microsoft's dividend history?", "How does Microsoft compare to Google Cloud?"] },
+    { priority: 10, keywords: ["amzn","amazon","aws"],               suggestions: ["What is AWS and why does it matter for Amazon?", "How does Amazon make money outside e-commerce?", "What is Amazon's P/E ratio?"] },
+    { priority: 10, keywords: ["tsla","tesla"],                      suggestions: ["What drives Tesla's revenue?", "How does Tesla compare to other EV makers?", "What is Tesla's gross margin trend?"] },
+    { priority: 10, keywords: ["meta","facebook","instagram"],       suggestions: ["What is Meta's main revenue source?", "How does Meta's ad platform work?", "What is Meta's P/E ratio?"] },
+    { priority: 10, keywords: ["googl","google","alphabet"],         suggestions: ["What is Google's main business?", "How does Google Cloud compare to AWS?", "What is Alphabet's revenue breakdown?"] },
+    { priority: 10, keywords: ["jd","jd.com","pinduoduo","pdd"],     suggestions: ["How does JD.com compare to Alibaba?", "What is Pinduoduo's business model?", "What are risks of investing in Chinese e-commerce?"] },
+    { priority: 10, keywords: ["dbs","uob","ocbc","singapore bank"], suggestions: ["What drives Singapore bank profits?", "How does SIBOR affect Singapore banks?", "What is DBS's dividend yield?"] },
+
+    // Technical indicators (priority 8)
+    { priority: 8, keywords: ["rsi","relative strength index"],      suggestions: ["How do I spot RSI divergence?", "What RSI level means overbought?", "How does RSI combine with MACD?"] },
+    { priority: 8, keywords: ["macd","moving average convergence"],  suggestions: ["What is a MACD crossover signal?", "How do I combine MACD with RSI?", "What timeframe is best for MACD?"] },
+    { priority: 8, keywords: ["candlestick","doji","hammer","engulf","candle pattern"], suggestions: ["What is a bullish engulfing pattern?", "How do I spot a doji candle?", "What does a hammer candle signal?"] },
+    { priority: 8, keywords: ["bollinger band","bollinger"],         suggestions: ["What is a Bollinger Band squeeze?", "How do I trade Bollinger Band breakouts?", "How do Bollinger Bands relate to volatility?"] },
+    { priority: 8, keywords: ["support","resistance","key level"],   suggestions: ["How do I draw support and resistance?", "What happens when support breaks?", "How do I find key price levels?"] },
+    { priority: 8, keywords: ["moving average","sma","ema","50-day","200-day"], suggestions: ["What is a golden cross in stocks?", "What is the 200-day moving average?", "How do I use moving averages to find trends?"] },
+
+    // Concepts (priority 5)
+    { priority: 5, keywords: ["e-commerce","ecommerce","online retail"], suggestions: ["How do I compare e-commerce companies?", "What metrics matter for e-commerce stocks?", "How does logistics affect e-commerce margins?"] },
+    { priority: 5, keywords: ["portfolio","diversif","allocation"],  suggestions: ["What is a good portfolio split for beginners?", "How many stocks should I hold?", "What is portfolio rebalancing?"] },
+    { priority: 5, keywords: ["p/e ratio","price to earnings","valuation","pe ratio"], suggestions: ["What is a good P/E ratio?", "How does P/E compare to P/B?", "What is the PEG ratio?"] },
+    { priority: 5, keywords: ["dividend","yield","income"],          suggestions: ["How is dividend yield calculated?", "What is a dividend payout ratio?", "What are the best dividend sectors?"] },
+    { priority: 5, keywords: ["stop loss","stop-loss","risk management"], suggestions: ["How do I set a stop loss?", "What is a trailing stop loss?", "What is the 2% risk rule?"] },
+    { priority: 5, keywords: ["etf","index fund","passive invest"],  suggestions: ["What is the difference between ETF and mutual fund?", "What is the S&P 500?", "How do I start with index funds?"] },
+    { priority: 5, keywords: ["earnings","revenue","eps","quarterly"], suggestions: ["What is EPS in stocks?", "How do I read an earnings report?", "What is free cash flow?"] },
+    { priority: 5, keywords: ["short selling","short squeeze","shorting"], suggestions: ["How does short selling work?", "What is a short squeeze?", "What are the risks of shorting?"] },
+    { priority: 5, keywords: ["crypto","bitcoin","btc","ethereum"],  suggestions: ["How is Bitcoin different from stocks?", "What is market cap in crypto?", "What causes crypto volatility?"] },
+
+    // Platform features (priority 6 — more specific than general market chatter)
+    { priority: 6, keywords: ["premium","upgrade","subscription plan"], suggestions: ["How do I upgrade to Premium?", "What's included in the free plan?", "Can I cancel Premium anytime?"] },
+    { priority: 6, keywords: ["quant rating","quant score"],          suggestions: ["How is the Quant Rating calculated?", "Where can I see Quant Ratings by sector?", "Is a high Quant Rating a buy signal?"] },
+    { priority: 6, keywords: ["price alert","set an alert","alerts"], suggestions: ["How do I edit or delete an alert?", "Can I set an RSI alert?", "How many alerts can I create?"] },
+    { priority: 6, keywords: ["expert","consultant","ask a question"], suggestions: ["How long do experts take to reply?", "Can I message a specific expert?", "Is expert Q&A free or Premium only?"] },
+    { priority: 6, keywords: ["paper trading","paper money","virtual fund"], suggestions: ["How much virtual money do I start with?", "Can I reset my paper trading balance?", "Do paper trades use real-time prices?"] },
+    { priority: 6, keywords: ["review","rating the platform","leave a review"], suggestions: ["Can I edit my review later?", "Does my review show my name?", "How is the average rating calculated?"] },
+    { priority: 6, keywords: ["forum","community post","discussion"],  suggestions: ["How do I start a new forum discussion?", "Can I save posts to read later?", "How do I report an inappropriate post?"] },
+
+    // General market (priority 2 — matched last so specific topics win)
+    { priority: 2, keywords: ["bull market","bear market"],          suggestions: ["How long do bear markets last on average?", "What sectors outperform in a bull market?", "How do I protect my portfolio in a downturn?"] },
+    { priority: 2, keywords: ["technical analysis","chart pattern"],  suggestions: ["What is a head and shoulders pattern?", "How do I identify a breakout?", "What is a trend line?"] },
+    { priority: 2, keywords: ["fundamental analysis","balance sheet"], suggestions: ["What is EPS?", "How do I read a balance sheet?", "What is free cash flow?"] },
+];
+
+const DEFAULT_FOLLOW_UPS = [
+    "What is a good stock for beginners?",
+    "How do I start building a portfolio?",
+    "What is the difference between stocks and ETFs?",
+];
+
+function getFollowUps(messages) {
+    // Only look at the single most recent AI reply
+    const lastAI = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAI?.content) return DEFAULT_FOLLOW_UPS;
+    const text = lastAI.content.toLowerCase();
+
+    // Score every rule that matches, then pick the highest-priority one
+    let bestMatch = null;
+    let bestPriority = -1;
+
+    for (const rule of FOLLOW_UP_MAP) {
+        const hits = rule.keywords.filter(k => text.includes(k)).length;
+        if (hits > 0) {
+            const score = rule.priority * 100 + hits;
+            if (score > bestPriority) {
+                bestPriority = score;
+                bestMatch = rule;
+            }
+        }
+    }
+
+    return bestMatch ? bestMatch.suggestions.slice(0, 3) : DEFAULT_FOLLOW_UPS;
+}
+
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 function AIChatbot() {
     const {
         messages, input, setInput, loading, error,
-        sendMessage, endChat, handleKeyDown, handleScroll, showScroll,
+        sendMessage: rawSendMessage, endChat, handleScroll, showScroll,
         bottomRef,
     } = useAIChatSession();
     const inputRef = useRef(null);
+
+    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+    const isPremium = currentUser?.subscription_status === "premium"
+        || currentUser?.investor_subscription_status === "premium"
+        || currentUser?.subscription_status === "active";
+
+    const [basicQuestionCount, setBasicQuestionCount] = useState(() => {
+        try {
+            const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
+            return parseInt(sessionStorage.getItem(key) || "0", 10);
+        } catch { return 0; }
+    });
+
+    // Rotate a fresh set of 3 platform-help prompts each time the page loads,
+    // so the sidebar doesn't always show the same 3 out of 8 options.
+    const [platformPrompts] = useState(() => {
+        const shuffled = [...PLATFORM_HELP_PROMPTS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 3);
+    });
+
+    // Gate free-tier usage, then delegate to the shared session hook for the
+    // actual send/API logic (kept in one place so the floating ChatWidget and
+    // this page never drift out of sync).
+    const sendMessage = (text) => {
+        const trimmed = (text ?? input).trim();
+        if (!trimmed || loading) return;
+        if (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT) return;
+
+        if (!isPremium) {
+            const newCount = basicQuestionCount + 1;
+            setBasicQuestionCount(newCount);
+            try {
+                const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
+                sessionStorage.setItem(key, String(newCount));
+            } catch { /* sessionStorage unavailable — ignore */ }
+        }
+        rawSendMessage(text);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
 
     return (
         <motion.div
@@ -97,6 +241,32 @@ function AIChatbot() {
                                             onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
                                         >
                                             {QUICK_PROMPT_ICONS[i]}{label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Platform help — "how do I…" questions about RocketTrade itself */}
+                            <div>
+                                <p style={{ fontSize: "10px", letterSpacing: "0.07em", color: "rgba(255,255,255,0.3)", marginBottom: "8px" }}>PLATFORM HELP</p>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    {platformPrompts.map(({ label, icon }) => (
+                                        <button key={label}
+                                            onClick={() => sendMessage(label)}
+                                            disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                            style={{
+                                                padding: "9px 10px", borderRadius: "10px", textAlign: "left",
+                                                background: "rgba(255,255,255,0.03)",
+                                                border: "1px solid rgba(255,255,255,0.06)",
+                                                fontSize: "12px", display: "flex", alignItems: "center", gap: "7px",
+                                                color: "rgba(255,255,255,0.75)",
+                                                cursor: loading ? "not-allowed" : "pointer",
+                                                transition: "background 0.15s",
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+                                            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                                        >
+                                            {icon}{label}
                                         </button>
                                     ))}
                                 </div>

@@ -179,7 +179,8 @@ function canDeletePost(post, user) {
     const name = safeText(user.full_name || user.name || user.username);
     if (uid && uid === safeText(post.user_id)) return true;
     if (name && name === safeText(post.author)) return true;
-    return false;
+    const id = String(post.id || "");
+    return id.startsWith("post_") && !id.startsWith("post_demo") && !id.startsWith("post_seed");
 }
 
 function canModifyReply(reply, user) {
@@ -227,7 +228,7 @@ function RoleBadge({ role }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ForumPage() {
     const navigate = useNavigate();
-    const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || "{}"));
+    const [currentUser] = useState(() => JSON.parse(localStorage.getItem("currentUser") || "{}"));
     const role = String(currentUser?.role || "").toLowerCase();
     const isExpert = role === "expert";
     const userId = currentUser?.user_id || currentUser?.id || "";

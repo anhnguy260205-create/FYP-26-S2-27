@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../../layout/Footer.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
+import { fetchStockSnapshot } from "../../api/stockApi.js";
+import { getReviewStats, getReviews } from "../../api/reviewApi.js";
 import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
 import {
   Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
@@ -348,7 +350,7 @@ function FAQSection() {
           className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 px-6 py-3 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 cursor-pointer"
         >
           Visit Help Center
-          <ArrowRight size={16} />
+
         </button>
       </div>
     </div>
@@ -705,6 +707,16 @@ function TestimonialsSection() {
     getReviews({ sort: "helpful", pageSize: 5 }).then((d) => {
       if (d?.success) setReviews(d.reviews || []);
     }).catch(() => { });
+function TestimonialsSection() {
+  const navigate = useNavigate();
+  const [stats,   setStats]   = useState({ average: 0, total: 0 });
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    getReviewStats().then((d) => { if (d?.success || d?.average != null) setStats(d); }).catch(() => {});
+    getReviews({ sort: "helpful", pageSize: 6 }).then((d) => {
+      if (d?.success) setReviews(d.reviews || []);
+    }).catch(() => {});
   }, []);
 
   const avg = Number(stats?.average || 0).toFixed(1);
@@ -726,7 +738,7 @@ function TestimonialsSection() {
   }
 
   function AvatarCircle({ name }) {
-    const palette = ["#155dfc", "#0092b8", "#7c3aed", "#059669", "#d97706", "#be185d"];
+    const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
     let h = 0;
     for (const c of String(name || "")) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
     const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -831,6 +843,17 @@ function TestimonialsSection() {
             <CtaButton onClick={() => navigate("/login")}>
               Read all reviews
             </CtaButton>
+            <button onClick={() => navigate("/register")} style={{
+              padding: "12px 28px", borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: "pointer", border: "none",
+              background: "linear-gradient(135deg,#155dfc,#0092b8)", color: "white",
+              boxShadow: "0 4px 20px rgba(21,93,252,0.35)" }}>
+              Get started free →
+            </button>
+            <button onClick={() => navigate("/login")} style={{
+              padding: "12px 28px", borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: "pointer",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)" }}>
+              Read all reviews
+            </button>
           </div>
         </div>
       </div>
@@ -892,6 +915,7 @@ function HomePage() {
             />
           </div>
         )}
+        <TestimonialsSection />
         <div className="bg-white">
           <RegistrationGuide />
         </div>
