@@ -127,9 +127,9 @@ function EducationContent() {
             {canWrite && (
               <button onClick={() => navigate("/expert/knowledge-hub")} style={{
                 padding: "10px 22px", borderRadius: 8, cursor: "pointer",
-                border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.1)",
-                color: "#34d399", fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
-              }}>+ Write Article</button>
+                border: "1px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.1)",
+                color: "#a855f7", fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
+              }}>My Article</button>
             )}
           </div>
 

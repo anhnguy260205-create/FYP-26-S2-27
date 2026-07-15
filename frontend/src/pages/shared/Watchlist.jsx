@@ -88,11 +88,16 @@ export default function Watchlist() {
     }, [newSymbol, symbols, userId, isPremium, isExpert]);
 
     const handleRemove = useCallback(async (sym) => {
-        const res = await removeStockFromWatchlist(userId, sym);
-        if (res.success) {
-            setSymbols(prev => prev.filter(s => s !== sym));
-        } else {
-            alert(res.message || "Failed to remove stock.");
+        try {
+            const res = await removeStockFromWatchlist(userId, sym);
+            if (res.success) {
+                setSymbols(prev => prev.filter(s => s !== sym));
+            } else {
+                alert(res.message || "Failed to remove stock.");
+            }
+        } catch (error) {
+            console.error("Failed to remove stock:", error);
+            alert("Failed to remove stock. Check your connection and try again.");
         }
     }, [userId]);
     const navigate = useNavigate();
@@ -331,15 +336,17 @@ export default function Watchlist() {
                                 {/* Remove */}
                                 <div className="flex justify-end">
                                     <button
-                                        onClick={e => { e.stopPropagation(); handleRemove(row.sym); }}
+                                        onClick={e => { e.stopPropagation(); if (!isAtLimit) handleRemove(row.sym); }}
+                                        disabled={isAtLimit}
                                         className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg text-xs"
                                         style={{
                                             width: "30px", height: "30px",
-                                            background: "rgba(239,68,68,0.1)",
-                                            border: "1px solid rgba(239,68,68,0.25)",
-                                            color: "#ef4444",
+                                            background: isAtLimit ? "rgba(255,255,255,0.05)" : "rgba(239,68,68,0.1)",
+                                            border: isAtLimit ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(239,68,68,0.25)",
+                                            color: isAtLimit ? "rgba(255,255,255,0.25)" : "#ef4444",
+                                            cursor: isAtLimit ? "not-allowed" : "pointer",
                                         }}
-                                        title="Remove"
+                                        title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks. Upgrade to Premium to manage your watchlist freely.` : "Remove"}
                                     >
                                         ✕
                                     </button>
