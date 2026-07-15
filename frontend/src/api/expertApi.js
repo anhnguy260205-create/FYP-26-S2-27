@@ -21,6 +21,11 @@ export const saveExpertPortfolio = (userId, portfolio) =>
     body: JSON.stringify(portfolio),
   });
 
+// ── Public expert directory ────────────────────────────────────────────────────
+
+export const getPublicExpertStats = () =>
+  requestJson(`${EXPERT_BASE_URL}/public-stats`);
+
 // ── Follow / unfollow an expert ──────────────────────────────────────────────
 
 export const getFollowerStatus = (expertUserId) =>
@@ -31,6 +36,20 @@ export const followExpert = (expertUserId) =>
 
 export const unfollowExpert = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/follow`, { method: "DELETE" });
+
+// ── Portfolio ratings & reviews ────────────────────────────────────────────────
+
+export const getPortfolioReviews = (expertUserId) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/portfolio-reviews`);
+
+export const submitPortfolioReview = (expertUserId, { rating, comment }) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/portfolio-reviews`, {
+    method: "POST",
+    body: JSON.stringify({ rating, comment }),
+  });
+
+export const deletePortfolioReview = (expertUserId) =>
+  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/portfolio-reviews`, { method: "DELETE" });
 
 // ── Compensation ──────────────────────────────────────────────────────────────
 

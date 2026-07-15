@@ -86,7 +86,7 @@ export default function ExpertCompensationPage() {
               onClick={() => navigate("/expert/documents")}
               className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800"
             >
-              Submit Documents →
+              Submit Documents
             </button>
           </div>
         </main>

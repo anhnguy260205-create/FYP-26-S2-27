@@ -6,6 +6,8 @@ from app.control.controller.expertc import ExpertPortfolioController
 from app.entity.models.expert import Expert
 from app.entity.models.expertprofileview import ExpertProfileView
 from app.entity.models.expertfollow import ExpertFollow
+from app.entity.models.expertportfolioreview import ExpertPortfolioReview
+from app.entity.models.expertportfolio import ExpertPortfolioRepository
 from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
@@ -26,6 +28,8 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
             "rating": e.get("rating"),
             "risk_tolerance": e["risk_tolerance"],
             "verification_status": e["verification_status"],
+            "follower_count": ExpertFollow.get_follower_count(e["user_id"]),
+            "portfolio_rating": ExpertPortfolioReview.get_stats(e["user_id"]),
         }
 
     approved = [_pub(e) for e in experts
@@ -33,6 +37,32 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
     # fall back to all experts if none are marked approved yet (dev data)
     out = approved or [_pub(e) for e in experts]
     return {"success": True, "experts": out}
+
+
+@router.get("/public-stats")
+def public_expert_stats(current_user: dict = Depends(get_current_user)):
+    """Aggregate stats for the Expert Portfolio page's top banner."""
+    experts = Expert.get_all_for_admin()
+    listed = [e for e in experts if e["verification_status"] in ("approved", "active")] or experts
+
+    total_followers = 0
+    top_rated = None  # {"name": ..., "rating": ...}
+    for e in listed:
+        follower_count = ExpertFollow.get_follower_count(e["user_id"])
+        total_followers += follower_count
+
+        stats = ExpertPortfolioReview.get_stats(e["user_id"])
+        rating = stats["average"] if stats["total"] > 0 else float(e.get("rating") or 0)
+        if rating > 0 and (top_rated is None or rating > top_rated["rating"]):
+            top_rated = {"name": e["full_name"], "rating": rating}
+
+    return {
+        "success": True,
+        "total_experts": len(listed),
+        "top_rated": top_rated,
+        "avg_return": ExpertPortfolioRepository.get_average_return(),
+        "total_followers": total_followers,
+    }
 
 
 @router.get("/public-profile/{user_id}")
@@ -74,6 +104,8 @@ def public_expert_profile(user_id: str,
             "address": info.get("address"),
             "follower_count": ExpertFollow.get_follower_count(user_id),
             "is_following": ExpertFollow.is_following(current_user["user_id"], user_id),
+            "is_self": current_user["user_id"] == user_id,
+            "portfolio_rating": ExpertPortfolioReview.get_stats(user_id),
         },
     }
 
@@ -97,6 +129,39 @@ def follow_expert(expert_user_id: str, current_user: dict = Depends(get_current_
 @router.delete("/{expert_user_id}/follow")
 def unfollow_expert(expert_user_id: str, current_user: dict = Depends(get_current_user)):
     return ExpertFollow.unfollow(current_user["user_id"], expert_user_id)
+
+
+# ── Portfolio ratings & reviews (investor- and expert-facing) ────────────────
+
+class PortfolioReviewRequest(BaseModel):
+    rating: int
+    comment: Optional[str] = ""
+
+
+@router.get("/{expert_user_id}/portfolio-reviews")
+def get_portfolio_reviews(
+    expert_user_id: str,
+    page: int = 1,
+    page_size: int = 10,
+    current_user: dict = Depends(get_current_user),
+):
+    return ExpertPortfolioReview.list_for_expert(
+        expert_user_id, current_user["user_id"], page, page_size)
+
+
+@router.post("/{expert_user_id}/portfolio-reviews")
+def submit_portfolio_review(
+    expert_user_id: str,
+    data: PortfolioReviewRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    return ExpertPortfolioReview.create_or_update(
+        current_user["user_id"], expert_user_id, data.rating, data.comment)
+
+
+@router.delete("/{expert_user_id}/portfolio-reviews")
+def delete_portfolio_review(expert_user_id: str, current_user: dict = Depends(get_current_user)):
+    return ExpertPortfolioReview.delete(current_user["user_id"], expert_user_id)
 
 
 class HoldingRequest(BaseModel):
