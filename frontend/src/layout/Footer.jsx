@@ -49,7 +49,7 @@ function Footer() {
   }, []);
 
   return (
-    <footer className="border-t border-white/10 bg-slate-950/50 backdrop-blur-md">
+    <footer className="border-t border-white/10 bg-slate-950">
       <div className="max-w-300 mx-auto px-6 lg:px-8 py-14 md:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-10 md:gap-12 mb-10">
 

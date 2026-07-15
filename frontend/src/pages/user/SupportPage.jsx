@@ -231,7 +231,7 @@ function SupportPage() {
       <RoleHeader />
 
       {/* Hero — full-width banner */}
-      <section className="relative w-full h-200 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
+      <section className="relative w-full h-250 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
         <img
           alt=""
           src={helpCenterImg}
