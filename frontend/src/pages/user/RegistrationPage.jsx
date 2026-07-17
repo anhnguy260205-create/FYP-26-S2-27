@@ -1,11 +1,15 @@
 import Header from "../../layout/Header.jsx";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
 import img from "../../images/image1.png";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
+
+// reCAPTCHA v2 checkbox — set VITE_RECAPTCHA_SITE_KEY in frontend/.env.
+// If unset, the widget is hidden and the backend skips verification (dev mode).
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const ACCOUNT_TYPE_STYLES = {
   investor: { color: "#0092b8", bg: "rgba(0,146,184,0.06)", hover: "hover:border-[#0092b8] hover:bg-[#0092b8]/5" },
@@ -24,6 +28,39 @@ function RegistrationPage() {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // ── reCAPTCHA v2 widget (loads Google script once, renders explicitly) ──
+  const recaptchaRef = useRef(null);
+  const widgetIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY) return;
+    const render = () => {
+      if (window.grecaptcha?.render && recaptchaRef.current && widgetIdRef.current === null) {
+        widgetIdRef.current = window.grecaptcha.render(recaptchaRef.current, {
+          sitekey: RECAPTCHA_SITE_KEY,
+        });
+      }
+    };
+    if (window.grecaptcha?.render) {
+      render();
+      return;
+    }
+    window.__onRecaptchaLoad = render;
+    if (!document.querySelector('script[src*="recaptcha/api.js"]')) {
+      const s = document.createElement("script");
+      s.src = "https://www.google.com/recaptcha/api.js?onload=__onRecaptchaLoad&render=explicit";
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+  }, []);
+
+  const resetCaptcha = () => {
+    if (RECAPTCHA_SITE_KEY && window.grecaptcha && widgetIdRef.current !== null) {
+      window.grecaptcha.reset(widgetIdRef.current);
+    }
   };
 
   const passwordRules = {
@@ -54,6 +91,15 @@ function RegistrationPage() {
       return;
     }
 
+    let recaptchaToken = "";
+    if (RECAPTCHA_SITE_KEY) {
+      recaptchaToken = window.grecaptcha?.getResponse(widgetIdRef.current) || "";
+      if (!recaptchaToken) {
+        alert("Please tick the \"I'm not a robot\" box.");
+        return;
+      }
+    }
+
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
       const firebaseUser = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
@@ -62,11 +108,13 @@ function RegistrationPage() {
         role: formData.accountType,
         username: formData.username.trim(),
         email_address: cleanEmail,
+        recaptcha_token: recaptchaToken,
       };
 
       const result = await createAccount(payload);
       if (!result.success) {
         await firebaseUser.user.delete();
+        resetCaptcha();
         alert(result.message || "Account already exists");
         return;
       }
@@ -74,6 +122,7 @@ function RegistrationPage() {
       navigate("/login");
 
     } catch (error) {
+      resetCaptcha();
       if (error.code === "auth/email-already-in-use") {
         alert("This email is already registered.");
       } else if (error.code === "auth/weak-password") {
@@ -242,6 +291,13 @@ function RegistrationPage() {
                   <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Privacy Policy</a>
                 </label>
               </div>
+
+              {/* reCAPTCHA */}
+              {RECAPTCHA_SITE_KEY && (
+                <div className="flex justify-center">
+                  <div ref={recaptchaRef} />
+                </div>
+              )}
 
               {/* Submit */}
               <button
