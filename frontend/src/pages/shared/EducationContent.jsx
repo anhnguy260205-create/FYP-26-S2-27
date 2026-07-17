@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getArticles } from "../../api/knowledgeHubApi.js";
 
@@ -71,6 +73,15 @@ function ArticleReader({ article, onClose }) {
 }
 
 function EducationContent() {
+  const navigate = useNavigate();
+  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+  const role = String(currentUser?.role || "").toLowerCase();
+  const isExpert = role === "expert";
+  // Unverified experts still see the button — clicking through to
+  // /expert/knowledge-hub is what prompts them to submit documents
+  // (ExpertKnowledgeHub's own VerificationWall handles that gate).
+  const canWrite = isExpert;
+
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All");
@@ -78,7 +89,7 @@ function EducationContent() {
   const [selected, setSelected] = useState(null);
 
   // `silent` skips the loading spinner — used for background polling so
-  // newly-approved articles show up without the investor reloading the page.
+  // newly-approved articles show up without the reader reloading the page.
   const fetchArticles = ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     getArticles({ category: category === "All" ? undefined : category })
@@ -105,13 +116,21 @@ function EducationContent() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        <GeneralHeader />
+        {isExpert ? <ExpertHeader /> : <GeneralHeader />}
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
-          <div
-            style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24 }}>
-            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>Educational Content</h1>
-            <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>Educational articles written by verified experts</p>
+          <div style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>Educational Content</h1>
+              <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>Educational articles written by verified experts</p>
+            </div>
+            {canWrite && (
+              <button onClick={() => navigate("/expert/knowledge-hub")} style={{
+                padding: "10px 22px", borderRadius: 8, cursor: "pointer",
+                border: "1px solid rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.1)",
+                color: "#a855f7", fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
+              }}>My Article</button>
+            )}
           </div>
 
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>

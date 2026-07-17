@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import ExpertHeader from "../../layout/ExpertHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
+import { getPublicExpertStats } from "../../api/expertApi.js";
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Search,
@@ -22,14 +24,17 @@ const RISK_MAP = { Aggressive: "High", Moderate: "Moderate", Conservative: "Low"
 
 function toDisplayExpert(e) {
     const name = e.full_name || "Expert";
+    const portfolioRating = e.portfolio_rating || { average: 0, total: 0 };
     return {
         user_id: e.user_id,
         name,
         role: e.experience_years ? `${e.experience_years} yrs experience` : "Verified Expert",
         market: "Global Markets",
         risk: RISK_MAP[e.risk_tolerance] || "Moderate",
-        followers: "—",
-        rating: Number(e.rating || 0),
+        followers: e.follower_count ?? 0,
+        // Prefer the real portfolio-review average; fall back to the static
+        // Expert.rating field until an expert has any reviews.
+        rating: portfolioRating.total > 0 ? portfolioRating.average : Number(e.rating || 0),
         avatar: name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
     };
 }
@@ -79,18 +84,17 @@ function StarRating({ value }) {
     );
 }
 
-const STATS = [
-    { icon: Users, title: "Total Experts", value: "18", desc: "Active on platform" },
-    { icon: Star, title: "Top Rated", value: "Dr. Raymond", desc: "Based on user ratings" },
-    { icon: PieChart, title: "Avg. Return", value: "+12.45%", desc: "All time" },
-    { icon: UserRound, title: "Total Followers", value: "12.4K", desc: "Across all experts" },
-];
-
 export default function ExpertPortfolio() {
     const navigate = useNavigate();
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+    const role = String(currentUser?.role || "").toLowerCase();
+    const isExpert = role === "expert";
+    const canManage = isExpert && currentUser?.verification_status === "approved";
+
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
     const [experts, setExperts] = useState([]);
+    const [publicStats, setPublicStats] = useState(null);
 
     useEffect(() => {
         authFetch(`${import.meta.env.VITE_API_URL}/expert/public-list`)
@@ -98,8 +102,19 @@ export default function ExpertPortfolio() {
             .then(res => {
                 if (res.success) setExperts((res.experts || []).map(toDisplayExpert));
             })
-            .catch(() => {});
+            .catch(() => { });
+
+        getPublicExpertStats()
+            .then(res => { if (res.success) setPublicStats(res); })
+            .catch(() => { });
     }, []);
+
+    const STATS = [
+        { icon: Users, title: "Total Experts", value: publicStats ? publicStats.total_experts : "—", desc: "Active on platform" },
+        { icon: Star, title: "Top Rated", value: publicStats?.top_rated?.name || "—", desc: publicStats?.top_rated ? `${publicStats.top_rated.rating.toFixed(1)} rating` : "No ratings yet" },
+        { icon: PieChart, title: "Avg. Return", value: publicStats ? `${publicStats.avg_return >= 0 ? "+" : ""}${publicStats.avg_return.toFixed(2)}%` : "—", desc: "All time" },
+        { icon: UserRound, title: "Total Followers", value: publicStats ? publicStats.total_followers.toLocaleString() : "—", desc: "Across all experts" },
+    ];
 
     const filtered = experts.filter(e =>
         e.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -115,30 +130,51 @@ export default function ExpertPortfolio() {
     return (
         <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
-            <GeneralHeader />
+            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
                 {/* Header */}
-                <div className="mb-6">
-                    <h1
-                        style={{
-                            fontSize: "28px",
-                            fontWeight: 700,
-                            color: "#f8fafc",
-                        }}
-                    >
-                        Expert Portfolio
-                    </h1>
+                <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
+                    <div>
+                        <h1
+                            style={{
+                                fontSize: "28px",
+                                fontWeight: 700,
+                                color: "#f8fafc",
+                            }}
+                        >
+                            Expert Portfolio
+                        </h1>
 
-                    <p
-                        style={{
-                            color: "rgba(255,255,255,0.45)",
-                            marginTop: "4px",
-                            fontSize: "14px",
-                        }}
-                    >
-                        Explore and invest in portfolios managed by our expert consultants.
-                    </p>
+                        <p
+                            style={{
+                                color: "rgba(255,255,255,0.45)",
+                                marginTop: "4px",
+                                fontSize: "14px",
+                            }}
+                        >
+                            Explore and invest in portfolios managed by our expert consultants.
+                        </p>
+                    </div>
+
+                    {canManage && (
+                        <button
+                            onClick={() => navigate("/expert/portfolio")}
+                            style={{
+                                padding: "10px 20px",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                background: "rgba(59,130,246,0.12)",
+                                border: "1px solid rgba(59,130,246,0.3)",
+                                color: "#60a5fa",
+                                fontWeight: 600,
+                                fontSize: 14,
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            My Portfolio
+                        </button>
+                    )}
                 </div>
                 <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
 
@@ -259,7 +295,7 @@ export default function ExpertPortfolio() {
                         className="grid px-5 py-3"
                         style={{
                             gridTemplateColumns:
-                                "60px 2fr 1.5fr 120px 120px 140px 250px",
+                                "2.5fr 1fr 140px 110px 140px",
                             background:
                                 "rgba(255,255,255,0.03)",
                             color:
@@ -269,7 +305,7 @@ export default function ExpertPortfolio() {
                                 "1px solid rgba(255,255,255,0.08)",
                         }}
                     >
-                        <div>#</div>
+
                         <div>Expert</div>
                         <div>Target Market</div>
                         <div>Risk Level</div>
@@ -280,16 +316,17 @@ export default function ExpertPortfolio() {
                     {/* Rows */}
                     {visible.map((expert, index) => (
                         <div
+                            onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`)}
                             key={index}
                             className="grid items-center px-5 py-4"
                             style={{
                                 gridTemplateColumns:
-                                    "60px 2fr 1.5fr 120px 120px 140px 250px",
+                                    "2.5fr 1fr 140px 110px 140px",
                                 borderTop:
                                     "1px solid rgba(255,255,255,0.05)",
                             }}
                         >
-                            <div>{index + 1}</div>
+
 
                             <div className="flex items-center gap-3">
                                 <Avatar
@@ -342,7 +379,7 @@ export default function ExpertPortfolio() {
                                 </span>
                             </div>
 
-                            <div>{expert.followers}</div>
+                            <div>{expert.followers.toLocaleString()}</div>
 
                             <div>
                                 <StarRating
@@ -350,50 +387,7 @@ export default function ExpertPortfolio() {
                                 />
                             </div>
 
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`)}
-                                    style={{
-                                        padding:
-                                            "8px 14px",
-                                        borderRadius:
-                                            "8px",
-                                        background:
-                                            "rgba(59,130,246,0.12)",
-                                        border:
-                                            "1px solid rgba(59,130,246,0.3)",
-                                        color:
-                                            "#60a5fa",
-                                        fontSize:
-                                            "12px",
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    View Profile
-                                </button>
 
-                                <button
-                                    onClick={() => openChatWith({ user_id: expert.user_id, full_name: expert.name, role: "expert" })}
-                                    style={{
-                                        padding:
-                                            "8px 14px",
-                                        borderRadius:
-                                            "8px",
-                                        background:
-                                            "rgba(0,211,243,0.12)",
-                                        border:
-                                            "1px solid rgba(0,211,243,0.3)",
-                                        color:
-                                            "#00D3F2",
-                                        fontSize:
-                                            "12px",
-                                        cursor: "pointer"
-
-                                    }}
-                                >
-                                    Ask Question
-                                </button>
-                            </div>
                         </div>
                     ))}
 

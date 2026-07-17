@@ -1,11 +1,12 @@
-import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 // Lazy-loaded pages — each becomes its own chunk at build time
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
 const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));
@@ -29,10 +30,10 @@ const PaymentFail = lazy(() => import("./pages/investor/PaymentFail.jsx"));
 const InvestorProfilePage = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
 const Watchlist = lazy(() => import("./pages/shared/Watchlist.jsx"));
 const Notification = lazy(() => import("./pages/investor/Notification.jsx"));
-const ExpertPortfolio = lazy(() => import("./pages/investor/ExpertPortfolio.jsx"));
-const EducationContent = lazy(() => import("./pages/investor/EducationContent.jsx"));
+const ExpertPortfolio = lazy(() => import("./pages/shared/ExpertPortfolio.jsx"));
+const EducationContent = lazy(() => import("./pages/shared/EducationContent.jsx"));
 const AIChatbot = lazy(() => import("./pages/investor/AIChatbot.jsx"));
-const ExpertDetails = lazy(() => import("./pages/investor/ExpertDetail.jsx"));
+const ExpertDetails = lazy(() => import("./pages/shared/ExpertDetail.jsx"));
 const BuyStockPage = lazy(() => import("./pages/investor/BuyStockPage.jsx"));
 const SellStockPage = lazy(() => import("./pages/investor/SellStockPage.jsx"));
 const TransactionHistoryPage = lazy(() => import("./pages/investor/TransactionHistoryPage.jsx"));
@@ -46,13 +47,21 @@ const ExpertPortfolioPage = lazy(() => import("./pages/expert/ExpertPortfolioPag
 const CreateExpertPortfolioPage = lazy(() => import("./pages/expert/CreateExpertPortfolioPage.jsx"));
 const ExpertQuestionsPage = lazy(() => import("./pages/expert/ExpertQuestionsPage.jsx"));
 const ExpertNotificationPage = lazy(() => import("./pages/expert/ExpertNotificationPage.jsx"));
+const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensationPage.jsx"));
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
+const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
+const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 
 function S({ children }) {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
+
     return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
 }
 
@@ -78,10 +87,11 @@ export const router = createBrowserRouter([
     { path: "/investor/portfolio-overview", element: protect(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
     { path: "/investor", element: protect(["investor"], LoggedInHomePage) },
+    { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
     { path: "/realtimedashboard", element: protect(["investor", "expert"], RealTimeDashBoardPage) },
     { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
-    { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
+    { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
     { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
@@ -90,10 +100,10 @@ export const router = createBrowserRouter([
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
     { path: "/watchlist", element: protect(["investor", "expert"], Watchlist) },
     { path: "/investor/notification", element: protect(["investor"], Notification) },
-    { path: "/investor/expertportfolio", element: protect(["investor"], ExpertPortfolio) },
-    { path: "/investor/educationcontent", element: protect(["investor"], EducationContent) },
+    { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
+    { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
-    { path: "/investor/expertdetails", element: protect(["investor"], ExpertDetails) },
+    { path: "/investor/expertdetails", element: protect(["investor", "expert"], ExpertDetails) },
 
     { path: "/adminpanel", element: protect(["admin"], AdminPanelPage) },
     { path: "/adminpanel/useraccounts", element: protect(["admin"], UserAccountsPage) },
@@ -105,6 +115,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
     { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
+    { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
@@ -116,4 +127,5 @@ export const router = createBrowserRouter([
     { path: "/expert/notifications", element: protect(["expert"], ExpertNotificationPage) },
     { path: "/expert/updateparticular", element: protect(["expert"], UpdateExpertParticularPage) },
     { path: "/expert/documents", element: protect(["expert"], ExpertDocumentPage) },
+    { path: "/expert/compensation", element: protect(["expert"], ExpertCompensationPage) },
 ]);

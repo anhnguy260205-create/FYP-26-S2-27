@@ -2,46 +2,15 @@ import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { createAccount } from "../../api/userApi";
-import image1 from "../../images/image1.png";
+import img from "../../images/image1.png";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 
-function ImageStockMarketTradingCharts() {
-  return (
-    <div className="flex flex-col gap-6 w-full">
-
-      {/* Image */}
-      <div className="relative w-full h-64 lg:h-100 overflow-hidden">
-        <img alt="" src={image1} className="absolute inset-0 w-full h-full object-cover rounded-[30px]" />
-        <div className="absolute inset-0 bg-black/35 rounded-[30px]" />
-        <div className="absolute bottom-8 left-8 right-8 text-white z-10">
-          <h1 className="text-lg font-bold leading-tight mb-2">Smart Trading Starts Here</h1>
-          <p className="text-sm text-gray-200 leading-relaxed">
-            Join thousands of investors leveraging data-driven insights to grow their portfolios.
-          </p>
-        </div>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="flex gap-3 lg:gap-5 w-full">
-        {[
-          { value: "50K+", label: "Active Users" },
-          { value: "2M+", label: "Daily Trades" },
-          { value: "18.4%", label: "Avg. Return" },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="flex-1 bg-slate-900 border border-slate-700 rounded-3xl p-4 lg:p-6 text-center transition-all duration-300 hover:bg-cyan-500/20 hover:border-cyan-400/40 hover:shadow-[0_0_25px_rgba(34,211,238,0.35)] hover:-translate-y-1 cursor-pointer"
-          >
-            <h2 className="text-cyan-400 text-2xl lg:text-4xl font-bold mb-1 lg:mb-2">{stat.value}</h2>
-            <p className="text-gray-300 text-sm lg:text-lg">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+const ACCOUNT_TYPE_STYLES = {
+  investor: { color: "#0092b8", bg: "rgba(0,146,184,0.06)", hover: "hover:border-[#0092b8] hover:bg-[#0092b8]/5" },
+  expert: { color: "#7c3aed", bg: "rgba(124,58,237,0.06)", hover: "hover:border-[#7c3aed] hover:bg-[#7c3aed]/5" },
+};
 
 function RegistrationPage() {
   const navigate = useNavigate();
@@ -124,18 +93,18 @@ function RegistrationPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col bg-white text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
-        <div className="flex flex-col md:flex-row md:items-center gap-8 lg:gap-16 max-w-7xl w-full">
+      <main className="flex-1 flex flex-col md:flex-row">
 
-          {/* Form Card */}
+        {/* Form half */}
+        <div className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-16 py-10 bg-white">
           <div
-            className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
+            className="bg-[rgba(255,255,255,0.82)] w-full max-w-115 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
           >
             <div className="text-center">
@@ -237,23 +206,24 @@ function RegistrationPage() {
                   {[
                     { value: "investor", label: "Investor", desc: "Grow my portfolio" },
                     { value: "expert", label: "Expert", desc: "Provide trading insights" },
-                  ].map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => handleChange("accountType", type.value)}
-                      className="flex flex-col items-start px-4 py-3 rounded-[14px] border-2 transition-all text-left"
-                      style={{
-                        borderColor: formData.accountType === type.value ? "#0092b8" : "rgba(0,0,0,0.12)",
-                        background: formData.accountType === type.value ? "rgba(0,146,184,0.06)" : "white",
-                      }}
-                    >
-                      <span className="font-semibold text-[14px]" style={{ color: formData.accountType === type.value ? "#0092b8" : "#1f2937" }}>
-                        {type.label}
-                      </span>
-                      <span className="text-[12px] text-gray-500 mt-0.5">{type.desc}</span>
-                    </button>
-                  ))}
+                  ].map((type) => {
+                    const accent = ACCOUNT_TYPE_STYLES[type.value];
+                    const selected = formData.accountType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => handleChange("accountType", type.value)}
+                        className={`flex flex-col items-start px-4 py-3 rounded-[14px] border-2 transition-all text-left cursor-pointer ${selected ? "" : `border-black/10 bg-white ${accent.hover}`}`}
+                        style={selected ? { borderColor: accent.color, background: accent.bg } : undefined}
+                      >
+                        <span className="font-semibold text-[14px]" style={{ color: selected ? accent.color : "#1f2937" }}>
+                          {type.label}
+                        </span>
+                        <span className="text-[12px] text-gray-500 mt-0.5">{type.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -290,14 +260,18 @@ function RegistrationPage() {
               </p>
             </div>
           </div>
+        </div>
 
-          {/* Image — hidden on mobile */}
-          <div className="hidden md:flex flex-1 justify-center lg:justify-end">
-            <div className="w-full max-w-125">
-              <ImageStockMarketTradingCharts />
-            </div>
+        {/* Image half — full-bleed cover, sticks in view while the form scrolls, hidden on mobile */}
+        <div className="hidden md:block md:w-1/2 md:self-start md:sticky md:top-[60px] md:h-[calc(100vh-60px)] relative overflow-hidden">
+          <img alt="" src={img} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+          <div className="absolute bottom-12 left-10 right-10 text-white z-10">
+            <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-3 [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">Smart Trading Starts Here</h1>
+            <p className="text-sm lg:text-base font-medium text-gray-100 leading-relaxed [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
+              Join thousands of investors leveraging data-driven insights to grow their portfolios.
+            </p>
           </div>
-
         </div>
       </main>
     </motion.div>
