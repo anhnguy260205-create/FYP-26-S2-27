@@ -167,10 +167,6 @@ def mfa_resend(request: Request, current_user: dict = Depends(get_current_user_p
     return {"success": True, "message": "Code sent."}
 
 
-class LogoutRequest(BaseModel):
-    user_id: str
-
-
 @router.post("/logout")
 def logout(current_user: dict = Depends(get_current_user)):
     from app.control.controller.userc import LogoutController
