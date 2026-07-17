@@ -4,6 +4,9 @@ import { UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layout/AdminPage.jsx";
+import { authFetch } from "../../api/apiClient.js";
+
+const API = `${import.meta.env.VITE_API_URL}/admin`;
 
 function UserAccountsPage() {
   const [users, setUsers] = useState([]);
@@ -16,10 +19,10 @@ function UserAccountsPage() {
       setLoading(true);
 
       const url = searchKeyword
-        ? `http://127.0.0.1:8000/admin/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
-        : "http://127.0.0.1:8000/admin/useraccounts";
+        ? `${API}/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
+        : `${API}/useraccounts`;
 
-      const response = await fetch(url);
+      const response = await authFetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -48,7 +51,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/suspend`, {
+      const response = await authFetch(`${API}/useraccounts/${userId}/suspend`, {
         method: "PUT",
       });
 
@@ -71,7 +74,7 @@ function UserAccountsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/admin/useraccounts/${userId}/activate`, {
+      const response = await authFetch(`${API}/useraccounts/${userId}/activate`, {
         method: "PUT",
       });
 
