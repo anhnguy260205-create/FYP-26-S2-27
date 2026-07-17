@@ -50,6 +50,7 @@ from app.entity.models.emailalert import StockAlert
 from app.entity.models.notification import Notification, NotificationBroadcast
 from app.entity.models.order_book import OrderBook
 from app.entity.models.predictionusage import PredictionUsage
+from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,

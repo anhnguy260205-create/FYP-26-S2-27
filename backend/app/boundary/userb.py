@@ -21,7 +21,7 @@ from app.control.controller.investorc import (
     UpdateInvestorInterestsController,
     UpdateInvestorRiskToleranceController,
 )
-from app.control.services.auth import get_current_user
+from app.control.services.auth import get_current_user, get_current_user_pre_mfa, mfa_satisfied
 from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -88,12 +88,73 @@ def email_by_username(request: Request, username: str):
 # ── Auth: login/logout ─────────────────────────────────────────────────────────
 
 @router.post("/firebase-login")
-def firebase_login(current_user: dict = Depends(get_current_user)):
-    """Exchange a verified Firebase token for the full internal user profile."""
+def firebase_login(current_user: dict = Depends(get_current_user_pre_mfa)):
+    """Exchange a verified Firebase token for the full internal user profile.
+
+    Non-admin logins additionally require an email OTP (2nd factor): the first
+    call of a new login session sends the code and returns mfa_required=True;
+    the frontend then calls /user/mfa/verify to complete the login."""
+    if not mfa_satisfied(current_user):
+        from app.entity.models.login_mfa import LoginMfaOtp
+        from app.control.services.email_service import send_login_otp_email
+        otp = LoginMfaOtp.create_otp(current_user["email"])
+        # DEV convenience: OTP visible in backend console. REMOVE before production.
+        print(f"[MFA] login OTP for {current_user['email']}: {otp}")
+        send_login_otp_email(current_user["email"], otp)
+        return {"success": True, "mfa_required": True, "email": current_user["email"]}
+
+    profile = FirebaseLoginController().login(current_user["email"])
+    if not profile:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"success": True, "mfa_required": False, "user": profile}
+
+
+# ── Auth: login email OTP (2nd factor; admins exempt) ──────────────────────────
+
+class MfaVerifyRequest(BaseModel):
+    otp_code: str
+
+
+@router.post("/mfa/verify")
+@limiter.limit("10/minute")
+def mfa_verify(request: Request, data: MfaVerifyRequest,
+               current_user: dict = Depends(get_current_user_pre_mfa)):
+    """Verify the emailed OTP for the current login session."""
+    from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
+
+    auth_time = current_user.get("auth_time")
+    if auth_time is None:
+        auth_time = 0
+    if current_user.get("role") == "admin":
+        # admins are exempt — just return the profile
+        profile = FirebaseLoginController().login(current_user["email"])
+        return {"success": True, "user": profile}
+
+    ok, message = LoginMfaOtp.verify_otp(current_user["email"], data.otp_code.strip())
+    if not ok:
+        return {"success": False, "message": message}
+
+    LoginMfaSession.mark_verified(current_user["email"], auth_time)
     profile = FirebaseLoginController().login(current_user["email"])
     if not profile:
         raise HTTPException(status_code=404, detail="User not found")
     return {"success": True, "user": profile}
+
+
+@router.post("/mfa/resend")
+@limiter.limit("3/minute")
+def mfa_resend(request: Request, current_user: dict = Depends(get_current_user_pre_mfa)):
+    """Send a fresh login OTP (invalidates previous ones)."""
+    from app.entity.models.login_mfa import LoginMfaOtp
+    from app.control.services.email_service import send_login_otp_email
+
+    if mfa_satisfied(current_user):
+        return {"success": True, "message": "No verification needed."}
+    otp = LoginMfaOtp.create_otp(current_user["email"])
+    # DEV convenience: OTP visible in backend console. REMOVE before production.
+    print(f"[MFA] login OTP for {current_user['email']}: {otp}")
+    sent = send_login_otp_email(current_user["email"], otp)
+    return {"success": bool(sent), "message": "Code sent." if sent else "Failed to send email."}
 
 
 class LogoutRequest(BaseModel):

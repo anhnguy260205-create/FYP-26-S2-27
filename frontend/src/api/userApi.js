@@ -70,6 +70,22 @@ export const firebaseLogin = async () => {
   return response.json();
 };
 
+/** Verify the emailed login OTP (2nd factor; admins never need this). */
+export const verifyLoginOtp = async (otpCode) => {
+  const response = await authFetch(`${BASE_URL}/mfa/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ otp_code: otpCode }),
+  });
+  return response.json();
+};
+
+/** Ask the backend to email a fresh login OTP. */
+export const resendLoginOtp = async () => {
+  const response = await authFetch(`${BASE_URL}/mfa/resend`, { method: "POST" });
+  return response.json();
+};
+
 export const logoutAccount = async () => {
   const response = await authFetch(`${BASE_URL}/logout`, { method: "POST" });
   return response.json();

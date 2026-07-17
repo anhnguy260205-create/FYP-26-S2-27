@@ -2,7 +2,7 @@ import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { firebaseLogin } from "../../api/userApi";
+import { firebaseLogin, verifyLoginOtp, resendLoginOtp } from "../../api/userApi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import image1 from "../../images/image1.png";
@@ -44,10 +44,55 @@ function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+  // Email OTP (2nd factor) — backend sends a code for non-admin logins
+  const [stage,     setStage]     = useState("login");   // "login" | "otp"
+  const [otp,       setOtp]       = useState("");
+  const [otpError,  setOtpError]  = useState("");
+  const [resendMsg, setResendMsg] = useState("");
 
   const handleChange = (field, value) => {
     setError("");
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const goToRole = (user) => {
+    sessionStorage.setItem("currentUser", JSON.stringify(user));
+    const role = user.role;
+    const isFirstLogin = !user.full_name;
+    if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");
+    else if (role === "expert") navigate(isFirstLogin ? "/expert/updateparticular" : "/expert");
+    else if (role === "admin") navigate("/adminpanel");
+    else setError("Unknown role: " + role);
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setOtpError("");
+    setResendMsg("");
+    setLoading(true);
+    try {
+      const result = await verifyLoginOtp(otp.trim());
+      if (!result.success) {
+        setOtpError(result.message || "Verification failed");
+        return;
+      }
+      goToRole(result.user);
+    } catch {
+      setOtpError("Network error — please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setOtpError("");
+    setResendMsg("");
+    try {
+      const result = await resendLoginOtp();
+      setResendMsg(result.success ? "A new code has been sent." : (result.message || "Failed to resend."));
+    } catch {
+      setResendMsg("Failed to resend — please try again.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -74,13 +119,12 @@ function LoginPage() {
         setError(result.message || "Failed to load user profile");
         return;
       }
-      sessionStorage.setItem("currentUser", JSON.stringify(result.user));
-      const role = result.user.role;
-      const isFirstLogin = !result.user.full_name;
-      if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");
-      else if (role === "expert") navigate(isFirstLogin ? "/expert/updateparticular" : "/expert");
-      else if (role === "admin") navigate("/adminpanel");
-      else setError("Unknown role: " + role);
+      // Non-admin logins need an email OTP — backend has already sent it
+      if (result.mfa_required) {
+        setStage("otp");
+        return;
+      }
+      goToRole(result.user);
 
     } catch (err) {
       console.error("[LOGIN ERROR]", err.code, err.message, err);
@@ -117,6 +161,51 @@ function LoginPage() {
           <div className="bg-[rgba(255,255,255,0.82)] w-full md:max-w-115 md:shrink-0 flex flex-col justify-center"
             style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}>
 
+            {stage === "otp" ? (
+              <>
+                <div className="text-center">
+                  <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">Verify It's You</h1>
+                  <p className="text-black mt-2 mb-8 text-base md:text-[18px]" style={{ marginTop: "8px", marginBottom: "36px" }}>
+                    We sent a 6-digit code to <b>{formData.email.trim().toLowerCase()}</b>
+                  </p>
+                </div>
+
+                <form onSubmit={handleOtpSubmit} className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-[14px] text-gray-700 pl-1">Verification code</label>
+                    <input
+                      id="otp" name="otp" type="text" inputMode="numeric" maxLength={6}
+                      placeholder="Enter 6-digit code" value={otp} required autoFocus
+                      onChange={(e) => { setOtpError(""); setOtp(e.target.value.replace(/\D/g, "")); }}
+                      className="w-full rounded-[14px] bg-white px-4 text-[22px] tracking-[8px] text-gray-800 placeholder-gray-400 focus:outline-none transition text-center font-mono"
+                      style={{ ...inputStyle, height: "52px", border: otpError ? "1.5px solid #ef4444" : "1px solid #d1d5db" }}
+                      onFocus={focusStyle} onBlur={blurStyle}
+                    />
+                    {otpError && (
+                      <p className="text-[13px] font-medium mt-1" style={{ color: "#ef4444" }}>{otpError}</p>
+                    )}
+                    {resendMsg && (
+                      <p className="text-[13px] font-medium mt-1" style={{ color: "#0092b8" }}>{resendMsg}</p>
+                    )}
+                  </div>
+
+                  <button type="submit" disabled={loading || otp.length !== 6}
+                    className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}>
+                    {loading ? "Verifying…" : "Verify & Sign In"}
+                  </button>
+
+                  <div className="flex justify-between text-[14px] px-1">
+                    <span className="text-blue-700 cursor-pointer" onClick={handleResend}>Resend code</span>
+                    <span className="text-gray-600 cursor-pointer"
+                      onClick={() => { setStage("login"); setOtp(""); setOtpError(""); setResendMsg(""); }}>
+                      Back to login
+                    </span>
+                  </div>
+                </form>
+              </>
+            ) : (
+            <>
             <div className="text-center">
               <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">Welcome Back</h1>
               <p className="text-black mt-2 mb-8 text-base md:text-[20px]" style={{ marginTop: "8px", marginBottom: "36px" }}>
@@ -180,6 +269,8 @@ function LoginPage() {
               style={{ height: "52px", borderRadius: "12px", backgroundImage: "linear-gradient(174.015deg, rgb(2,6,24) 0%, rgb(22,36,86) 50%, rgb(15,23,43) 100%)", boxShadow: "0px 10px 10px rgba(0,184,219,0.3)" }}>
               Create Account
             </button>
+            </>
+            )}
           </div>
 
           {/* Image — hidden on mobile */}
