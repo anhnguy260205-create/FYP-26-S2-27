@@ -68,10 +68,8 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
 def mfa_satisfied(profile: dict) -> bool:
     """True if this login session doesn't need (or has passed) email OTP.
 
-    Only admins are exempt. Dev-header sessions use auth_time=0 so they must
-    verify once too."""
-    if profile.get("role") == "admin":
-        return True
+    All roles go through OTP, including admin. Dev-header sessions use
+    auth_time=0 so they must verify once too."""
     auth_time = profile.get("auth_time")
     if auth_time is None:
         # No session identity at all (shouldn't happen) — require OTP under

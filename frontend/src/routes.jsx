@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect } from "react";
 import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { StocksProvider } from "./context/StocksContext.jsx";
 
-// Lazy-loaded pages — each becomes its own chunk at build time
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
@@ -69,27 +69,34 @@ function wrap(Component) {
     return <S><Component /></S>;
 }
 
+function wrapWithStocks(Component) {
+    return <StocksProvider><S><Component /></S></StocksProvider>;
+}
+
 function protect(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><S><Component /></S></ProtectedRoute>;
 }
 
+function protectWithStocks(roles, Component) {
+    return <ProtectedRoute allowedRoles={roles}><StocksProvider><S><Component /></S></StocksProvider></ProtectedRoute>;
+}
+
 export const router = createBrowserRouter([
-    { path: "/", element: wrap(HomePage) },
+    { path: "/", element: wrapWithStocks(HomePage) },
     { path: "/about-us", element: wrap(AboutUsPage) },
     { path: "/support", element: wrap(SupportPage) },
     { path: "/register", element: wrap(RegistrationPage) },
     { path: "/login", element: wrap(LoginPage) },
     { path: "/reset-password", element: wrap(ResetPasswordPage) },
 
-    { path: "/buy/:symbol", element: protect(["investor"], BuyStockPage) },
-    { path: "/sell/:symbol", element: protect(["investor"], SellStockPage) },
+    { path: "/buy/:symbol", element: protectWithStocks(["investor"], BuyStockPage) },
+    { path: "/sell/:symbol", element: protectWithStocks(["investor"], SellStockPage) },
     { path: "/investor/transaction-history", element: protect(["investor"], TransactionHistoryPage) },
-    { path: "/investor/portfolio-overview", element: protect(["investor"], PortfolioOverviewPage) },
+    { path: "/investor/portfolio-overview", element: protectWithStocks(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
-    { path: "/investor", element: protect(["investor"], LoggedInHomePage) },
-    { path: "/investor/quantrating", element: protect(["investor"], QuantRatingPage) },
-    { path: "/realtimedashboard", element: protect(["investor", "expert"], RealTimeDashBoardPage) },
-    { path: "/realtimedashboard/astockdashboard/:symbol", element: protect(["investor", "expert"], AStockDashBoardPage) },
+    { path: "/investor", element: protectWithStocks(["investor"], LoggedInHomePage) },
+    { path: "/investor/quantrating", element: protectWithStocks(["investor"], QuantRatingPage) },    { path: "/realtimedashboard", element: protectWithStocks(["investor", "expert"], RealTimeDashBoardPage) },
+    { path: "/realtimedashboard/astockdashboard/:symbol", element: protectWithStocks(["investor", "expert"], AStockDashBoardPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
     { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
     { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
@@ -98,7 +105,7 @@ export const router = createBrowserRouter([
     { path: "/investor/payment-success", element: protect(["investor"], PaymentSuccess) },
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
-    { path: "/watchlist", element: protect(["investor", "expert"], Watchlist) },
+    { path: "/watchlist", element: protectWithStocks(["investor", "expert"], Watchlist) },
     { path: "/investor/notification", element: protect(["investor"], Notification) },
     { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
