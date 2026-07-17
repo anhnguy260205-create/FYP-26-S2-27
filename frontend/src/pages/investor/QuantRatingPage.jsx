@@ -33,6 +33,14 @@ const GRADE_COLOR = {
   A: "#10b981", B: "#34d399", C: "#fbbf24", D: "#fb923c", F: "#f87171", "N/A": "#64748b",
 };
 
+// Model confidence badge theme (from backend `confidence.level`)
+const CONF_THEME = {
+  high:    { label: "High confidence",   text: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.35)" },
+  medium:  { label: "Medium confidence", text: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.35)" },
+  low:     { label: "Low confidence",    text: "#fb923c", bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.35)" },
+  unknown: { label: "Unrated model",     text: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
+};
+
 const themeFor = (label) => LABEL_THEME[label] || LABEL_THEME["Hold"];
 const pct = (x) => (x == null ? "—" : `${(x * 100).toFixed(1)}%`);
 const money = (x) => (x == null ? "—" : `$${Number(x).toFixed(2)}`);
@@ -211,9 +219,12 @@ export default function QuantRatingPage() {
                       <div className="text-2xl font-bold text-slate-100">{rating.symbol}</div>
                       <div className="text-xs text-slate-400 truncate max-w-45">{rating.name}</div>
                     </div>
-                    <span className="text-[11px] px-2 py-1 rounded-md bg-slate-800 text-slate-300">
-                      {rating.sectorLabel}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="text-[11px] px-2 py-1 rounded-md bg-slate-800 text-slate-300">
+                        {rating.sectorLabel}
+                      </span>
+                      <ConfidenceBadge confidence={rating.confidence} />
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-center my-3">
@@ -284,9 +295,12 @@ export default function QuantRatingPage() {
             {/* Sector leaderboard */}
             <div className="rounded-2xl border border-slate-700/60 p-6" style={{ background: "rgba(15,23,42,0.5)" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-slate-200">
-                  Sector Leaderboard {ranking ? `· ${ranking.sectorLabel}` : ""}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-slate-200">
+                    Sector Leaderboard {ranking ? `· ${ranking.sectorLabel}` : ""}
+                  </h2>
+                  {ranking && <ConfidenceBadge confidence={ranking.confidence} />}
+                </div>
                 {rankLoading && <span className="text-xs text-slate-500">Loading…</span>}
               </div>
               {ranking?.ranking?.length ? (
@@ -353,6 +367,20 @@ export default function QuantRatingPage() {
 
 
 // ─── Small components ────────────────────────────────────────────────────────
+
+function ConfidenceBadge({ confidence }) {
+  if (!confidence) return null;
+  const c = CONF_THEME[confidence.level] || CONF_THEME.unknown;
+  const auc = confidence.auc != null ? ` · AUC ${Number(confidence.auc).toFixed(2)}` : "";
+  return (
+    <span
+      className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+      style={{ color: c.text, background: c.bg, border: `1px solid ${c.border}` }}
+      title="Out-of-sample reliability of the model behind this sector's ratings">
+      {c.label}{auc}
+    </span>
+  );
+}
 
 function Stat({ label, value, color }) {
   return (

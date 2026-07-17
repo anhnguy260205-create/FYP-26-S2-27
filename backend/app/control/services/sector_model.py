@@ -27,6 +27,8 @@ Design notes
   service correct even if the training feature list changes slightly.
 * All network/feature work is cached per (key, UTC-date) so a page view does
   the expensive yfinance work at most once per ticker per day.
+* When ml_models/sector/sector_pooled.pkl exists (see
+  scripts/train_pooled_rating.py) it replaces the 11 per-sector models.
 """
 
 import os
@@ -149,6 +151,53 @@ def _load_model(sector_key: str):
     # Some training pipelines store {"model": est, "threshold": .., "metrics": {..}}
     _models[sector_key] = model
     return model
+
+
+# ── Pooled model (sector_pooled.pkl) — preferred when present ────────────────
+# Trained by scripts/train_pooled_rating.py: ONE model for all sectors
+# (binary "beat sector median 21d excess return"), features rank-normalized
+# within the sector cohort, sector identity one-hot encoded.
+
+_POOLED_PATH = os.path.join(_MODEL_DIR, "sector_pooled.pkl")
+_pooled_state = {"checked": False, "payload": None}
+
+
+def _load_pooled():
+    """Load (once) the pooled model payload, or None → fall back to 11 pkls."""
+    if _pooled_state["checked"]:
+        return _pooled_state["payload"]
+    _pooled_state["checked"] = True
+    if os.path.exists(_POOLED_PATH):
+        try:
+            if joblib is not None:
+                _pooled_state["payload"] = joblib.load(_POOLED_PATH)
+            else:
+                with open(_POOLED_PATH, "rb") as fh:
+                    _pooled_state["payload"] = pickle.load(fh)
+        except Exception:
+            _pooled_state["payload"] = None
+    return _pooled_state["payload"]
+
+
+def _pooled_scores(payload: dict, sector_key: str, cohort_feats: dict) -> dict:
+    """P(beat sector median) for every symbol in cohort_feats.
+
+    Mirrors training exactly: price features rank-normalized (0..1) within the
+    cohort, sector one-hots appended, columns aligned to the training order."""
+    cols = payload["features"]
+    price = payload.get("price_features") or [c for c in cols if not c.startswith("sec_")]
+    raw = pd.DataFrame.from_dict(cohort_feats, orient="index")
+    X = pd.DataFrame(index=raw.index)
+    for c in price:
+        X[c] = raw[c].rank(pct=True) if c in raw.columns else np.nan
+    for c in cols:
+        if c.startswith("sec_"):
+            X[c] = 1 if c == f"sec_{sector_key}" else 0
+    X = X.reindex(columns=cols)
+    est = payload["model"]
+    proba = est.predict_proba(X)
+    idx = _buy_class_index(est)
+    return {sym: float(p[idx]) for sym, p in zip(X.index, proba)}
 
 
 def _unwrap(model):
@@ -484,8 +533,33 @@ def _label_from_prob(p: float, threshold: float) -> str:
     return "Strong Sell"
 
 
-def _stars_from_prob(p: float) -> float:
-    return round(1 + max(0.0, min(1.0, p)) * 4, 1)   # 1.0 .. 5.0
+def _stars_from_percentile(pct: float) -> float:
+    """Stars from the stock's score percentile WITHIN its sector cohort.
+
+    (Mapping raw probability linearly squashed every stock into 2-3 stars,
+    because calibrated probabilities rarely approach 0 or 1.)"""
+    return round(1 + max(0.0, min(1.0, pct)) * 4, 1)   # 1.0 .. 5.0
+
+
+def _pct_rank(value: float, values: list) -> float:
+    vals = [v for v in values if v is not None and math.isfinite(v)]
+    if value is None or not math.isfinite(value) or not vals:
+        return 0.5
+    return sum(1 for v in vals if v <= value) / len(vals)
+
+
+def _confidence_level(auc, reliable) -> str:
+    try:
+        a = float(auc)
+    except (TypeError, ValueError):
+        a = float("nan")
+    if not math.isfinite(a):
+        return "unknown"
+    if a >= 0.65 and bool(reliable):
+        return "high"
+    if a >= 0.58:
+        return "medium"
+    return "low"
 
 
 # Factor groups: (feature, +1 if higher-is-better else -1)
@@ -577,6 +651,60 @@ def _cohort_features(sector_key: str) -> dict:
     return cohort
 
 
+def _score_cohort(sector_key: str, extra: dict | None = None):
+    """Score every cohort member (plus `extra` {symbol: features}) on one scale.
+
+    Prefers the pooled model; falls back to the legacy per-sector pkl.
+    Returns (scores, threshold, model_info) or None."""
+    cohort = dict(_cohort_features(sector_key))
+    if extra:
+        cohort.update(extra)
+    if not cohort:
+        return None
+
+    pooled = _load_pooled()
+    if pooled is not None:
+        try:
+            scores = _pooled_scores(pooled, sector_key, cohort)
+            sec = (pooled.get("per_sector") or {}).get(sector_key, {})
+            info = {
+                "kind": "pooled",
+                "auc": _safe(sec.get("auc")),
+                "rankIc": _safe(sec.get("rank_ic")),
+                "reliable": bool(sec.get("reliable", pooled.get("reliable", False))),
+                "trainedAt": pooled.get("trained_at"),
+                "metrics": dict(pooled.get("metrics") or {}),
+            }
+            return scores, float(pooled.get("threshold", 0.5)), info
+        except Exception:
+            pass  # fall through to legacy models
+
+    model = _load_model(sector_key)
+    if model is None:
+        return None
+    est, threshold, metrics = _unwrap(model)
+    cols = _model_feature_names(model, est)
+    scores = {}
+    for sym, feats in cohort.items():
+        try:
+            p = _buy_probability(est, feats, cols)
+        except Exception:
+            continue
+        if p is not None:
+            scores[sym] = p
+    if not scores:
+        return None
+    info = {
+        "kind": "per_sector",
+        "auc": _safe(metrics.get("auc_buy_cv")),
+        "rankIc": None,
+        "reliable": bool(metrics.get("reliable", False)),
+        "trainedAt": metrics.get("trained_at"),
+        "metrics": metrics,
+    }
+    return scores, threshold, info
+
+
 def rate_symbol(symbol: str) -> dict | None:
     """Full Quant Rating for one ticker, ready for the frontend."""
     symbol = symbol.upper()
@@ -597,22 +725,22 @@ def rate_symbol(symbol: str) -> dict | None:
     if sector_key is None:
         return None
 
-    model = _load_model(sector_key)
-    if model is None:
-        return None
-    est, threshold, metrics = _unwrap(model)
-    cols = _model_feature_names(model, est)
-
     features = compute_features(hist, info, sector_key)
     if not features:
         return None
 
-    prob = _buy_probability(est, features, cols)
+    scored = _score_cohort(sector_key, extra={symbol: features})
+    if scored is None:
+        return None
+    scores, threshold, minfo = scored
+    prob = scores.get(symbol)
     if prob is None:
         return None
+    pct = _pct_rank(prob, list(scores.values()))
 
     cohort = _cohort_features(sector_key)
     grades = _factor_grades(features, cohort)
+    metrics = minfo.get("metrics") or {}
 
     result = {
         "symbol": symbol,
@@ -621,18 +749,26 @@ def rate_symbol(symbol: str) -> dict | None:
         "sectorLabel": SECTOR_LABELS.get(sector_key, sector_key),
         "buyProbability": round(prob, 4),
         "score": round(prob * 100),
-        "stars": _stars_from_prob(prob),
+        "stars": _stars_from_percentile(pct),
+        "sectorPercentile": round(pct * 100),
         "label": _label_from_prob(prob, threshold),
         "threshold": round(threshold, 4),
         "currentPrice": _safe(info.get("currentPrice", hist["Close"].iloc[-1])),
         "targetMeanPrice": _safe(info.get("targetMeanPrice")),
         "factorGrades": grades,
+        "confidence": {
+            "level": _confidence_level(minfo.get("auc"), minfo.get("reliable")),
+            "auc": minfo.get("auc"),
+            "rankIc": minfo.get("rankIc"),
+            "reliable": minfo.get("reliable"),
+            "modelKind": minfo.get("kind"),
+        },
         "modelMetrics": {
-            "aucBuyCv": _safe(metrics.get("auc_buy_cv")) if metrics else None,
+            "aucBuyCv": minfo.get("auc"),
             "buyPrecisionCv": _safe(metrics.get("buy_precision_cv")) if metrics else None,
             "sellPrecisionCv": _safe(metrics.get("sell_precision_cv")) if metrics else None,
-            "trainedAt": metrics.get("trained_at") if metrics else None,
-            "reliable": metrics.get("reliable") if metrics else None,
+            "trainedAt": minfo.get("trainedAt"),
+            "reliable": minfo.get("reliable"),
         },
     }
     result = _json_safe(result)
@@ -644,23 +780,20 @@ def rank_sector(sector_key: str) -> dict | None:
     """Leaderboard: rate every cohort member of a sector and sort by score."""
     if sector_key not in _SECTOR_FILES:
         return None
-    model = _load_model(sector_key)
-    if model is None:
+    scored = _score_cohort(sector_key)
+    if scored is None:
         return None
-    est, threshold, _ = _unwrap(model)
-    cols = _model_feature_names(model, est)
-    cohort = _cohort_features(sector_key)
+    scores, threshold, minfo = scored
 
+    all_probs = list(scores.values())
     rows = []
-    for sym, feats in cohort.items():
-        p = _buy_probability(est, feats, cols)
-        if p is None:
-            continue
+    for sym, p in scores.items():
+        pct = _pct_rank(p, all_probs)
         rows.append({
             "symbol": sym,
             "score": round(p * 100),
             "buyProbability": round(p, 4),
-            "stars": _stars_from_prob(p),
+            "stars": _stars_from_percentile(pct),
             "label": _label_from_prob(p, threshold),
         })
     rows.sort(key=lambda r: r["score"], reverse=True)
@@ -671,6 +804,13 @@ def rank_sector(sector_key: str) -> dict | None:
         "sectorLabel": SECTOR_LABELS.get(sector_key, sector_key),
         "count": len(rows),
         "ranking": rows,
+        "confidence": {
+            "level": _confidence_level(minfo.get("auc"), minfo.get("reliable")),
+            "auc": minfo.get("auc"),
+            "rankIc": minfo.get("rankIc"),
+            "reliable": minfo.get("reliable"),
+            "modelKind": minfo.get("kind"),
+        },
     })
 
 

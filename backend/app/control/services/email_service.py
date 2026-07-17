@@ -63,6 +63,25 @@ def send_password_reset_email(to_email: str, otp_code: str):
     _send(msg, to_email, label="password reset OTP")
 
 
+# ── Login verification OTP (2nd factor) ──────────────────────────────────────
+
+def send_login_otp_email(to_email: str, otp_code: str):
+    subject = "Deskstock Login Verification Code"
+    body = (
+        f"<p>Someone just signed in to your Deskstock account. "
+        f"To finish signing in, enter this verification code:</p>"
+        f"<h2 style='letter-spacing:4px;font-family:monospace;'>{otp_code}</h2>"
+        f"<p>This code will expire in <b>10 minutes</b>. "
+        f"If this wasn't you, please change your password immediately.</p>"
+    )
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = GMAIL_USER
+    msg["To"] = to_email
+    msg.attach(MIMEText(body, "html"))
+    return _send(msg, to_email, label="login OTP")
+
+
 # ── Password changed confirmation ────────────────────────────────────────────
 
 def send_password_changed_email(to_email: str):

@@ -26,6 +26,10 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
                 profile = UserAccount.get_auth_profile(email)
                 print(f"[AUTH] token email={email!r} => {profile}")
                 if profile:
+                    profile = dict(profile)
+                    # Firebase login timestamp — identifies this login session
+                    # for the email-OTP second factor (see login_mfa.py).
+                    profile["auth_time"] = decoded.get("auth_time")
                     return profile
 
     dev_email = _extract_dev_email(headers)
@@ -33,21 +37,57 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
         profile = UserAccount.get_auth_profile(dev_email)
         print(f"[AUTH] dev fallback email={dev_email!r} => {profile}")
         if profile:
+            profile = dict(profile)
+            # Dev-header sessions have no Firebase auth_time; use 0 so they
+            # still go through the email OTP once instead of bypassing MFA.
+            profile["auth_time"] = 0
             return profile
 
     return None
 
 
-def get_current_user(
+def mfa_satisfied(profile: dict) -> bool:
+    """True if this login session doesn't need (or has passed) email OTP.
+
+    Only admins are exempt. Dev-header sessions use auth_time=0 so they must
+    verify once too."""
+    if profile.get("role") == "admin":
+        return True
+    auth_time = profile.get("auth_time")
+    if auth_time is None:
+        # No session identity at all (shouldn't happen) — require OTP under
+        # a fixed key rather than silently skipping the second factor.
+        auth_time = 0
+    from app.entity.models.login_mfa import LoginMfaSession
+    return LoginMfaSession.is_verified(profile["email"], auth_time)
+
+
+def get_current_user_pre_mfa(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict:
+    """Valid Firebase login, but MFA not yet enforced. ONLY for the login /
+    OTP endpoints themselves — everything else must use get_current_user."""
     token = credentials.credentials if credentials else None
     profile = _resolve_profile_from_token(token, request.headers)
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
+        )
+    return profile
+
+
+def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> dict:
+    profile = get_current_user_pre_mfa(request, credentials)
+    if not mfa_satisfied(profile):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "mfa_required",
+                    "message": "Email verification required for this login."},
         )
     return profile
 
