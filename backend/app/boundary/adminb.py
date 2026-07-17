@@ -81,11 +81,14 @@ class AdminUserAccountPage:
     def suspendUserAccount(self, user_id):
         return self.controller.suspendUserAccount(user_id)
 
-    def deleteUserAccount(self, user_id, requesting_user_id=None):
-        return self.controller.deleteUserAccount(user_id, requesting_user_id)
-
     def activateUserAccount(self, user_id):
         return self.controller.activateUserAccount(user_id)
+
+    def getDashboardStats(self):
+        return self.controller.getDashboardStats()
+
+    def getSubscriptions(self):
+        return self.controller.getSubscriptions()
 
     def getInvestmentArticles(self):
         return AdminListArticlesController().list()
@@ -132,6 +135,7 @@ def get_user_accounts(
     keyword: Optional[str] = None,
     role: Optional[str] = None,
     status: Optional[str] = None,
+    current_user: dict = Depends(require_admin),
 ):
     boundary = AdminUserAccountPage()
     users = boundary.searchUserAccounts(keyword, role, status)
@@ -144,7 +148,7 @@ def get_user_accounts(
 
 
 @router.get("/useraccounts/{user_id}")
-def view_user_account(user_id: str):
+def view_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     user = boundary.viewUserAccount(user_id)
 
@@ -161,7 +165,7 @@ def view_user_account(user_id: str):
 
 
 @router.put("/useraccounts/{user_id}/suspend")
-def suspend_user_account(user_id: str):
+def suspend_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     success = boundary.suspendUserAccount(user_id)
 
@@ -174,29 +178,6 @@ def suspend_user_account(user_id: str):
     return {
         "success": True,
         "message": "User suspended successfully",
-    }
-
-
-@router.delete("/useraccounts/{user_id}")
-def delete_user_account(user_id: str, requesting_user_id: Optional[str] = None):
-    boundary = AdminUserAccountPage()
-    result = boundary.deleteUserAccount(user_id, requesting_user_id)
-
-    if result == "self_delete":
-        return {
-            "success": False,
-            "message": "You cannot delete your own account",
-        }
-
-    if not result:
-        return {
-            "success": False,
-            "message": "User not found",
-        }
-
-    return {
-        "success": True,
-        "message": "User account deleted successfully",
     }
 
 
@@ -213,7 +194,7 @@ def delete_firebase_orphan(data: DeleteFirebaseOrphanRequest, current_user: dict
 
 
 @router.put("/useraccounts/{user_id}/activate")
-def activate_user_account(user_id: str):
+def activate_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     success = boundary.activateUserAccount(user_id)
 
@@ -227,6 +208,19 @@ def activate_user_account(user_id: str):
         "success": True,
         "message": "User activated successfully",
     }
+
+
+@router.get("/dashboard-stats")
+def get_dashboard_stats(current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getDashboardStats()}
+
+
+@router.get("/subscriptions")
+def get_subscriptions(current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    subs = boundary.getSubscriptions()
+    return {"success": True, "subscriptions": subs}
 
 
 @router.get("/articles")
