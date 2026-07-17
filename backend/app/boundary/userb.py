@@ -1,3 +1,4 @@
+import os
 import threading
 from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -25,6 +26,29 @@ from app.control.services.auth import get_current_user, get_current_user_pre_mfa
 from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["User"])
+
+
+def _env_true(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _send_or_queue_login_otp(background_tasks: BackgroundTasks, email: str, otp: str):
+    """Send login OTP.
+
+    Default is synchronous so local/dev immediately shows Gmail failures in the
+    API response and backend terminal. On Render, set LOGIN_OTP_BACKGROUND=true
+    after email delivery is confirmed if you want faster response time.
+    """
+    from app.control.services.email_service import send_login_otp_email
+
+    print(f"[MFA] login OTP for {email}: {otp}")
+    if _env_true("LOGIN_OTP_BACKGROUND", False):
+        background_tasks.add_task(send_login_otp_email, email, otp)
+        return None
+    return bool(send_login_otp_email(email, otp))
 
 
 #  Public: registration 
@@ -104,14 +128,21 @@ def firebase_login(
     the frontend then calls /user/mfa/verify to complete the login."""
     if not mfa_satisfied(current_user):
         from app.entity.models.login_mfa import LoginMfaOtp
-        from app.control.services.email_service import send_login_otp_email
-        otp = LoginMfaOtp.create_otp(current_user["email"])
-        
-        # DEV convenience: OTP visible in backend console. REMOVE before production.
-        
-        print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-        background_tasks.add_task(send_login_otp_email, current_user["email"], otp)
-        return {"success": True, "mfa_required": True, "email": current_user["email"]}
+        email = current_user["email"]
+        otp = LoginMfaOtp.create_otp(email)
+        email_sent = _send_or_queue_login_otp(background_tasks, email, otp)
+        message = (
+            "Verification code sent."
+            if email_sent is not False
+            else "Verification code was generated, but email sending failed. Check backend terminal [EMAIL] logs."
+        )
+        return {
+            "success": True,
+            "mfa_required": True,
+            "email": email,
+            "email_sent": email_sent,
+            "message": message,
+        }
 
     profile = FirebaseLoginController().login(current_user["email"])
     if not profile:
@@ -156,15 +187,18 @@ def mfa_resend(
 ):
     """Send a fresh login OTP (invalidates previous ones)."""
     from app.entity.models.login_mfa import LoginMfaOtp
-    from app.control.services.email_service import send_login_otp_email
 
     if mfa_satisfied(current_user):
         return {"success": True, "message": "No verification needed."}
-    otp = LoginMfaOtp.create_otp(current_user["email"])
-    # DEV convenience: OTP visible in backend console. REMOVE before production.
-    print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-    background_tasks.add_task(send_login_otp_email, current_user["email"], otp)
-    return {"success": True, "message": "Code sent."}
+    email = current_user["email"]
+    otp = LoginMfaOtp.create_otp(email)
+    email_sent = _send_or_queue_login_otp(background_tasks, email, otp)
+    message = (
+        "A new code has been sent."
+        if email_sent is not False
+        else "A new code was generated, but email sending failed. Check backend terminal [EMAIL] logs."
+    )
+    return {"success": True, "message": message, "email_sent": email_sent}
 
 
 class LogoutRequest(BaseModel):
