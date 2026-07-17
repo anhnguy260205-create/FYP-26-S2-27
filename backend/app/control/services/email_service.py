@@ -92,14 +92,20 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
             return True
         # fall through to SMTP as a local-dev fallback
     if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        print(f"[EMAIL] Credentials not set — skipping {label}")
+        print(f"[EMAIL] Credentials not set — skipping {label}. Check GMAIL_USER and GMAIL_APP_PASSWORD in backend/.env or Render env vars.")
         return False
     try:
         # local_hostname: smtplib defaults to the machine's computer name in the
-        # EHLO handshake; non-ASCII names (Korean/Chinese Windows PCs) crash with
-        # "'ascii' codec can't encode" — pin it to a safe literal instead.
-        with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT, local_hostname="[127.0.0.1]") as server:
+        # EHLO handshake; non-ASCII Windows PC names can crash with
+        # "'ascii' codec can't encode". Pin it to a safe literal instead.
+        with smtplib.SMTP(
+            GMAIL_SMTP_HOST,
+            GMAIL_SMTP_PORT,
+            local_hostname="[127.0.0.1]",
+            timeout=20,
+        ) as server:
             server.starttls()
+            server.ehlo()
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_USER, to_email, msg.as_string())
         print(f"[EMAIL] {label} sent to {to_email}")
@@ -113,7 +119,7 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
         return False
 
 
-# ── Password reset OTP ────────────────────────────────────────────────────────
+#  Password reset OTP 
 
 def send_password_reset_email(to_email: str, otp_code: str):
     subject = "Deskstock Password Reset Code"
@@ -132,7 +138,7 @@ def send_password_reset_email(to_email: str, otp_code: str):
     _send(msg, to_email, label="password reset OTP")
 
 
-# ── Login verification OTP (2nd factor) ──────────────────────────────────────
+#  Login verification OTP (2nd factor) 
 
 def send_login_otp_email(to_email: str, otp_code: str):
     subject = "Deskstock Login Verification Code"
@@ -151,7 +157,7 @@ def send_login_otp_email(to_email: str, otp_code: str):
     return _send(msg, to_email, label="login OTP")
 
 
-# ── Password changed confirmation ────────────────────────────────────────────
+#  Password changed confirmation 
 
 def send_password_changed_email(to_email: str):
     subject = "Your DeskStock Password Was Changed"
@@ -209,7 +215,7 @@ def send_password_changed_email(to_email: str):
     return _send(msg, to_email, label="password changed confirmation")
 
 
-# ── Welcome email ─────────────────────────────────────────────────────────────
+#  Welcome email 
 
 def send_welcome_email(to_email: str, username: str, role: str):
     role_label = role.capitalize()
@@ -352,7 +358,7 @@ def send_subscription_email(to_email: str, username: str, plan_type: str):
     return _send(msg, to_email, label=f"{plan_label} subscription email for {username}")
 
 
-# ── Subscription renewal reminder ────────────────────────────────────────────
+#  Subscription renewal reminder 
 
 def send_renewal_reminder_email(to_email: str, username: str, renewal_date: str, days_remaining: int):
     subject = f"Your DeskStock Premium expires in {days_remaining} day{'s' if days_remaining != 1 else ''}"
@@ -416,7 +422,7 @@ def send_renewal_reminder_email(to_email: str, username: str, renewal_date: str,
     return _send(msg, to_email, label=f"renewal reminder for {username}")
 
 
-# ── Subscription cancellation confirmation ────────────────────────────────────
+#  Subscription cancellation confirmation 
 
 def send_cancellation_email(to_email: str, username: str, plan_type: str):
     plan_label = plan_type.capitalize()
@@ -477,7 +483,7 @@ def send_cancellation_email(to_email: str, username: str, plan_type: str):
     return _send(msg, to_email, label=f"cancellation email for {username}")
 
 
-# ── Expert verification approved ─────────────────────────────────────────────
+#  Expert verification approved 
 
 def send_expert_verified_email(to_email: str, username: str):
     subject = "Your DeskStock Expert Account Has Been Verified"
@@ -534,7 +540,7 @@ def send_expert_verified_email(to_email: str, username: str):
     return _send(msg, to_email, label=f"expert verified email for {username}")
 
 
-# ── Expert verification cancelled ────────────────────────────────────────────
+#  Expert verification cancelled 
 
 def send_expert_verification_cancelled_email(to_email: str, username: str):
     subject = "Your DeskStock Expert Verification Has Been Cancelled"
@@ -594,7 +600,7 @@ def send_expert_verification_cancelled_email(to_email: str, username: str):
     return _send(msg, to_email, label=f"expert verification cancelled email for {username}")
 
 
-# ── Expert verification rejected ─────────────────────────────────────────────
+#  Expert verification rejected 
 
 def send_expert_rejected_email(to_email: str, username: str):
     subject = "Update on Your DeskStock Expert Application"
@@ -653,7 +659,7 @@ def send_expert_rejected_email(to_email: str, username: str):
     return _send(msg, to_email, label=f"expert rejected email for {username}")
 
 
-# ── Price alert ───────────────────────────────────────────────────────────────
+#  Price alert 
 
 def send_alert_email(to_email: str, stock_symbol: str, current_price: float,
                      condition: str, custom_message: str = None):

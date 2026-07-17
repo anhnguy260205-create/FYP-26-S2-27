@@ -1,6 +1,7 @@
+import os
 import threading
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.control.services.email_service import send_welcome_email
@@ -27,7 +28,30 @@ from app.control.services.rate_limit import limiter
 router = APIRouter(prefix="/user", tags=["User"])
 
 
-# ── Public: registration ───────────────────────────────────────────────────────
+def _env_true(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _send_or_queue_login_otp(background_tasks: BackgroundTasks, email: str, otp: str):
+    """Send login OTP.
+
+    Default is synchronous so local/dev immediately shows Gmail failures in the
+    API response and backend terminal. On Render, set LOGIN_OTP_BACKGROUND=true
+    after email delivery is confirmed if you want faster response time.
+    """
+    from app.control.services.email_service import send_login_otp_email
+
+    print(f"[MFA] login OTP for {email}: {otp}")
+    if _env_true("LOGIN_OTP_BACKGROUND", False):
+        background_tasks.add_task(send_login_otp_email, email, otp)
+        return None
+    return bool(send_login_otp_email(email, otp))
+
+
+#  Public: registration 
 
 class CreateAccountRequest(BaseModel):
     role: str
@@ -81,7 +105,7 @@ def email_by_username(request: Request, username: str):
             UserAccount.username == name
         ).first()
         if not user:
-            # Convenience: allow logging in with the email address directly
+            # allow logging in with the email address directly
             user = session.query(UserAccount).filter(
                 UserAccount.email_address == name.lower()
             ).first()
@@ -90,26 +114,35 @@ def email_by_username(request: Request, username: str):
         return {"success": True, "email": user.email_address}
 
 
-# ── Auth: login/logout ─────────────────────────────────────────────────────────
+#  Auth: login/logout
 
 @router.post("/firebase-login")
-def firebase_login(current_user: dict = Depends(get_current_user_pre_mfa)):
+def firebase_login(
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user_pre_mfa),
+):
     """Exchange a verified Firebase token for the full internal user profile.
 
-    Non-admin logins additionally require an email OTP (2nd factor): the first
+    Every login additionally requires an email OTP (2nd factor): the first
     call of a new login session sends the code and returns mfa_required=True;
     the frontend then calls /user/mfa/verify to complete the login."""
     if not mfa_satisfied(current_user):
         from app.entity.models.login_mfa import LoginMfaOtp
-        from app.control.services.email_service import send_login_otp_email
-        otp = LoginMfaOtp.create_otp(current_user["email"])
-        # DEV convenience: OTP visible in backend console. REMOVE before production.
-        print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-        # Send in the background — SMTP takes 2-5s and must not block the login response.
-        threading.Thread(
-            target=send_login_otp_email, args=(current_user["email"], otp), daemon=True
-        ).start()
-        return {"success": True, "mfa_required": True, "email": current_user["email"]}
+        email = current_user["email"]
+        otp = LoginMfaOtp.create_otp(email)
+        email_sent = _send_or_queue_login_otp(background_tasks, email, otp)
+        message = (
+            "Verification code sent."
+            if email_sent is not False
+            else "Verification code was generated, but email sending failed. Check backend terminal [EMAIL] logs."
+        )
+        return {
+            "success": True,
+            "mfa_required": True,
+            "email": email,
+            "email_sent": email_sent,
+            "message": message,
+        }
 
     profile = FirebaseLoginController().login(current_user["email"])
     if not profile:
@@ -117,7 +150,7 @@ def firebase_login(current_user: dict = Depends(get_current_user_pre_mfa)):
     return {"success": True, "mfa_required": False, "user": profile}
 
 
-# ── Auth: login email OTP (2nd factor; admins exempt) ──────────────────────────
+#  Auth: login email OTP (2nd factor, all roles)
 
 class MfaVerifyRequest(BaseModel):
     otp_code: str
@@ -133,10 +166,6 @@ def mfa_verify(request: Request, data: MfaVerifyRequest,
     auth_time = current_user.get("auth_time")
     if auth_time is None:
         auth_time = 0
-    if current_user.get("role") == "admin":
-        # admins are exempt — just return the profile
-        profile = FirebaseLoginController().login(current_user["email"])
-        return {"success": True, "user": profile}
 
     ok, message = LoginMfaOtp.verify_otp(current_user["email"], data.otp_code.strip())
     if not ok:
@@ -151,20 +180,29 @@ def mfa_verify(request: Request, data: MfaVerifyRequest,
 
 @router.post("/mfa/resend")
 @limiter.limit("3/minute")
-def mfa_resend(request: Request, current_user: dict = Depends(get_current_user_pre_mfa)):
+def mfa_resend(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user_pre_mfa),
+):
     """Send a fresh login OTP (invalidates previous ones)."""
     from app.entity.models.login_mfa import LoginMfaOtp
-    from app.control.services.email_service import send_login_otp_email
 
     if mfa_satisfied(current_user):
         return {"success": True, "message": "No verification needed."}
-    otp = LoginMfaOtp.create_otp(current_user["email"])
-    # DEV convenience: OTP visible in backend console. REMOVE before production.
-    print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-    threading.Thread(
-        target=send_login_otp_email, args=(current_user["email"], otp), daemon=True
-    ).start()
-    return {"success": True, "message": "Code sent."}
+    email = current_user["email"]
+    otp = LoginMfaOtp.create_otp(email)
+    email_sent = _send_or_queue_login_otp(background_tasks, email, otp)
+    message = (
+        "A new code has been sent."
+        if email_sent is not False
+        else "A new code was generated, but email sending failed. Check backend terminal [EMAIL] logs."
+    )
+    return {"success": True, "message": message, "email_sent": email_sent}
+
+
+class LogoutRequest(BaseModel):
+    user_id: str
 
 
 @router.post("/logout")
@@ -176,7 +214,7 @@ def logout(current_user: dict = Depends(get_current_user)):
     return {"success": True, "message": "Logout successful"}
 
 
-# ── Auth: user information ─────────────────────────────────────────────────────
+#  Auth: user information 
 
 @router.get("/investor-information/{user_id}")
 def get_investor_information(
@@ -200,7 +238,7 @@ def get_expert_information(
     return {"success": True, "message": "Expert information retrieved successfully", "expert_information": result}
 
 
-# ── Auth: update/delete ────────────────────────────────────────────────────────
+#  Auth: update/delete 
 
 class UpdateInformationRequest(BaseModel):
     user_name: Optional[str] = None
@@ -255,7 +293,7 @@ def delete_expert_account(
     return {"success": True, "message": "Account deleted successfully"}
 
 
-# ── Auth: watchlist ────────────────────────────────────────────────────────────
+#  Auth: watchlist 
 
 class AddStockToWatchlistRequest(BaseModel):
     stock_symbol: str
@@ -301,7 +339,7 @@ def remove_stock_symbol(
     return {"success": True, "message": "Stock removed from watchlist"}
 
 
-# ── Auth: interests / risk tolerance ──────────────────────────────────────────
+#  Auth: interests / risk tolerance 
 
 class UpdateInterestsRequest(BaseModel):
     interests: str

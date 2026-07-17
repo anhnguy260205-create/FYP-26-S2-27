@@ -19,3 +19,4 @@ pip-system-certs
 firebase
 groq
 pytest
+gunicorn

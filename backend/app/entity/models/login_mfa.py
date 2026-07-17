@@ -1,8 +1,8 @@
 """
 login_mfa.py
 ============
-Email-OTP verification for logins (2nd factor). Admins are exempt — the check
-lives in app/control/services/auth.py.
+Email-OTP verification for logins (2nd factor), required for all roles. The
+gate check lives in app/control/services/auth.py.
 
 Two tables:
   * login_mfa_otp     — one row per issued OTP (mirrors password_reset).

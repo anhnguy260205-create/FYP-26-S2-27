@@ -7,8 +7,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import login from "../../images/login.jpg";
 
-const API_BASE = import.meta.env.VITE_API_URL;
-
 function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -59,7 +57,7 @@ function LoginPage() {
     setResendMsg("");
     try {
       const result = await resendLoginOtp();
-      setResendMsg(result.success ? "A new code has been sent." : (result.message || "Failed to resend."));
+      setResendMsg(result.message || (result.success ? "A new code has been sent." : "Failed to resend."));
     } catch {
       setResendMsg("Failed to resend — please try again.");
     }
@@ -70,20 +68,11 @@ function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      // 1. Check email exists in our system first
-      const checkRes = await fetch(
-        `${API_BASE}/user/check-email?email=${encodeURIComponent(formData.email.trim().toLowerCase())}`
-      );
-      const checkData = await checkRes.json();
-      if (!checkData.exists) {
-        setError("No account found with this email address.");
-        return;
-      }
-
-      // 2. Email confirmed — now authenticate password via Firebase
+      // 1. Authenticate directly with Firebase.
+      // This avoids one extra Render backend request before login.
       await signInWithEmailAndPassword(auth, formData.email.trim().toLowerCase(), formData.password);
 
-      // 3. Load user profile (token set by Firebase; authFetch picks it up automatically)
+      // 2. Load user profile (token set by Firebase; authFetch picks it up automatically)
       const result = await firebaseLogin();
       if (!result.success) {
         setError(result.message || "Failed to load user profile");
@@ -91,6 +80,7 @@ function LoginPage() {
       }
       // Non-admin logins need an email OTP — backend has already sent it
       if (result.mfa_required) {
+        setResendMsg(result.message || "We sent a 6-digit verification code to your email.");
         setStage("otp");
         return;
       }
@@ -103,9 +93,11 @@ function LoginPage() {
       } else if (err.code === "auth/too-many-requests") {
         setError("Too many failed attempts. Please try again later.");
       } else if (err.code === "auth/user-not-found") {
-        setError("No Firebase account found. Please register first.");
+        setError("No account found with this email address.");
       } else if (err.code === "auth/network-request-failed") {
         setError("Network error — check your internet connection and try again.");
+      } else if (err.message === "Failed to fetch") {
+        setError("Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev.");
       } else {
         setError(`Login failed (${err.code || err.message || "unknown"}). See browser console for details.`);
       }
