@@ -33,11 +33,16 @@ class CreateAccountRequest(BaseModel):
     role: str
     username: str
     email_address: str
+    recaptcha_token: Optional[str] = None
 
 
 @router.post("/create-account")
 @limiter.limit("5/minute")
 def create_account(request: Request, data: CreateAccountRequest):
+    from app.control.services.captcha import verify_recaptcha
+    client_ip = request.client.host if request.client else None
+    if not verify_recaptcha(data.recaptcha_token, client_ip):
+        return {"success": False, "message": "CAPTCHA verification failed. Please try again."}
     result = CreateAccountController().createAccount(
         data.role, data.username, data.email_address
     )
