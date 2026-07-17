@@ -116,6 +116,23 @@ def _serialise_portfolio(portfolio):
 
 class ExpertPortfolioRepository:
     @staticmethod
+    def get_average_return():
+        """Average (current value - invested) / invested across all portfolios
+        that have holdings with a positive invested amount — used for the
+        public 'Avg. Return' stat on the expert directory."""
+        with get_session() as session:
+            portfolios = session.query(ExpertPortfolio).all()
+            returns = []
+            for p in portfolios:
+                total_invested = sum(float(h.total_invested or 0) for h in p.holdings)
+                if total_invested <= 0:
+                    continue
+                total_value = sum(
+                    float(h.units or 0) * float(h.current_price or 0) for h in p.holdings)
+                returns.append((total_value - total_invested) / total_invested * 100)
+            return round(sum(returns) / len(returns), 2) if returns else 0.0
+
+    @staticmethod
     def get_or_seed_by_user(user_id=None):
         with get_session() as session:
             expert_id = _resolve_expert_id(session, user_id)

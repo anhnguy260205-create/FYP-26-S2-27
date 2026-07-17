@@ -92,6 +92,17 @@ def get_current_user(
     return profile
 
 
+def get_current_user_optional(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> dict | None:
+    """Like get_current_user, but returns None instead of raising 401 —
+    for endpoints that work for both guests and logged-in users, but need
+    to know who's asking (e.g. to mark 'is_mine' on a public review list)."""
+    token = credentials.credentials if credentials else None
+    return _resolve_profile_from_token(token, request.headers)
+
+
 def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
     if current_user.get("role") != "admin":
         raise HTTPException(

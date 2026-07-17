@@ -159,6 +159,9 @@ class Expert(Base):
         from app.entity.models.emailalert import StockAlert
         from app.entity.models.notification import Notification
         from app.entity.models.watchlist import Watchlist
+        from app.entity.models.expertfollow import ExpertFollow
+        from app.entity.models.expertportfolioreview import ExpertPortfolioReview
+        from app.entity.models.expertcompensation import ExpertCompensationLedger
 
         with get_session() as session:
             expert = session.query(Expert).filter(
@@ -197,6 +200,17 @@ class Expert(Base):
             ).delete()
             session.query(Watchlist).filter(
                 Watchlist.user_id == user_id
+            ).delete()
+            session.query(ExpertFollow).filter(
+                (ExpertFollow.expert_user_id == user_id) |
+                (ExpertFollow.follower_user_id == user_id)
+            ).delete()
+            session.query(ExpertPortfolioReview).filter(
+                (ExpertPortfolioReview.expert_user_id == user_id) |
+                (ExpertPortfolioReview.reviewer_user_id == user_id)
+            ).delete()
+            session.query(ExpertCompensationLedger).filter(
+                ExpertCompensationLedger.expert_id == expert.expert_id
             ).delete()
 
             # 5. Verification record (child of expert)

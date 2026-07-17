@@ -40,6 +40,7 @@ from app.entity.models.transaction import Transaction
 from app.entity.models.password_reset import PasswordReset
 from app.entity.models.article import Article, seed_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+from app.entity.models.review import Review, ReviewHelpful, ReviewFlag, ReviewRemoval, seed_reviews
 from app.entity.models.forumquestion import (
     ForumPost, ForumReply, ForumPostLike, ForumPostSave,
     ForumReplyLike, ForumPostView,
@@ -51,6 +52,9 @@ from app.entity.models.notification import Notification, NotificationBroadcast
 from app.entity.models.order_book import OrderBook
 from app.entity.models.predictionusage import PredictionUsage
 from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
+from app.entity.models.expertfollow import ExpertFollow
+from app.entity.models.expertportfolioreview import ExpertPortfolioReview
+from app.entity.models.expertcompensation import ExpertCompensationLedger
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
@@ -67,9 +71,11 @@ from app.boundary.passwordresetb import router as password_reset_router
 from app.boundary.tradingb import router as trading_router
 from app.boundary.knowledgehub_b import router as knowledge_router
 from app.boundary.expertb import router as expert_router
+from app.boundary.expertcompensationb import router as expert_compensation_router
 from app.boundary.consultant_forumb import router as consultant_forum_router
 from app.boundary.contentb import router as content_router
 from app.boundary.chatbotb import router as chatbot_router
+from app.boundary.reviewb import router as review_router
 from app.boundary.chatb import router as chat_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
@@ -114,6 +120,7 @@ def ensure_all_schemas(engine):
         ("forum_reply",  "updated_at",            "ALTER TABLE forum_reply ADD COLUMN updated_at DATETIME NULL"),
         ("watchlist",    "user_id",               "ALTER TABLE watchlist ADD COLUMN user_id VARCHAR(50) NULL"),
         ("notification", "broadcast_id",           "ALTER TABLE notification ADD COLUMN broadcast_id INT NULL"),
+        ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
     ]
 
     with engine.connect() as conn:
@@ -181,6 +188,19 @@ def ensure_all_schemas(engine):
             conn.commit()
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist investor_id/user_id backfill: {e}")
+
+        # expert_follow.investor_id must become nullable (experts have no investor
+        # row, and now experts can follow other experts too), and existing rows
+        # need follower_user_id backfilled from their investor's user_id.
+        try:
+            conn.execute(text("ALTER TABLE expert_follow MODIFY investor_id VARCHAR(50) NULL"))
+            conn.execute(text(
+                "UPDATE expert_follow ef JOIN investor i ON ef.investor_id = i.investor_id "
+                "SET ef.follower_user_id = i.user_id WHERE ef.follower_user_id IS NULL"
+            ))
+            conn.commit()
+        except Exception as e:
+            print(f"[SCHEMA] Skipped expert_follow investor_id/follower_user_id backfill: {e}")
     print("[SCHEMA] All schema patches complete.")
 
 
@@ -240,13 +260,28 @@ async def renewal_reminder_poller():
         await asyncio.sleep(3600)  # check every hour
 
 
+async def expert_compensation_poller():
+    """Once a day, materialize any completed calendar months of expert
+    compensation that haven't been recorded yet (idempotent — safe to run
+    repeatedly)."""
+    await asyncio.sleep(45)  # short delay after server start
+    while True:
+        try:
+            await asyncio.to_thread(ExpertCompensationLedger.materialize_completed_months)
+        except Exception as e:
+            print(f"[COMPENSATION] Poller error: {e}")
+        await asyncio.sleep(86400)  # once a day
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task1 = asyncio.create_task(yfinance_alert_poller())
     task2 = asyncio.create_task(renewal_reminder_poller())
+    task3 = asyncio.create_task(expert_compensation_poller())
     yield
     task1.cancel()
     task2.cancel()
+    task3.cancel()
 
 
 app = FastAPI(lifespan=lifespan, redirect_slashes=False)
@@ -283,6 +318,7 @@ seed_jordan_account()
 seed_articles()
 seed_landing_content()
 seed_forum_posts()
+seed_reviews()
 try:
     seed_all_firebase_accounts()
 except Exception as _e:
@@ -301,9 +337,11 @@ app.include_router(password_reset_router)
 app.include_router(trading_router)
 app.include_router(knowledge_router)
 app.include_router(expert_router)
+app.include_router(expert_compensation_router)
 app.include_router(consultant_forum_router)
 app.include_router(content_router)
 app.include_router(chatbot_router)
+app.include_router(review_router)
 app.include_router(chat_router)
 
 

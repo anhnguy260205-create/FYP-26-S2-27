@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
+import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import MiniChart from "../../components/MiniChart.jsx";
@@ -13,6 +14,7 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
+  Users, ListChecks, BadgeCheck,
 } from "lucide-react";
 import {
   CARD, CARD_COMPACT, CARD_DOMINANT, CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
@@ -269,6 +271,22 @@ function PortfolioSparkline({ up }) {
   return <MiniChart candles={series} width={600} height={80} responsive />;
 }
 
+function ProfileAvatar({ name, size = 48 }) {
+  const initials = String(name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const palette = ["#155dfc","#0092b8","#7c3aed","#059669","#d97706","#be185d"];
+  let hash = 0;
+  for (const c of String(name || "")) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  const bg = palette[hash % palette.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{ fontSize: size * 0.36, fontWeight: 700, color: "white" }}>{initials}</span>
+    </div>
+  );
+}
+
 function Hero({ name, portfolioData }) {
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
@@ -276,16 +294,21 @@ function Hero({ name, portfolioData }) {
   const TrendIcon = up ? TrendingUp : TrendingDown;
 
   return (
-    <section className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-white font-bold text-[36px] leading-[1.15] tracking-tight">
-          Welcome back, {name} <span aria-hidden="true">👋</span>
+    <section className="flex flex-col gap-5 -mt-6 md:-mt-8 -mb-8">
+      <div className="relative overflow-hidden w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] min-h-[220px] md:min-h-[280px] flex flex-col justify-center p-16 md:p-20">
+        <img alt="" src={investorLoggedInImg} className="absolute inset-0 w-full h-full object-cover -z-20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/15 -z-10" />
+
+        <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
+          Welcome back,{" "}
+          <span className="bg-clip-text text-transparent bg-linear-to-r from-[#068fffcb] to-[#0075f2]">{name}</span>{" "}
+         
         </h1>
 
         {loading ? (
-          <div className="h-5 w-64 max-w-full rounded bg-white/5 animate-pulse mt-2" />
+          <div className="h-5 w-64 max-w-full rounded bg-white/20 animate-pulse mt-2" />
         ) : hasHoldings ? (
-          <p className="mt-2 text-base text-slate-400 flex flex-wrap items-center gap-1.5">
+          <p className="mt-2 text-base text-gray-100 flex flex-wrap items-center gap-1.5 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
             Your portfolio {up ? "gained" : "lost"}
             <span className={`inline-flex items-center gap-1 font-semibold ${up ? "text-emerald-400" : "text-red-400"}`}>
               <TrendIcon size={16} />
@@ -294,7 +317,7 @@ function Hero({ name, portfolioData }) {
             today.
           </p>
         ) : (
-          <p className="mt-2 text-base text-slate-400">
+          <p className="mt-2 text-base text-gray-100 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
             You haven't made any trades yet — jump in and start building your portfolio.
           </p>
         )}
@@ -519,7 +542,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
 
 function WatchlistSection() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
   const { stocks, candles, marketStatus, lastUpdated } = useLiveStocks();
 
@@ -536,7 +559,7 @@ function WatchlistSection() {
   const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
 
   return (
-    <section>
+    <section className="border-t-0!">
       <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-[26px] font-bold text-white tracking-tight leading-snug">My Watchlist</h2>
@@ -617,6 +640,8 @@ function WatchlistSection() {
     </section>
   );
 }
+
+
 
 function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
   const price = snapshot?.p ?? null;
@@ -745,22 +770,24 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") navigate(to); }}
-      className={`group flex flex-col justify-between cursor-pointer ${primary ? CARD_DOMINANT : CARD} ${CARD_HOVER} ${CARD_GLOW_HOVER} ${a.ring} ${FOCUS_RING} ${primary ? "lg:col-span-2 p-7" : "p-6"}`}
+      className={`group flex flex-col justify-between cursor-pointer rounded-2xl bg-white ring-1 ring-slate-200 shadow-md shadow-slate-900/5 ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 ${a.ring} ${FOCUS_RING} ${primary ? "lg:col-span-2 p-7" : "p-6"}`}
     >
       <div>
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className={`flex items-center justify-center rounded-xl ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
-            <Icon size={primary ? 22 : 19} />
+          <div className={`flex items-center justify-center rounded-xl ring-1 ring-inset ring-white/10 ${a.icon} ${primary ? "w-12 h-12" : "w-10 h-10"}`}>
+            <Icon size={primary ? 24 : 21} strokeWidth={3} />
           </div>
-          <span className={`text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
-            {badge}
-          </span>
+          {badge && (
+            <span className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${a.badge}`}>
+              {badge}
+            </span>
+          )}
         </div>
-        <h3 className={`text-white font-semibold mb-1.5 ${primary ? "text-xl" : "text-lg"}`}>{title}</h3>
-        <p className="text-[15px] text-slate-400 leading-relaxed">{description}</p>
+        <h3 className={`text-slate-900 font-bold mb-1.5 ${primary ? "text-2xl" : "text-lg"}`}>{title}</h3>
+        <p className="text-[15px] font-medium text-slate-600 leading-relaxed">{description}</p>
       </div>
-      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
-        {cta} <ArrowRight size={14} />
+      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
+        {cta}
       </div>
     </div>
   );
@@ -769,7 +796,7 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
 function PlatformFeaturesSection() {
   return (
     <section>
-      <SectionHeader title="Explore RocketTrade" subtitle="Everything the platform offers, all in one place" />
+      <SectionHeader title="Explore RocketTrade" subtitle="Everything the platform offers, all in one place" dark={false} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {PLATFORM_FEATURES.map((feature) => (
           <PlatformFeatureCard key={feature.title} {...feature} />
@@ -779,28 +806,133 @@ function PlatformFeaturesSection() {
   );
 }
 
+function RealtimeDashboardSection() {
+  const navigate = useNavigate();
+  const highlights = [
+    {
+      Icon: BrainCircuit,
+      title: "AI Predictions",
+      description: "Multi-day price forecasts and confidence scores powered by machine learning.",
+    },
+    {
+      Icon: BadgeCheck,
+      title: "Verified Expert Comments",
+      description: "Get insights straight from verified market experts on every stock page.",
+    },
+    {
+      Icon: Wallet,
+      title: "Paper Trading",
+      description: "Trade against live market prices using virtual funds, zero real-money risk.",
+    },
+  ];
+
+  return (
+    <section
+      onClick={() => navigate("/realtimedashboard")}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate("/realtimedashboard"); }}
+      className="group relative overflow-hidden rounded-3xl bg-linear-to-br from-blue-900 via-blue-950 to-blue-800 ring-1 ring-blue-300/20 shadow-xl shadow-blue-950/35 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-400/10"
+    >
+      <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
+
+      <div className="relative flex flex-col gap-8">
+        <div>
+          <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
+            Live Market Data
+          </span>
+          <h2 className="text-white font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
+            The Realtime Trading Dashboard
+          </h2>
+          <p className="text-slate-300 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
+            One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {highlights.map(({ Icon, title, description }) => (
+            <div key={title} className="flex flex-col gap-2">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
+                <Icon size={19} />
+              </div>
+              <p className="text-white font-semibold text-[15px]">{title}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#00D3F2] transition-all duration-200 group-hover:gap-2.5">
+          Launch Dashboard <ArrowRight size={14} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingTeaserSection() {
+  const navigate = useNavigate();
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-900 via-slate-950 to-amber-950 ring-1 ring-[#FFD700]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#FFD700]/10 blur-3xl" />
+
+      <div className="relative max-w-xl">
+        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-[#FFD700]">
+          ⭐ RocketTrade Premium
+        </span>
+        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+          Stop guessing. Start trading with an edge.
+        </h2>
+        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+          Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.
+        </p>
+      </div>
+
+      <button
+        onClick={() => navigate("/investor/subscription")}
+        className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFD700] px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-[#FFD700]/20 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+      >
+        View Pricing <ArrowRight size={16} />
+      </button>
+    </section>
+  );
+}
+
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
-  const name = currentUser?.username || currentUser?.full_name || "Investor";
+  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="relative min-h-screen flex flex-col text-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
+
       <GeneralHeader />
       <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/6">
         <Hero name={name} portfolioData={portfolioData} />
-        <AIInsightsSection portfolioData={portfolioData} />
-        <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
-        <WatchlistSection />
-        <PopularStocksSection />
-        <PlatformFeaturesSection />
+        <div
+          className="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] rounded-4xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 px-6 sm:px-12 md:px-40 py-10 md:py-40 flex flex-col gap-8"
+          style={{ marginTop:-15, marginBottom: -100}}
+        >
+          <AIInsightsSection portfolioData={portfolioData} />
+          <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
+          <WatchlistSection />
+    
+
+
+          </div>
+          <PricingTeaserSection  />
+          <div classname="bg-white">
+            <PlatformFeaturesSection />
+          </div>
+
+          <RealtimeDashboardSection />
+
       </main>
       <Footer />
     </motion.div>
