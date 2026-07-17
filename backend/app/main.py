@@ -100,6 +100,35 @@ ENABLE_BACKGROUND_JOBS = _env_true("ENABLE_BACKGROUND_JOBS", DEFAULT_HEAVY_START
 LOG_SLOW_REQUESTS = _env_true("LOG_SLOW_REQUESTS", True)
 
 
+
+def _env_list(name: str) -> list[str]:
+    raw = os.getenv(name, "")
+    return [item.strip().rstrip("/") for item in raw.split(",") if item.strip()]
+
+
+DEFAULT_CORS_ORIGINS = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://127.0.0.1:5174",
+    "http://localhost:5174",
+    "https://fyp-26-s2-27.web.app",
+    "https://fyp-26-s2-27.firebaseapp.com",
+]
+
+CORS_ORIGINS = list(dict.fromkeys(
+    DEFAULT_CORS_ORIGINS
+    + _env_list("CORS_ORIGINS")
+    + _env_list("FRONTEND_URL")
+))
+
+# Allows Vite dev ports even if the port changes. Keep exact production
+# origins in CORS_ORIGINS above / Render env var CORS_ORIGINS.
+CORS_ALLOW_ORIGIN_REGEX = os.getenv(
+    "CORS_ALLOW_ORIGIN_REGEX",
+    r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+)
+
+
 def _col_exists(conn, table, col):
     """Check column existence via information_schema — works on ALL MySQL versions."""
     from sqlalchemy import text
@@ -299,12 +328,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-        "https://fyp-26-s2-27.web.app",
-        "https://fyp-26-s2-27.firebaseapp.com",
-    ],
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
