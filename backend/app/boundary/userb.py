@@ -99,7 +99,7 @@ def firebase_login(
 ):
     """Exchange a verified Firebase token for the full internal user profile.
 
-    Non-admin logins additionally require an email OTP (2nd factor): the first
+    Every login additionally requires an email OTP (2nd factor): the first
     call of a new login session sends the code and returns mfa_required=True;
     the frontend then calls /user/mfa/verify to complete the login."""
     if not mfa_satisfied(current_user):
@@ -119,7 +119,7 @@ def firebase_login(
     return {"success": True, "mfa_required": False, "user": profile}
 
 
-#  Auth: login email OTP (2nd factor; admins exempt) 
+#  Auth: login email OTP (2nd factor, all roles)
 
 class MfaVerifyRequest(BaseModel):
     otp_code: str
@@ -135,10 +135,6 @@ def mfa_verify(request: Request, data: MfaVerifyRequest,
     auth_time = current_user.get("auth_time")
     if auth_time is None:
         auth_time = 0
-    if current_user.get("role") == "admin":
-        # admins are exempt — just return the profile
-        profile = FirebaseLoginController().login(current_user["email"])
-        return {"success": True, "user": profile}
 
     ok, message = LoginMfaOtp.verify_otp(current_user["email"], data.otp_code.strip())
     if not ok:
