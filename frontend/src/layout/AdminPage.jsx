@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutAccount } from "../api/userApi";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 
 const menuItems = [
   { name: "Dashboard", path: "/adminpanel" },
@@ -21,6 +21,19 @@ function AdminLayout({ title, subtitle, children }) {
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -80,8 +93,8 @@ function AdminLayout({ title, subtitle, children }) {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={`block rounded px-3 py-2 text-[11px] font-medium ${active
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-slate-700 hover:bg-slate-100"
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-slate-700 hover:bg-slate-100"
                   }`}
               >
                 {item.name}
@@ -89,15 +102,6 @@ function AdminLayout({ title, subtitle, children }) {
             );
           })}
         </nav>
-
-        <div className="px-3 py-3 border-t border-gray-200 shrink-0">
-          <button
-            onClick={handleLogout}
-            className="w-full text-left rounded px-3 py-2 text-[11px] font-medium text-red-500 hover:bg-red-50"
-          >
-            Logout
-          </button>
-        </div>
       </aside>
 
       {/* Right column */}
@@ -121,14 +125,33 @@ function AdminLayout({ title, subtitle, children }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
-              AD
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-[10px] font-semibold text-slate-900">Admin User</p>
-              <p className="text-[9px] text-slate-500">administrator</p>
-            </div>
+          <div className="relative shrink-0" ref={profileMenuRef}>
+            <button
+              onClick={() => setProfileMenuOpen((open) => !open)}
+              className="flex items-center gap-2"
+              aria-haspopup="true"
+              aria-expanded={profileMenuOpen}
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                AD
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-[10px] font-semibold text-slate-900">Admin User</p>
+                <p className="text-[9px] text-slate-500">administrator</p>
+              </div>
+            </button>
+
+            {profileMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-25 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
