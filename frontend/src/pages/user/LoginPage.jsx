@@ -57,7 +57,7 @@ function LoginPage() {
     setResendMsg("");
     try {
       const result = await resendLoginOtp();
-      setResendMsg(result.success ? "A new code has been sent." : (result.message || "Failed to resend."));
+      setResendMsg(result.message || (result.success ? "A new code has been sent." : "Failed to resend."));
     } catch {
       setResendMsg("Failed to resend — please try again.");
     }
@@ -80,6 +80,7 @@ function LoginPage() {
       }
       // Non-admin logins need an email OTP — backend has already sent it
       if (result.mfa_required) {
+        setResendMsg(result.message || "We sent a 6-digit verification code to your email.");
         setStage("otp");
         return;
       }
@@ -95,6 +96,8 @@ function LoginPage() {
         setError("No account found with this email address.");
       } else if (err.code === "auth/network-request-failed") {
         setError("Network error — check your internet connection and try again.");
+      } else if (err.message === "Failed to fetch") {
+        setError("Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev.");
       } else {
         setError(`Login failed (${err.code || err.message || "unknown"}). See browser console for details.`);
       }
