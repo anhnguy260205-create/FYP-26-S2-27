@@ -105,7 +105,10 @@ def firebase_login(current_user: dict = Depends(get_current_user_pre_mfa)):
         otp = LoginMfaOtp.create_otp(current_user["email"])
         # DEV convenience: OTP visible in backend console. REMOVE before production.
         print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-        send_login_otp_email(current_user["email"], otp)
+        # Send in the background — SMTP takes 2-5s and must not block the login response.
+        threading.Thread(
+            target=send_login_otp_email, args=(current_user["email"], otp), daemon=True
+        ).start()
         return {"success": True, "mfa_required": True, "email": current_user["email"]}
 
     profile = FirebaseLoginController().login(current_user["email"])
@@ -158,8 +161,10 @@ def mfa_resend(request: Request, current_user: dict = Depends(get_current_user_p
     otp = LoginMfaOtp.create_otp(current_user["email"])
     # DEV convenience: OTP visible in backend console. REMOVE before production.
     print(f"[MFA] login OTP for {current_user['email']}: {otp}")
-    sent = send_login_otp_email(current_user["email"], otp)
-    return {"success": bool(sent), "message": "Code sent." if sent else "Failed to send email."}
+    threading.Thread(
+        target=send_login_otp_email, args=(current_user["email"], otp), daemon=True
+    ).start()
+    return {"success": True, "message": "Code sent."}
 
 
 class LogoutRequest(BaseModel):
