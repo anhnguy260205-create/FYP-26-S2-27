@@ -101,7 +101,7 @@ def seed_firebase_user(email: str, password: str, display_name: str = None) -> b
 
 def seed_all_firebase_accounts():
     """Seed default accounts. Passwords come from env vars; dev fallbacks are intentionally weak."""
-    seed_firebase_user("admin@gmail.com",  os.getenv("SEED_ADMIN_PASSWORD",   "admin123"),    "Admin")
+    seed_firebase_user("fyphd3009@gmail.com", os.getenv("SEED_ADMIN_PASSWORD", "admin123"),    "Admin")
     seed_firebase_user("kim@gmail.com",    os.getenv("SEED_INVESTOR_PASSWORD", "password"),    "Kim")
     seed_firebase_user("kimhi@gmail.com",  os.getenv("SEED_EXPERT_PASSWORD",   "password"),    "Anh")
     seed_firebase_user("jordan@gmail.com", os.getenv("SEED_JORDAN_PASSWORD",   "password123"), "Jordan")

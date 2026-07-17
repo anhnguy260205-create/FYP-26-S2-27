@@ -206,7 +206,7 @@ class UserAccount(Base):
 
 def seed_admin_account():
     UserAccount.createAccount(
-        email_address="admin@gmail.com",
+        email_address="fyphd3009@gmail.com",
         profile_name="admin",
         username="admin",
         full_name="Admin User",

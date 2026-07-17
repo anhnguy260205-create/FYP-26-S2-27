@@ -8,7 +8,7 @@
   + npm run dev
 - app link: http://localhost:5173/ 
 - Admin account:
-  + Email: admin@gmail.com
+  + Email: fyphd3009@gmail.com
   + Password: admin123
 - Investor account:
   + Email: kim@gmail.com
