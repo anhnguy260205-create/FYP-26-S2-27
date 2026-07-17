@@ -1,5 +1,4 @@
-# This module sets up the database connection using SQLAlchemy and loads configuration from environment variables.  
-# It also includes a function to check the database connection and prints a success message if the connection is established.
+# sets up the database connection using SQLAlchemy and loads configuration from environment variables.
 import os
 from pathlib import Path
 
@@ -42,12 +41,20 @@ DATABASE_URL = URL.create(
     port=int(DB_PORT),
     database=DB_NAME,
 )
-
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# unlimited DB connections or waiting too long for a stale connection.
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "280")),
+    pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
+    max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "10")),
+    pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "10")),
+)
 
 
 def check_database_connection():
     with engine.connect() as connection:
         connection.execute(text("SELECT 1"))
+
 
 print("Database connection successful")
