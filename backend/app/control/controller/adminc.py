@@ -2,7 +2,6 @@ from app.entity.database.session import get_session
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
-from app.entity.models.emailalert import StockAlert
 from app.entity.models.subscription import Subscription
 
 
@@ -131,39 +130,6 @@ class AdminUserAccountController:
             user.is_active = False
 
             session.commit()
-            return True
-
-    def deleteUserAccount(self, user_id, requesting_user_id=None):
-        if requesting_user_id and requesting_user_id == user_id:
-            return "self_delete"
-
-        with get_session() as session:
-            user = session.query(UserAccount).filter(
-                UserAccount.user_id == user_id
-            ).first()
-
-            if not user:
-                return False
-
-            investor = session.query(Investor).filter(
-                Investor.user_id == user_id
-            ).first()
-
-            expert = session.query(Expert).filter(
-                Expert.user_id == user_id
-            ).first()
-
-            session.query(StockAlert).filter(
-                StockAlert.user_id == user_id
-            ).delete()
-
-            if investor:
-                session.delete(investor)
-
-            if expert:
-                session.delete(expert)
-
-            session.delete(user)
             return True
 
     def activateUserAccount(self, user_id):
