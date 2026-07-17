@@ -1,17 +1,12 @@
 import os
+import time
 import certifi
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env this early so LOCAL_CA_BUNDLE (see below) is visible before anything
-# else in this file/its imports touches SSL. connection.py loads it again later,
-# which is a harmless no-op for vars already set.
+
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-# Point Python's SSL stack at certifi's CA bundle (fixes Windows cert errors with Google APIs).
-# LOCAL_CA_BUNDLE (set in backend/.env, gitignored) lets one machine override this — e.g.
-# antivirus software that TLS-scans outbound HTTPS and re-signs certs with its own root,
-# which isn't in certifi's public bundle. Falls back to plain certifi for everyone else.
 _ca_bundle = os.environ.get("LOCAL_CA_BUNDLE") or certifi.where()
 os.environ.setdefault("SSL_CERT_FILE", _ca_bundle)
 os.environ.setdefault("REQUESTS_CA_BUNDLE", _ca_bundle)
@@ -86,6 +81,25 @@ from slowapi.errors import RateLimitExceeded
 from app.control.services.rate_limit import limiter
 
 
+def _env_true(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _running_on_render() -> bool:
+    return bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+
+
+DEFAULT_HEAVY_STARTUP = not _running_on_render()
+RUN_SCHEMA_PATCHES = _env_true("RUN_SCHEMA_PATCHES", DEFAULT_HEAVY_STARTUP)
+RUN_SEEDS = _env_true("RUN_SEEDS", DEFAULT_HEAVY_STARTUP)
+RUN_FIREBASE_SEED = _env_true("RUN_FIREBASE_SEED", False)
+ENABLE_BACKGROUND_JOBS = _env_true("ENABLE_BACKGROUND_JOBS", DEFAULT_HEAVY_STARTUP)
+LOG_SLOW_REQUESTS = _env_true("LOG_SLOW_REQUESTS", True)
+
+
 def _col_exists(conn, table, col):
     """Check column existence via information_schema — works on ALL MySQL versions."""
     from sqlalchemy import text
@@ -133,10 +147,7 @@ def ensure_all_schemas(engine):
             except Exception as e:
                 print(f"[SCHEMA] Skipped {table}.{col}: {e}")
 
-        # user_account.has_welcomed drives the one-time welcome notification on first
-        # login. Existing accounts must be backfilled as already-welcomed the moment
-        # this column is created, or every current user would get "welcomed" on their
-        # next login as if they were brand new.
+
         try:
             if not _col_exists(conn, "user_account", "has_welcomed"):
                 conn.execute(text(
@@ -147,14 +158,7 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped user_account.has_welcomed: {e}")
 
-        # Verification/application data (status, documents, approved_date) used to
-        # live directly on the expert table. It's now split into its own
-        # expert_verification table, separating "who this expert is" from "where
-        # their application stands". One-time backfill for legacy rows: copy any
-        # expert that predates the split into expert_verification, normalizing the
-        # old inconsistent status casing ("Not Submitted" -> "not_submitted") and
-        # stale defaults ("pending" with no documents ever submitted -> "not_submitted").
-        # Safe to run every startup — only inserts rows not already migrated.
+
         try:
             if _col_exists(conn, "expert", "verification_status"):
                 conn.execute(text(
@@ -177,8 +181,7 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped expert_verification backfill: {e}")
 
-        # watchlist.investor_id must become nullable (experts have no investor row),
-        # and existing rows need user_id backfilled from their investor's user_id.
+
         try:
             conn.execute(text("ALTER TABLE watchlist MODIFY investor_id VARCHAR(50) NULL"))
             conn.execute(text(
@@ -189,9 +192,7 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist investor_id/user_id backfill: {e}")
 
-        # expert_follow.investor_id must become nullable (experts have no investor
-        # row, and now experts can follow other experts too), and existing rows
-        # need follower_user_id backfilled from their investor's user_id.
+
         try:
             conn.execute(text("ALTER TABLE expert_follow MODIFY investor_id VARCHAR(50) NULL"))
             conn.execute(text(
@@ -207,11 +208,10 @@ def ensure_all_schemas(engine):
 async def yfinance_alert_poller():
     """Check alerts using cached snapshots — avoids duplicate yfinance calls.
     Polls every 60s when market is open, every 300s when closed."""
-    await asyncio.sleep(10)  # wait for server to fully start
+    await asyncio.sleep(int(os.getenv("STOCK_POLLER_START_DELAY_SECONDS", "90")))
     while True:
         market_open = get_market_status() == "OPEN"
-        # One batched refresh fills the cache for the whole pool — no
-        # per-symbol yfinance calls even when no client is connected.
+
         await ensure_snapshots_fresh()
         for symbol in stock_pool:
             try:
@@ -275,13 +275,22 @@ async def expert_compensation_poller():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    task1 = asyncio.create_task(yfinance_alert_poller())
-    task2 = asyncio.create_task(renewal_reminder_poller())
-    task3 = asyncio.create_task(expert_compensation_poller())
-    yield
-    task1.cancel()
-    task2.cancel()
-    task3.cancel()
+    tasks = []
+    if ENABLE_BACKGROUND_JOBS:
+        tasks = [
+            asyncio.create_task(yfinance_alert_poller()),
+            asyncio.create_task(renewal_reminder_poller()),
+            asyncio.create_task(expert_compensation_poller()),
+        ]
+        print("[STARTUP] Background jobs enabled")
+    else:
+        print("[STARTUP] Background jobs disabled")
+
+    try:
+        yield
+    finally:
+        for task in tasks:
+            task.cancel()
 
 
 app = FastAPI(lifespan=lifespan, redirect_slashes=False)
@@ -301,30 +310,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── 1. Create brand-new tables ────────────────────────────────────────────────
-Base.metadata.create_all(bind=engine)
-ensure_forum_schema(engine)
+# 1. Create/patch/seed data only when enabled 
+if RUN_SCHEMA_PATCHES:
+    Base.metadata.create_all(bind=engine)
+    ensure_forum_schema(engine)
+    ensure_all_schemas(engine)
+    ensure_forum_schema(engine)
+else:
+    print("[STARTUP] Schema patches skipped")
 
-# ── 2. Patch existing tables (MySQL-version-safe) ─────────────────────────────
-ensure_all_schemas(engine)
-ensure_forum_schema(engine)
+if RUN_SEEDS:
+    seed_profiles()
+    seed_admin_account()
+    seed_investor_account()
+    seed_expert_account()
+    seed_jordan_account()
+    seed_articles()
+    seed_landing_content()
+    seed_forum_posts()
+    seed_reviews()
+else:
+    print("[STARTUP] Seed data skipped")
 
-# ── 3. Seed data ──────────────────────────────────────────────────────────────
-seed_profiles()
-seed_admin_account()
-seed_investor_account()
-seed_expert_account()
-seed_jordan_account()
-seed_articles()
-seed_landing_content()
-seed_forum_posts()
-seed_reviews()
-try:
-    seed_all_firebase_accounts()
-except Exception as _e:
-    print(f"[SEED] Firebase seeding skipped (network/SSL issue): {_e}")
+if RUN_FIREBASE_SEED:
+    try:
+        seed_all_firebase_accounts()
+    except Exception as _e:
+        print(f"[SEED] Firebase seeding skipped (network/SSL issue): {_e}")
+else:
+    print("[STARTUP] Firebase seeding skipped")
 
-# ── 4. Routers ────────────────────────────────────────────────────────────────
+#  2. Routers 
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(stock_ws_router)
@@ -343,6 +359,16 @@ app.include_router(content_router)
 app.include_router(chatbot_router)
 app.include_router(review_router)
 app.include_router(chat_router)
+
+
+@app.middleware("http")
+async def log_request_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    if LOG_SLOW_REQUESTS and duration_ms > int(os.getenv("SLOW_REQUEST_MS", "500")):
+        print(f"[SLOW] {request.method} {request.url.path} {response.status_code} {duration_ms:.0f}ms")
+    return response
 
 
 @app.get("/")
