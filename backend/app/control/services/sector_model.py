@@ -32,8 +32,10 @@ Design notes
 """
 
 import os
+import json
 import math
 import pickle
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import numpy as np
@@ -637,17 +639,79 @@ def _features_for(symbol: str, sector_key: str) -> dict:
     return compute_features(hist, info, sector_key)
 
 
+# Cohort features survive backend restarts via this JSON file (same idea as
+# snapshot_cache.json). Critical on Render: every cold start would otherwise
+# throw away the day's cache and make the first visitor wait ~30s again.
+_COHORT_DISK_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "cohort_cache.json"
+)
+
+
+def _load_disk_cohorts() -> dict:
+    """Today's persisted cohorts ({sector: {symbol: {feat: val}}}) or {}."""
+    try:
+        with open(_COHORT_DISK_PATH) as fh:
+            data = json.load(fh)
+        if data.get("date") != _today():
+            return {}
+        out = {}
+        for sec, cohort in (data.get("sectors") or {}).items():
+            out[sec] = {
+                sym: {k: (np.nan if v is None else float(v)) for k, v in feats.items()}
+                for sym, feats in cohort.items()
+            }
+        return out
+    except Exception:
+        return {}
+
+
+def _save_disk_cohort(sector_key: str, cohort: dict) -> None:
+    sectors = {
+        sec: {sym: {k: (None if v is None or not math.isfinite(v) else float(v))
+                    for k, v in feats.items()}
+              for sym, feats in c.items()}
+        for sec, c in _load_disk_cohorts().items()
+    }
+    sectors[sector_key] = {
+        sym: {k: (None if v is None or not math.isfinite(v) else float(v))
+              for k, v in feats.items()}
+        for sym, feats in cohort.items()
+    }
+    try:
+        with open(_COHORT_DISK_PATH, "w") as fh:
+            json.dump({"date": _today(), "sectors": sectors}, fh)
+    except Exception as e:  # disk cache is best-effort
+        print(f"[RATING] could not persist cohort cache: {e}")
+
+
 def _cohort_features(sector_key: str) -> dict:
-    """Feature dicts for every cohort member of a sector, cached per day."""
+    """Feature dicts for every cohort member of a sector, cached per day.
+
+    Cache order: memory -> disk (survives restarts) -> parallel yfinance fetch
+    (12 tickers concurrently instead of sequentially: ~30s -> ~4s)."""
     ckey = (sector_key, _today())
     if ckey in _cohort_cache:
         return _cohort_cache[ckey]
+
+    disk = _load_disk_cohorts().get(sector_key)
+    if disk:
+        _cohort_cache[ckey] = disk
+        return disk
+
+    _market_ctx(sector_key)  # prefetch shared SPY/ETF/yield series once
     cohort = {}
-    for sym in SECTOR_UNIVERSE.get(sector_key, []):
-        feats = _features_for(sym, sector_key)
-        if feats:
-            cohort[sym] = feats
+    syms = SECTOR_UNIVERSE.get(sector_key, [])
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(_features_for, sym, sector_key): sym for sym in syms}
+        for fut in as_completed(futures):
+            try:
+                feats = fut.result()
+            except Exception:
+                continue
+            if feats:
+                cohort[futures[fut]] = feats
     _cohort_cache[ckey] = cohort
+    _save_disk_cohort(sector_key, cohort)
     return cohort
 
 

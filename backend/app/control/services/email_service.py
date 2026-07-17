@@ -8,8 +8,22 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(BASE_DIR / ".env")
 
-GMAIL_USER = os.getenv("GMAIL_USER")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+def _clean_env(name: str) -> str:
+    """Strip whitespace (incl. full-width/invisible unicode spaces that sneak
+    in when values are copy-pasted from chat apps). SMTP creds must be ASCII."""
+    value = (os.getenv(name) or "").strip()
+    value = "".join(ch for ch in value if ch.isascii() and not ch.isspace())
+    raw = (os.getenv(name) or "")
+    if value != raw.strip():
+        bad = [ch for ch in raw if not ch.isascii()]
+        if bad:
+            print(f"[EMAIL] WARNING: {name} contained non-ASCII characters {bad} — stripped. "
+                  f"Re-type the value in .env by hand if email sending fails.")
+    return value
+
+
+GMAIL_USER = _clean_env("GMAIL_USER")
+GMAIL_APP_PASSWORD = _clean_env("GMAIL_APP_PASSWORD")
 
 # ── shared SMTP helper (Gmail) ─────────────────────────────────────────────────
 
