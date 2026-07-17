@@ -43,7 +43,10 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
         print(f"[EMAIL] Credentials not set — skipping {label}")
         return False
     try:
-        with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT) as server:
+        # local_hostname: smtplib defaults to the machine's computer name in the
+        # EHLO handshake; non-ASCII names (Korean/Chinese Windows PCs) crash with
+        # "'ascii' codec can't encode" — pin it to a safe literal instead.
+        with smtplib.SMTP(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT, local_hostname="[127.0.0.1]") as server:
             server.starttls()
             server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_USER, to_email, msg.as_string())
