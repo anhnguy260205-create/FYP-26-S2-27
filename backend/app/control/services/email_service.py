@@ -25,6 +25,53 @@ def _clean_env(name: str) -> str:
 GMAIL_USER = _clean_env("GMAIL_USER")
 GMAIL_APP_PASSWORD = _clean_env("GMAIL_APP_PASSWORD")
 
+# ── Brevo (HTTP API, port 443) ────────────────────────────────────────────────
+# Render's free tier blocks outbound SMTP ports (25/465/587), so in production
+# we send through Brevo's REST API instead. Set BREVO_API_KEY to enable; the
+# sender address MUST be a verified sender in the Brevo dashboard
+# (Senders & IPs → Senders). Falls back to Gmail SMTP when unset/failing.
+BREVO_API_KEY = _clean_env("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = (os.getenv("BREVO_SENDER_EMAIL") or "").strip() or GMAIL_USER
+BREVO_SENDER_NAME = (os.getenv("BREVO_SENDER_NAME") or "Deskstock").strip()
+_BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+def _html_from_msg(msg) -> str:
+    """Extract the HTML body from a MIME message."""
+    for part in msg.walk():
+        if part.get_content_type() == "text/html":
+            payload = part.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                return payload.decode(part.get_content_charset() or "utf-8", errors="replace")
+            return str(payload)
+    return str(msg.get_payload())
+
+
+def _send_via_brevo(msg, to_email: str, label: str) -> bool:
+    import requests
+    try:
+        resp = requests.post(
+            _BREVO_URL,
+            headers={"api-key": BREVO_API_KEY,
+                     "content-type": "application/json",
+                     "accept": "application/json"},
+            json={
+                "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
+                "to": [{"email": to_email}],
+                "subject": msg["Subject"],
+                "htmlContent": _html_from_msg(msg),
+            },
+            timeout=15,
+        )
+        if resp.status_code in (200, 201, 202):
+            print(f"[EMAIL] {label} sent to {to_email} via Brevo")
+            return True
+        print(f"[EMAIL] Brevo rejected {label}: {resp.status_code} {resp.text[:200]}")
+        return False
+    except Exception as e:
+        print(f"[EMAIL] Brevo send failed for {label}: {e}")
+        return False
+
 # ── shared SMTP helper (Gmail) ─────────────────────────────────────────────────
 
 GMAIL_SMTP_HOST = "smtp.gmail.com"
@@ -39,6 +86,11 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
     settings (this requires 2-Step Verification to be turned on). A normal
     Gmail login password will NOT work here.
     """
+    # Prefer Brevo's HTTP API when configured (works on hosts that block SMTP).
+    if BREVO_API_KEY:
+        if _send_via_brevo(msg, to_email, label):
+            return True
+        # fall through to SMTP as a local-dev fallback
     if not GMAIL_USER or not GMAIL_APP_PASSWORD:
         print(f"[EMAIL] Credentials not set — skipping {label}")
         return False
