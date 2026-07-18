@@ -422,7 +422,7 @@ def send_renewal_reminder_email(to_email: str, username: str, renewal_date: str,
     return _send(msg, to_email, label=f"renewal reminder for {username}")
 
 
-#  Subscription cancellation confirmation 
+#  Subscription cancellation confirmation
 
 def send_cancellation_email(to_email: str, username: str, plan_type: str):
     plan_label = plan_type.capitalize()
@@ -483,7 +483,7 @@ def send_cancellation_email(to_email: str, username: str, plan_type: str):
     return _send(msg, to_email, label=f"cancellation email for {username}")
 
 
-#  Expert verification approved 
+#  Expert verification approved
 
 def send_expert_verified_email(to_email: str, username: str):
     subject = "Your DeskStock Expert Account Has Been Verified"

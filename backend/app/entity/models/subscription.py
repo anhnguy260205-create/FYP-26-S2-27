@@ -1,10 +1,14 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean
+from sqlalchemy import Column, ForeignKey, String, DateTime, Boolean, Integer
 from app.entity.models.investor import Investor
 from app.entity.database.base import Base
 from datetime import datetime, timedelta
 from app.entity.database.session import get_session
 from zoneinfo import ZoneInfo
 from uuid import uuid4
+
+# Revenue credited per plan, in cents — internal bookkeeping only, independent
+# of what Stripe actually charges (PLAN_CONFIG in payment_service.py).
+PLAN_REVENUE_CENTS = {"basic": 0, "premium": 2099}
 
 
 class Subscription(Base):
@@ -21,6 +25,7 @@ class Subscription(Base):
     sub_renewal_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")), nullable=True)
     renewal_reminder_sent = Column(Boolean, default=False, nullable=False)
+    amount = Column(Integer, default=0, nullable=False)  # revenue credited, in cents
 
     @staticmethod
     def createSubscription(transaction_id, plan_type, investor_id):
@@ -31,13 +36,13 @@ class Subscription(Base):
                 print("DUPLICATE TRANSACTION — already processed")
                 return False
 
-            if plan_type == "basic":
-                if session.query(Subscription).filter(
-                    Subscription.investor_id == investor_id,
-                    Subscription.sub_status == "active"
-                ).first():
-                    print("ACTIVE SUBSCRIPTION EXISTS")
-                    return False
+            if session.query(Subscription).filter(
+                Subscription.investor_id == investor_id,
+                Subscription.plan_type == plan_type,
+                Subscription.sub_status == "active"
+            ).first():
+                print(f"ACTIVE {plan_type.upper()} SUBSCRIPTION EXISTS")
+                return False
 
             renewal_date = (
                 datetime.now(ZoneInfo("Asia/Singapore")) + timedelta(days=30)
@@ -50,7 +55,8 @@ class Subscription(Base):
                 plan_type=plan_type,
                 investor_id=investor_id,
                 sub_status="active",
-                sub_renewal_date=renewal_date
+                sub_renewal_date=renewal_date,
+                amount=PLAN_REVENUE_CENTS.get(plan_type, 0),
             )
             session.add(subscription)
 
@@ -140,6 +146,7 @@ class Subscription(Base):
 
     @staticmethod
     def cancelSubscription(investor_id: str):
+        """Cancel the active subscription. Premium cannot be cancelled — only basic."""
         with get_session() as session:
             sub = (
                 session.query(Subscription)
@@ -152,12 +159,13 @@ class Subscription(Base):
             )
             if not sub:
                 return False
-            cancelled_plan = sub.plan_type
+            if sub.plan_type == "premium":
+                return "premium_locked"
+
             sub.sub_status = "cancelled"
             investor = session.query(Investor).filter(
                 Investor.investor_id == investor_id
             ).first()
             if investor:
-                # Premium cancel reverts to basic; basic cancel goes inactive
-                investor.investor_subscription_status = "basic" if cancelled_plan == "premium" else "inactive"
-            return cancelled_plan
+                investor.investor_subscription_status = "inactive"
+            return sub.plan_type

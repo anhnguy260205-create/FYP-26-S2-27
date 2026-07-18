@@ -13,14 +13,27 @@ function UserAccountsPage() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [roleFilter, setRoleFilter] = useState("All");
 
-  const fetchUsers = async (searchKeyword = "") => {
+  const fetchUsers = async (searchKeyword = "", filterValue = "All") => {
     try {
       setLoading(true);
 
-      const url = searchKeyword
-        ? `${API}/useraccounts?keyword=${encodeURIComponent(searchKeyword)}`
-        : `${API}/useraccounts`;
+      const params = new URLSearchParams();
+      if (searchKeyword) params.set("keyword", searchKeyword);
+
+      if (filterValue === "Expert") {
+        params.set("role", "Expert");
+      } else if (filterValue === "Basic") {
+        params.set("role", "Investor");
+        params.set("tier", "Basic");
+      } else if (filterValue === "Premium") {
+        params.set("role", "Investor");
+        params.set("tier", "Premium");
+      }
+
+      const query = params.toString();
+      const url = query ? `${API}/useraccounts?${query}` : `${API}/useraccounts`;
 
       const response = await authFetch(url);
       const data = await response.json();
@@ -39,8 +52,8 @@ function UserAccountsPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(keyword, roleFilter);
+  }, [roleFilter]);
 
   const handleView = (userId) => {
     navigate(`/adminpanel/useraccounts/${userId}`);
@@ -59,7 +72,7 @@ function UserAccountsPage() {
 
       if (data.success) {
         alert("User suspended successfully");
-        fetchUsers(keyword);
+        fetchUsers(keyword, roleFilter);
       } else {
         alert(data.message || "Failed to suspend user");
       }
@@ -82,7 +95,7 @@ function UserAccountsPage() {
 
       if (data.success) {
         alert("User activated successfully");
-        fetchUsers(keyword);
+        fetchUsers(keyword, roleFilter);
       } else {
         alert(data.message || "Failed to activate user");
       }
@@ -97,25 +110,29 @@ function UserAccountsPage() {
     { name: "User Accounts", path: "/adminpanel/useraccounts" },
     { name: "User Profiles", path: "/adminpanel/profiles" },
     { name: "Community Post", path: "/adminpanel/posts" },
-    { name: "Trade", path: "/adminpanel/trade" },
     { name: "Investment Guidance Article", path: "/adminpanel/articles" },
   ];
 
   const roleStyle = (role) => {
-    if (role === "Premium") return "bg-purple-100 text-purple-700";
-    if (role === "Customer") return "bg-blue-100 text-blue-700";
+    if (role === "Expert") return "bg-amber-100 text-amber-700";
     return "bg-blue-100 text-blue-700";
   };
 
+  const tierStyle = (tier) => {
+    if (tier === "Premium") return "bg-purple-100 text-purple-700";
+    if (tier === "Basic") return "bg-gray-100 text-gray-700";
+    return "";
+  };
+
   const statusStyle = (status) => {
-    if (status === "Active") return "bg-green-100 text-green-700";
-    if (status === "Suspended") return "bg-red-100 text-red-700";
+    if (status === "active") return "bg-green-100 text-green-700";
+    if (status === "suspended") return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-700";
   };
 
   return (
     <AdminLayout
-      title="User Accounts"
+      title="User Accounts Management"
       subtitle="Search and manage all user accounts"
     >
       <div className="p-3">
@@ -133,7 +150,7 @@ function UserAccountsPage() {
                 onChange={(e) => setKeyword(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    fetchUsers(keyword);
+                    fetchUsers(keyword, roleFilter);
                   }
                 }}
                 placeholder="Search by name, email, ID, or phone..."
@@ -142,7 +159,7 @@ function UserAccountsPage() {
             </div>
 
             <button
-              onClick={() => fetchUsers(keyword)}
+              onClick={() => fetchUsers(keyword, roleFilter)}
               className="h-12 px-8 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
             >
               Search
@@ -150,7 +167,16 @@ function UserAccountsPage() {
 
             <Filter size={22} className="text-slate-500" />
 
-            <input className="h-12 w-36 border border-gray-300 rounded-lg px-3 outline-none" />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-12 w-40 border border-gray-300 rounded-lg px-3 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="All">All Roles</option>
+              <option value="Basic">Basic Investor</option>
+              <option value="Premium">Premium Investor</option>
+              <option value="Expert">Expert</option>
+            </select>
           </div>
 
           <p className="text-sm text-slate-600 mt-5">
@@ -166,6 +192,7 @@ function UserAccountsPage() {
                 <th className="px-5 py-4">User</th>
                 <th className="px-5 py-4">Contact</th>
                 <th className="px-5 py-4">Role</th>
+                <th className="px-5 py-4">Subscription Tier</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Join Date</th>
                 <th className="px-5 py-4">Last Active</th>
@@ -203,6 +230,16 @@ function UserAccountsPage() {
                     <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
                       {user.role}
                     </span>
+                  </td>
+
+                  <td className="px-5 py-5">
+                    {user.subscription_tier ? (
+                      <span className={`px-4 py-2 rounded-full text-xs font-bold ${tierStyle(user.subscription_tier)}`}>
+                        {user.subscription_tier}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
 
                   <td className="px-5 py-5">

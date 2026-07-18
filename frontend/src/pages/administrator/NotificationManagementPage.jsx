@@ -86,7 +86,7 @@ function NotificationManagementPage() {
   };
 
   return (
-    <AdminLayout title="Notification" subtitle="Send an announcement to investors, experts, or both">
+    <AdminLayout title="Notification Management" subtitle="Send an announcement to investors, experts, or both">
       <div className="p-3">
         {/* Compose Box */}
         <section className="bg-white rounded-lg p-7 mb-5">

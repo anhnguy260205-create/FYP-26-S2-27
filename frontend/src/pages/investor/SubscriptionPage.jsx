@@ -164,10 +164,8 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
   const isPremium = currentSubscriptionStatus === "premium";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: 0.35 }}
+    <div
+
       style={{
         background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
         flexDirection: "column",
@@ -221,7 +219,7 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
       >
         {isPremium ? "Premium active" : "Upgrade now"}
       </button>
-    </motion.div>
+    </div>
   );
 }
 

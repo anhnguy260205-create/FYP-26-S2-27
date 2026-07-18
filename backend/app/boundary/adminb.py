@@ -72,8 +72,8 @@ class AdminUserAccountPage:
     def __init__(self):
         self.controller = AdminUserAccountController()
 
-    def searchUserAccounts(self, keyword=None, role=None, status=None):
-        return self.controller.getUserAccounts(keyword, role, status)
+    def searchUserAccounts(self, keyword=None, role=None, status=None, tier=None):
+        return self.controller.getUserAccounts(keyword, role, status, tier)
 
     def viewUserAccount(self, user_id):
         return self.controller.getUserAccountById(user_id)
@@ -86,6 +86,18 @@ class AdminUserAccountPage:
 
     def getDashboardStats(self):
         return self.controller.getDashboardStats()
+
+    def getSignupStats(self, days=30):
+        return self.controller.getSignupStats(days)
+
+    def getUserTypeBreakdown(self):
+        return self.controller.getUserTypeBreakdown()
+
+    def getRevenueStats(self):
+        return self.controller.getRevenueStats()
+
+    def getRevenueByMonth(self, months=6):
+        return self.controller.getRevenueByMonth(months)
 
     def getSubscriptions(self):
         return self.controller.getSubscriptions()
@@ -135,10 +147,11 @@ def get_user_accounts(
     keyword: Optional[str] = None,
     role: Optional[str] = None,
     status: Optional[str] = None,
+    tier: Optional[str] = None,
     current_user: dict = Depends(require_admin),
 ):
     boundary = AdminUserAccountPage()
-    users = boundary.searchUserAccounts(keyword, role, status)
+    users = boundary.searchUserAccounts(keyword, role, status, tier)
 
     return {
         "success": True,
@@ -214,6 +227,30 @@ def activate_user_account(user_id: str, current_user: dict = Depends(require_adm
 def get_dashboard_stats(current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getDashboardStats()}
+
+
+@router.get("/signup-stats")
+def get_signup_stats(days: int = 30, current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getSignupStats(days)}
+
+
+@router.get("/user-types")
+def get_user_types(current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getUserTypeBreakdown()}
+
+
+@router.get("/revenue-stats")
+def get_revenue_stats(current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getRevenueStats()}
+
+
+@router.get("/revenue-by-month")
+def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getRevenueByMonth(months)}
 
 
 @router.get("/subscriptions")

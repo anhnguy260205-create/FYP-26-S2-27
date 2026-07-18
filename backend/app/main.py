@@ -152,6 +152,7 @@ def ensure_all_schemas(engine):
         ("expert",       "risk_tolerance",        "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
         ("expert",       "interests",             "ALTER TABLE expert ADD COLUMN interests VARCHAR(255) NULL"),
         ("subscription", "renewal_reminder_sent", "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0"),
+        ("subscription", "amount",                "ALTER TABLE subscription ADD COLUMN amount INT NOT NULL DEFAULT 0"),
         ("transaction",  "realized_pnl",          "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL"),
         ("article",      "author_type",           "ALTER TABLE article ADD COLUMN author_type VARCHAR(20) NOT NULL DEFAULT 'expert'"),
         ("article",      "author_name",           "ALTER TABLE article ADD COLUMN author_name VARCHAR(100) NULL"),
@@ -175,6 +176,16 @@ def ensure_all_schemas(engine):
                     print(f"[SCHEMA] Added {table}.{col}")
             except Exception as e:
                 print(f"[SCHEMA] Skipped {table}.{col}: {e}")
+
+
+        try:
+            result = conn.execute(text(
+                "UPDATE subscription SET amount = 900 WHERE plan_type = 'premium' AND amount = 0"))
+            conn.commit()
+            if result.rowcount:
+                print(f"[SCHEMA] Backfilled amount for {result.rowcount} existing premium subscription(s)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped subscription.amount backfill: {e}")
 
 
         try:

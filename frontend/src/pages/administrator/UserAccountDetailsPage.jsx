@@ -90,6 +90,11 @@ function UserAccountDetailsPage() {
           </div>
 
           <div>
+            <p className="text-sm font-bold text-slate-400 uppercase">Subscription Tier</p>
+            <p className="text-lg text-slate-900 mt-1">{user.subscription_tier || "—"}</p>
+          </div>
+
+          <div>
             <p className="text-sm font-bold text-slate-400 uppercase">Address</p>
             <p className="text-lg text-slate-900 mt-1">{user.address}</p>
           </div>

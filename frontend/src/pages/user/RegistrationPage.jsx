@@ -25,6 +25,7 @@ function RegistrationPage() {
     confirmPassword: "",
     accountType: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -100,6 +101,7 @@ function RegistrationPage() {
       }
     }
 
+    setLoading(true);
     try {
       const cleanEmail = formData.email.trim().toLowerCase();
       const firebaseUser = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
@@ -133,6 +135,8 @@ function RegistrationPage() {
         console.error(error);
         alert("Failed to create account");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -302,10 +306,11 @@ function RegistrationPage() {
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer"
+                disabled={loading}
+                className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
               >
-                Create Account
+                {loading ? "Creating Account…" : "Create Account"}
               </button>
             </form>
 
