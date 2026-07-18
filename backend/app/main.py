@@ -88,11 +88,15 @@ def _env_true(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _running_on_render() -> bool:
-    return bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+def _running_on_managed_host() -> bool:
+    """True on Railway, or when ENVIRONMENT=production is set explicitly."""
+    return bool(
+        os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID")
+        or os.getenv("ENVIRONMENT", "").strip().lower() == "production"
+    )
 
 
-DEFAULT_HEAVY_STARTUP = not _running_on_render()
+DEFAULT_HEAVY_STARTUP = not _running_on_managed_host()
 RUN_SCHEMA_PATCHES = _env_true("RUN_SCHEMA_PATCHES", DEFAULT_HEAVY_STARTUP)
 RUN_SEEDS = _env_true("RUN_SEEDS", DEFAULT_HEAVY_STARTUP)
 RUN_FIREBASE_SEED = _env_true("RUN_FIREBASE_SEED", False)
@@ -122,7 +126,7 @@ CORS_ORIGINS = list(dict.fromkeys(
 ))
 
 # Allows Vite dev ports even if the port changes. Keep exact production
-# origins in CORS_ORIGINS above / Render env var CORS_ORIGINS.
+# origins in CORS_ORIGINS above / the CORS_ORIGINS env var.
 CORS_ALLOW_ORIGIN_REGEX = os.getenv(
     "CORS_ALLOW_ORIGIN_REGEX",
     r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",

@@ -26,8 +26,8 @@ GMAIL_USER = _clean_env("GMAIL_USER")
 GMAIL_APP_PASSWORD = _clean_env("GMAIL_APP_PASSWORD")
 
 # ── Brevo (HTTP API, port 443) ────────────────────────────────────────────────
-# Render's free tier blocks outbound SMTP ports (25/465/587), so in production
-# we send through Brevo's REST API instead. Set BREVO_API_KEY to enable; the
+# Some hosts block outbound SMTP ports (25/465/587), so this sends through
+# Brevo's REST API instead when configured. Set BREVO_API_KEY to enable; the
 # sender address MUST be a verified sender in the Brevo dashboard
 # (Senders & IPs → Senders). Falls back to Gmail SMTP when unset/failing.
 BREVO_API_KEY = _clean_env("BREVO_API_KEY")
@@ -92,7 +92,7 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
             return True
         # fall through to SMTP as a local-dev fallback
     if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        print(f"[EMAIL] Credentials not set — skipping {label}. Check GMAIL_USER and GMAIL_APP_PASSWORD in backend/.env or Render env vars.")
+        print(f"[EMAIL] Credentials not set — skipping {label}. Check GMAIL_USER and GMAIL_APP_PASSWORD in backend/.env or your host's env vars.")
         return False
     try:
         # local_hostname: smtplib defaults to the machine's computer name in the

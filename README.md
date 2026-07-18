@@ -24,4 +24,4 @@
   firebase deploy
  Backend:
   git push
-  That's it — Render auto-deploys when you push to main.
+  That's it — Railway auto-deploys when you push to main.
