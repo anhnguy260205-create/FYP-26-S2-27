@@ -91,6 +91,12 @@ export const logoutAccount = async () => {
   return response.json();
 };
 
+/** Fire-and-forget logout for tab close/navigation-away — keepalive lets the
+ * request finish after the page starts unloading. */
+export const logoutOnUnload = () => {
+  authFetch(`${BASE_URL}/logout`, { method: "POST", keepalive: true });
+};
+
 export const getInvestorInformation = async (userId) => {
   const response = await authFetch(`${BASE_URL}/investor-information/${userId}`);
   return response.json();

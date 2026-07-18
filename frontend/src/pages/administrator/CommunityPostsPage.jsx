@@ -39,7 +39,7 @@ function CommunityPostsPage() {
   const navigate = useNavigate();
 
   return (
-    <AdminPage title="Community Posts" subtitle="Monitor and review community discussions">
+    <AdminPage title="Community Management" subtitle="Monitor and review community discussions">
       <div className="bg-white rounded-lg p-6">
         <p className="text-sm text-slate-600 mb-5">Showing {posts.length} post(s)</p>
 

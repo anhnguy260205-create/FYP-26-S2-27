@@ -16,18 +16,23 @@ const profiles = [
       "Can provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
   },
   {
-    profile_type: "Premium Investor",
-    access_level: "Premium Access",
+    profile_type: "Investor",
+    access_level: "Basic Access / Premium Access",
     status: "Active",
     description:
-      "Paid subscription tier. Can access AI stock predictions, expert consultations, advanced portfolio management, and all free investor features.",
-  },
-  {
-    profile_type: "Free Investor",
-    access_level: "Basic Access",
-    status: "Active",
-    description:
-      "Free tier. Can view stock information, manage watchlist, paper trade, and access basic investment services. Upgrade to Premium to unlock full features.",
+      "Can view stock information, manage watchlist, paper trade, and access core investment services. Subscription tier (Basic or Premium) is an attribute of this account, not a separate profile type, and is managed via Subscription Management.",
+    tiers: [
+      {
+        name: "Basic",
+        access_level: "Basic Access",
+        description: "Default tier. Paper trading, watchlist, and basic investment services.",
+      },
+      {
+        name: "Premium",
+        access_level: "Premium Access",
+        description: "Paid tier. Adds AI stock predictions, expert consultations, and advanced portfolio management.",
+      },
+    ],
   },
 ];
 
@@ -67,10 +72,29 @@ function UserProfilesPage() {
               </div>
             </div>
 
-            <div>
+            <div className="mb-4">
               <p className="text-xs font-bold text-slate-400 mb-1">DESCRIPTION</p>
               <p className="text-sm text-slate-600 leading-relaxed">{profile.description}</p>
             </div>
+
+            {profile.tiers && (
+              <div>
+                <p className="text-xs font-bold text-slate-400 mb-2">SUBSCRIPTION TIERS</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {profile.tiers.map((tier) => (
+                    <div key={tier.name} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm text-slate-800">{tier.name}</span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-semibold">
+                          {tier.access_level}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">{tier.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

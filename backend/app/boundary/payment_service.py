@@ -148,9 +148,10 @@ def cancel_subscription(user_id: str):
         return {"success": False, "message": "Investor not found"}
     latest = SubscriptionModel.getLatestByInvestorId(investor["investor_id"])
     cancelled_plan = SubscriptionModel.cancelSubscription(investor["investor_id"])
+    if cancelled_plan == "premium_locked":
+        return {"success": False, "message": "Premium subscriptions cannot be cancelled."}
     if not cancelled_plan:
         return {"success": False, "message": "No active subscription to cancel"}
-    new_status = "basic" if cancelled_plan == "premium" else "inactive"
     if latest:
         threading.Thread(
             target=_email_cancellation,
@@ -163,7 +164,7 @@ def cancel_subscription(user_id: str):
             f"{latest['plan_type'].capitalize()} subscription cancelled",
             "Your subscription has been cancelled.",
         )
-    return {"success": True, "message": "Subscription cancelled successfully", "new_status": new_status}
+    return {"success": True, "message": "Subscription cancelled successfully", "new_status": "inactive"}
 
 
 def _email_cancellation(user_id: str, plan_type: str):

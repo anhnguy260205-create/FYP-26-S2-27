@@ -232,7 +232,7 @@ function VerifyDocumentationPage() {
   }
 
   return (
-    <AdminLayout title="Expert Verification" subtitle="Review and verify expert account applications">
+    <AdminLayout title="Expert Application Review" subtitle="Review and verify expert account applications">
       <div className="space-y-5">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

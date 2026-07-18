@@ -66,7 +66,7 @@ class FirebaseLoginController:
         profile = UserAccount.getProfileByEmail(email)
         if not profile:
             return None
-        if profile.pop("_first_login", False) and profile["role"] in WELCOME_MESSAGE:
+        if profile.get("first_login") and profile["role"] in WELCOME_MESSAGE:
             create_notification(
                 profile["user_id"],
                 "welcome",

@@ -26,9 +26,8 @@ function LoginPage() {
   const goToRole = (user) => {
     sessionStorage.setItem("currentUser", JSON.stringify(user));
     const role = user.role;
-    const isFirstLogin = !user.full_name;
-    if (role === "investor") navigate(isFirstLogin ? "/investor/update-particular" : "/investor");
-    else if (role === "expert") navigate(isFirstLogin ? "/expert/updateparticular" : "/expert");
+    if (role === "investor") navigate(user.first_login ? "/investor/subscription" : "/investor");
+    else if (role === "expert") navigate(!user.full_name ? "/expert/updateparticular" : "/expert");
     else if (role === "admin") navigate("/adminpanel");
     else setError("Unknown role: " + role);
   };

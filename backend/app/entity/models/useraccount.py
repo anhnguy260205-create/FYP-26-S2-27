@@ -139,7 +139,7 @@ class UserAccount(Base):
                 "interests": investor.interests if investor else None,
                 "risk_tolerance": investor.risk_tolerance if investor else None,
                 "verification_status": ExpertVerification.get_for_expert(expert.expert_id)["verification_status"] if expert else None,
-                "_first_login": first_login,
+                "first_login": first_login,
             }
 
     @staticmethod

@@ -1097,7 +1097,7 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
         try {
             const result = await cancelSubscription(userId);
             if (result.success) {
-                const newStatus = result.new_status || "basic";
+                const newStatus = result.new_status || "inactive";
                 const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
                 stored.subscription_status = newStatus;
                 stored.investor_subscription_status = newStatus;
@@ -1119,7 +1119,7 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             <div style={{ background: "#0f1b2d", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
                 <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "10px" }}>Cancel Subscription?</p>
                 <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
-                    Your plan will be cancelled immediately and your account will revert to the free tier. This cannot be undone.
+                    Your plan will be cancelled immediately and your account will revert to no active subscription. This cannot be undone.
                 </p>
                 <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
                     <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
@@ -1287,7 +1287,6 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     }
 
     return (
-        <>
         <GlassCard>
             <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
                 {/* Header */}
@@ -1320,16 +1319,13 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                     </div>
                 )}
 
-                {/* Renew + cancel row */}
+                {/* Renew */}
                 <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
                     <button
                         onClick={handleUpgrade}
                         style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}
                     >
                         Renew Premium
-                    </button>
-                    <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
-                        Cancel plan
                     </button>
                 </div>
 
@@ -1366,8 +1362,6 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                 )}
             </div>
         </GlassCard>
-        {showCancelConfirm && <CancelModal />}
-    </>
     );
 }
 
