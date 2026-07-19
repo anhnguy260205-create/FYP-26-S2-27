@@ -170,7 +170,8 @@ function AIChatbot() {
 
     return (
         <motion.div
-            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            className="min-h-screen flex flex-col text-white"
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 33%, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
@@ -188,8 +189,9 @@ function AIChatbot() {
 
                     {/* ── SIDEBAR ── */}
                     <div style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#0B1D4F",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        boxShadow: "0 4px 20px rgba(0,22,52,0.35)",
                         borderRadius: "20px",
                         padding: "20px",
                         display: "flex",
@@ -302,8 +304,9 @@ function AIChatbot() {
 
                     {/* ── CHAT AREA ── */}
                     <div style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#0B1D4F",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        boxShadow: "0 4px 20px rgba(0,22,52,0.35)",
                         borderRadius: "20px",
                         display: "flex",
                         flexDirection: "column",

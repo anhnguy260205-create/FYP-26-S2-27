@@ -44,8 +44,8 @@ function usePlanContent() {
 function Badge({ children, type }) {
   const s =
     type === "free"
-      ? { background: "rgba(37,99,235,0.25)", color: "#93C5FD", border: "0.5px solid rgba(147,197,253,0.3)" }
-      : { background: "rgba(251,191,36,0.2)", color: "#FDE68A", border: "0.5px solid rgba(253,230,138,0.3)" };
+      ? { background: "rgba(37,99,235,0.12)", color: "#1D4ED8", border: "0.5px solid rgba(37,99,235,0.35)" }
+      : { background: "rgba(217,119,6,0.12)", color: "#92400E", border: "0.5px solid rgba(217,119,6,0.35)" };
   return (
     <span
       style={{
@@ -68,9 +68,9 @@ function Badge({ children, type }) {
 function Feature({ children, type }) {
   const iconStyle =
     type === "free"
-      ? { background: "rgba(37,99,235,0.3)", color: "#93C5FD" }
-      : { background: "rgba(251,191,36,0.25)", color: "#FCD34D" };
-  const textColor = type === "free" ? "#8BA9D8" : "#C6A96B";
+      ? { background: "#2563EB", color: "#fff" }
+      : { background: "#D97706", color: "#fff" };
+  const textColor = type === "free" ? "#33477A" : "#8A6A3F";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", marginBottom: "10px" }}>
       <span
@@ -103,8 +103,8 @@ function FreeTier({ userId, currentSubscriptionStatus, features, plan }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: 0.2 }}
       style={{
-        background: "#0B1D4F",
-        border: hovered ? "1.5px solid #60A5FA" : "1.5px solid #2563EB",
+        background: "#FFFFFF",
+        border: hovered ? "1.5px solid #1D4ED8" : "1.5px solid #0B1D4F",
         borderRadius: "24px",
         padding: "28px 32px",
         width: "400px",
@@ -112,17 +112,17 @@ function FreeTier({ userId, currentSubscriptionStatus, features, plan }) {
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
         boxShadow: hovered
-          ? "0 12px 40px rgba(37,99,235,0.45), 0 0 0 1px rgba(96,165,250,0.3)"
-          : "0 4px 20px rgba(37,99,235,0.2)",
+          ? "0 12px 40px rgba(37,99,235,0.25), 0 0 0 1px rgba(37,99,235,0.2)"
+          : "0 4px 20px rgba(15,23,42,0.12)",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <Badge type="free">Free</Badge>
-      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#E0EEFF" }}>{plan.name}</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#60A5FA" }}>{plan.price}</p>
-      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#6B89C4" }}>{plan.priceSubtitle}</p>
-      <div style={{ height: "0.5px", background: "rgba(59,130,246,0.2)", marginBottom: "16px" }} />
+      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#0B1D4F" }}>{plan.name}</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#1D4ED8" }}>{plan.price}</p>
+      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#475569" }}>{plan.priceSubtitle}</p>
+      <div style={{ height: "0.5px", background: "rgba(11,29,79,0.15)", marginBottom: "16px" }} />
 
       {features.map((f) => <Feature key={f} type="free">{f}</Feature>)}
 
@@ -167,9 +167,9 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
     <div
 
       style={{
-        background: "linear-gradient(145deg, #0B1D4F 0%, #0E2460 60%, #102870 100%)",
+        background: "#FFFFFF",
         flexDirection: "column",
-        border: hovered ? "1.5px solid #FDE68A" : "1.5px solid #FBBF24",
+        border: hovered ? "1.5px solid #D97706" : "1.5px solid #92400E",
         borderRadius: "24px",
         padding: "28px 32px",
         width: "400px",
@@ -177,17 +177,17 @@ function PremiumTier({ userId, currentSubscriptionStatus, features, plan }) {
         transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
         boxShadow: hovered
-          ? "0 12px 40px rgba(251,191,36,0.35), 0 0 0 1px rgba(253,230,138,0.3)"
-          : "0 4px 20px rgba(251,191,36,0.2)",
+          ? "0 12px 40px rgba(217,119,6,0.25), 0 0 0 1px rgba(217,119,6,0.2)"
+          : "0 4px 20px rgba(15,23,42,0.12)",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <Badge type="premium">⭐ Premium</Badge>
-      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#FFFBEB" }}>{plan.name}</p>
-      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#FCD34D" }}>{plan.price}</p>
-      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#B8945A" }}>{plan.priceSubtitle}</p>
-      <div style={{ height: "0.5px", background: "rgba(251,191,36,0.2)", marginBottom: "16px" }} />
+      <p style={{ fontSize: "22px", fontWeight: 500, margin: "0 0 6px", color: "#78350F" }}>{plan.name}</p>
+      <p style={{ fontSize: "36px", fontWeight: 600, lineHeight: 1, margin: "0 0 4px", color: "#B45309" }}>{plan.price}</p>
+      <p style={{ fontSize: "13px", margin: "0 0 20px", color: "#8A6A3F" }}>{plan.priceSubtitle}</p>
+      <div style={{ height: "0.5px", background: "rgba(217,119,6,0.15)", marginBottom: "16px" }} />
       {features.map((f) => <Feature key={f} type="premium">{f}</Feature>)}
       <button
         disabled={isPremium}
@@ -251,7 +251,7 @@ function SubscriptionPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col  text-white" style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 33%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}

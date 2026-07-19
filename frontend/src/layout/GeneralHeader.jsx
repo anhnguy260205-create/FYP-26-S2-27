@@ -194,7 +194,7 @@ function GeneralHeader() {
   return (
     <>
       <div
-        className={`w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-5 lg:px-10 transition-shadow duration-200 ${scrolled ? "shadow-[0_1px_16px_rgba(15,23,42,0.08)]" : ""}`}
+        className={`w-full bg-white flex items-center justify-between shrink-0 sticky top-0 z-50 px-5 lg:px-10 transition-shadow duration-200 ${scrolled ? "shadow-[0_4px_20px_rgba(15,23,42,0.15)]" : "shadow-[0_1px_16px_rgba(15,23,42,0.08)]"}`}
         style={{ height: "60px", borderBottom: "0.667px solid rgba(28,57,142,0.3)" }}
       >
         <img

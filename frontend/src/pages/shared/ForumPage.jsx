@@ -54,16 +54,26 @@ const CATEGORIES = [
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
     bg: "#0d1526",
-    card: "#161f38",
-    card2: "#1e2740",
-    border: "rgba(255,255,255,0.08)",
+    card: "#FFFFFF",
+    card2: "#F1F5F9",
+    border: "rgba(11,29,79,0.25)",
     accent: "#378ADD",
-    cyan: "#00d3f2",
-    success: "#4dd68c",
-    danger: "#f87171",
-    muted: "#8b92a8",
-    text: "#e2e8f0",
-    sub: "rgba(255,255,255,0.45)",
+    cyan: "#0E7490",
+    success: "#0F9D58",
+    danger: "#DC2626",
+    muted: "#5B6C88",
+    text: "#0F172A",
+    sub: "rgba(15,23,42,0.65)",
+};
+
+// Tokens for text/controls that sit directly on the page's blue-to-white
+// gradient (outside any dark card) — C.text/C.muted are tuned for dark card
+// backgrounds and would wash out against the white lower section.
+const PAGE = {
+    heading: "#0B1D4F",
+    sub: "#33477A",
+    pillBorder: "rgba(11,29,79,0.3)",
+    pillText: "#0B1D4F",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -152,7 +162,7 @@ function formatDate(value) {
 function roleColour(role) {
     const r = String(role || "").toLowerCase();
     if (r.includes("expert") || r.includes("consultant")) return { bg: "rgba(0,211,242,0.12)", text: "#00d3f2", border: "rgba(0,211,242,0.3)" };
-    return { bg: "rgba(255,255,255,0.08)", text: C.muted, border: "rgba(255,255,255,0.15)" };
+    return { bg: "rgba(11,29,79,0.06)", text: C.muted, border: "rgba(11,29,79,0.15)" };
 }
 
 function displayRole(role) {
@@ -434,11 +444,12 @@ export default function ForumPage() {
     }
 
     return (
-        <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+        <motion.div className="min-h-screen flex flex-col text-white"
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
                 {selectedPost ? (
                     <PostDetail
@@ -521,26 +532,26 @@ function ForumHome({
                     {/* Back to community forum home — only shows when viewing a filtered/sorted view */}
                     {(sort !== "" || activeRoom || query) && (
                         <button onClick={() => { setSort(""); setActiveRoom(null); setQuery(""); }}
-                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.muted, background: "none", border: "none", cursor: "pointer", marginBottom: 10, padding: 0 }}>
+                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: PAGE.sub, background: "none", border: "none", cursor: "pointer", marginBottom: 10, padding: 0 }}>
                             <ArrowLeft size={13} /> Back to Community Forum
                         </button>
                     )}
                     {activeRoom && (
                         <button onClick={() => { setActiveRoom(null); setQuery(""); setSort(""); }}
-                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: C.cyan, background: "none", border: "none", cursor: "pointer", marginBottom: 6, padding: 0 }}>
+                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: PAGE.heading, background: "none", border: "none", cursor: "pointer", marginBottom: 6, padding: 0 }}>
                             <ArrowLeft size={15} /> All Topics
                         </button>
                     )}
-                    <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.text, margin: 0, lineHeight: 1 }}>
+                    <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: 0, lineHeight: 1 }}>
                         {activeRoom || "Community Forum"}
                     </h1>
                     {activeRoom && (
-                        <p style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                        <p style={{ fontSize: 12, color: PAGE.sub, marginTop: 3 }}>
                             {filteredPosts.length} post{filteredPosts.length !== 1 ? "s" : ""} in this topic
                         </p>
                     )}
                     {!activeRoom && !query && (
-                        <p style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>
+                        <p style={{ fontSize: 13, color: PAGE.sub, marginTop: 4 }}>
                             Share ideas, discuss markets, and learn from the community
                         </p>
                     )}
@@ -561,9 +572,9 @@ function ForumHome({
                     <button key={cat} onClick={() => { setActiveRoom(cat === "All" ? null : cat); }} style={{
                         padding: "7px 15px", borderRadius: 50, fontSize: 12, fontWeight: 600,
                         whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
-                        border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${C.border}`,
+                        border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${PAGE.pillBorder}`,
                         background: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accent : "transparent",
-                        color: (cat === "All" ? !activeRoom : activeRoom === cat) ? "white" : C.muted,
+                        color: (cat === "All" ? !activeRoom : activeRoom === cat) ? "white" : PAGE.pillText,
                         transition: "all 0.15s",
                     }}>{cat}</button>
                 ))}
@@ -854,7 +865,7 @@ function PostRow({ post, onClick, onLike, onSave, onDelete, canDelete }) {
             borderRadius: 12, padding: "12px 14px", cursor: "pointer",
             transition: "border-color 0.15s",
         }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(11,29,79,0.4)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
             {/* Category colour stripe */}
             <div style={{ width: 3, borderRadius: 4, background: C.accent, alignSelf: "stretch", flexShrink: 0 }} />
@@ -998,7 +1009,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
 
     return (
         <div>
-            <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: C.cyan, background: "none", border: "none", cursor: "pointer", marginBottom: 16, padding: 0 }}>
+            <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: PAGE.heading, background: "none", border: "none", cursor: "pointer", marginBottom: 16, padding: 0 }}>
                 <ArrowLeft size={15} /> Back
             </button>
 
@@ -1172,7 +1183,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                             style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box" }}
                         />
                     </div>
-                    <button onClick={onReply} disabled={!replyText.trim()} style={{ padding: "10px 16px", borderRadius: 12, background: replyText.trim() ? C.accent : "rgba(255,255,255,0.08)", border: "none", color: replyText.trim() ? "white" : C.muted, cursor: replyText.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13, transition: "background 0.15s" }}>
+                    <button onClick={onReply} disabled={!replyText.trim()} style={{ padding: "10px 16px", borderRadius: 12, background: replyText.trim() ? C.accent : "rgba(11,29,79,0.08)", border: "none", color: replyText.trim() ? "white" : C.muted, cursor: replyText.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13, transition: "background 0.15s" }}>
                         <Send size={14} /> Post
                     </button>
                 </div>
@@ -1201,7 +1212,7 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ width: "100%", maxWidth: 600, background: C.card, borderRadius: 24, border: `1px solid ${C.border}`, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", borderBottom: `1px solid ${C.border}` }}>
                     <h2 style={{ fontSize: 17, fontWeight: 800, color: C.text, margin: 0 }}>Create Post</h2>
-                    <button onClick={onClose} style={{ background: `rgba(255,255,255,0.08)`, border: "none", cursor: "pointer", borderRadius: 8, padding: 6, color: C.muted }}>
+                    <button onClick={onClose} style={{ background: `rgba(11,29,79,0.08)`, border: "none", cursor: "pointer", borderRadius: 8, padding: 6, color: C.muted }}>
                         <X size={16} />
                     </button>
                 </div>
@@ -1222,7 +1233,7 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
                     {error && <p style={{ fontSize: 12, color: C.danger, margin: 0 }}>{error}</p>}
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "0 20px 20px" }}>
-                    <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 12, background: `rgba(255,255,255,0.06)`, border: "none", color: C.muted, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+                    <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 12, background: `rgba(11,29,79,0.06)`, border: "none", color: C.muted, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
                     <button onClick={submit} disabled={submitted || creating} style={{ padding: "10px 24px", borderRadius: 12, background: `linear-gradient(135deg,#155dfc,#0092b8)`, border: "none", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: (submitted || creating) ? 0.6 : 1 }}>
                         {submitted || creating ? "Publishing…" : "Publish"}
                     </button>
