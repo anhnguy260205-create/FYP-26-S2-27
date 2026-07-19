@@ -43,7 +43,7 @@ function SellStockPage() {
   const chg = price != null && previousClose != null ? price - previousClose : null;
   const pctChg = chg != null && previousClose ? (chg / previousClose) * 100 : null;
   const isUp = chg === null ? true : chg >= 0;
-  const changeColor = isUp ? "#34d399" : "#f87171";
+  const changeColor = isUp ? "#0F9D58" : "#DC2626";
   const isMarketOpen = marketStatus === "OPEN";
 
   const ownedShares = holding?.quantity ?? 0;
@@ -115,7 +115,8 @@ function SellStockPage() {
     <>
 
       <motion.div
-        className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+        className="min-h-screen flex flex-col"
+        style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
         <GeneralHeader />
@@ -127,8 +128,9 @@ function SellStockPage() {
             transition={{ duration: 0.25 }}
             style={{
               width: "100%", maxWidth: "560px",
-              background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-              border: "1px solid rgba(99,179,237,0.15)", borderRadius: "16px",
+              background: "#FFFFFF",
+              border: "1px solid rgba(11,29,79,0.25)", borderRadius: "16px",
+              boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
               padding: "28px",            }}
           >
             {/* Header */}
@@ -137,13 +139,13 @@ function SellStockPage() {
                 <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
                   <h1 style={{
                     fontFamily: "'DM Mono', monospace", fontSize: "30px", fontWeight: 700,
-                    letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1,
+                    letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1,
                   }}>
                     {selectedStock}
                   </h1>
                   <span style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: "14px",
-                    color: "#64748b", fontWeight: 400, letterSpacing: "0.02em",
+                    color: "#5B6C88", fontWeight: 400, letterSpacing: "0.02em",
                   }}>
                     {companyName(selectedStock)}
                   </span>
@@ -151,13 +153,13 @@ function SellStockPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
                   <span style={{
                     width: "6px", height: "6px", borderRadius: "50%",
-                    background: isMarketOpen ? "#34d399" : "#ef4444",
-                    boxShadow: isMarketOpen ? "0 0 8px #34d399" : "0 0 8px #ef4444",
+                    background: isMarketOpen ? "#0F9D58" : "#DC2626",
+                    boxShadow: isMarketOpen ? "0 0 8px rgba(15,157,88,0.5)" : "0 0 8px rgba(220,38,38,0.5)",
                     display: "inline-block",
                   }} />
                   <span style={{
                     fontFamily: "'DM Mono', monospace", fontSize: "11px",
-                    color: isMarketOpen ? "#34d399" : "#ef4444",
+                    color: isMarketOpen ? "#0F9D58" : "#DC2626",
                     letterSpacing: "0.1em", textTransform: "uppercase",
                   }}>
                     Market {marketStatus || "Loading"}
@@ -167,8 +169,9 @@ function SellStockPage() {
 
               <span style={{
                 fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: "11px",
-                color: "#fca5a5", letterSpacing: "0.12em", textTransform: "uppercase",
-                border: "1px solid rgba(248,113,113,0.4)", borderRadius: "6px",
+                color: "#DC2626", letterSpacing: "0.12em", textTransform: "uppercase",
+                background: "rgba(220,38,38,0.08)",
+                border: "1px solid rgba(220,38,38,0.35)", borderRadius: "6px",
                 padding: "4px 10px",
               }}>
                 Sell Order
@@ -178,15 +181,15 @@ function SellStockPage() {
             {!isMarketOpen && (
               <div style={{
                 display: "flex", alignItems: "center", gap: "10px",
-                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)",
                 borderRadius: "10px", padding: "12px 14px", marginBottom: "20px",
               }}>
                 <span style={{ fontSize: "16px" }}>🔒</span>
                 <div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#fca5a5" }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#DC2626" }}>
                     Market closed — trading unavailable
                   </div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88", marginTop: "2px" }}>
                     US markets are open Mon–Fri, 9:30am–4:00pm ET (about 9:30pm–4:00am Singapore time).
                   </div>
                 </div>
@@ -196,10 +199,10 @@ function SellStockPage() {
             {/* Price */}
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "16px 0", borderTop: "1px solid rgba(99,179,237,0.1)",
-              borderBottom: "1px solid rgba(99,179,237,0.1)", marginBottom: "20px",
+              padding: "16px 0", borderTop: "1px solid rgba(15,23,42,0.1)",
+              borderBottom: "1px solid rgba(15,23,42,0.1)", marginBottom: "20px",
             }}>
-              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#475569", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#5B6C88", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Current Price
               </span>
               <div style={{ textAlign: "right" }}>
@@ -216,18 +219,18 @@ function SellStockPage() {
 
             {/* Holdings info */}
             <div style={{
-              background: "rgba(15,23,42,0.5)", borderRadius: "10px", padding: "16px",
+              background: "#F1F5F9", border: "1px solid rgba(15,23,42,0.08)", borderRadius: "10px", padding: "16px",
               display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                <span style={{ color: "#94a3b8" }}>Shares Owned</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#e2e8f0" }}>
+                <span style={{ color: "#5B6C88" }}>Shares Owned</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
                   {loading ? "—" : ownedShares}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                <span style={{ color: "#94a3b8" }}>Average Cost</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#e2e8f0" }}>
+                <span style={{ color: "#5B6C88" }}>Average Cost</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
                   {loading ? "—" : formatCurrency(avgCost)}
                 </span>
               </div>
@@ -235,9 +238,9 @@ function SellStockPage() {
 
             {!loading && ownedShares === 0 ? (
               <div style={{
-                background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)",
+                background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)",
                 borderRadius: "10px", padding: "16px", marginBottom: "20px",
-                fontFamily: "'DM Sans', sans-serif", fontSize: "14px", color: "#fca5a5", textAlign: "center",
+                fontFamily: "'DM Sans', sans-serif", fontSize: "14px", color: "#DC2626", textAlign: "center",
               }}>
                 You don't own any shares of {selectedStock} to sell.
               </div>
@@ -247,7 +250,7 @@ function SellStockPage() {
                 <div style={{ marginBottom: "20px" }}>
                   <label style={{
                     display: "block", fontFamily: "'DM Mono', monospace", fontSize: "10px",
-                    color: "#475569", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px",
+                    color: "#5B6C88", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "8px",
                   }}>
                     Quantity (Shares) — Max {ownedShares}
                   </label>
@@ -256,8 +259,8 @@ function SellStockPage() {
                       onClick={() => handleQuantityChange(quantity - 1)}
                       style={{
                         width: "40px", height: "40px", borderRadius: "8px",
-                        border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",
-                        color: "#e2e8f0", fontSize: "18px", cursor: "pointer",
+                        border: "1px solid rgba(15,23,42,0.15)", background: "#F1F5F9",
+                        color: "#0B1D4F", fontSize: "18px", cursor: "pointer",
                       }}
                     >−</button>
                     <input
@@ -268,31 +271,31 @@ function SellStockPage() {
                       onChange={(e) => handleQuantityChange(e.target.value)}
                       style={{
                         flex: 1, height: "44px", borderRadius: "8px", textAlign: "center",
-                        border: exceedsHoldings ? "1px solid rgba(248,113,113,0.5)" : "1px solid rgba(99,179,237,0.2)",
-                        background: "rgba(15,23,42,0.6)",
-                        color: "#e2e8f0", fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 600,
+                        border: exceedsHoldings ? "1px solid rgba(220,38,38,0.5)" : "1px solid rgba(15,23,42,0.15)",
+                        background: "#FFFFFF",
+                        color: "#0F172A", fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 600,
                       }}
                     />
                     <button
                       onClick={() => handleQuantityChange(quantity + 1)}
                       style={{
                         width: "40px", height: "40px", borderRadius: "8px",
-                        border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",
-                        color: "#e2e8f0", fontSize: "18px", cursor: "pointer",
+                        border: "1px solid rgba(15,23,42,0.15)", background: "#F1F5F9",
+                        color: "#0B1D4F", fontSize: "18px", cursor: "pointer",
                       }}
                     >+</button>
                     <button
                       onClick={() => handleQuantityChange(ownedShares)}
                       style={{
                         height: "40px", padding: "0 14px", borderRadius: "8px",
-                        border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",
-                        color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: "11px",
+                        border: "1px solid rgba(15,23,42,0.15)", background: "#F1F5F9",
+                        color: "#5B6C88", fontFamily: "'DM Mono', monospace", fontSize: "11px",
                         letterSpacing: "0.08em", cursor: "pointer", textTransform: "uppercase",
                       }}
                     >All</button>
                   </div>
                   {exceedsHoldings && (
-                    <p style={{ color: "#f87171", fontSize: "12px", marginTop: "6px", fontFamily: "'DM Sans', sans-serif" }}>
+                    <p style={{ color: "#DC2626", fontSize: "12px", marginTop: "6px", fontFamily: "'DM Sans', sans-serif" }}>
                       You only own {ownedShares} share(s).
                     </p>
                   )}
@@ -300,25 +303,25 @@ function SellStockPage() {
 
                 {/* Summary */}
                 <div style={{
-                  background: "rgba(15,23,42,0.5)", borderRadius: "10px", padding: "16px",
+                  background: "#F1F5F9", border: "1px solid rgba(15,23,42,0.08)", borderRadius: "10px", padding: "16px",
                   display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                    <span style={{ color: "#94a3b8" }}>Estimated Proceeds</span>
-                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#e2e8f0" }}>{formatCurrency(estimatedTotal)}</span>
+                    <span style={{ color: "#5B6C88" }}>Estimated Proceeds</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>{formatCurrency(estimatedTotal)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                    <span style={{ color: "#94a3b8" }}>Estimated Gain/Loss</span>
+                    <span style={{ color: "#5B6C88" }}>Estimated Gain/Loss</span>
                     <span style={{
                       fontFamily: "'DM Mono', monospace", fontWeight: 600,
-                      color: estimatedGainLoss >= 0 ? "#34d399" : "#f87171",
+                      color: estimatedGainLoss >= 0 ? "#0F9D58" : "#DC2626",
                     }}>
                       {estimatedGainLoss >= 0 ? "+" : ""}{formatCurrency(estimatedGainLoss)}
                     </span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                    <span style={{ color: "#94a3b8" }}>Paper Funds After Sale</span>
-                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#e2e8f0" }}>
+                    <span style={{ color: "#5B6C88" }}>Paper Funds After Sale</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
                       {paperMoney != null ? formatCurrency(paperMoney + estimatedTotal) : "—"}
                     </span>
                   </div>
@@ -332,8 +335,8 @@ function SellStockPage() {
                 onClick={() => navigate(`/realtimedashboard/astockdashboard/${selectedStock}`)}
                 style={{
                   flex: 1, padding: "14px", borderRadius: "8px",
-                  border: "1px solid rgba(99,179,237,0.2)", background: "rgba(30,41,59,0.6)",
-                  color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                  border: "1px solid rgba(15,23,42,0.15)", background: "#F1F5F9",
+                  color: "#5B6C88", fontFamily: "'DM Mono', monospace", fontWeight: 600,
                   fontSize: "13px", letterSpacing: "0.08em", cursor: "pointer", textTransform: "uppercase",
                 }}
               >
@@ -344,9 +347,9 @@ function SellStockPage() {
                 disabled={submitting || !isMarketOpen || price == null || ownedShares === 0 || exceedsHoldings}
                 style={{
                   flex: 2, padding: "14px", borderRadius: "8px",
-                  border: "1px solid rgba(248,113,113,0.4)",
-                  background: "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(248,113,113,0.25))",
-                  color: "#fca5a5", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                  border: "1px solid rgba(220,38,38,0.4)",
+                  background: "linear-gradient(135deg, #DC2626, #E4453F)",
+                  color: "#FFFFFF", fontFamily: "'DM Mono', monospace", fontWeight: 600,
                   fontSize: "13px", letterSpacing: "0.08em", cursor: "pointer", textTransform: "uppercase",
                   opacity: (submitting || !isMarketOpen || price == null || ownedShares === 0 || exceedsHoldings) ? 0.5 : 1,
                 }}
@@ -355,7 +358,7 @@ function SellStockPage() {
               </button>
             </div>
 
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#475569", marginTop: "16px", textAlign: "center" }}>
+            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#5B6C88", marginTop: "16px", textAlign: "center" }}>
               Last update: {lastUpdated || "Loading..."}
             </p>
           </motion.div>

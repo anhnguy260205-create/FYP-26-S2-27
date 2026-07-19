@@ -110,22 +110,27 @@ function LoginPage() {
     }
   };
 
-  const inputStyle = { height: "40px", borderColor: "rgba(0,0,0,0.15)" };
-  const focusStyle = (e) => { e.target.style.borderColor = "#0092b8"; e.target.style.boxShadow = "0 0 0 3px rgba(0,146,184,0.15)"; };
+  const inputStyle = { height: "46px", borderColor: "rgba(0,0,0,0.15)" };
+  const focusStyle = (e) => { e.target.style.borderColor = "#00A9C4"; e.target.style.boxShadow = "0 0 0 3px rgba(0,211,242,0.18)"; };
   const blurStyle = (e) => { e.target.style.borderColor = "rgba(0,0,0,0.15)"; e.target.style.boxShadow = "none"; };
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-white text-white"
+      className="min-h-screen flex flex-col bg-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
       <Header />
       <main className="flex-1 flex flex-col md:flex-row">
 
         {/* Form half */}
-        <div className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-16 py-10 bg-white">
-          <div className="bg-[rgba(255,255,255,0.82)] w-full max-w-115 flex flex-col justify-center"
-            style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}>
+        <div className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-16 py-10"
+          style={{ background: "linear-gradient(to bottom, rgba(0,211,242,0.10) 0%, #F8FAFC 45%, #F8FAFC 100%)" }}>
+          <div className="w-full max-w-115 flex flex-col justify-center"
+            style={{
+              borderRadius: "28px", minHeight: "500px", padding: "36px 32px",
+              background: "#FFFFFF", border: "1px solid rgba(15,23,42,0.08)",
+              boxShadow: "0 20px 50px rgba(15,23,42,0.10)",
+            }}>
 
             {stage === "otp" ? (
               <>
@@ -151,18 +156,18 @@ function LoginPage() {
                       <p className="text-[13px] font-medium mt-1" style={{ color: "#ef4444" }}>{otpError}</p>
                     )}
                     {resendMsg && (
-                      <p className="text-[13px] font-medium mt-1" style={{ color: "#0092b8" }}>{resendMsg}</p>
+                      <p className="text-[13px] font-medium mt-1" style={{ color: "#0E7490" }}>{resendMsg}</p>
                     )}
                   </div>
 
                   <button type="submit" disabled={loading || otp.length !== 6}
-                    className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ height: "54px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}>
+                    className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ height: "54px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}>
                     {loading ? "Verifying…" : "Verify & Sign In"}
                   </button>
 
                   <div className="flex justify-between text-[14px] px-1">
-                    <span className="text-blue-700 cursor-pointer" onClick={handleResend}>Resend code</span>
+                    <span className="text-[#00A9C4] font-medium cursor-pointer" onClick={handleResend}>Resend code</span>
                     <span className="text-gray-600 cursor-pointer"
                       onClick={() => { setStage("login"); setOtp(""); setOtpError(""); setResendMsg(""); }}>
                       Back to login
@@ -198,9 +203,9 @@ function LoginPage() {
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
                   <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
-                  <label className="text-blue-700 text-[14px] cursor-pointer"
+                  <label className="text-[#00A9C4] font-medium text-[14px] cursor-pointer"
                     onClick={() => navigate("/reset-password")}>
-                    Forget password?
+                    Forgot password?
                   </label>
                 </div>
                 <input
@@ -224,15 +229,15 @@ function LoginPage() {
 
               {/* Submit */}
               <button type="submit" disabled={loading}
-                className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ height: "40px", background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}>
+                className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ height: "46px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}>
                 {loading ? "Signing in…" : "Sign In"}
               </button>
             </form>
 
             <p className="text-center text-sm text-gray-700 mt-3">
               Don't have an account?{" "}
-              <a onClick={() => navigate("/register")} className="text-blue-700 font-semibold cursor-pointer">
+              <a onClick={() => navigate("/register")} className="text-[#00A9C4] font-semibold cursor-pointer">
                 Create Account
               </a>
             </p>

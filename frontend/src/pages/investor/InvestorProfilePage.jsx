@@ -8,6 +8,25 @@ import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } f
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
 import { addPaperMoney } from "../../api/tradingApi.js";
 
+/* ─── Light theme tokens ──────────────────────────────────── */
+const ACCENT_TEXT = "#004450";
+const HEADING = "#0B1D4F";
+const TEXT_BODY = "#0F172A";
+const TEXT_MUTED = "#33477A";
+const TEXT_MUTED2 = "#5B6C88";
+const TEXT_FAINT = "rgba(15,23,42,0.45)";
+const CARD_BG = "#FFFFFF";
+const CARD_BG_MUTED = "#F1F5F9";
+const CARD_BORDER = "rgba(11,29,79,0.25)";
+const DIVIDER = "rgba(15,23,42,0.1)";
+const SUCCESS = "#0F9D58";
+const DANGER = "#DC2626";
+const GOLD = "#92400E";
+const AMBER = "#B45309";
+const BLUE = "#1D4ED8";
+const CARD_SHADOW = "0 4px 20px rgba(15,23,42,0.06)";
+const MODAL_SHADOW = "0 20px 60px rgba(15,23,42,0.25)";
+
 const SPECIALTIES = [
     "Information Technology",
     "Financials",
@@ -25,9 +44,9 @@ const SPECIALTIES = [
 function FormField({ label, children, hint, htmlFor }) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label htmlFor={htmlFor} style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
+            <label htmlFor={htmlFor} style={{ fontSize: "12px", fontWeight: 600, color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</label>
             {children}
-            {hint && <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{hint}</p>}
+            {hint && <p style={{ fontSize: "11px", color: TEXT_FAINT }}>{hint}</p>}
         </div>
     );
 }
@@ -35,18 +54,18 @@ function FormField({ label, children, hint, htmlFor }) {
 function TextInput({ value, onChange, placeholder, type = "text", disabled = false, prefix, id }) {
     return (
         <div style={{ position: "relative" }}>
-            {prefix && <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", color: "rgba(255,255,255,0.35)" }}>{prefix}</span>}
+            {prefix && <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", color: "rgba(15,23,42,0.4)" }}>{prefix}</span>}
             <input id={id} type={type} value={value} onChange={e => onChange?.(e.target.value)} placeholder={placeholder} disabled={disabled}
                 style={{
                     height: "44px", borderRadius: "10px",
-                    border: "0.667px solid rgba(255,255,255,0.15)",
+                    border: "1px solid rgba(15,23,42,0.15)",
                     padding: prefix ? "0 14px 0 28px" : "0 14px",
-                    fontSize: "14px", color: disabled ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.9)",
-                    background: disabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)",
+                    fontSize: "14px", color: disabled ? "rgba(15,23,42,0.35)" : TEXT_BODY,
+                    background: disabled ? CARD_BG_MUTED : "#F8FAFC",
                     width: "100%", outline: "none", transition: "all 0.15s",
                 }}
-                onFocus={e => { if (!disabled) { e.target.style.border = "0.667px solid rgba(0,211,243,0.5)"; e.target.style.boxShadow = "0 0 0 3px rgba(0,211,243,0.1)"; } }}
-                onBlur={e => { e.target.style.border = "0.667px solid rgba(255,255,255,0.15)"; e.target.style.boxShadow = "none"; }} />
+                onFocus={e => { if (!disabled) { e.target.style.border = "1px solid rgba(0,211,243,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(0,211,243,0.15)"; } }}
+                onBlur={e => { e.target.style.border = "1px solid rgba(15,23,42,0.15)"; e.target.style.boxShadow = "none"; }} />
         </div>
     );
 }
@@ -55,12 +74,12 @@ function SaveRow({ onSave, onCancel }) {
         <div className="flex items-center justify-end gap-3" style={{ marginTop: "8px" }}>
             <button type="button" onClick={onCancel}
                 className="font-medium hover:opacity-70 transition-opacity"
-                style={{ height: "40px", padding: "0 20px", borderRadius: "10px", background: "rgba(255,255,255,0.07)", border: "0.667px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                style={{ height: "40px", padding: "0 20px", borderRadius: "10px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
                 Cancel
             </button>
             <button type="submit" onClick={onSave}
                 className="font-semibold text-white hover:opacity-90 active:scale-[0.98] transition-all"
-                style={{ height: "40px", padding: "0 24px", borderRadius: "10px", backgroundImage: "linear-gradient(90deg,#0092b8,#155dfc)", fontSize: "14px", boxShadow: "0 8px 18px rgba(0,184,219,0.2)", cursor: "pointer" }}>
+                style={{ height: "40px", padding: "0 24px", borderRadius: "10px", backgroundImage: "linear-gradient(90deg,#0092b8,#155dfc)", fontSize: "14px", boxShadow: "0 8px 18px rgba(0,146,184,0.25)", cursor: "pointer" }}>
                 Save Changes
             </button>
         </div>
@@ -71,10 +90,11 @@ function GlassCard({ children }) {
         <div
             style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: CARD_BG,
+                border: `1px solid ${CARD_BORDER}`,
                 borderRadius: "24px",
                 padding: "32px",
+                boxShadow: CARD_SHADOW,
 
             }}
         >
@@ -85,10 +105,10 @@ function GlassCard({ children }) {
 function InfoRow({ label, value }) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <span style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 {label}
             </span>
-            <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.88)" }}>
+            <span style={{ fontSize: "15px", color: TEXT_BODY }}>
                 {value || "—"}
             </span>
         </div>
@@ -106,7 +126,7 @@ function MenuButton({ children, active, onClick }) {
                 borderRadius: "8px",
                 background: active ? "rgba(0,211,243,0.12)" : "transparent",
                 border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid transparent",
-                color: active ? "white" : "rgba(255,255,255,0.28)",
+                color: active ? ACCENT_TEXT : TEXT_MUTED2,
                 fontSize: "12px",
                 cursor: "pointer",
                 transition: "all 0.2s ease"
@@ -147,7 +167,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
     }
     return (
         <div className="flex flex-col shrink-0" style={{ gap: "16px" }}>
-            {/* Banner */}
+            {/* Banner — kept as a deliberate dark cover panel (same pattern as Hero()) so the badge stays legible */}
             <div style={{ position: "relative", height: "78px", background: "linear-gradient(135deg,#020618 0%,#0d2d5e 45%,#0092b8 100%)", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: "-22px", right: "-18px", width: "88px", height: "88px", borderRadius: "50%", background: "rgba(0,211,243,0.1)", border: "0.667px solid rgba(0,211,243,0.14)" }} />
                 <div style={{ position: "absolute", bottom: "-32px", left: "14px", width: "68px", height: "68px", borderRadius: "50%", background: "rgba(81,162,255,0.09)", border: "0.667px solid rgba(81,162,255,0.1)" }} />
@@ -163,7 +183,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
             {/* Avatar */}
             <div style={{ position: "relative", padding: "0 18px", marginTop: "-34px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "10px" }}>
                 <div className="relative group" style={{ cursor: "pointer" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #FFFFFF" }}>
                         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
                     </div>
                 </div>
@@ -171,38 +191,38 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
             {/* Username and email */}
             <div style={{ padding: "0 18px" }}>
-                <p className="font-bold text-white" style={{ fontSize: "15px", lineHeight: 1.2 }}>{investorInfo?.full_name}</p>
-                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.38)", marginTop: "2px" }}>@{investorInfo?.username}</p>
+                <p className="font-bold" style={{ fontSize: "15px", lineHeight: 1.2, color: HEADING }}>{investorInfo?.full_name}</p>
+                <p style={{ fontSize: "11px", color: TEXT_MUTED2, marginTop: "2px" }}>@{investorInfo?.username}</p>
             </div>
 
             {/* Tags */}
             <div style={{ padding: "0 18px", display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "0.667px solid rgba(255,255,255,0.08)" }}>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(0,211,243,0.5)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.38)" }}>{investorInfo?.address}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{investorInfo?.address}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "0.667px solid rgba(255,255,255,0.08)" }}>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(0,211,243,0.5)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.38)" }}>{currentUser?.role}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{currentUser?.role}</span>
                 </div>
             </div>
 
             {/* Divider */}
-            <div style={{ width: "80%", height: "0.667px", background: "rgba(255,255,255,0.07)", marginLeft: "18px", marginRight: "18px" }} />
+            <div style={{ width: "80%", height: "1px", background: DIVIDER, marginLeft: "18px", marginRight: "18px" }} />
 
             <div className="flex" style={{ gap: "7px", padding: "0 18px" }}>
-                <div style={{ borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.667px solid rgba(255,255,255,0.08)", padding: "8px 10px" }}>
+                <div style={{ borderRadius: "10px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)", padding: "8px 10px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "3px" }}>
-                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.06em" }}>MEMBER SINCE</span>
+                        <span style={{ fontSize: "9px", color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>MEMBER SINCE</span>
                     </div>
-                    <p className="font-bold" style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
+                    <p className="font-bold" style={{ fontSize: "11px", color: HEADING }}>
                         {investorInfo?.join_date ? new Date(investorInfo.join_date).toLocaleDateString() : "—"}
                     </p>
                 </div>
             </div>
 
             {/* Divider */}
-            <div style={{ width: "80%", height: "0.667px", background: "rgba(255,255,255,0.07)", marginLeft: "18px", marginRight: "18px" }} />
+            <div style={{ width: "80%", height: "1px", background: DIVIDER, marginLeft: "18px", marginRight: "18px" }} />
 
             {/* Menu */}
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "0 18px", alignItems: "start" }}>
@@ -244,37 +264,37 @@ function DeleteAccountButton() {
     return (
         <>
             <div className="flex flex-col items-start gap-4 p-6">
-                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>Danger Zone</p>
-                <div style={{ width: "85%", height: "0.667px", background: "rgba(255,255,255,0.07)" }} />
+                <p style={{ fontSize: "14px", color: TEXT_MUTED, fontWeight: 500 }}>Danger Zone</p>
+                <div style={{ width: "85%", height: "1px", background: DIVIDER }} />
                 <button
                     onClick={() => setShowConfirm(true)}
-                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(255,0,0,0.1)", border: "1px solid rgba(255,0,0,0.3)", color: "#FF6347", fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: "pointer" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "red"; e.currentTarget.style.border = "1px solid red"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "#FF6347"; e.currentTarget.style.border = "1px solid rgba(255,0,0,0.3)"; }}
+                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: DANGER, fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: "pointer" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "#B91C1C"; e.currentTarget.style.border = "1px solid #B91C1C"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = DANGER; e.currentTarget.style.border = "1px solid rgba(220,38,38,0.3)"; }}
                 >
                     Delete Account
                 </button>
             </div>
 
             {showConfirm && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "12px" }}>Delete Account</h2>
-                        <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)", marginBottom: "24px", lineHeight: 1.6 }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Delete Account</h2>
+                        <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>
                             This will permanently delete your account and all associated data. This action cannot be undone.
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowConfirm(false)}
                                 disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}
+                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
                                 disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.5)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
+                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.45)", color: DANGER, fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
                             >
                                 {loading ? "Deleting…" : "Yes"}
                             </button>
@@ -351,11 +371,11 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                     {/* HEADER */}
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold">Personal Information</h1>
+                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>Personal Information</h1>
                             <p
                                 style={{
                                     fontSize: "13px",
-                                    color: "rgba(255,255,255,0.5)",
+                                    color: TEXT_MUTED,
                                     marginTop: "4px",
                                 }}
                             >
@@ -370,8 +390,8 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 padding: "0 18px",
                                 borderRadius: "100px",
                                 background:
-                                    "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
-                                border: "0.667px solid rgba(0,211,243,0.35)",
+                                    "linear-gradient(90deg,rgba(0,146,184,0.14),rgba(21,93,252,0.14))",
+                                border: "1px solid rgba(0,211,243,0.4)",
                                 color: "#00D3F2",
                                 fontSize: "13px",
                                 fontWeight: 600,
@@ -410,8 +430,8 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
 
                         <div>
                             <p
-                                className="font-bold text-white"
-                                style={{ fontSize: "18px" }}
+                                className="font-bold"
+                                style={{ fontSize: "18px", color: HEADING }}
                             >
                                 {investorInfo?.full_name}
                             </p>
@@ -419,7 +439,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                             <p
                                 style={{
                                     fontSize: "13px",
-                                    color: "rgba(255,255,255,0.4)",
+                                    color: TEXT_MUTED2,
                                 }}
                             >
                                 @{investorInfo?.username}
@@ -430,7 +450,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                     <div
                         style={{
                             height: "1px",
-                            background: "rgba(255,255,255,0.06)",
+                            background: DIVIDER,
                             marginBottom: "24px",
                         }}
                     />
@@ -463,13 +483,13 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                 <>
                     {/* EDIT MODE */}
                     <div>
-                        <h1 className="text-xl font-bold">
+                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>
                             Edit Personal Information
                         </h1>
                         <p
                             style={{
                                 fontSize: "13px",
-                                color: "rgba(255,255,255,0.5)",
+                                color: TEXT_MUTED,
                                 marginTop: "4px",
                             }}
                         >
@@ -618,14 +638,14 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                 <>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold">Account Settings</h1>
-                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>Account Settings</h1>
+                            <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
                                 Stock interests and account type
                             </p>
                         </div>
                         <button onClick={() => setEditingSection("account")}
                             className="flex items-center gap-2"
-                            style={{ height: "38px", padding: "0 18px", borderRadius: "100px", background: "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))", border: "0.667px solid rgba(0,211,243,0.35)", color: "#00D3F2", cursor: "pointer" }}>
+                            style={{ height: "38px", padding: "0 18px", borderRadius: "100px", background: "linear-gradient(90deg,rgba(0,146,184,0.14),rgba(21,93,252,0.14))", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", cursor: "pointer" }}>
                             <SquarePen size={14} />
                             Edit
                         </button>
@@ -633,11 +653,11 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
 
                     {/* Stock Interests */}
                     <div style={{ marginTop: "32px" }}>
-                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                        <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginBottom: "12px", fontWeight: 600 }}>
                             STOCK INTERESTS
                         </p>
                         {selectedInterests.length === 0 ? (
-                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>No interests selected — edit to pick sectors you care about.</p>
+                            <p style={{ fontSize: "13px", color: TEXT_FAINT }}>No interests selected — edit to pick sectors you care about.</p>
                         ) : (
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                 {selectedInterests.map(s => (
@@ -649,11 +669,11 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                         )}
                     </div>
 
-                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
+                    <div style={{ height: "1px", background: DIVIDER, margin: "24px 0" }} />
 
                     {/* Risk Tolerance */}
                     <div>
-                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "12px", fontWeight: 600 }}>
+                        <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginBottom: "12px", fontWeight: 600 }}>
                             RISK TOLERANCE
                         </p>
                         {selectedRisk ? (
@@ -661,33 +681,33 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                                 {selectedRisk}
                             </span>
                         ) : (
-                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>Not set — edit to choose your risk profile.</p>
+                            <p style={{ fontSize: "13px", color: TEXT_FAINT }}>Not set — edit to choose your risk profile.</p>
                         )}
                     </div>
 
-                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "24px 0" }} />
+                    <div style={{ height: "1px", background: DIVIDER, margin: "24px 0" }} />
 
                     {/* Account Type */}
                     <div>
-                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "16px", fontWeight: 600 }}>ACCOUNT TYPE</p>
+                        <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginBottom: "16px", fontWeight: 600 }}>ACCOUNT TYPE</p>
                         <div className="flex items-center gap-4">
-                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>$</div>
+                            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#00D3F2" }}>$</div>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: "18px" }}>{role}</div>
-                                <div style={{ color: "rgba(255,255,255,0.45)" }}>Trade & track your portfolio</div>
+                                <div style={{ fontWeight: 700, fontSize: "18px", color: HEADING }}>{role}</div>
+                                <div style={{ color: TEXT_MUTED2 }}>Trade & track your portfolio</div>
                             </div>
                         </div>
                     </div>
                 </>
             ) : (
                 <>
-                    <h1 className="text-xl font-bold">Edit Account Settings</h1>
+                    <h1 className="text-xl font-bold" style={{ color: HEADING }}>Edit Account Settings</h1>
                     <div className="flex flex-col" style={{ gap: "24px", marginTop: "24px" }}>
 
                         {/* Stock Interests */}
                         <div>
-                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
-                                Stock Interests <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select all that apply)</span>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Stock Interests <span style={{ color: TEXT_FAINT, fontWeight: 400 }}>(select all that apply)</span>
                             </label>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                 {SPECIALTIES.map(s => {
@@ -696,9 +716,9 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                                         <button key={s} type="button" onClick={() => toggleInterest(s)}
                                             style={{
                                                 padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
-                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
-                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                                background: active ? "rgba(0,211,243,0.15)" : CARD_BG_MUTED,
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(15,23,42,0.15)",
+                                                color: active ? "#00D3F2" : TEXT_MUTED2,
                                             }}>
                                             {active ? "✓ " : ""}{s}
                                         </button>
@@ -709,8 +729,8 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
 
                         {/* Risk Tolerance */}
                         <div>
-                            <label style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
-                                Risk Tolerance <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 400 }}>(select one)</span>
+                            <label style={{ fontSize: "12px", fontWeight: 600, color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "10px" }}>
+                                Risk Tolerance <span style={{ color: TEXT_FAINT, fontWeight: 400 }}>(select one)</span>
                             </label>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                 {[
@@ -724,9 +744,9 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                                             onClick={() => setSelectedRisk(active ? "" : value)}
                                             style={{
                                                 padding: "6px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
-                                                background: active ? "rgba(0,211,243,0.15)" : "rgba(255,255,255,0.04)",
-                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                                                color: active ? "#00D3F2" : "rgba(255,255,255,0.5)",
+                                                background: active ? "rgba(0,211,243,0.15)" : CARD_BG_MUTED,
+                                                border: active ? "1px solid rgba(0,211,243,0.5)" : "1px solid rgba(15,23,42,0.15)",
+                                                color: active ? "#00D3F2" : TEXT_MUTED2,
                                             }}>
                                             {active ? "✓ " : ""}{value}
                                         </button>
@@ -749,14 +769,14 @@ function SecurityCard({ investorInfo }) {
         <GlassCard>
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-xl font-bold">
+                    <h1 className="text-xl font-bold" style={{ color: HEADING }}>
                         Security
                     </h1>
 
                     <p
                         style={{
                             fontSize: "13px",
-                            color: "rgba(255,255,255,0.5)",
+                            color: TEXT_MUTED,
                             marginTop: "4px",
                         }}
                     >
@@ -772,9 +792,9 @@ function SecurityCard({ investorInfo }) {
                         padding: "0 18px",
                         borderRadius: "100px",
                         background:
-                            "linear-gradient(90deg,rgba(0,146,184,0.25),rgba(21,93,252,0.25))",
+                            "linear-gradient(90deg,rgba(0,146,184,0.14),rgba(21,93,252,0.14))",
                         border:
-                            "0.667px solid rgba(0,211,243,0.35)",
+                            "1px solid rgba(0,211,243,0.4)",
                         color: "#00D3F2",
                         cursor: "pointer",
                     }}
@@ -803,7 +823,7 @@ function SecurityCard({ investorInfo }) {
                         >
                             <Shield
                                 size={18}
-                                color="#22c55e"
+                                color={SUCCESS}
                             />
                         </div>
 
@@ -812,6 +832,7 @@ function SecurityCard({ investorInfo }) {
                                 style={{
                                     fontWeight: 700,
                                     fontSize: "16px",
+                                    color: HEADING,
                                 }}
                             >
                                 Password : {investorInfo?.password}
@@ -820,7 +841,7 @@ function SecurityCard({ investorInfo }) {
                                 style={{
                                     fontSize: "13px",
                                     color:
-                                        "rgba(255,255,255,0.4)",
+                                        TEXT_MUTED2,
                                     marginTop: "2px",
                                 }}
                             >
@@ -837,7 +858,7 @@ function SecurityCard({ investorInfo }) {
                                 "rgba(34,197,94,0.12)",
                             border:
                                 "1px solid rgba(34,197,94,0.25)",
-                            color: "#22c55e",
+                            color: SUCCESS,
                             fontSize: "13px",
                             fontWeight: 600,
                         }}
@@ -907,26 +928,26 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
             <GlassCard>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold">Paper Money</h1>
-                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Paper Money</h1>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
                             Manage your virtual trading funds
                         </p>
                     </div>
                 </div>
 
-                <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "32px 0" }} />
+                <div style={{ height: "1px", background: DIVIDER, margin: "32px 0" }} />
 
                 <div style={{ marginTop: "32px" }}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <PiggyBank size={18} color="yellow" />
+                                <PiggyBank size={18} color={SUCCESS} />
                             </div>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: "16px" }}>
+                                <div style={{ fontWeight: 700, fontSize: "16px", color: HEADING }}>
                                     Available Balance: ${paperMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
-                                <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
+                                <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
                                     Use paper money to practice stock trading without risking real capital.
                                 </div>
                             </div>
@@ -937,9 +958,9 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                             style={{
                                 display: "flex", alignItems: "center", gap: "6px",
                                 padding: "6px 14px", borderRadius: "999px",
-                                background: isPremium ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)",
-                                border: isPremium ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(255,255,255,0.12)",
-                                color: isPremium ? "#22c55e" : "rgba(255,255,255,0.35)",
+                                background: isPremium ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED,
+                                border: isPremium ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(15,23,42,0.15)",
+                                color: isPremium ? SUCCESS : "rgba(15,23,42,0.4)",
                                 fontSize: "13px", fontWeight: 600, cursor: "pointer",
                             }}
                         >
@@ -950,13 +971,13 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
                     {/* Non-premium hint */}
                     {!isPremium && (
-                        <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-                            <p style={{ fontSize: "12px", color: "rgba(251,191,36,0.85)", margin: 0 }}>
+                        <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                            <p style={{ fontSize: "12px", color: AMBER, margin: 0 }}>
                                 Adding paper money is a <strong>Premium</strong> feature.
                             </p>
                             <button
                                 onClick={() => navigate("/investor/subscription")}
-                                style={{ padding: "4px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                                style={{ padding: "4px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: AMBER, fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
                             >
                                 Upgrade →
                             </button>
@@ -965,14 +986,14 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
                     {/* Progress bar */}
                     <div style={{ marginTop: "24px" }}>
-                        <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(255,255,255,0.7)" }}>
+                        <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
                             <span>Paper Trading Capital</span>
                             <span>${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
                         </div>
-                        <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                            <div style={{ width: `${progressPct}%`, height: "100%", background: "linear-gradient(90deg,#22c55e,#00D3F2)", borderRadius: "999px", transition: "width 0.4s ease" }} />
+                        <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
+                            <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
                         </div>
-                        <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
+                        <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
                             <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                             <span>Cash: ${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
@@ -982,14 +1003,14 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Add Money Modal ── */}
             {showModal === "add" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%" }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "6px" }}>Add Paper Money</h2>
-                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "24px" }}>
-                            Max you can add: <strong style={{ color: "#22c55e" }}>${maxAddable.toLocaleString()}</strong>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Paper Money</h2>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "24px" }}>
+                            Max you can add: <strong style={{ color: SUCCESS }}>${maxAddable.toLocaleString()}</strong>
                         </p>
 
-                        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Select amount</p>
+                        <p style={{ fontSize: "11px", color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Select amount</p>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
                             {presets.map(p => {
                                 const disabled = p > maxAddable;
@@ -997,9 +1018,9 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                                     <button key={p} disabled={disabled} onClick={() => setSelectedAmount(p)}
                                         style={{
                                             padding: "10px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
-                                            border: selectedAmount === p ? "1px solid rgba(34,197,94,0.6)" : "1px solid rgba(255,255,255,0.1)",
-                                            background: selectedAmount === p ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
-                                            color: disabled ? "rgba(255,255,255,0.2)" : selectedAmount === p ? "#22c55e" : "rgba(255,255,255,0.7)",
+                                            border: selectedAmount === p ? "1px solid rgba(34,197,94,0.6)" : "1px solid rgba(15,23,42,0.15)",
+                                            background: selectedAmount === p ? "rgba(34,197,94,0.15)" : CARD_BG_MUTED,
+                                            color: disabled ? "rgba(15,23,42,0.3)" : selectedAmount === p ? SUCCESS : "rgba(15,23,42,0.7)",
                                         }}>
                                         ${p.toLocaleString()}
                                     </button>
@@ -1008,19 +1029,19 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                         </div>
 
                         <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
-                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>New balance after top-up</p>
-                            <p style={{ fontSize: "20px", fontWeight: 700, color: "#22c55e", margin: 0 }}>
+                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, margin: "0 0 4px" }}>New balance after top-up</p>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: SUCCESS, margin: 0 }}>
                                 ${(paperMoney + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
 
                         <div className="flex gap-3">
                             <button onClick={() => setShowModal(false)} disabled={adding}
-                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
                                 Cancel
                             </button>
                             <button onClick={handleConfirmAdd} disabled={adding || selectedAmount > maxAddable}
-                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "linear-gradient(90deg,rgba(34,197,94,0.3),rgba(0,211,242,0.2))", border: "1px solid rgba(34,197,94,0.4)", color: "#22c55e", fontSize: "14px", fontWeight: 700, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.6 : 1 }}>
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "linear-gradient(90deg,rgba(34,197,94,0.3),rgba(0,211,242,0.2))", border: "1px solid rgba(34,197,94,0.4)", color: SUCCESS, fontSize: "14px", fontWeight: 700, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.6 : 1 }}>
                                 {adding ? "Adding…" : `Add $${selectedAmount.toLocaleString()}`}
                             </button>
                         </div>
@@ -1030,22 +1051,22 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Upgrade Prompt Modal ── */}
             {showModal === "upgrade" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(251,191,36,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
-                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                            <Lock size={20} color="#fbbf24" />
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: "1px solid rgba(251,191,36,0.35)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
+                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                            <Lock size={20} color={AMBER} />
                         </div>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Premium Feature</h2>
-                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
-                            Adding paper money is only available to <strong style={{ color: "#fbbf24" }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Premium Feature</h2>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
+                            Adding paper money is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowModal(false)}
-                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", fontSize: "14px", cursor: "pointer" }}>
+                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
                                 Cancel
                             </button>
                             <button onClick={() => navigate("/investor/subscription")}
-                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: "#fbbf24", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: AMBER, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
                                 Upgrade to Premium
                             </button>
                         </div>
@@ -1055,14 +1076,14 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
 
             {/* ── Balance Capped Modal ── */}
             {showModal === "capped" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: "#0f1b2d", border: "1px solid rgba(99,179,237,0.2)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center" }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>Balance at Maximum</h2>
-                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
-                            Your paper money balance has reached the <strong style={{ color: "#63b3ed" }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: "1px solid rgba(29,78,216,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Balance at Maximum</h2>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
+                            Your paper money balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
                         </p>
                         <button onClick={() => setShowModal(false)}
-                            style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.3)", color: "#63b3ed", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
+                            style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(29,78,216,0.1)", border: "1px solid rgba(29,78,216,0.3)", color: BLUE, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
                             OK
                         </button>
                     </div>
@@ -1115,17 +1136,17 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     };
 
     const CancelModal = () => (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-            <div style={{ background: "#0f1b2d", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center" }}>
-                <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "10px" }}>Cancel Subscription?</p>
-                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: "24px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+            <div style={{ background: CARD_BG, border: "1px solid rgba(220,38,38,0.3)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
+                <p style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "10px" }}>Cancel Subscription?</p>
+                <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
                     Your plan will be cancelled immediately and your account will revert to no active subscription. This cannot be undone.
                 </p>
                 <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-                    <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
                         Keep Plan
                     </button>
-                    <button onClick={handleCancel} disabled={cancelling} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={handleCancel} disabled={cancelling} style={{ flex: 1, padding: "10px", borderRadius: "8px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.4)", color: DANGER, fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
                         {cancelling ? "Cancelling…" : "Yes, Cancel"}
                     </button>
                 </div>
@@ -1141,12 +1162,12 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             <GlassCard>
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", padding: "16px 0", textAlign: "center" }}>
-                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
+                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
                         💳
                     </div>
                     <div>
-                        <p style={{ fontSize: "18px", fontWeight: 700, color: "white", marginBottom: "8px" }}>No Active Subscription</p>
-                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", maxWidth: "340px", lineHeight: 1.6 }}>
+                        <p style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>No Active Subscription</p>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, maxWidth: "340px", lineHeight: 1.6 }}>
                             Choose a plan to unlock AI stock predictions, expert portfolios, and more.
                         </p>
                     </div>
@@ -1161,24 +1182,24 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                 {/* Past subscription history */}
                 {!loading && history.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
-                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                 <thead>
-                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                    <tr style={{ background: CARD_BG_MUTED }}>
                                         {["Plan", "Date", "Renewal", "Status"].map(h => (
-                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {history.map((row, i) => (
-                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                        <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
                                             <td style={{ padding: "10px 14px" }}>
-                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
                                                     {row.sub_status}
                                                 </span>
                                             </td>
@@ -1218,8 +1239,8 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                     {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
                         <div>
-                            <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Basic Plan</p>
-                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Basic Plan</p>
+                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
                         </div>
                         <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", fontSize: "12px", fontWeight: 700 }}>
                             ● Basic
@@ -1228,13 +1249,13 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
 
                     {/* Feature list */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
                         {FEATURES.map(f => (
                             <div key={f.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <span style={{ fontSize: "14px", color: f.included ? "#22c55e" : "rgba(255,255,255,0.2)" }}>
+                                <span style={{ fontSize: "14px", color: f.included ? SUCCESS : "rgba(15,23,42,0.25)" }}>
                                     {f.included ? "✓" : "✕"}
                                 </span>
-                                <span style={{ fontSize: "13px", color: f.included ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)" }}>
+                                <span style={{ fontSize: "13px", color: f.included ? "#334155" : "rgba(15,23,42,0.35)" }}>
                                     {f.label}
                                 </span>
                             </div>
@@ -1242,10 +1263,10 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                     </div>
 
                     {/* Upgrade CTA */}
-                    <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                    <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.3)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
                         <div>
-                            <p style={{ fontSize: "14px", fontWeight: 700, color: "#FFD700" }}>Upgrade to Premium</p>
-                            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
+                            <p style={{ fontSize: "14px", fontWeight: 700, color: GOLD }}>Upgrade to Premium</p>
+                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
                         </div>
                         <button
                             onClick={handleUpgrade}
@@ -1256,8 +1277,8 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                     </div>
 
                     {/* Cancel */}
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "16px" }}>
-                        <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(248,113,113,0.7)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                    <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: "16px" }}>
+                        <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(220,38,38,0.75)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
                             Cancel plan
                         </button>
                     </div>
@@ -1292,10 +1313,10 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
                     <div>
-                        <p style={{ fontSize: "20px", fontWeight: 700, color: "white" }}>Premium Plan</p>
-                        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
+                        <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Premium Plan</p>
+                        <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
                     </div>
-                    <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.5)", color: "#FFD700", fontSize: "12px", fontWeight: 700 }}>
+                    <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.5)", color: GOLD, fontSize: "12px", fontWeight: 700 }}>
                         ★ Premium
                     </div>
                 </div>
@@ -1304,17 +1325,17 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                 {!loading && daysRemaining !== null && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>30-Day Renewal Period</p>
-                            <p style={{ fontSize: "12px", color: daysRemaining <= 5 ? "#f87171" : "#FFD700", fontWeight: 700 }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>30-Day Renewal Period</p>
+                            <p style={{ fontSize: "12px", color: daysRemaining <= 5 ? DANGER : GOLD, fontWeight: 700 }}>
                                 {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
                             </p>
                         </div>
-                        <div style={{ height: "8px", borderRadius: "100px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${progressPct}%`, borderRadius: "100px", background: daysRemaining <= 5 ? "linear-gradient(90deg,#f87171,#ef4444)" : "linear-gradient(90deg,#b8860b,#FFD700)", transition: "width 0.4s ease" }} />
+                        <div style={{ height: "8px", borderRadius: "100px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${progressPct}%`, borderRadius: "100px", background: daysRemaining <= 5 ? "linear-gradient(90deg,#DC2626,#EF4444)" : "linear-gradient(90deg,#b8860b,#FFD700)", transition: "width 0.4s ease" }} />
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{startDate}</span>
-                            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>Renews {renewalDate}</span>
+                            <span style={{ fontSize: "11px", color: TEXT_FAINT }}>{startDate}</span>
+                            <span style={{ fontSize: "11px", color: TEXT_FAINT }}>Renews {renewalDate}</span>
                         </div>
                     </div>
                 )}
@@ -1332,24 +1353,24 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
                 {/* Subscription history */}
                 {!loading && history.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <p style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Subscription History</p>
-                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Subscription History</p>
+                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                 <thead>
-                                    <tr style={{ background: "rgba(255,255,255,0.04)" }}>
+                                    <tr style={{ background: CARD_BG_MUTED }}>
                                         {["Plan", "Date", "Renewal", "Status"].map(h => (
-                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {history.map((row, i) => (
-                                        <tr key={i} style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? "#FFD700" : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: "rgba(255,255,255,0.6)" }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                        <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
                                             <td style={{ padding: "10px 14px" }}>
-                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.06)", color: row.sub_status === "active" ? "#22c55e" : "rgba(255,255,255,0.35)", border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.1)"}` }}>
+                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
                                                     {row.sub_status}
                                                 </span>
                                             </td>
@@ -1393,7 +1414,11 @@ function InvestorProfilePage() {
 
     return (
         <motion.div
-            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            className="min-h-screen flex flex-col"
+            style={{
+                fontFamily: "'DM Sans', sans-serif",
+                background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 14%, #FFFFFF 100%)",
+            }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -1402,10 +1427,10 @@ function InvestorProfilePage() {
             <main className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-10">
                 {/* Left sidebar */}
                 <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-                    <div style={{ width: "300px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", overflow: "hidden", background: "rgba(255,255,255,0.04)", }}>
+                    <div style={{ width: "300px", borderRadius: "20px", border: `1px solid ${CARD_BORDER}`, overflow: "hidden", background: CARD_BG, boxShadow: CARD_SHADOW }}>
                         <LeftSection activeTab={activeTab} setActiveTab={setActiveTab} investorInfo={investorInfo} currentUser={currentUser} />
                     </div>
-                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: "0.667px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", }}>
+                    <div style={{ width: "300px", marginTop: "20px", borderRadius: "20px", border: `1px solid ${CARD_BORDER}`, background: CARD_BG, boxShadow: CARD_SHADOW }}>
                         <DeleteAccountButton />
                     </div>
                 </div>

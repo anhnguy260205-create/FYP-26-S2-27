@@ -11,14 +11,16 @@ const sans = "'DM Sans', sans-serif";
 const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
 
 const C = {
-  card: "#161f38",
-  border: "#232d4a",
-  rowBorder: "#1e2740",
-  accent: "#378ADD",
-  accentText: "#6fb3f0",
-  success: "#4dd68c",
-  danger: "#ff6b6b",
-  muted: "#8b92a8",
+  card: "#FFFFFF",
+  card2: "#F1F5F9",
+  border: "rgba(11,29,79,0.25)",
+  rowBorder: "rgba(15,23,42,0.1)",
+  accent: "#00D3F2",
+  accentText: "#004450",
+  success: "#0F9D58",
+  danger: "#DC2626",
+  muted: "#5B6C88",
+  heading: "#0B1D4F",
 };
 
 function fmt$(n) {
@@ -44,8 +46,8 @@ function TypeBadge({ type }) {
       letterSpacing: "0.1em", textTransform: "uppercase",
       padding: "3px 10px", borderRadius: 20,
       color: buy ? C.success : C.danger,
-      background: buy ? "rgba(77,214,140,0.1)" : "rgba(255,107,107,0.1)",
-      border: `1px solid ${buy ? "rgba(77,214,140,0.3)" : "rgba(255,107,107,0.3)"}`,
+      background: buy ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)",
+      border: `1px solid ${buy ? "rgba(15,157,88,0.3)" : "rgba(220,38,38,0.3)"}`,
     }}>
       {buy ? "▲ BUY" : "▼ SELL"}
     </span>
@@ -62,14 +64,14 @@ function TxRow({ tx, index }) {
       transition={{ duration: 0.2, delay: index * 0.02 }}
       style={{
         borderBottom: `1px solid ${C.rowBorder}`,
-        background: index % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)",
+        background: index % 2 === 0 ? "transparent" : C.card2,
       }}
     >
       <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 11, color: C.muted }}>{fmtDate(tx.transaction_date)}</td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0", letterSpacing: "0.05em" }}>{tx.symbol}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.heading, letterSpacing: "0.05em" }}>{tx.symbol}</td>
       <td style={{ padding: "12px 14px" }}><TypeBadge type={tx.transaction_type} /></td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: "#e2e8f0", textAlign: "right" }}>{tx.quantity}</td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: "#94a3b8", textAlign: "right" }}>{fmt$(tx.price)}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.heading, textAlign: "right" }}>{tx.quantity}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmt$(tx.price)}</td>
       <td style={{
         padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, textAlign: "right",
         color: buy ? C.danger : C.success
@@ -89,11 +91,11 @@ function Empty({ navigate }) {
         <path d="M16 20h16M16 27h10" stroke={C.accent} strokeWidth="1.5" strokeLinecap="round" />
       </svg>
       <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, margin: "0 0 4px" }}>No transactions yet</p>
-      <p style={{ fontFamily: sans, fontSize: 12, color: "#64748b", margin: "0 0 20px" }}>Start trading to see your history here</p>
+      <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 20px" }}>Start trading to see your history here</p>
       <button onClick={() => navigate("/realtimedashboard")}
         style={{
           padding: "9px 22px", borderRadius: 8, cursor: "pointer",
-          border: `1px solid rgba(55,138,221,0.4)`, background: "rgba(55,138,221,0.1)",
+          border: `1px solid rgba(0,211,242,0.4)`, background: "rgba(0,211,242,0.1)",
           color: C.accentText, fontFamily: mono, fontSize: 12, fontWeight: 700,
           letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
@@ -135,12 +137,13 @@ function TransactionHistoryPage() {
 
   const inputStyle = {
     height: 36, padding: "0 12px", borderRadius: 8,
-    border: `1px solid ${C.border}`, background: "rgba(22,31,56,0.8)",
-    color: "#e2e8f0", fontFamily: mono, fontSize: 12, outline: "none",
+    border: `1px solid ${C.border}`, background: C.card2,
+    color: C.heading, fontFamily: mono, fontSize: 12, outline: "none",
   };
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+    <motion.div className="min-h-screen flex flex-col"
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
@@ -148,13 +151,13 @@ function TransactionHistoryPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
+          <h1 style={{ fontFamily: mono, fontSize: 24, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.03em" }}>
             Transaction History
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
             All executed buy &amp; sell orders
           </p>
-          <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
+          <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(15,23,42,0.1)" }} />
         </div>
 
 
@@ -162,7 +165,7 @@ function TransactionHistoryPage() {
         {!loading && transactions.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
             {[
-              { label: "Showing", value: filtered.length, color: "#e2e8f0", suffix: " trades" },
+              { label: "Showing", value: filtered.length, color: C.heading, suffix: " trades" },
               { label: "Buy volume", value: fmt$(totalBuy), color: C.danger },
               { label: "Sell volume", value: fmt$(totalSell), color: C.success },
               {
@@ -196,8 +199,8 @@ function TransactionHistoryPage() {
           {["ALL", "buy", "sell"].map(t => (
             <button key={t} onClick={() => setFilterType(t)} style={{
               height: 36, padding: "0 14px", borderRadius: 8, cursor: "pointer",
-              border: filterType === t ? `1px solid rgba(55,138,221,0.5)` : `1px solid ${C.border}`,
-              background: filterType === t ? "rgba(55,138,221,0.14)" : "rgba(22,31,56,0.6)",
+              border: filterType === t ? `1px solid rgba(0,211,242,0.5)` : `1px solid ${C.border}`,
+              background: filterType === t ? "rgba(0,211,242,0.14)" : C.card2,
               color: filterType === t ? C.accentText : C.muted,
               fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
             }}>
@@ -208,13 +211,13 @@ function TransactionHistoryPage() {
             <button onClick={() => { setFilterSymbol("ALL"); setFilterType("ALL"); setSearch(""); }}
               style={{
                 height: 36, padding: "0 12px", borderRadius: 8, cursor: "pointer",
-                border: `1px solid rgba(255,107,107,0.25)`, background: "transparent",
+                border: `1px solid rgba(220,38,38,0.25)`, background: "transparent",
                 color: C.danger, fontFamily: mono, fontSize: 11,
               }}>
               Clear
             </button>
           )}
-          <span style={{ fontFamily: mono, fontSize: 11, color: "#475569", marginLeft: "auto" }}>
+          <span style={{ fontFamily: mono, fontSize: 11, color: C.muted, marginLeft: "auto" }}>
             {filtered.length} record{filtered.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -223,7 +226,7 @@ function TransactionHistoryPage() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12 }}>
           {loading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
-              <div style={{ width: 36, height: 36, border: `3px solid rgba(55,138,221,0.2)`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <div style={{ width: 36, height: 36, border: `3px solid rgba(0,211,242,0.2)`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             </div>
           ) : filtered.length === 0 ? (
@@ -251,7 +254,7 @@ function TransactionHistoryPage() {
           )}
         </div>
 
-        <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 16 }}>
+        <p style={{ fontFamily: mono, fontSize: 9, color: C.muted, textAlign: "center", marginTop: 16 }}>
           Showing {filtered.length} of {transactions.length} transactions · Paper trading only · Not financial advice
         </p>
       </main>

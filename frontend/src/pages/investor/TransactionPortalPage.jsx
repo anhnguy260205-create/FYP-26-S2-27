@@ -9,15 +9,17 @@ const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
 const C = {
-    bg:      "#0d1526",
-    card:    "#161f38",
-    border:  "#232d4a",
-    row:     "#1e2740",
-    accent:  "#378ADD",
-    success: "#4dd68c",
-    danger:  "#ff6b6b",
-    muted:   "#8b92a8",
-    text:    "#e2e8f0",
+    bg:      "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)",
+    card:    "#FFFFFF",
+    card2:   "#F1F5F9",
+    border:  "rgba(11,29,79,0.25)",
+    row:     "rgba(15,23,42,0.1)",
+    accent:  "#00D3F2",
+    accentText: "#004450",
+    success: "#0F9D58",
+    danger:  "#DC2626",
+    muted:   "#5B6C88",
+    text:    "#0B1D4F",
 };
 
 function fmt$(n) {
@@ -150,7 +152,7 @@ export default function TransactionPortalPage() {
                         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                                 <thead>
-                                    <tr style={{ background: "#1a2540" }}>
+                                    <tr style={{ background: C.card2 }}>
                                         {["Date", "Symbol", "Type", "Qty", "Price", "Total"].map(h => (
                                             <th key={h} style={{
                                                 padding: "12px 18px", textAlign: "left",
