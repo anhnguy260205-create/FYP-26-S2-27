@@ -18,6 +18,31 @@ import {
     ChevronRight,
 } from "lucide-react";
 
+// ── Design tokens (light theme) ─────────────────────────────────────────
+const C = {
+    card: "#FFFFFF",
+    card2: "#F1F5F9",
+    border: "rgba(11,29,79,0.25)",
+    divider: "rgba(15,23,42,0.1)",
+    rowBorder: "rgba(15,23,42,0.08)",
+    accent: "#00D3F2",
+    accentBorder: "rgba(0,211,242,0.3)",
+    accentText: "#004450",
+    accentRgb: "0,211,242",
+    cyan: "#0E7490",
+    success: "#0F9D58",
+    danger: "#DC2626",
+    amber: "#B45309",
+    muted: "#5B6C88",
+    mutedLight: "rgba(15,23,42,0.5)",
+    text: "#0F172A",
+};
+
+const PAGE = {
+    heading: "#0B1D4F",
+    sub: "#33477A",
+};
+
 // Experts are loaded from the backend (/expert/public-list) and mapped to
 // this display shape. The risk badge reflects the expert's risk_tolerance.
 const RISK_MAP = { Aggressive: "High", Moderate: "Moderate", Conservative: "Low" };
@@ -42,9 +67,9 @@ function toDisplayExpert(e) {
 const PAGE_SIZE = 6;
 
 const RISK_STYLE = {
-    High: { bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.25)", color: "#ef4444" },
-    Moderate: { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)", color: "#f59e0b" },
-    Low: { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.25)", color: "#22c55e" },
+    High: { bg: "rgba(220,38,38,0.1)", border: "rgba(220,38,38,0.25)", color: "#DC2626" },
+    Moderate: { bg: "rgba(180,83,9,0.1)", border: "rgba(180,83,9,0.25)", color: "#B45309" },
+    Low: { bg: "rgba(15,157,88,0.1)", border: "rgba(15,157,88,0.25)", color: "#0F9D58" },
 };
 
 function Avatar({ initials }) {
@@ -72,12 +97,12 @@ function StarRating({ value }) {
                     <svg key={i} width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path
                             d="M6 1l1.236 2.505L10 3.882l-2 1.95.472 2.75L6 7.25 3.528 8.582 4 5.832l-2-1.95 2.764-.377z"
-                            fill={i < full ? "#f59e0b" : "rgba(255,255,255,0.15)"}
+                            fill={i < full ? "#B45309" : "rgba(15,23,42,0.15)"}
                         />
                     </svg>
                 ))}
             </div>
-            <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.6)" }}>
+            <span className="text-xs font-mono" style={{ color: C.muted }}>
                 {value.toFixed(1)}
             </span>
         </div>
@@ -128,7 +153,8 @@ export default function ExpertPortfolio() {
     const COLS = "48px 1fr 1fr 100px 80px 130px 120px";
 
     return (
-        <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+        <motion.div className="min-h-screen flex flex-col"
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)", color: C.text }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
@@ -138,9 +164,11 @@ export default function ExpertPortfolio() {
                     <div>
                         <h1
                             style={{
+                                fontFamily: "'DM Mono', monospace",
                                 fontSize: "28px",
                                 fontWeight: 700,
-                                color: "#f8fafc",
+                                color: PAGE.heading,
+                                letterSpacing: "0.03em",
                             }}
                         >
                             Expert Portfolio
@@ -148,7 +176,7 @@ export default function ExpertPortfolio() {
 
                         <p
                             style={{
-                                color: "rgba(255,255,255,0.45)",
+                                color: PAGE.sub,
                                 marginTop: "4px",
                                 fontSize: "14px",
                             }}
@@ -164,9 +192,9 @@ export default function ExpertPortfolio() {
                                 padding: "10px 20px",
                                 borderRadius: "10px",
                                 cursor: "pointer",
-                                background: "rgba(59,130,246,0.12)",
-                                border: "1px solid rgba(59,130,246,0.3)",
-                                color: "#60a5fa",
+                                background: "rgba(0,211,242,0.12)",
+                                border: "1px solid rgba(0,211,242,0.3)",
+                                color: C.cyan,
                                 fontWeight: 600,
                                 fontSize: 14,
                                 whiteSpace: "nowrap",
@@ -176,7 +204,7 @@ export default function ExpertPortfolio() {
                         </button>
                     )}
                 </div>
-                <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
+                <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
 
                 {/* Search Bar */}
                 <div className="flex gap-3 mb-6">
@@ -185,13 +213,13 @@ export default function ExpertPortfolio() {
                         style={{
                             height: "46px",
                             borderRadius: "10px",
-                            background: "rgba(255,255,255,0.05)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: C.card,
+                            border: `1px solid ${C.border}`,
                         }}
                     >
                         <Search
                             size={16}
-                            color="rgba(255,255,255,0.4)"
+                            color={C.muted}
                         />
 
                         <input
@@ -202,20 +230,22 @@ export default function ExpertPortfolio() {
                             }
                             className="flex-1 bg-transparent border-none outline-none ml-3"
                             style={{
-                                color: "white",
+                                color: C.text,
                                 fontSize: "14px",
                             }}
                         />
                     </div>
 
                     <button
+                        onClick={handleSearch}
                         style={{
                             width: "120px",
                             borderRadius: "10px",
-                            background:
-                                "linear-gradient(90deg,#0092b8,#155dfc)",
-                            color: "white",
-                            fontWeight: 600,
+                            background: C.accent,
+                            border: "none",
+                            color: C.accentText,
+                            fontWeight: 700,
+                            cursor: "pointer",
                         }}
                     >
                         Search
@@ -233,23 +263,20 @@ export default function ExpertPortfolio() {
                                 style={{
                                     padding: "20px",
                                     borderRadius: "16px",
-                                    background:
-                                        "rgba(255,255,255,0.04)",
-                                    border:
-                                        "1px solid rgba(255,255,255,0.08)",
+                                    background: C.card,
+                                    border: `1px solid ${C.border}`,
                                 }}
                             >
                                 <Icon
                                     size={18}
-                                    color="#60a5fa"
+                                    color={C.cyan}
                                 />
 
                                 <div
                                     style={{
                                         marginTop: "12px",
                                         fontSize: "12px",
-                                        color:
-                                            "rgba(255,255,255,0.4)",
+                                        color: C.muted,
                                     }}
                                 >
                                     {item.title}
@@ -260,6 +287,7 @@ export default function ExpertPortfolio() {
                                         marginTop: "4px",
                                         fontSize: "20px",
                                         fontWeight: 700,
+                                        color: C.text,
                                     }}
                                 >
                                     {item.value}
@@ -268,8 +296,7 @@ export default function ExpertPortfolio() {
                                 <div
                                     style={{
                                         fontSize: "12px",
-                                        color:
-                                            "rgba(255,255,255,0.3)",
+                                        color: C.mutedLight,
                                     }}
                                 >
                                     {item.desc}
@@ -284,10 +311,8 @@ export default function ExpertPortfolio() {
                     style={{
                         borderRadius: "20px",
                         overflow: "hidden",
-                        background:
-                            "rgba(255,255,255,0.03)",
-                        border:
-                            "1px solid rgba(255,255,255,0.08)",
+                        background: C.card,
+                        border: `1px solid ${C.border}`,
                     }}
                 >
                     {/* Table Header */}
@@ -296,13 +321,10 @@ export default function ExpertPortfolio() {
                         style={{
                             gridTemplateColumns:
                                 "2.5fr 1fr 140px 110px 140px",
-                            background:
-                                "rgba(255,255,255,0.03)",
-                            color:
-                                "rgba(255,255,255,0.35)",
+                            background: C.card2,
+                            color: C.muted,
                             fontSize: "12px",
-                            borderBottom:
-                                "1px solid rgba(255,255,255,0.08)",
+                            borderBottom: `1px solid ${C.border}`,
                         }}
                     >
 
@@ -322,8 +344,8 @@ export default function ExpertPortfolio() {
                             style={{
                                 gridTemplateColumns:
                                     "2.5fr 1fr 140px 110px 140px",
-                                borderTop:
-                                    "1px solid rgba(255,255,255,0.05)",
+                                borderTop: `1px solid ${C.rowBorder}`,
+                                cursor: "pointer",
                             }}
                         >
 
@@ -337,6 +359,7 @@ export default function ExpertPortfolio() {
                                     <div
                                         style={{
                                             fontWeight: 600,
+                                            color: C.text,
                                         }}
                                     >
                                         {expert.name}
@@ -345,8 +368,7 @@ export default function ExpertPortfolio() {
                                     <div
                                         style={{
                                             fontSize: "12px",
-                                            color:
-                                                "rgba(255,255,255,0.4)",
+                                            color: C.muted,
                                         }}
                                     >
                                         {expert.role}
@@ -354,7 +376,7 @@ export default function ExpertPortfolio() {
                                 </div>
                             </div>
 
-                            <div>{expert.market}</div>
+                            <div style={{ color: C.text }}>{expert.market}</div>
 
                             <div>
                                 <span
@@ -379,7 +401,7 @@ export default function ExpertPortfolio() {
                                 </span>
                             </div>
 
-                            <div>{expert.followers.toLocaleString()}</div>
+                            <div style={{ color: C.text }}>{expert.followers.toLocaleString()}</div>
 
                             <div>
                                 <StarRating
@@ -395,14 +417,12 @@ export default function ExpertPortfolio() {
                     <div
                         className="flex justify-between items-center px-5 py-4"
                         style={{
-                            borderTop:
-                                "1px solid rgba(255,255,255,0.08)",
+                            borderTop: `1px solid ${C.border}`,
                         }}
                     >
                         <span
                             style={{
-                                color:
-                                    "rgba(255,255,255,0.4)",
+                                color: C.muted,
                                 fontSize: "12px",
                             }}
                         >
@@ -410,21 +430,72 @@ export default function ExpertPortfolio() {
                         </span>
 
                         <div className="flex gap-2">
-                            <button>◀</button>
                             <button
                                 style={{
                                     width: 32,
                                     height: 32,
                                     borderRadius: 8,
-                                    background:
-                                        "#155dfc",
+                                    background: "transparent",
+                                    border: `1px solid ${C.border}`,
+                                    color: C.text,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                ◀
+                            </button>
+                            <button
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    background: C.accent,
+                                    border: "none",
+                                    color: C.accentText,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
                                 }}
                             >
                                 1
                             </button>
-                            <button>2</button>
-                            <button>3</button>
-                            <button>▶</button>
+                            <button
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    background: "transparent",
+                                    border: `1px solid ${C.border}`,
+                                    color: C.text,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                2
+                            </button>
+                            <button
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    background: "transparent",
+                                    border: `1px solid ${C.border}`,
+                                    color: C.text,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                3
+                            </button>
+                            <button
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 8,
+                                    background: "transparent",
+                                    border: `1px solid ${C.border}`,
+                                    color: C.text,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                ▶
+                            </button>
                         </div>
                     </div>
                 </div>

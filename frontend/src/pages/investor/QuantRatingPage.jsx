@@ -20,25 +20,38 @@ const SECTORS = [
   { key: "CommServices", label: "Comm. Services" },
 ];
 
-// Label → color theme (Seeking-Alpha-style: green buy, amber hold, red sell)
+// Light-theme card surface, matching the shared token set used on
+// LoggedInHomePage.jsx / ForumPage.jsx (white card, slate-200 ring).
+const CARD_LIGHT = "rounded-2xl bg-white shadow-md shadow-slate-900/5 ring-1 ring-slate-200";
+
+// Text sitting directly on the page's blue-to-white gradient (title area),
+// same tokens as ForumPage.jsx's PAGE object.
+const PAGE = {
+  heading: "#0B1D4F",
+  sub: "#33477A",
+};
+
+// Label → color theme (Seeking-Alpha-style: green buy, amber hold, red sell).
+// Text/ring colors are darker, more saturated hues tuned for contrast on a
+// white card; rgba tint backgrounds/borders are kept light.
 const LABEL_THEME = {
-  "Strong Buy": { text: "#10b981", ring: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.4)" },
-  "Buy": { text: "#34d399", ring: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" },
-  "Hold": { text: "#fbbf24", ring: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" },
-  "Sell": { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
-  "Strong Sell": { text: "#f87171", ring: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.4)" },
+  "Strong Buy": { text: "#0F9D58", ring: "#0F9D58", bg: "rgba(15,157,88,0.12)", border: "rgba(15,157,88,0.4)" },
+  "Buy": { text: "#059669", ring: "#059669", bg: "rgba(5,150,105,0.12)", border: "rgba(5,150,105,0.35)" },
+  "Hold": { text: "#B45309", ring: "#B45309", bg: "rgba(180,83,9,0.12)", border: "rgba(180,83,9,0.35)" },
+  "Sell": { text: "#C2410C", ring: "#C2410C", bg: "rgba(194,65,12,0.12)", border: "rgba(194,65,12,0.35)" },
+  "Strong Sell": { text: "#DC2626", ring: "#DC2626", bg: "rgba(220,38,38,0.12)", border: "rgba(220,38,38,0.4)" },
 };
 
 const GRADE_COLOR = {
-  A: "#10b981", B: "#34d399", C: "#fbbf24", D: "#fb923c", F: "#f87171", "N/A": "#64748b",
+  A: "#0F9D58", B: "#059669", C: "#B45309", D: "#C2410C", F: "#DC2626", "N/A": "#64748b",
 };
 
 // Model confidence badge theme (from backend `confidence.level`)
 const CONF_THEME = {
-  high:    { label: "High confidence",   text: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.35)" },
-  medium:  { label: "Medium confidence", text: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.35)" },
-  low:     { label: "Low confidence",    text: "#fb923c", bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.35)" },
-  unknown: { label: "Unrated model",     text: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
+  high: { label: "High confidence", text: "#059669", bg: "rgba(5,150,105,0.12)", border: "rgba(5,150,105,0.35)" },
+  medium: { label: "Medium confidence", text: "#B45309", bg: "rgba(180,83,9,0.12)", border: "rgba(180,83,9,0.35)" },
+  low: { label: "Low confidence", text: "#C2410C", bg: "rgba(194,65,12,0.12)", border: "rgba(194,65,12,0.35)" },
+  unknown: { label: "Unrated model", text: "#64748b", bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.3)" },
 };
 
 const themeFor = (label) => LABEL_THEME[label] || LABEL_THEME["Hold"];
@@ -66,14 +79,14 @@ function ScoreGauge({ score, label }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-65">
       {/* track */}
       <path d={`M ${sx} ${sy} A ${r} ${r} 0 ${largeBg} 1 ${ex} ${ey}`}
-        fill="none" stroke="rgba(148,163,184,0.18)" strokeWidth="14" strokeLinecap="round" />
+        fill="none" stroke="#E2E8F0" strokeWidth="14" strokeLinecap="round" />
       {/* value arc */}
       <path d={`M ${sx} ${sy} A ${r} ${r} 0 ${largeVal} 1 ${nx} ${ny}`}
         fill="none" stroke={theme.ring} strokeWidth="14" strokeLinecap="round" />
-      <text x={cx} y={cy - 28} textAnchor="middle" fontSize="46" fontWeight="800" fill="#f1f5f9">
+      <text x={cx} y={cy - 28} textAnchor="middle" fontSize="46" fontWeight="800" fill="#0B1D4F">
         {Math.round(clamped)}
       </text>
-      <text x={cx} y={cy - 6} textAnchor="middle" fontSize="12" fill="#94a3b8">/ 100</text>
+      <text x={cx} y={cy - 6} textAnchor="middle" fontSize="12" fill="#5B6C88">/ 100</text>
     </svg>
   );
 }
@@ -87,7 +100,7 @@ function Stars({ value }) {
         const filled = i <= full;
         const isHalf = i === full + 1 && half;
         return (
-          <span key={i} className="text-lg" style={{ color: filled || isHalf ? "#fbbf24" : "#475569" }}>
+          <span key={i} className="text-lg" style={{ color: filled || isHalf ? "#F59E0B" : "#CBD5E1" }}>
             {isHalf ? "⯨" : "★"}
           </span>
         );
@@ -156,14 +169,14 @@ export default function QuantRatingPage() {
   const metrics = rating?.modelMetrics || {};
 
   return (
-    <div className="min-h-screen" style={{ background: "#020617" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}>
       <GeneralHeader />
 
       <main className="max-w mx-auto ">
         {/* Title */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-100">Sector Quant Ratings</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold" style={{ color: PAGE.heading }}>Sector Quant Ratings</h1>
+          <p className="text-sm mt-1" style={{ color: PAGE.sub }}>
             Calibrated machine-learning buy ratings, modelled per GICS sector. Each score is a true,
             calibrated probability — not a black-box index.
           </p>
@@ -175,10 +188,10 @@ export default function QuantRatingPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Enter ticker (e.g. AAPL, JPM, XOM)"
-            className="flex-1 bg-slate-900/70 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            className="flex-1 bg-white border border-[rgba(11,29,79,0.25)] rounded-lg px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#00D3F2]"
           />
           <button type="submit"
-            className="px-5 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition">
+            className="px-5 py-2.5 rounded-lg bg-[#00D3F2] hover:bg-[#00b8d4] text-[#004450] font-semibold transition">
             Rate
           </button>
         </form>
@@ -189,8 +202,8 @@ export default function QuantRatingPage() {
             <button key={s.key}
               onClick={() => loadRanking(s.key)}
               className={`text-xs px-3 py-1.5 rounded-full border transition ${ranking?.sector === s.key
-                ? "bg-cyan-600/20 border-cyan-500 text-cyan-300"
-                : "bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-500"
+                ? "bg-[#00D3F2]/15 border-[#00D3F2] text-[#004450]"
+                : "bg-white border-[rgba(11,29,79,0.25)] text-[#33477A] hover:border-[#0B1D4F]/50"
                 }`}>
               {s.label}
             </button>
@@ -198,7 +211,7 @@ export default function QuantRatingPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+          <div className="mb-6 p-4 rounded-lg text-sm" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: "#DC2626" }}>
             {error}
           </div>
         )}
@@ -212,15 +225,15 @@ export default function QuantRatingPage() {
               ) : rating ? (
                 <motion.div key={rating.symbol}
                   initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="rounded-2xl border p-6"
-                  style={{ background: "rgba(15,23,42,0.7)", borderColor: theme.border }}>
+                  className="rounded-2xl border p-6 shadow-md shadow-slate-900/5"
+                  style={{ background: "#FFFFFF", borderColor: theme.border }}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <div className="text-2xl font-bold text-slate-100">{rating.symbol}</div>
-                      <div className="text-xs text-slate-400 truncate max-w-45">{rating.name}</div>
+                      <div className="text-2xl font-bold text-slate-900">{rating.symbol}</div>
+                      <div className="text-xs text-slate-500 truncate max-w-45">{rating.name}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className="text-[11px] px-2 py-1 rounded-md bg-slate-800 text-slate-300">
+                      <span className="text-[11px] px-2 py-1 rounded-md bg-slate-100 text-slate-600">
                         {rating.sectorLabel}
                       </span>
                       <ConfidenceBadge confidence={rating.confidence} />
@@ -244,12 +257,12 @@ export default function QuantRatingPage() {
                     {upside != null && (
                       <Stat label="Implied upside"
                         value={`${upside >= 0 ? "+" : ""}${(upside * 100).toFixed(1)}%`}
-                        color={upside >= 0 ? "#34d399" : "#f87171"} />
+                        color={upside >= 0 ? "#059669" : "#DC2626"} />
                     )}
                   </div>
 
                   {/* Model reliability — the transparency edge over Seeking Alpha */}
-                  <div className="mt-5 pt-4 border-t border-slate-700/60">
+                  <div className="mt-5 pt-4 border-t border-slate-200">
                     <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-2">Model reliability</div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <MiniStat label="Buy prec." value={pct(metrics.buyPrecisionCv)} />
@@ -272,17 +285,17 @@ export default function QuantRatingPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Factor grades */}
             {rating && (
-              <div className="rounded-2xl border border-slate-700/60 p-6" style={{ background: "rgba(15,23,42,0.5)" }}>
-                <h2 className="text-sm font-semibold text-slate-200 mb-1">Factor Grades</h2>
+              <div className={`${CARD_LIGHT} p-6`}>
+                <h2 className="text-sm font-semibold text-slate-900 mb-1">Factor Grades</h2>
                 <p className="text-xs text-slate-500 mb-4">Percentile rank within the {rating.sectorLabel} cohort.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {(rating.factorGrades || []).map((g) => (
-                    <div key={g.factor} className="rounded-xl bg-slate-900/60 border border-slate-800 p-3 text-center">
+                    <div key={g.factor} className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-center">
                       <div className="text-2xl font-extrabold" style={{ color: GRADE_COLOR[g.grade] || "#64748b" }}>
                         {g.grade}
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-1 leading-tight">{g.factor}</div>
-                      <div className="h-1.5 mt-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div className="text-[11px] text-slate-500 mt-1 leading-tight">{g.factor}</div>
+                      <div className="h-1.5 mt-2 rounded-full bg-slate-200 overflow-hidden">
                         <div className="h-full rounded-full"
                           style={{ width: `${g.percentile ?? 0}%`, background: GRADE_COLOR[g.grade] || "#64748b" }} />
                       </div>
@@ -293,10 +306,10 @@ export default function QuantRatingPage() {
             )}
 
             {/* Sector leaderboard */}
-            <div className="rounded-2xl border border-slate-700/60 p-6" style={{ background: "rgba(15,23,42,0.5)" }}>
+            <div className={`${CARD_LIGHT} p-6`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-slate-200">
+                  <h2 className="text-sm font-semibold text-slate-900">
                     Sector Leaderboard {ranking ? `· ${ranking.sectorLabel}` : ""}
                   </h2>
                   {ranking && <ConfidenceBadge confidence={ranking.confidence} />}
@@ -307,7 +320,7 @@ export default function QuantRatingPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-[11px] uppercase tracking-wide text-slate-500 border-b border-slate-800">
+                      <tr className="text-left text-[11px] uppercase tracking-wide text-slate-500 border-b border-slate-200">
                         <th className="py-2 pr-2 font-medium">#</th>
                         <th className="py-2 pr-2 font-medium">Symbol</th>
                         <th className="py-2 pr-2 font-medium">Score</th>
@@ -322,14 +335,14 @@ export default function QuantRatingPage() {
                         return (
                           <tr key={r.symbol}
                             onClick={() => loadRating(r.symbol)}
-                            className={`border-b border-slate-800/60 cursor-pointer transition ${active ? "bg-cyan-500/10" : "hover:bg-slate-800/40"
+                            className={`border-b border-slate-100 cursor-pointer transition ${active ? "bg-[#00D3F2]/10" : "hover:bg-slate-50"
                               }`}>
                             <td className="py-2.5 pr-2 text-slate-500 tabular-nums">{r.rank}</td>
-                            <td className="py-2.5 pr-2 font-semibold text-slate-100">{r.symbol}</td>
+                            <td className="py-2.5 pr-2 font-semibold text-slate-900">{r.symbol}</td>
                             <td className="py-2.5 pr-2">
                               <div className="flex items-center gap-2">
-                                <span className="tabular-nums text-slate-200 w-7">{r.score}</span>
-                                <div className="h-1.5 w-20 rounded-full bg-slate-800 overflow-hidden">
+                                <span className="tabular-nums text-slate-700 w-7">{r.score}</span>
+                                <div className="h-1.5 w-20 rounded-full bg-slate-200 overflow-hidden">
                                   <div className="h-full rounded-full" style={{ width: `${r.score}%`, background: t.ring }} />
                                 </div>
                               </div>
@@ -338,7 +351,7 @@ export default function QuantRatingPage() {
                               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                                 style={{ color: t.text, background: t.bg }}>{r.label}</span>
                             </td>
-                            <td className="py-2.5 text-right text-amber-400">
+                            <td className="py-2.5 text-right text-amber-600">
                               {"★".repeat(Math.round(r.stars))}
                             </td>
                           </tr>
@@ -354,7 +367,7 @@ export default function QuantRatingPage() {
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-600 mt-8 max-w-3xl">
+        <p className="text-[11px] text-slate-500 mt-8 max-w-3xl">
           Ratings are model-generated and for educational purposes only — not investment advice.
           Scores reflect the calibrated probability of the model's BUY class over its training horizon.
         </p>
@@ -386,15 +399,15 @@ function Stat({ label, value, color }) {
   return (
     <div>
       <div className="text-[11px] text-slate-500">{label}</div>
-      <div className="font-semibold tabular-nums" style={{ color: color || "#e2e8f0" }}>{value}</div>
+      <div className="font-semibold tabular-nums" style={{ color: color || "#0F172A" }}>{value}</div>
     </div>
   );
 }
 
 function MiniStat({ label, value }) {
   return (
-    <div className="rounded-lg bg-slate-900/60 py-2">
-      <div className="text-sm font-bold text-slate-200 tabular-nums">{value}</div>
+    <div className="rounded-lg bg-slate-100 py-2">
+      <div className="text-sm font-bold text-slate-800 tabular-nums">{value}</div>
       <div className="text-[10px] text-slate-500">{label}</div>
     </div>
   );
@@ -403,11 +416,11 @@ function MiniStat({ label, value }) {
 function SkeletonCard() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="rounded-2xl border border-slate-700/60 p-6 animate-pulse" style={{ background: "rgba(15,23,42,0.7)" }}>
-      <div className="h-6 w-24 bg-slate-700/50 rounded mb-3" />
-      <div className="h-32 w-full bg-slate-800/50 rounded-xl mb-4" />
+      className="rounded-2xl border border-slate-200 p-6 animate-pulse shadow-md shadow-slate-900/5" style={{ background: "#FFFFFF" }}>
+      <div className="h-6 w-24 bg-slate-200 rounded mb-3" />
+      <div className="h-32 w-full bg-slate-100 rounded-xl mb-4" />
       <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-10 bg-slate-800/40 rounded" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded" />)}
       </div>
     </motion.div>
   );

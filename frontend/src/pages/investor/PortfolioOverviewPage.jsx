@@ -10,15 +10,21 @@ const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
 const C = {
-  card: "#161f38",
-  border: "#232d4a",
-  rowBorder: "#1e2740",
-  accent: "#378ADD",
-  accentText: "#6fb3f0",
-  accentCardBg: "#17223f",
-  success: "#4dd68c",
-  danger: "#ff6b6b",
-  muted: "#8b92a8",
+  card: "#FFFFFF",
+  border: "rgba(11,29,79,0.25)",
+  divider: "rgba(15,23,42,0.15)",
+  rowBorder: "rgba(15,23,42,0.08)",
+  accent: "#00A9C4",
+  accentBorder: "#00D3F2",
+  accentBg: "rgba(0,211,242,0.08)",
+  accentText: "#004450",
+  success: "#0F9D58",
+  danger: "#DC2626",
+  heading: "#0B1D4F",
+  text: "#0F172A",
+  textSecondary: "#33477A",
+  muted: "#5B6C88",
+  mutedLight: "rgba(15,23,42,0.55)",
 };
 
 const PIE_COLORS = ["#378ADD", "#EF9F27", "#E24B4A", "#639922", "#9b59b6", "#1abc9c", "#e67e22", "#e91e63"];
@@ -74,7 +80,7 @@ function TrendChart({ transactions }) {
           <stop offset="100%" stopColor={C.accent} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1={PL} y1={zeroY} x2={W - PR} y2={zeroY} stroke={C.border} strokeWidth="1" strokeDasharray="4 4" />
+      <line x1={PL} y1={zeroY} x2={W - PR} y2={zeroY} stroke={C.divider} strokeWidth="1" strokeDasharray="4 4" />
       <path d={area} fill="url(#tg)" />
       <path d={line} fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -114,7 +120,7 @@ function DonutChart({ holdings, liveStocks }) {
     <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
       <svg width={SZ} height={SZ} viewBox={`0 0 ${SZ} ${SZ}`} style={{ flexShrink: 0 }}>
         {segments.length === 0
-          ? <circle cx={cx} cy={cy} r={55} fill="none" stroke={C.border} strokeWidth={22} />
+          ? <circle cx={cx} cy={cy} r={55} fill="none" stroke={C.divider} strokeWidth={22} />
           : segments.map((seg, i) => (
             <path key={i} d={arcPath(cx, cy, 66, 44, seg.startDeg, seg.endDeg)} fill={seg.color} />
           ))
@@ -124,7 +130,7 @@ function DonutChart({ holdings, liveStocks }) {
         {segments.map((seg, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: seg.color, flexShrink: 0 }} />
-            <span style={{ fontFamily: mono, fontSize: 11, color: "#e2e8f0" }}>
+            <span style={{ fontFamily: mono, fontSize: 11, color: C.text }}>
               {seg.sym} <span style={{ color: C.muted }}>{seg.pct.toFixed(1)}%</span>
             </span>
           </div>
@@ -141,12 +147,12 @@ function DonutChart({ holdings, liveStocks }) {
 function StatCard({ label, value, sub, highlighted = false, valueColor }) {
   return (
     <div style={{
-      background: highlighted ? C.accentCardBg : C.card,
-      border: `${highlighted ? 2 : 1}px solid ${highlighted ? C.accent : C.border}`,
+      background: highlighted ? C.accentBg : C.card,
+      border: `${highlighted ? 2 : 1}px solid ${highlighted ? C.accentBorder : C.border}`,
       borderRadius: 12, padding: "16px 18px",
     }}>
       <p style={{ fontFamily: sans, fontSize: 13, color: highlighted ? C.accentText : C.muted, margin: "0 0 8px" }}>{label}</p>
-      <p style={{ fontFamily: mono, fontSize: highlighted ? 22 : 18, fontWeight: 600, color: valueColor ?? (highlighted ? C.accentText : "#e2e8f0"), margin: 0 }}>
+      <p style={{ fontFamily: mono, fontSize: highlighted ? 22 : 18, fontWeight: 600, color: valueColor ?? (highlighted ? C.accentText : C.text), margin: 0 }}>
         {value}
       </p>
       {sub && <p style={{ fontFamily: sans, fontSize: 11, color: highlighted ? C.accentText : C.muted, margin: "6px 0 0" }}>{sub}</p>}
@@ -201,10 +207,10 @@ function PortfolioOverviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900">
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}>
         <GeneralHeader />
         <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 40, height: 40, border: `3px solid rgba(55,138,221,0.2)`, borderTopColor: C.accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ width: 40, height: 40, border: `3px solid rgba(0,211,242,0.2)`, borderTopColor: C.accentBorder, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </main>
         <Footer />
@@ -213,7 +219,8 @@ function PortfolioOverviewPage() {
   }
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+    <motion.div className="min-h-screen flex flex-col"
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
@@ -221,13 +228,13 @@ function PortfolioOverviewPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: "0.03em" }}>
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.03em" }}>
             Portfolio Overview
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
             Full trading analytics, holdings, and order history
           </p>
-          <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }} />
+          <hr style={{ marginTop: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
         </div>
 
         {/* Stat cards */}
@@ -254,7 +261,7 @@ function PortfolioOverviewPage() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>Current holdings</p>
-            <span style={{ fontFamily: sans, fontSize: 13, color: "#475569" }}>
+            <span style={{ fontFamily: sans, fontSize: 13, color: C.textSecondary }}>
               {holdings.length} position{holdings.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -282,14 +289,14 @@ function PortfolioOverviewPage() {
                       <tr key={h.symbol}
                         style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}`, cursor: "pointer" }}
                         onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`)}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(55,138,221,0.05)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,211,242,0.06)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                       >
-                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{h.symbol}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{h.quantity}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#94a3b8" }}>{fmt$(h.average_cost)}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{fmt$(price)}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{fmt$(mktVal)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.text }}>{h.symbol}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.text }}>{h.quantity}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.mutedLight }}>{fmt$(h.average_cost)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.text }}>{fmt$(price)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.text }}>{fmt$(mktVal)}</td>
                         <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 600, textAlign: "right", color: upnl >= 0 ? C.success : C.danger }}>
                           {fmtSigned$(upnl)}
                         </td>
@@ -307,7 +314,7 @@ function PortfolioOverviewPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>Recent orders</p>
             <button onClick={() => navigate("/investor/transaction-history")}
-              style={{ fontFamily: sans, fontSize: 13, color: C.accentText, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              style={{ fontFamily: sans, fontSize: 13, color: C.accent, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
               View all →
             </button>
           </div>
@@ -331,13 +338,13 @@ function PortfolioOverviewPage() {
                     const isLast = i === Math.min(transactions.length, 5) - 1;
                     return (
                       <tr key={tx.transaction_id} style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}` }}>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, color: "#94a3b8" }}>{fmtDate(tx.transaction_date)}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{tx.symbol}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, color: C.mutedLight }}>{fmtDate(tx.transaction_date)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.text }}>{tx.symbol}</td>
                         <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, color: buy ? C.success : C.danger }}>
                           {buy ? "Buy" : "Sell"}
                         </td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#e2e8f0" }}>{tx.quantity}</td>
-                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: "#94a3b8" }}>{fmt$(tx.price)}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.text }}>{tx.quantity}</td>
+                        <td style={{ padding: "10px 6px", fontFamily: sans, fontSize: 13, textAlign: "right", color: C.mutedLight }}>{fmt$(tx.price)}</td>
                       </tr>
                     );
                   })}
@@ -347,7 +354,7 @@ function PortfolioOverviewPage() {
           )}
         </div>
 
-        <p style={{ fontFamily: mono, fontSize: 9, color: "#475569", textAlign: "center", marginTop: 16 }}>
+        <p style={{ fontFamily: mono, fontSize: 9, color: C.textSecondary, textAlign: "center", marginTop: 16 }}>
           Paper trading only · Prices are simulated · Not financial advice
         </p>
       </main>

@@ -5,6 +5,8 @@ import {
     Bookmark, Eye, Hash, Heart, MessageCircle,
     Search, Send, X, ArrowLeft, Trash2, Pencil,
     Check, Plus, MoreHorizontal, ChevronDown,
+    Flame, Users, BookOpen, Clock, Star, FileText,
+    MessageSquare, Pin, Inbox,
 } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import ExpertHeader from "../../layout/ExpertHeader.jsx";
@@ -52,12 +54,15 @@ const CATEGORIES = [
 ];
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
+// accent matches the site brand cyan used in GeneralHeader nav highlights —
+// keep this as the single accent instead of inventing a second blue here.
 const C = {
-    bg: "#0d1526",
     card: "#FFFFFF",
     card2: "#F1F5F9",
     border: "rgba(11,29,79,0.25)",
-    accent: "#378ADD",
+    accent: "#00D3F2",
+    accentText: "#004450",
+    accentRgb: "0,211,242",
     cyan: "#0E7490",
     success: "#0F9D58",
     danger: "#DC2626",
@@ -444,7 +449,7 @@ export default function ForumPage() {
     }
 
     return (
-        <motion.div className="min-h-screen flex flex-col text-white"
+        <motion.div className="min-h-screen flex flex-col"
             style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
@@ -558,9 +563,9 @@ function ForumHome({
                 </div>
                 <button onClick={onShowCreate} style={{
                     display: "flex", alignItems: "center", gap: 7, padding: "10px 20px",
-                    borderRadius: 50, background: "linear-gradient(135deg,#155dfc,#0092b8)",
-                    border: "none", color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(21,93,252,0.35)", whiteSpace: "nowrap",
+                    borderRadius: 50, background: C.accent,
+                    border: "none", color: C.accentText, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                    boxShadow: `0 4px 14px rgba(${C.accentRgb},0.35)`, whiteSpace: "nowrap",
                 }}>
                     <Plus size={15} /> New Post
                 </button>
@@ -574,7 +579,7 @@ function ForumHome({
                         whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
                         border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${PAGE.pillBorder}`,
                         background: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accent : "transparent",
-                        color: (cat === "All" ? !activeRoom : activeRoom === cat) ? "white" : PAGE.pillText,
+                        color: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accentText : PAGE.pillText,
                         transition: "all 0.15s",
                     }}>{cat}</button>
                 ))}
@@ -611,7 +616,7 @@ function ForumHome({
                     {/* ── Trending right now ── */}
                     {trendingPosts.length > 0 && (
                         <section style={{ marginBottom: 32 }}>
-                            <SectionHeader icon="🔥" label="Trending Right Now" />
+                            <SectionHeader icon={Flame} label="Trending Right Now" />
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
                                 {trendingPosts.map(post => (
                                     <TrendingCard
@@ -628,7 +633,7 @@ function ForumHome({
 
                     {/* ── My Activity — always shown, even with 0 counts ── */}
                     <section style={{ marginBottom: 32 }}>
-                        <SectionHeader icon="👤" label="My Activity" />
+                        <SectionHeader icon={Users} label="My Activity" />
                         <div style={{ display: "flex", gap: 12 }}>
                             <button onClick={() => setSort("saved")} style={{
                                 flex: 1, padding: "14px 18px", borderRadius: 14,
@@ -637,7 +642,9 @@ function ForumHome({
                             }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = C.cyan}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                                <div style={{ fontSize: 22, marginBottom: 6 }}>⭐</div>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, background: "rgba(14,116,144,0.12)" }}>
+                                    <Star size={17} color={C.cyan} />
+                                </div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{savedPosts.length}</div>
                                 <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Saved Posts</div>
                             </button>
@@ -648,7 +655,9 @@ function ForumHome({
                             }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = C.danger}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                                <div style={{ fontSize: 22, marginBottom: 6 }}>❤️</div>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, background: "rgba(220,38,38,0.12)" }}>
+                                    <Heart size={17} color={C.danger} />
+                                </div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{likedPosts.length}</div>
                                 <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Liked Posts</div>
                             </button>
@@ -659,7 +668,9 @@ function ForumHome({
                             }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = "#a78bfa"}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                                <div style={{ fontSize: 22, marginBottom: 6 }}>📝</div>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, background: "rgba(167,139,250,0.15)" }}>
+                                    <FileText size={17} color="#a78bfa" />
+                                </div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{myPosts.length}</div>
                                 <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>My Posts</div>
                             </button>
@@ -670,7 +681,9 @@ function ForumHome({
                             }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = "#34d399"}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                                <div style={{ fontSize: 22, marginBottom: 6 }}>💬</div>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, background: "rgba(52,211,153,0.15)" }}>
+                                    <MessageSquare size={17} color="#34d399" />
+                                </div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{commentedPosts.length}</div>
                                 <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Commented</div>
                             </button>
@@ -679,7 +692,7 @@ function ForumHome({
 
                     {/* ── Topic rooms grid ── */}
                     <section style={{ marginBottom: 32 }}>
-                        <SectionHeader icon="📚" label="Browse by Topic" />
+                        <SectionHeader icon={BookOpen} label="Browse by Topic" />
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 10 }}>
                             {CATEGORIES.filter(c => c !== "All").map(cat => {
                                 const count = posts.filter(p => p.category === cat).length;
@@ -716,8 +729,13 @@ function ForumHome({
                     {/* ── Latest posts ── */}
                     <section style={{ marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ fontSize: 16 }}>🕐</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{
+                                    width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                                    background: `rgba(${C.accentRgb},0.12)`, color: C.accent,
+                                }}>
+                                    <Clock size={15} strokeWidth={2} />
+                                </span>
                                 <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Latest Posts</span>
                             </div>
                             <button onClick={() => setSort("latest")} style={{ fontSize: 12, color: C.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>See all →</button>
@@ -744,15 +762,38 @@ function ForumHome({
             {/* ════════════════════════════════════════════════════════════════ */}
             {(!showHome || loading) && (
                 loading ? (
-                    <div style={{ textAlign: "center", color: C.muted, padding: 60 }}>Loading posts…</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} style={{
+                                display: "flex", gap: 12, background: C.card, border: `1px solid ${C.border}`,
+                                borderRadius: 12, padding: "12px 14px",
+                            }}>
+                                <div style={{ width: 3, borderRadius: 4, background: C.border, alignSelf: "stretch" }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ width: "30%", height: 10, borderRadius: 4, background: C.card2, marginBottom: 8 }} />
+                                    <div style={{ width: "70%", height: 14, borderRadius: 4, background: C.card2, marginBottom: 8 }} />
+                                    <div style={{ width: "40%", height: 10, borderRadius: 4, background: C.card2 }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <>
                         {/* Section label for special sort modes */}
                         {(sort === "saved" || sort === "liked" || sort === "popular" || sort === "replies" || sort === "mine" || sort === "commented" || sort === "latest") && !activeRoom && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-                                <span style={{ fontSize: 18 }}>
-                                    {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "commented" ? "💬" : sort === "popular" ? "🔥" : sort === "latest" ? "🕐" : "💬"}
-                                </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                                {(() => {
+                                    const SortIcon = sort === "saved" ? Star : sort === "liked" ? Heart : sort === "mine" ? FileText
+                                        : sort === "commented" ? MessageSquare : sort === "popular" ? Flame : sort === "latest" ? Clock : MessageSquare;
+                                    return (
+                                        <span style={{
+                                            width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                                            background: `rgba(${C.accentRgb},0.12)`, color: C.accent,
+                                        }}>
+                                            <SortIcon size={15} strokeWidth={2} />
+                                        </span>
+                                    );
+                                })()}
                                 <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>
                                     {sort === "saved" ? "My Saved Posts"
                                         : sort === "liked" ? "Posts I Liked"
@@ -781,8 +822,12 @@ function ForumHome({
                             ))}
                             {filteredPosts.length === 0 && (
                                 <div style={{ textAlign: "center", padding: 60 }}>
-                                    <div style={{ fontSize: 40, marginBottom: 12 }}>
-                                        {sort === "saved" ? "⭐" : sort === "liked" ? "❤️" : sort === "mine" ? "📝" : sort === "commented" ? "💬" : "📭"}
+                                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                                        {(() => {
+                                            const EmptyIcon = sort === "saved" ? Star : sort === "liked" ? Heart : sort === "mine" ? FileText
+                                                : sort === "commented" ? MessageSquare : Inbox;
+                                            return <EmptyIcon size={36} strokeWidth={1.5} color={C.muted} />;
+                                        })()}
                                     </div>
                                     <div style={{ color: C.muted, fontSize: 14, marginBottom: 8 }}>
                                         {sort === "saved" ? "You haven't saved any posts yet."
@@ -807,10 +852,15 @@ function ForumHome({
 }
 
 // ── SectionHeader ─────────────────────────────────────────────────────────────
-function SectionHeader({ icon, label }) {
+function SectionHeader({ icon: Icon, label }) {
     return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 16 }}>{icon}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <span style={{
+                width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, background: `rgba(${C.accentRgb},0.12)`, color: C.accent,
+            }}>
+                <Icon size={15} strokeWidth={2} />
+            </span>
             <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{label}</span>
             <div style={{ flex: 1, height: 1, background: C.border, marginLeft: 6 }} />
         </div>
@@ -827,10 +877,10 @@ function TrendingCard({ post, onClick, onLike, onSave }) {
             onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
             onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 20, background: "rgba(55,138,221,0.12)", color: C.accent, border: `1px solid rgba(55,138,221,0.2)` }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 20, background: `rgba(${C.accentRgb},0.12)`, color: C.accent, border: `1px solid rgba(${C.accentRgb},0.2)` }}>
                     {post.category}
                 </span>
-                {post.is_pinned && <span style={{ fontSize: 10 }}>📌</span>}
+                {post.is_pinned && <Pin size={11} color={C.accent} fill={C.accent} />}
             </div>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: "0 0 6px", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {post.title}
@@ -872,7 +922,7 @@ function PostRow({ post, onClick, onLike, onSave, onDelete, canDelete }) {
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: "0.05em" }}>{post.category}</span>
-                    {post.is_pinned && <span style={{ fontSize: 10 }}>📌</span>}
+                    {post.is_pinned && <Pin size={11} color={C.accent} fill={C.accent} />}
                 </div>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: "0 0 4px", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {post.title}
@@ -931,7 +981,11 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, canDele
                         <span style={{ fontSize: 11, color: C.muted }}>{formatDate(post.created_at)}</span>
                         <span style={{ fontSize: 11, color: C.muted }}>·</span>
                         <span style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>{post.category}</span>
-                        {post.is_pinned && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(55,138,221,0.15)", color: C.accent, fontWeight: 700 }}>📌 PINNED</span>}
+                        {post.is_pinned && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, padding: "1px 6px", borderRadius: 4, background: `rgba(${C.accentRgb},0.15)`, color: C.accent, fontWeight: 700 }}>
+                                <Pin size={10} fill={C.accent} /> PINNED
+                            </span>
+                        )}
                     </div>
                 </div>
                 {/* More menu */}
@@ -961,7 +1015,7 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, canDele
                 {post.tags?.length > 0 && (
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
                         {post.tags.slice(0, 4).map(t => (
-                            <span key={t} style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: "rgba(55,138,221,0.12)", color: C.accent, fontWeight: 600 }}>#{t}</span>
+                            <span key={t} style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, background: `rgba(${C.accentRgb},0.12)`, color: C.accent, fontWeight: 600 }}>#{t}</span>
                         ))}
                     </div>
                 )}
@@ -1027,7 +1081,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                     <div style={{ display: "flex", gap: 8 }}>
                         {canEdit && !editingPost && (
                             <button onClick={() => { setEditTitle(post.title); setEditContent(post.content); setEditingPost(true); }}
-                                style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, background: "rgba(55,138,221,0.1)", border: `1px solid rgba(55,138,221,0.25)`, color: C.accent, cursor: "pointer", fontSize: 12 }}>
+                                style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, background: `rgba(${C.accentRgb},0.1)`, border: `1px solid rgba(${C.accentRgb},0.25)`, color: C.accent, cursor: "pointer", fontSize: 12 }}>
                                 <Pencil size={13} /> Edit
                             </button>
                         )}
@@ -1067,7 +1121,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                                             setEditingPost(false);
                                         }
                                     }}
-                                    style={{ padding: "8px 20px", borderRadius: 10, background: C.accent, border: "none", color: "white", cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                                    style={{ padding: "8px 20px", borderRadius: 10, background: C.accent, border: "none", color: C.accentText, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                                     <Check size={13} /> Save Changes
                                 </button>
                             </div>
@@ -1079,7 +1133,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                             {post.tags?.length > 0 && (
                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 14 }}>
                                     {post.tags.map(t => (
-                                        <span key={t} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, background: "rgba(55,138,221,0.12)", color: C.accent, fontWeight: 600 }}>#{t}</span>
+                                        <span key={t} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, background: `rgba(${C.accentRgb},0.12)`, color: C.accent, fontWeight: 600 }}>#{t}</span>
                                     ))}
                                 </div>
                             )}
@@ -1154,7 +1208,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                                                         style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
                                                     <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
                                                         <button onClick={() => setEditingId(null)} style={{ padding: "6px 14px", borderRadius: 8, background: C.card2, border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", fontSize: 12 }}>Cancel</button>
-                                                        <button onClick={() => saveEdit(reply)} style={{ padding: "6px 14px", borderRadius: 8, background: C.accent, border: "none", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                                                        <button onClick={() => saveEdit(reply)} style={{ padding: "6px 14px", borderRadius: 8, background: C.accent, border: "none", color: C.accentText, cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
                                                             <Check size={12} /> Save
                                                         </button>
                                                     </div>
@@ -1183,7 +1237,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
                             style={{ width: "100%", padding: "10px 12px", borderRadius: 12, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box" }}
                         />
                     </div>
-                    <button onClick={onReply} disabled={!replyText.trim()} style={{ padding: "10px 16px", borderRadius: 12, background: replyText.trim() ? C.accent : "rgba(11,29,79,0.08)", border: "none", color: replyText.trim() ? "white" : C.muted, cursor: replyText.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13, transition: "background 0.15s" }}>
+                    <button onClick={onReply} disabled={!replyText.trim()} style={{ padding: "10px 16px", borderRadius: 12, background: replyText.trim() ? C.accent : "rgba(11,29,79,0.08)", border: "none", color: replyText.trim() ? C.accentText : C.muted, cursor: replyText.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13, transition: "background 0.15s" }}>
                         <Send size={14} /> Post
                     </button>
                 </div>
@@ -1234,7 +1288,7 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "0 20px 20px" }}>
                     <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 12, background: `rgba(11,29,79,0.06)`, border: "none", color: C.muted, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-                    <button onClick={submit} disabled={submitted || creating} style={{ padding: "10px 24px", borderRadius: 12, background: `linear-gradient(135deg,#155dfc,#0092b8)`, border: "none", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: (submitted || creating) ? 0.6 : 1 }}>
+                    <button onClick={submit} disabled={submitted || creating} style={{ padding: "10px 24px", borderRadius: 12, background: C.accent, border: "none", color: C.accentText, cursor: "pointer", fontWeight: 700, fontSize: 14, opacity: (submitted || creating) ? 0.6 : 1 }}>
                         {submitted || creating ? "Publishing…" : "Publish"}
                     </button>
                 </div>

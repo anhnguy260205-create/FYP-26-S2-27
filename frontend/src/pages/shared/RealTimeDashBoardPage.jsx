@@ -41,9 +41,9 @@ function SearchBar({ onSearch, loading }) {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="w-full h-10 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-400 outline-none"
+          className="w-full h-10 pl-12 pr-4 rounded-xl bg-white border border-[rgba(11,29,79,0.25)] text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#00D3F2]"
         />
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(15,23,42,0.4)" strokeWidth="2">
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
         </svg>
@@ -53,7 +53,7 @@ function SearchBar({ onSearch, loading }) {
         onClick={handleSearch}
         disabled={loading}
         className="px-6 h-10 text-white font-semibold text-[16px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all whitespace-nowrap disabled:opacity-50"
-        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
+        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,146,184,0.25)" }}
       >
         {loading ? "Searching…" : "Search"}
       </button>
@@ -64,15 +64,15 @@ function SearchBar({ onSearch, loading }) {
 function MarketStatus({ marketStatus, lastUpdated }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className={marketStatus === "OPEN" ? "text-green-400" : "text-gray-400"}>
+      <span className={marketStatus === "OPEN" ? "text-emerald-600 font-medium" : "text-slate-500"}>
         {marketStatus === "OPEN" ? "🟢 Market Open" : "⚪ Market Closed"}
       </span>
-      <span className="text-gray-500">|</span>
-      <span className={marketStatus === "OPEN" ? "text-cyan-400" : "text-gray-400"}>
+      <span className="text-slate-400">|</span>
+      <span className={marketStatus === "OPEN" ? "text-[#0092b8] font-medium" : "text-slate-500"}>
         {marketStatus === "OPEN" ? "Live Data" : "Offline Data"}
       </span>
-      <span className="text-gray-500">|</span>
-      <span className="text-gray-400">Last Updated: {lastUpdated}</span>
+      <span className="text-slate-400">|</span>
+      <span className="text-slate-500">Last Updated: {lastUpdated}</span>
     </div>
   );
 }
@@ -98,21 +98,21 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
     ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(2)
     : null;
   const isUp = chg === null ? true : Number(chg) >= 0;
-  const color = isUp ? "text-green-400" : "text-red-400";
+  const color = isUp ? "text-emerald-600" : "text-red-600";
 
   return (
     <div
       onClick={() => onSelect(stock.symbol)}
-      className="grid px-6 py-4 border-b border-white/5 hover:bg-white/5 transition-colors items-center"
+      className="grid px-6 py-4 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors items-center"
       style={{
         gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr",
         background: isLive
-          ? "rgba(99,179,237,0.05)"
-          : isTopPick ? "rgba(250,204,21,0.04)"
-            : isRecommended ? "rgba(0,211,243,0.04)" : undefined,
+          ? "rgba(29,78,216,0.05)"
+          : isTopPick ? "rgba(180,83,9,0.05)"
+            : isRecommended ? "rgba(0,211,243,0.05)" : undefined,
         borderLeft: isLive
-          ? "3px solid rgba(99,179,237,0.6)"
-          : isTopPick ? "3px solid rgba(250,204,21,0.7)"
+          ? "3px solid rgba(29,78,216,0.6)"
+          : isTopPick ? "3px solid rgba(180,83,9,0.6)"
             : isRecommended ? "3px solid rgba(0,211,243,0.5)" : "3px solid transparent",
         cursor: "pointer",
       }}
@@ -120,12 +120,12 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
       {/* Symbol */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <span className="text-white font-semibold text-sm">{stock.symbol}</span>
+          <span className="text-slate-900 font-semibold text-sm">{stock.symbol}</span>
           {isLive && (
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
               padding: "2px 7px", borderRadius: 20,
-              color: "#63b3ed", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.3)",
+              color: "#1D4ED8", background: "rgba(29,78,216,0.1)", border: "1px solid rgba(29,78,216,0.3)",
             }}>
               Live Search
             </span>
@@ -134,7 +134,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
               padding: "2px 7px", borderRadius: 20,
-              color: "#fbbf24", background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)",
+              color: "#B45309", background: "rgba(180,83,9,0.12)", border: "1px solid rgba(180,83,9,0.35)",
             }}>
               Top Pick
             </span>
@@ -149,7 +149,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
             </span>
           )}
         </div>
-        <span className="text-gray-500 text-xs">{stock.name ?? companyName(stock.symbol)}</span>
+        <span className="text-slate-500 text-xs">{stock.name ?? companyName(stock.symbol)}</span>
       </div>
 
       {/* Price */}
@@ -171,7 +171,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
       <span className="flex justify-center items-center">
         {candles?.length > 0
           ? <MiniChart candles={candles} width={100} height={40} />
-          : <span className="text-gray-600 text-xs">—</span>
+          : <span className="text-slate-400 text-xs">—</span>
         }
       </span>
     </div>
@@ -193,32 +193,32 @@ const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick 
       style={{
         padding: "16px",
         borderRadius: "16px",
-        background: isTopPick ? "rgba(251,191,36,0.07)" : "rgba(0,211,243,0.05)",
-        border: isTopPick ? "1px solid rgba(251,191,36,0.28)" : "1px solid rgba(0,211,243,0.18)",
+        background: isTopPick ? "rgba(180,83,9,0.06)" : "rgba(0,211,243,0.06)",
+        border: isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.22)",
         minWidth: 0,
       }}
     >
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#f1f5f9" }}>{stock.symbol}</span>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>{stock.symbol}</span>
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
               padding: "2px 6px", borderRadius: 20,
-              color: isTopPick ? "#fbbf24" : "#00D3F2",
-              background: isTopPick ? "rgba(251,191,36,0.12)" : "rgba(0,211,243,0.12)",
-              border: isTopPick ? "1px solid rgba(251,191,36,0.3)" : "1px solid rgba(0,211,243,0.25)",
+              color: isTopPick ? "#B45309" : "#00D3F2",
+              background: isTopPick ? "rgba(180,83,9,0.12)" : "rgba(0,211,243,0.12)",
+              border: isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.25)",
             }}>
               {isTopPick ? "Top Pick" : "For You"}
             </span>
           </div>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2, display: "block" }}>{stock.name ?? companyName(stock.symbol)}</span>
+          <span style={{ fontSize: 12, color: "#5B6C88", marginTop: 2, display: "block" }}>{stock.name ?? companyName(stock.symbol)}</span>
         </div>
         <div className="text-right shrink-0">
-          <div style={{ fontWeight: 600, fontSize: 14, color: isUp ? "#4ade80" : "#f87171" }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: isUp ? "#0F9D58" : "#DC2626" }}>
             ${stock.price?.toFixed(2) ?? "—"}
           </div>
-          <div style={{ fontSize: 12, color: isUp ? "#4ade80" : "#f87171" }}>
+          <div style={{ fontSize: 12, color: isUp ? "#0F9D58" : "#DC2626" }}>
             {pctChg !== null ? (isUp ? "+" : "") + pctChg + "%" : "—"}
           </div>
         </div>
@@ -244,9 +244,9 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
   }, [stockList, categoryFilter]);
 
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-white/10">
+    <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5">
       <div className="min-w-140">
-        <div className="grid px-6 py-3 text-xs text-gray-400 uppercase tracking-widest border-b border-white/10 bg-white/5"
+        <div className="grid px-6 py-3 text-xs text-slate-500 uppercase tracking-widest border-b border-slate-200 bg-slate-50"
           style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr" }}>
           <span>Symbol</span>
           <span className="text-right">Price</span>
@@ -258,7 +258,7 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
           <StockRow stock={searchedStock} candles={searchedCandles} onSelect={handleSelect} isLive={true} />
         )}
         {filtered.length === 0 && !searchedStock ? (
-          <div className="px-6 py-8 text-center text-gray-500 text-sm">Waiting for data…</div>
+          <div className="px-6 py-8 text-center text-slate-500 text-sm">Waiting for data…</div>
         ) : (
           filtered.map(stock => (
             <StockRow key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]} onSelect={handleSelect} />
@@ -408,7 +408,8 @@ function RealTimeDashBoardPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col"
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
       {isExpert ? <ExpertHeader /> : <GeneralHeader />}
@@ -416,53 +417,53 @@ function RealTimeDashBoardPage() {
 
         {/* ── Page header ────────────────────────────────────── */}
         <div>
-          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(20px, 5vw, 30px)", fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(20px, 5vw, 30px)", fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
             Real-Time Dashboard
           </h1>
           <div className="mt-2">
             <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
-          {error && <div className="mt-2 text-red-400 text-sm">{error}</div>}
+          {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
         </div>
 
         {/* ── Section 1: Recommended ─────────────────────────── */}
         <section>
           <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>
+              <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#0B1D4F", margin: 0 }}>
                 Recommended for You
               </h2>
-              <p className="text-xs text-gray-500 mt-1">Based on your sector interests and risk tolerance</p>
+              <p className="text-xs text-slate-500 mt-1">Based on your sector interests and risk tolerance</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {interests.map(s => (
                 <span key={s} style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "#00D3F2", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.25)" }}>{s}</span>
               ))}
               {riskTolerance && (
-                <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)" }}>{riskTolerance} Risk</span>
+                <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, color: "#B45309", background: "rgba(180,83,9,0.1)", border: "1px solid rgba(180,83,9,0.3)" }}>{riskTolerance} Risk</span>
               )}
 
             </div>
           </div>
 
           {interests.length === 0 ? (
-            <div style={{ padding: "32px", borderRadius: "16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" }}>
-              <p className="text-gray-400 text-sm">No sector interests set yet.</p>
+            <div style={{ padding: "32px", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)", textAlign: "center" }}>
+              <p className="text-slate-500 text-sm">No sector interests set yet.</p>
               <button onClick={() => navigate(editProfilePath)}
                 className="mt-3 text-sm font-semibold"
-                style={{ color: "#00D3F2", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                style={{ color: "#0092b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                 Set your interests and risk tolerance →
               </button>
             </div>
           ) : (
-            <div style={{ padding: "clamp(14px, 3vw, 24px)", borderRadius: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ padding: "clamp(14px, 3vw, 24px)", borderRadius: "20px", background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)" }}>
 
               {/* Top Picks — sector + risk-tolerance match, momentum-ranked */}
               {topPicks.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#fbbf24" }}>★ Top Picks</span>
-                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— matches your sector + risk tolerance, ranked by 1-month momentum</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B45309" }}>★ Top Picks</span>
+                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "#5B6C88" }}>— matches your sector + risk tolerance, ranked by 1-month momentum</span>
                   </div>
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {topPicks.map(stock => (
@@ -478,8 +479,8 @@ function RealTimeDashBoardPage() {
               {forYou.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#00D3F2" }}>For You</span>
-                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>— in your selected sectors</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#0092b8" }}>For You</span>
+                    <span className="hidden sm:inline" style={{ fontSize: 12, color: "#5B6C88" }}>— in your selected sectors</span>
                   </div>
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {forYou.map(stock => (
@@ -492,7 +493,7 @@ function RealTimeDashBoardPage() {
               )}
 
               {topPicks.length === 0 && forYou.length === 0 && (
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, textAlign: "center", padding: "16px 0" }}>No stocks match your current interests.</p>
+                <p style={{ color: "#5B6C88", fontSize: 14, textAlign: "center", padding: "16px 0" }}>No stocks match your current interests.</p>
               )}
             </div>
           )}
@@ -502,10 +503,10 @@ function RealTimeDashBoardPage() {
         <section>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>
+              <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#0B1D4F", margin: 0 }}>
                 Browse Stocks
               </h2>
-              <p className="text-xs text-gray-500 mt-1">Filter by sector or search any symbol</p>
+              <p className="text-xs text-slate-500 mt-1">Filter by sector or search any symbol</p>
             </div>
           </div>
 
@@ -515,9 +516,9 @@ function RealTimeDashBoardPage() {
               <button key={tab} onClick={() => setBrowseCategory(tab)}
                 style={{
                   padding: "6px 16px", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                  background: browseCategory === tab ? "linear-gradient(90deg,#0092b8,#155dfc)" : "rgba(255,255,255,0.05)",
-                  border: browseCategory === tab ? "none" : "1px solid rgba(255,255,255,0.1)",
-                  color: browseCategory === tab ? "#fff" : "rgba(255,255,255,0.5)",
+                  background: browseCategory === tab ? "linear-gradient(90deg,#0092b8,#155dfc)" : "#F1F5F9",
+                  border: browseCategory === tab ? "none" : "1px solid rgba(11,29,79,0.15)",
+                  color: browseCategory === tab ? "#fff" : "#33477A",
                   whiteSpace: "nowrap", flexShrink: 0,
                 }}>
                 {tab}
@@ -527,7 +528,7 @@ function RealTimeDashBoardPage() {
 
           {/* Search bar */}
           <SearchBar onSearch={handleSearch} loading={searchLoading} />
-          {searchError && <p style={{ marginTop: 8, fontSize: 12, color: "#f87171" }}>{searchError}</p>}
+          {searchError && <p style={{ marginTop: 8, fontSize: 12, color: "#DC2626" }}>{searchError}</p>}
 
           <div className="mt-4">
             <StockTableSection

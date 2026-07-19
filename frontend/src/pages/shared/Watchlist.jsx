@@ -9,6 +9,27 @@ import { getWatchlist, addStockToWatchlist, removeStockFromWatchlist } from "../
 
 const BASIC_WATCHLIST_LIMIT = 3;
 
+// ── Design tokens — matches the light theme used across ForumPage.jsx /
+// PortfolioOverviewPage.jsx / LoggedInHomePage.jsx ─────────────────────────
+const C = {
+    card: "#FFFFFF",
+    card2: "#F1F5F9",
+    border: "rgba(11,29,79,0.25)",
+    rowBorder: "rgba(15,23,42,0.08)",
+    divider: "rgba(15,23,42,0.15)",
+    accent: "#00D3F2",
+    accentText: "#004450",
+    accentRgb: "0,211,242",
+    success: "#0F9D58",
+    danger: "#DC2626",
+    heading: "#0B1D4F",
+    text: "#0F172A",
+    textSecondary: "#33477A",
+    muted: "#5B6C88",
+    mutedLight: "rgba(15,23,42,0.45)",
+    gold: "#92700C",
+};
+
 function Sparkline({ data, positive }) {
     const w = 80, h = 28, pad = 2;
     const min = Math.min(...data);
@@ -19,7 +40,7 @@ function Sparkline({ data, positive }) {
         const y = pad + ((max - v) / range) * (h - pad * 2);
         return `${x},${y}`;
     });
-    const color = positive ? "#22c55e" : "#ef4444";
+    const color = positive ? C.success : C.danger;
     const fillId = `sf-${data[0]}-${data[data.length - 1]}`;
     return (
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
@@ -118,7 +139,8 @@ export default function Watchlist() {
         return { sym, price, change, percent, positive, spark };
     });
     return (
-        <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+        <motion.div className="min-h-screen flex flex-col"
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
@@ -127,10 +149,10 @@ export default function Watchlist() {
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
                             My Watchlist
                         </h1>
-                        <p className="mt-1.5 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        <p className="mt-1.5 text-sm" style={{ color: C.muted }}>
                             Track your favourite stocks and market trends
                         </p>
                     </div>
@@ -149,16 +171,16 @@ export default function Watchlist() {
                                         placeholder="e.g. META"
                                         className="px-3 py-2 rounded-lg text-sm font-mono outline-none"
                                         style={{
-                                            background: "rgba(255,255,255,0.07)",
-                                            border: "1px solid rgba(255,255,255,0.15)",
-                                            color: "white",
+                                            background: C.card2,
+                                            border: `1px solid ${C.border}`,
+                                            color: C.text,
                                             width: "120px",
                                         }}
                                     />
                                     <button
                                         onClick={() => { setAdding(false); setNewSymbol(""); }}
                                         className="text-xs px-3 py-2 rounded-lg"
-                                        style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}
+                                        style={{ background: C.card2, color: C.muted }}
                                     >
                                         Cancel
                                     </button>
@@ -169,7 +191,7 @@ export default function Watchlist() {
                         {!isPremium && !isExpert && (
                             <span style={{
                                 fontFamily: "'DM Mono', monospace", fontSize: "11px",
-                                color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.4)",
+                                color: isAtLimit ? C.danger : C.muted,
                                 letterSpacing: "0.06em",
                             }}>
                                 {symbols.length}/{BASIC_WATCHLIST_LIMIT}
@@ -185,8 +207,8 @@ export default function Watchlist() {
                             title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
                             className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity"
                             style={{
-                                background: isAtLimit ? "rgba(255,255,255,0.08)" : "linear-gradient(90deg, #155dfc, #0092b8)",
-                                color: isAtLimit ? "rgba(255,255,255,0.3)" : "white",
+                                background: isAtLimit ? C.card2 : "linear-gradient(90deg, #00D3F2, #0092b8)",
+                                color: isAtLimit ? C.muted : "white",
                                 cursor: isAtLimit ? "not-allowed" : "pointer",
                             }}
                         >
@@ -194,7 +216,7 @@ export default function Watchlist() {
                         </button>
                     </div>
                 </div>
-                <hr style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.1)", marginBottom: 20 }} />
+                <hr style={{ border: "none", borderTop: `1px solid ${C.divider}`, marginBottom: 20 }} />
 
                 {/* Basic plan limit banner */}
                 {isAtLimit && (
@@ -203,18 +225,18 @@ export default function Watchlist() {
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "space-between",
                             gap: "12px", marginBottom: "20px",
-                            background: "rgba(255,215,0,0.06)",
-                            border: "1px solid rgba(255,215,0,0.25)",
+                            background: "rgba(255,215,0,0.12)",
+                            border: "1px solid rgba(255,215,0,0.4)",
                             borderRadius: "10px", padding: "12px 16px",
                         }}
                     >
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <span style={{ fontSize: "16px" }}>🔒</span>
                             <div>
-                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#FFD700" }}>
+                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: C.gold }}>
                                     Watchlist limit reached ({BASIC_WATCHLIST_LIMIT}/{BASIC_WATCHLIST_LIMIT})
                                 </div>
-                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+                                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: C.textSecondary, marginTop: "2px" }}>
                                     Basic plan supports up to {BASIC_WATCHLIST_LIMIT} stocks. Upgrade to Premium for unlimited.
                                 </div>
                             </div>
@@ -223,8 +245,8 @@ export default function Watchlist() {
                             onClick={() => navigate("/investor/subscription")}
                             style={{
                                 padding: "7px 16px", borderRadius: "8px", whiteSpace: "nowrap",
-                                background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
-                                border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700",
+                                background: "linear-gradient(90deg, rgba(255,215,0,0.3), rgba(255,165,0,0.3))",
+                                border: "1px solid rgba(255,215,0,0.5)", color: C.gold,
                                 fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "11px",
                                 letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
                             }}
@@ -235,15 +257,15 @@ export default function Watchlist() {
                 )}
 
                 {/* Table */}
-                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
                     {/* Header row */}
                     <div
                         className="grid text-xs uppercase tracking-widest px-5 py-3"
                         style={{
                             gridTemplateColumns: "2fr 1.1fr 1.1fr 1.1fr 90px 60px",
-                            color: "rgba(255,255,255,0.35)",
-                            background: "rgba(255,255,255,0.03)",
-                            borderBottom: "1px solid rgba(255,255,255,0.07)",
+                            color: C.muted,
+                            background: C.card2,
+                            borderBottom: `1px solid ${C.border}`,
                         }}
                     >
                         <span>Symbol</span>
@@ -257,13 +279,13 @@ export default function Watchlist() {
                     {/* Data rows */}
                     <AnimatePresence initial={false}>
                         {loading && (
-                            <div className="text-center py-16 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                            <div className="text-center py-16 text-sm" style={{ color: C.muted, background: C.card }}>
                                 Loading watchlist...
                             </div>
                         )}
 
                         {!loading && !userId && (
-                            <div className="text-center py-16 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                            <div className="text-center py-16 text-sm" style={{ color: C.muted, background: C.card }}>
                                 Please log in to view your watchlist.
                             </div>
                         )}
@@ -271,7 +293,7 @@ export default function Watchlist() {
                         {!loading && userId && rows.length === 0 && (
                             <div
                                 className="text-center py-16 text-sm"
-                                style={{ color: "rgba(255,255,255,0.3)" }}
+                                style={{ color: C.muted, background: C.card }}
 
                             >
                                 Your watchlist is empty — add a symbol above.
@@ -286,32 +308,33 @@ export default function Watchlist() {
                                 className="grid items-center px-5 py-3.5 group"
                                 style={{
                                     gridTemplateColumns: "2fr 1.1fr 1.1fr 1.1fr 90px 60px",
-                                    borderTop: "1px solid rgba(255,255,255,0.05)",
+                                    borderTop: `1px solid ${C.rowBorder}`,
+                                    background: C.card,
                                     transition: "background 0.15s",
                                     cursor: "pointer",
                                 }}
                                 onClick={() => handleSelect(row.sym)}
-                                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                onMouseEnter={e => e.currentTarget.style.background = `rgba(${C.accentRgb},0.06)`}
+                                onMouseLeave={e => e.currentTarget.style.background = C.card}
                             >
                                 {/* Symbol + company */}
                                 <div className="flex items-center gap-3">
-                                    <span style={{ color: "#3b82f6", fontSize: "14px" }}>★</span>
+                                    <span style={{ color: C.accent, fontSize: "14px" }}>★</span>
                                     <div>
-                                        <div className="text-sm font-semibold font-mono tracking-wide">{row.sym}</div>
-                                        <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+                                        <div className="text-sm font-semibold font-mono tracking-wide" style={{ color: C.text }}>{row.sym}</div>
+                                        <div className="text-xs mt-0.5" style={{ color: C.muted }}>
                                             {COMPANY_NAMES[row.sym] ?? "—"}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Price */}
-                                <div className="text-right text-sm font-mono font-medium">
+                                <div className="text-right text-sm font-mono font-medium" style={{ color: C.text }}>
                                     {row.price != null ? `$${row.price.toFixed(2)}` : "—"}
                                 </div>
 
                                 {/* Change */}
-                                <div className="text-right text-sm font-mono" style={{ color: row.positive ? "#22c55e" : "#ef4444" }}>
+                                <div className="text-right text-sm font-mono" style={{ color: row.positive ? C.success : C.danger }}>
                                     {row.change != null ? `${row.change > 0 ? "+" : ""}${row.change.toFixed(2)}` : "—"}
                                 </div>
 
@@ -320,7 +343,7 @@ export default function Watchlist() {
                                     <span
                                         className="text-xs font-semibold px-2 py-0.5 rounded-full font-mono"
                                         style={{
-                                            color: row.positive ? "#22c55e" : "#ef4444",
+                                            color: row.positive ? C.success : C.danger,
                                             background: row.positive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
                                         }}
                                     >
@@ -341,9 +364,9 @@ export default function Watchlist() {
                                         className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg text-xs"
                                         style={{
                                             width: "30px", height: "30px",
-                                            background: isAtLimit ? "rgba(255,255,255,0.05)" : "rgba(239,68,68,0.1)",
-                                            border: isAtLimit ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(239,68,68,0.25)",
-                                            color: isAtLimit ? "rgba(255,255,255,0.25)" : "#ef4444",
+                                            background: isAtLimit ? C.card2 : "rgba(239,68,68,0.1)",
+                                            border: isAtLimit ? `1px solid ${C.border}` : "1px solid rgba(239,68,68,0.25)",
+                                            color: isAtLimit ? C.muted : C.danger,
                                             cursor: isAtLimit ? "not-allowed" : "pointer",
                                         }}
                                         title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks. Upgrade to Premium to manage your watchlist freely.` : "Remove"}
@@ -357,16 +380,16 @@ export default function Watchlist() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-between items-center mt-4 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <div className="flex justify-between items-center mt-4 text-xs" style={{ color: C.muted }}>
                     <span>
                         Showing {rows.length} entr{rows.length === 1 ? "y" : "ies"}
                         {!isPremium && !isExpert && (
-                            <span style={{ color: isAtLimit ? "#fca5a5" : "rgba(255,255,255,0.25)", marginLeft: "8px" }}>
+                            <span style={{ color: isAtLimit ? C.danger : C.mutedLight, marginLeft: "8px" }}>
                                 · {symbols.length}/{BASIC_WATCHLIST_LIMIT} Basic plan slots used
                             </span>
                         )}
                     </span>
-                    <span style={{ color: "rgba(255,255,255,0.2)" }}>Live prices via WebSocket</span>
+                    <span style={{ color: C.mutedLight }}>Live prices via WebSocket</span>
                 </div>
 
             </main>

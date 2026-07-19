@@ -79,7 +79,11 @@ function Notification() {
     ).length;
     return (
         <motion.div
-            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            className="min-h-screen flex flex-col"
+            style={{
+                fontFamily: "'DM Sans', sans-serif",
+                background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)",
+            }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
@@ -93,7 +97,7 @@ function Notification() {
                     <div>
                         <div className="flex items-center gap-3">
 
-                            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1 }}>
+                            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
 
                                 Notifications
                             </h1>
@@ -102,7 +106,7 @@ function Notification() {
                         <p
                             style={{
                                 marginTop: "6px",
-                                color: "rgba(255,255,255,0.45)"
+                                color: "#33477A"
                             }}
                         >
                             Stay updated with market alerts and account activity.
@@ -116,7 +120,9 @@ function Notification() {
                             padding: "10px 18px",
                             borderRadius: "10px",
                             background:
-                                "linear-gradient(90deg,#0092b8,#155dfc)",
+                                "linear-gradient(90deg,#00D3F2,#0092b8)",
+                            color: "#004450",
+                            fontWeight: 600,
                             cursor: "pointer"
                         }}
                     >
@@ -129,8 +135,9 @@ function Notification() {
                 <div
                     className="mb-6"
                     style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#FFFFFF",
+                        border: "1px solid rgba(11,29,79,0.25)",
+                        boxShadow: "0 1px 2px rgba(15,23,42,0.05)",
                         borderRadius: "18px",
                         padding: "20px"
                     }}
@@ -138,7 +145,8 @@ function Notification() {
                     <h3
                         style={{
                             fontSize: "18px",
-                            fontWeight: 600
+                            fontWeight: 600,
+                            color: "#0F172A"
                         }}
                     >
                         {unreadCount} Unread Notification
@@ -147,7 +155,7 @@ function Notification() {
 
                     <p
                         style={{
-                            color: "rgba(255,255,255,0.4)",
+                            color: "#5B6C88",
                             marginTop: "4px"
                         }}
                     >
@@ -158,8 +166,9 @@ function Notification() {
                 {/* Notification List */}
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#FFFFFF",
+                        border: "1px solid rgba(11,29,79,0.25)",
+                        boxShadow: "0 1px 2px rgba(15,23,42,0.05)",
                         borderRadius: "20px",
                         overflow: "hidden"
                     }}
@@ -169,7 +178,7 @@ function Notification() {
                             style={{
                                 padding: "50px",
                                 textAlign: "center",
-                                color: "rgba(255,255,255,0.4)"
+                                color: "#5B6C88"
                             }}
                         >
                             Loading notifications...
@@ -179,7 +188,7 @@ function Notification() {
                             style={{
                                 padding: "50px",
                                 textAlign: "center",
-                                color: "rgba(255,255,255,0.4)"
+                                color: "#5B6C88"
                             }}
                         >
                             No notifications available.
@@ -195,9 +204,9 @@ function Notification() {
                                     style={{
                                         padding: "20px",
                                         borderBottom:
-                                            "1px solid rgba(255,255,255,0.05)",
+                                            "1px solid rgba(15,23,42,0.08)",
                                         background: item.is_unread
-                                            ? "rgba(21,93,252,0.06)"
+                                            ? "#F1F5F9"
                                             : "transparent"
                                     }}
                                 >
@@ -209,7 +218,7 @@ function Notification() {
                                                 height: "46px",
                                                 borderRadius: "12px",
                                                 background:
-                                                    "rgba(21,93,252,0.12)",
+                                                    "rgba(29,78,216,0.10)",
                                                 display: "flex",
                                                 justifyContent: "center",
                                                 alignItems: "center"
@@ -217,7 +226,7 @@ function Notification() {
                                         >
                                             <Icon
                                                 size={20}
-                                                color="#60a5fa"
+                                                color="#1D4ED8"
                                             />
                                         </div>
 
@@ -225,7 +234,8 @@ function Notification() {
                                             <div className="flex items-center gap-2">
                                                 <h3
                                                     style={{
-                                                        fontWeight: 600
+                                                        fontWeight: 600,
+                                                        color: "#0F172A"
                                                     }}
                                                 >
                                                     {item.title}
@@ -238,7 +248,7 @@ function Notification() {
                                                             height: "8px",
                                                             borderRadius: "50%",
                                                             background:
-                                                                "#3b82f6"
+                                                                "#1D4ED8"
                                                         }}
                                                     />
                                                 )}
@@ -248,7 +258,7 @@ function Notification() {
                                                 style={{
                                                     marginTop: "4px",
                                                     color:
-                                                        "rgba(255,255,255,0.45)",
+                                                        "rgba(15,23,42,0.65)",
                                                     fontSize: "14px"
                                                 }}
                                             >
@@ -259,7 +269,7 @@ function Notification() {
                                                 style={{
                                                     fontSize: "12px",
                                                     color:
-                                                        "rgba(255,255,255,0.3)"
+                                                        "rgba(15,23,42,0.45)"
                                                 }}
                                             >
                                                 {timeAgo(item.created_at)}
@@ -288,7 +298,7 @@ function Notification() {
                                         >
                                             <CheckCircle
                                                 size={16}
-                                                color="#22c55e"
+                                                color="#0F9D58"
                                             />
                                         </button>
 
@@ -312,7 +322,7 @@ function Notification() {
                                         >
                                             <Trash2
                                                 size={16}
-                                                color="#ef4444"
+                                                color="#DC2626"
                                             />
                                         </button>
 

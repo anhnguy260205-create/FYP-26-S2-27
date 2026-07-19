@@ -9,6 +9,33 @@ import {
   getRemovalNotice, getReviewStats, getReviews, toggleReviewHelpful, updateReview,
 } from "../../api/reviewApi.js";
 
+// ── Design tokens — matches the light theme used across ForumPage.jsx /
+// Watchlist.jsx / LoggedInHomePage.jsx ─────────────────────────────────────────
+const C = {
+  card: "#FFFFFF",
+  card2: "#F1F5F9",
+  border: "rgba(11,29,79,0.25)",
+  rowBorder: "rgba(15,23,42,0.08)",
+  divider: "rgba(15,23,42,0.15)",
+  accent: "#00D3F2",
+  accentText: "#004450",
+  accentRgb: "0,211,242",
+  success: "#0F9D58",
+  danger: "#DC2626",
+  heading: "#0B1D4F",
+  text: "#0F172A",
+  textSecondary: "#33477A",
+  muted: "#5B6C88",
+  mutedLight: "rgba(15,23,42,0.45)",
+};
+
+// Tokens for text/controls that sit directly on the page's blue-to-white
+// gradient (outside any white card).
+const PAGE = {
+  heading: "#0B1D4F",
+  sub: "#33477A",
+};
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 function getCurrentUser() {
   try { return JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}"); }
@@ -26,9 +53,9 @@ function formatDate(v) {
 
 function roleBadge(role) {
   const r = String(role || "").toLowerCase();
-  if (r === "expert")  return { label: "Expert",   bg: "rgba(0,211,242,0.15)",  color: "#22d3ee",  border: "rgba(0,211,242,0.3)" };
-  if (r === "premium") return { label: "Premium",  bg: "rgba(251,191,36,0.15)", color: "#fbbf24",  border: "rgba(251,191,36,0.3)" };
-  return                      { label: "Member",   bg: "rgba(255,255,255,0.07)", color: "#94a3b8", border: "rgba(255,255,255,0.12)" };
+  if (r === "expert")  return { label: "Expert",   bg: "rgba(0,211,242,0.14)",  color: "#0092b8",  border: "rgba(0,211,242,0.35)" };
+  if (r === "premium") return { label: "Premium",  bg: "rgba(180,83,9,0.12)",   color: "#B45309",  border: "rgba(180,83,9,0.35)" };
+  return                      { label: "Member",   bg: "#F1F5F9",                color: "#5B6C88",  border: "rgba(15,23,42,0.15)" };
 }
 
 function initials(name) {
@@ -46,7 +73,7 @@ function SkeletonLine({ width = "100%", height = 12, mb = 0 }) {
   return (
     <div style={{
       width, height, borderRadius: 6, marginBottom: mb,
-      background: "linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)",
+      background: "linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%)",
       backgroundSize: "200% 100%",
       animation: "shimmer 1.4s infinite",
     }} />
@@ -56,11 +83,11 @@ function SkeletonLine({ width = "100%", height = 12, mb = 0 }) {
 function SkeletonReviewCard() {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+      background: C.card, border: `1px solid ${C.border}`,
       borderRadius: 16, padding: "20px 22px",
     }}>
       <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: C.card2 }} />
         <div style={{ flex: 1 }}>
           <SkeletonLine width="35%" height={13} mb={8} />
           <SkeletonLine width="20%" height={10} />
@@ -87,7 +114,7 @@ function Stars({ value, size = 16, onChange }) {
           onMouseLeave={() => onChange && setHov(0)}
           style={{ background: "none", border: "none", padding: 1,
             cursor: onChange ? "pointer" : "default",
-            color: n <= (hov || Math.round(value)) ? "#fbbf24" : "rgba(255,255,255,0.2)",
+            color: n <= (hov || Math.round(value)) ? "#fbbf24" : "#CBD5E1",
             transition: "color 0.1s" }}>
           <Star size={size} fill="currentColor" />
         </button>
@@ -103,14 +130,14 @@ function DistBar({ star, count, total, active, onClick }) {
       display: "flex", alignItems: "center", gap: 10,
       background: "none", border: "none", cursor: "pointer", width: "100%", padding: "3px 0",
     }}>
-      <span style={{ fontSize: 12, color: active ? "#fbbf24" : "#64748b", width: 32, textAlign: "right", fontWeight: 600 }}>
+      <span style={{ fontSize: 12, color: active ? "#D97706" : C.muted, width: 32, textAlign: "right", fontWeight: 600 }}>
         {star} ★
       </span>
-      <div style={{ flex: 1, height: 8, borderRadius: 4, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ flex: 1, height: 8, borderRadius: 4, background: C.card2, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", borderRadius: 4, transition: "width 0.4s",
           background: active ? "#fbbf24" : "linear-gradient(90deg,#0092b8,#155dfc)" }} />
       </div>
-      <span style={{ fontSize: 12, color: "#475569", width: 28 }}>{count}</span>
+      <span style={{ fontSize: 12, color: C.muted, width: 28 }}>{count}</span>
     </button>
   );
 }
@@ -129,34 +156,34 @@ function RemovalNoticeBanner({ notice, onDismiss }) {
   return (
     <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
       style={{
-        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+        background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)",
         borderRadius: 16, padding: "18px 20px", marginBottom: 24,
         display: "flex", gap: 14, alignItems: "flex-start",
       }}>
       <div style={{
         width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-        background: "rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(220,38,38,0.12)", display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        <AlertCircle size={18} color="#f87171" />
+        <AlertCircle size={18} color={C.danger} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#f1f5f9" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: C.heading }}>
           Your review was removed
         </h3>
         {notice.review_title && (
-          <p style={{ margin: "0 0 6px", fontSize: 13, color: "#94a3b8" }}>
+          <p style={{ margin: "0 0 6px", fontSize: 13, color: C.textSecondary }}>
             "{notice.review_title}"
           </p>
         )}
-        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#94a3b8" }}>
-          <strong style={{ color: "#f87171" }}>Reason:</strong> {notice.reason}
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: C.textSecondary }}>
+          <strong style={{ color: C.danger }}>Reason:</strong> {notice.reason}
         </p>
-        <p style={{ margin: "6px 0 0", fontSize: 12, color: "#64748b" }}>
+        <p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted }}>
           If you believe this was a mistake, please contact support. You're welcome to submit a new review that follows our community guidelines.
         </p>
       </div>
       <button onClick={onDismiss} style={{
-        background: "none", border: "none", cursor: "pointer", color: "#64748b", padding: 4, flexShrink: 0,
+        background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 4, flexShrink: 0,
       }}>
         <X size={16} />
       </button>
@@ -178,25 +205,25 @@ function ReportModal({ review, onConfirm, onCancel, reporting }) {
   const finalReason = reason === "Other" ? custom.trim() : reason;
   return (
     <div style={{ position:"fixed", inset:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"center",
-      background:"rgba(0,0,0,0.7)", padding:20 }}>
-      <div style={{ background:"#161f38", border:"1px solid rgba(255,255,255,0.1)", borderRadius:20,
-        padding:24, width:"100%", maxWidth:420 }}>
+      background:"rgba(15,23,42,0.55)", padding:20 }}>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20,
+        padding:24, width:"100%", maxWidth:420, boxShadow: "0 20px 50px rgba(15,23,42,0.2)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#f1f5f9" }}>Report Review</h3>
-          <button onClick={onCancel} style={{ background:"none", border:"none", cursor:"pointer", color:"#64748b" }}>
+          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:C.heading }}>Report Review</h3>
+          <button onClick={onCancel} style={{ background:"none", border:"none", cursor:"pointer", color:C.muted }}>
             <X size={18}/>
           </button>
         </div>
-        <p style={{ fontSize:13, color:"#64748b", marginBottom:16 }}>
-          Why are you reporting this review by <strong style={{color:"#94a3b8"}}>{review.author}</strong>?
+        <p style={{ fontSize:13, color:C.muted, marginBottom:16 }}>
+          Why are you reporting this review by <strong style={{color:C.textSecondary}}>{review.author}</strong>?
         </p>
         <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
           {REPORT_REASONS.map(r => (
             <label key={r} style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
               <input type="radio" name="reportReason" value={r}
                 checked={reason === r} onChange={() => setReason(r)}
-                style={{ accentColor:"#ef4444" }}/>
-              <span style={{ fontSize:13, color: reason === r ? "#f1f5f9" : "#64748b", fontWeight: reason === r ? 600 : 400 }}>
+                style={{ accentColor:"#dc2626" }}/>
+              <span style={{ fontSize:13, color: reason === r ? C.heading : C.muted, fontWeight: reason === r ? 600 : 400 }}>
                 {r}
               </span>
             </label>
@@ -206,17 +233,17 @@ function ReportModal({ review, onConfirm, onCancel, reporting }) {
           <textarea value={custom} onChange={e => setCustom(e.target.value)}
             placeholder="Describe the issue…" rows={3}
             style={{ width:"100%", padding:"10px 12px", borderRadius:10, marginBottom:14,
-              background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)",
-              color:"#e2e8f0", fontSize:13, outline:"none", resize:"none", boxSizing:"border-box" }}/>
+              background:C.card2, border:`1px solid ${C.border}`,
+              color:C.text, fontSize:13, outline:"none", resize:"none", boxSizing:"border-box" }}/>
         )}
-        <div style={{ background:"rgba(55,138,221,0.1)", border:"1px solid rgba(55,138,221,0.2)",
-          borderRadius:10, padding:"10px 14px", fontSize:12, color:"#60a5fa", marginBottom:16 }}>
+        <div style={{ background:"rgba(0,211,242,0.1)", border:"1px solid rgba(0,211,242,0.3)",
+          borderRadius:10, padding:"10px 14px", fontSize:12, color:C.accentText, marginBottom:16 }}>
           Our moderation team will review your report and take action if needed.
         </div>
         <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
           <button onClick={onCancel} disabled={reporting}
-            style={{ padding:"9px 18px", borderRadius:10, background:"rgba(255,255,255,0.05)",
-              border:"1px solid rgba(255,255,255,0.1)", color:"#94a3b8", cursor:"pointer", fontSize:13 }}>
+            style={{ padding:"9px 18px", borderRadius:10, background:C.card2,
+              border:`1px solid ${C.border}`, color:C.textSecondary, cursor:"pointer", fontSize:13 }}>
             Cancel
           </button>
           <button onClick={() => onConfirm(finalReason)} disabled={reporting || (reason === "Other" && !custom.trim())}
@@ -235,28 +262,28 @@ function ReviewCard({ review, onHelpful, onEdit, onDelete, onReport }) {
   const badge = roleBadge(review.author_role);
   return (
     <article style={{
-      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+      background: C.card, border: `1px solid ${C.border}`,
       borderRadius: 16, padding: "20px 22px", transition: "border-color 0.15s",
     }}
-    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)"}
-    onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
+    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(11,29,79,0.4)"}
+    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
           <Avatar name={review.author} />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: "#e2e8f0" }}>{review.author}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{review.author}</span>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
                 padding: "2px 8px", borderRadius: 20, color: badge.color,
                 background: badge.bg, border: `1px solid ${badge.border}` }}>
                 {badge.label}
               </span>
-              {review.is_edited && <span style={{ fontSize: 11, color: "#475569" }}>(edited)</span>}
+              {review.is_edited && <span style={{ fontSize: 11, color: C.muted }}>(edited)</span>}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
               <Stars value={review.rating} size={13} />
-              <span style={{ fontSize: 12, color: "#475569" }}>{formatDate(review.created_at)}</span>
+              <span style={{ fontSize: 12, color: C.muted }}>{formatDate(review.created_at)}</span>
             </div>
           </div>
         </div>
@@ -265,14 +292,14 @@ function ReviewCard({ review, onHelpful, onEdit, onDelete, onReport }) {
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => onEdit(review)} style={{
               display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8,
-              background: "rgba(55,138,221,0.1)", border: "1px solid rgba(55,138,221,0.25)",
-              color: "#60a5fa", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              background: "rgba(0,146,184,0.1)", border: "1px solid rgba(0,146,184,0.3)",
+              color: "#0092b8", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               <Pencil size={12} /> Edit
             </button>
             <button onClick={() => onDelete(review)} style={{
               display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 8,
-              background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)",
-              color: "#f87171", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)",
+              color: C.danger, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               <Trash2 size={12} /> Delete
             </button>
           </div>
@@ -280,11 +307,11 @@ function ReviewCard({ review, onHelpful, onEdit, onDelete, onReport }) {
       </div>
 
       {review.title && (
-        <h3 style={{ margin: "12px 0 6px", fontSize: 15, fontWeight: 700, color: "#f1f5f9" }}>
+        <h3 style={{ margin: "12px 0 6px", fontSize: 15, fontWeight: 700, color: C.heading }}>
           {review.title}
         </h3>
       )}
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: "#94a3b8", whiteSpace: "pre-line" }}>
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: C.textSecondary, whiteSpace: "pre-line" }}>
         {review.comment}
       </p>
 
@@ -292,17 +319,17 @@ function ReviewCard({ review, onHelpful, onEdit, onDelete, onReport }) {
         {review.is_mine ? (
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20,
-            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
-            color: "#475569", fontSize: 12, fontWeight: 600 }}>
+            background: C.card2, border: `1px solid ${C.rowBorder}`,
+            color: C.muted, fontSize: 12, fontWeight: 600 }}>
             <ThumbsUp size={12} />
             {review.helpful_count > 0 ? `${review.helpful_count} found this helpful` : "No votes yet"}
           </span>
         ) : (
           <button onClick={() => onHelpful(review.review_id)} style={{
             display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20,
-            background: review.helpful_by_me ? "rgba(55,138,221,0.12)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${review.helpful_by_me ? "rgba(55,138,221,0.3)" : "rgba(255,255,255,0.08)"}`,
-            color: review.helpful_by_me ? "#60a5fa" : "#64748b", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: review.helpful_by_me ? "rgba(0,146,184,0.12)" : C.card2,
+            border: `1px solid ${review.helpful_by_me ? "rgba(0,146,184,0.35)" : C.rowBorder}`,
+            color: review.helpful_by_me ? "#0092b8" : C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600,
             transition: "all 0.15s" }}>
             <ThumbsUp size={12} fill={review.helpful_by_me ? "currentColor" : "none"} />
             Helpful{review.helpful_count > 0 ? ` (${review.helpful_count})` : ""}
@@ -311,9 +338,9 @@ function ReviewCard({ review, onHelpful, onEdit, onDelete, onReport }) {
         {!review.is_mine && (
           <button onClick={() => onReport(review)} style={{
             display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20,
-            background: review.flagged_by_me ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.03)",
-            border: `1px solid ${review.flagged_by_me ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.06)"}`,
-            color: review.flagged_by_me ? "#f87171" : "#475569",
+            background: review.flagged_by_me ? "rgba(220,38,38,0.08)" : C.card2,
+            border: `1px solid ${review.flagged_by_me ? "rgba(220,38,38,0.3)" : C.rowBorder}`,
+            color: review.flagged_by_me ? C.danger : C.muted,
             cursor: "pointer", fontSize: 11, fontWeight: 600, transition: "all 0.15s" }}>
             <Flag size={11} fill={review.flagged_by_me ? "currentColor" : "none"}/>
             {review.flagged_by_me ? "Reported" : "Report"}
@@ -341,44 +368,44 @@ function ReviewForm({ existing, onCancel, onSubmit, submitting, message }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(55,138,221,0.3)",
+      style={{ background: C.card, border: "1px solid rgba(0,146,184,0.35)",
         borderRadius: 18, padding: 24, marginBottom: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#f1f5f9" }}>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: C.heading }}>
           {existing ? "Edit Your Review" : "Write a Review"}
         </h2>
-        <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", padding: 4 }}>
+        <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 4 }}>
           <X size={18} />
         </button>
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>Your Rating</label>
+        <label style={{ fontSize: 12, color: C.muted, display: "block", marginBottom: 6 }}>Your Rating</label>
         <Stars value={form.rating} size={28} onChange={r => setForm(p => ({ ...p, rating: r }))} />
       </div>
 
       <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
         placeholder="Review title (optional)"
         style={{ width: "100%", padding: "11px 14px", borderRadius: 10, marginBottom: 12,
-          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-          color: "#e2e8f0", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          background: C.card2, border: `1px solid ${C.border}`,
+          color: C.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
 
       <textarea value={form.comment} onChange={e => setForm(p => ({ ...p, comment: e.target.value }))}
         placeholder="Share your experience with RocketTrade — what worked well, what could improve?"
         rows={5} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, resize: "vertical",
-          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-          color: "#e2e8f0", fontSize: 14, outline: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
+          background: C.card2, border: `1px solid ${C.border}`,
+          color: C.text, fontSize: 14, outline: "none", lineHeight: 1.6, boxSizing: "border-box" }} />
 
       {(err || message) && (
-        <p style={{ fontSize: 12, margin: "8px 0 0", color: message && !err ? "#4ade80" : "#f87171" }}>
+        <p style={{ fontSize: 12, margin: "8px 0 0", color: message && !err ? C.success : C.danger }}>
           {err || message}
         </p>
       )}
 
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
         <button onClick={onCancel} style={{ padding: "9px 18px", borderRadius: 10,
-          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-          color: "#94a3b8", cursor: "pointer", fontSize: 13 }}>
+          background: C.card2, border: `1px solid ${C.border}`,
+          color: C.textSecondary, cursor: "pointer", fontSize: 13 }}>
           Cancel
         </button>
         <button onClick={submit} disabled={submitting} style={{
@@ -512,7 +539,8 @@ export default function ReviewsPage() {
   const otherReviews = reviews;
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+    <motion.div className="min-h-screen flex flex-col"
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
@@ -527,17 +555,18 @@ export default function ReviewsPage() {
         </AnimatePresence>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f1f5f9", margin: "0 0 6px" }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.02em", color: PAGE.heading, margin: "0 0 6px" }}>
             RocketTrade Reviews
           </h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>
+          <p style={{ fontSize: 14, color: PAGE.sub, margin: 0 }}>
             Real feedback from our community of investors and market experts.
           </p>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+        <div style={{ background: C.card, border: `1px solid ${C.border}`,
           borderRadius: 20, padding: "28px 28px 24px", marginBottom: 28,
-          display: "flex", gap: 36, flexWrap: "wrap", alignItems: "center" }}>
+          display: "flex", gap: 36, flexWrap: "wrap", alignItems: "center",
+          boxShadow: "0 4px 16px rgba(15,23,42,0.05)" }}>
 
           {loading ? (
             <>
@@ -553,9 +582,9 @@ export default function ReviewsPage() {
           ) : (
             <>
               <div style={{ textAlign: "center", minWidth: 120 }}>
-                <div style={{ fontSize: 56, fontWeight: 800, color: "#f1f5f9", lineHeight: 1 }}>{avg}</div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 56, fontWeight: 800, color: C.heading, lineHeight: 1 }}>{avg}</div>
                 <div style={{ margin: "8px 0 4px" }}><Stars value={Number(avg)} size={18} /></div>
-                <div style={{ fontSize: 13, color: "#64748b" }}>
+                <div style={{ fontSize: 13, color: C.muted }}>
                   {total} review{total !== 1 ? "s" : ""}
                 </div>
               </div>
@@ -572,7 +601,7 @@ export default function ReviewsPage() {
               </div>
 
               <div style={{ textAlign: "center", minWidth: 110 }}>
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Verified Platform
                 </div>
                 <div style={{ background: "linear-gradient(135deg,#0092b8,#155dfc)", borderRadius: 12,
@@ -588,7 +617,7 @@ export default function ReviewsPage() {
 
         {myReview && !showForm && (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", letterSpacing: "0.07em",
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: "0.07em",
               textTransform: "uppercase", marginBottom: 8 }}>Your Review</div>
             <ReviewCard review={{ ...myReview, is_mine: true }}
               onHelpful={handleHelpful}
@@ -624,18 +653,18 @@ export default function ReviewsPage() {
 
         {message && !showForm && (
           <div style={{ padding: "10px 16px", borderRadius: 10, marginBottom: 16, fontSize: 13, fontWeight: 600,
-            background: "rgba(74,222,128,0.1)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.25)" }}>
+            background: "rgba(15,157,88,0.1)", color: C.success, border: "1px solid rgba(15,157,88,0.3)" }}>
             {message}
           </div>
         )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
           flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
-          <div style={{ fontSize: 13, color: "#64748b" }}>
+          <div style={{ fontSize: 13, color: C.muted }}>
             {starFilter
               ? <>{`Showing ${starFilter}-star reviews `}
                   <button onClick={() => setStarFilter(null)}
-                    style={{ color: "#60a5fa", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                    style={{ color: "#0092b8", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                     Clear ×
                   </button>
                 </>
@@ -644,8 +673,8 @@ export default function ReviewsPage() {
           </div>
           <select value={sort} onChange={e => setSort(e.target.value)} style={{
               padding: "10px 14px", borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "#161f38", color: "#e2e8f0",
+              border: `1px solid ${C.border}`,
+              background: C.card, color: C.text,
               fontSize: 13, outline: "none", cursor: "pointer",
             }}>
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -657,7 +686,7 @@ export default function ReviewsPage() {
             {[1, 2, 3].map(i => <SkeletonReviewCard key={i} />)}
           </div>
         ) : otherReviews.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60, color: "#475569", fontSize: 14 }}>
+          <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 14 }}>
             {starFilter
               ? `No ${starFilter}-star reviews yet.`
               : "No reviews yet — be the first!"}

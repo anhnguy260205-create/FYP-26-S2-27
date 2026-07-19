@@ -84,21 +84,27 @@ function UpdateParticularPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 px-4 py-8"
+      className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 28%, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       <div
-        className="bg-[rgba(255,255,255,0.92)] w-full max-w-125 flex flex-col"
-        style={{ borderRadius: "24px", padding: "clamp(20px, 5vw, 36px) clamp(18px, 5vw, 28px)" }}
+        className="bg-white w-full max-w-125 flex flex-col"
+        style={{
+          borderRadius: "24px",
+          padding: "clamp(20px, 5vw, 36px) clamp(18px, 5vw, 28px)",
+          border: "1px solid rgba(11,29,79,0.25)",
+          boxShadow: "0 20px 45px rgba(15,23,42,0.12)",
+        }}
       >
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="font-bold text-black leading-tight mb-2" style={{ fontSize: "clamp(22px, 6vw, 30px)" }}>
+          <h1 className="font-bold leading-tight mb-2" style={{ fontSize: "clamp(22px, 6vw, 30px)", color: "#0B1D4F", fontFamily: "'DM Mono', monospace" }}>
             Welcome, {currentUser.username}! 👋
           </h1>
-          <p className="text-gray-500 text-[14px]">
+          <p className="text-[14px]" style={{ color: "#5B6C88" }}>
             Let's set up your profile before you start trading.
           </p>
         </div>
