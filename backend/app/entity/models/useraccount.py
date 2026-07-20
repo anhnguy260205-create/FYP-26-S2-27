@@ -120,14 +120,26 @@ class UserAccount(Base):
             expert = session.query(Expert).filter(
                 Expert.user_id == user.user_id).first()
 
-            if investor:
+            # Merged roles: anyone with an investor OR expert row is an
+            # "investor". Expert is an add-on flag (is_expert) — verified
+            # experts automatically enjoy premium benefits.
+            if investor or expert:
                 role = "investor"
-            elif expert:
-                role = "expert"
             elif profile_name == "admin":
                 role = "admin"
             else:
                 role = profile_name or "unknown"
+
+            verification = (
+                ExpertVerification.get_for_expert(expert.expert_id)
+                if expert else None
+            )
+            verification_status = verification["verification_status"] if verification else None
+            is_verified_expert = verification_status in ("approved", "active")
+
+            subscription_status = investor.investor_subscription_status if investor else "inactive"
+            if is_verified_expert:
+                subscription_status = "premium"
 
             return {
                 "user_id": user.user_id,
@@ -135,10 +147,11 @@ class UserAccount(Base):
                 "full_name": user.full_name,
                 "email_address": user.email_address,
                 "role": role,
-                "subscription_status": investor.investor_subscription_status if investor else "inactive",
-                "interests": investor.interests if investor else None,
-                "risk_tolerance": investor.risk_tolerance if investor else None,
-                "verification_status": ExpertVerification.get_for_expert(expert.expert_id)["verification_status"] if expert else None,
+                "is_expert": expert is not None,
+                "subscription_status": subscription_status,
+                "interests": (investor.interests if investor else None) or (expert.interests if expert else None),
+                "risk_tolerance": (investor.risk_tolerance if investor else None) or (expert.risk_tolerance if expert else None),
+                "verification_status": verification_status,
                 "first_login": first_login,
             }
 
@@ -166,16 +179,19 @@ class UserAccount(Base):
                 Expert.user_id == user.user_id
             ).first()
 
-            if investor:
+            if investor or expert:
                 role = "investor"
-            elif expert:
-                role = "expert"
             elif profile_name == "admin":
                 role = "admin"
             else:
                 role = profile_name or "unknown"
 
-            return {"user_id": user.user_id, "email": email, "role": role}
+            return {
+                "user_id": user.user_id,
+                "email": email,
+                "role": role,
+                "is_expert": expert is not None,
+            }
 
     @staticmethod
     def emailExists(email_address) -> bool:

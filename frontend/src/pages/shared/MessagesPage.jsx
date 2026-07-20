@@ -80,7 +80,8 @@ export default function MessagesPage() {
     } catch { return {}; }
   })();
   const role = String(me?.role || "").toLowerCase();
-  const isExpert = role === "expert";
+  // Merged roles: experts are investors with the is_expert flag.
+  const isExpert = role === "expert" || me?.is_expert === true;
   const isPremium = String(me?.subscription_status || "").toLowerCase() === "premium";
   const hasAccess = isExpert || isPremium;
 
@@ -209,7 +210,7 @@ export default function MessagesPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
-      {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+      {role === "expert" ? <ExpertHeader /> : <GeneralHeader />}
 
       <main className="flex-1 p-4 md:p-7 flex flex-col">
         <div className="mb-5">

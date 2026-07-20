@@ -71,7 +71,7 @@ function ExpertDocumentPage() {
       const data = await res.json();
       if (data.success) {
         setStatus(docs.length > 0 ? "pending" : "not_submitted");
-        navigate("/expert");
+        navigate("/investor/become-expert");
       } else setError(data.message || "Failed to save documents.");
     } catch {
       setError("Could not reach backend. Please try again.");
@@ -178,7 +178,7 @@ function ExpertDocumentPage() {
           </button>
 
           {/* Skip */}
-          <button type="button" onClick={() => navigate("/expert")}
+          <button type="button" onClick={() => navigate("/investor")}
             className="w-full text-gray-400 text-[14px] hover:text-gray-600 transition-colors">
             Skip for now
           </button>

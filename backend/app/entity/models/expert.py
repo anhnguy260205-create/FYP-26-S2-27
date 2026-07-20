@@ -52,6 +52,27 @@ class Expert(Base):
             return False
 
     @staticmethod
+    def create_for_existing_user(user_id, experience_years=None, linked_in_url=None):
+        """Attach an expert row (+ verification record) to an EXISTING investor
+        account — the merged-roles upgrade path. Returns the expert dict, or
+        the existing one if the user already applied."""
+        with get_session() as session:
+            existing = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if existing:
+                return {"expert_id": existing.expert_id, "created": False}
+            expert = Expert(
+                user_id=user_id,
+                experience_years=experience_years,
+                linked_in_url=linked_in_url,
+            )
+            session.add(expert)
+            session.flush()
+            expert_id = expert.expert_id
+        ExpertVerification.create_for_expert(expert_id)
+        return {"expert_id": expert_id, "created": True}
+
+    @staticmethod
     def update_profile(user_id, experience_years=None, linked_in_url=None, risk_tolerance=None, interests=None):
         with get_session() as session:
             expert = session.query(Expert).filter(

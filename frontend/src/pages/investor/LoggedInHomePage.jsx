@@ -14,8 +14,9 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles,
+  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase,
 } from "lucide-react";
+import { authFetch } from "../../api/apiClient.js";
 import {
   CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   SectionHeader, PrimaryButton,
@@ -105,6 +106,15 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
+  },
+  {
+    Icon: Award,
+    title: "Become an Expert",
+    description: "Trade 30 different stocks and hit a 200% profit margin to apply for verified expert status — publish articles and share your portfolio.",
+    to: "/investor/become-expert",
+    badge: "Level up",
+    cta: "Check my progress",
+    accent: "rose",
   },
 ];
 
@@ -896,6 +906,79 @@ function RealtimeDashboardSection() {
   );
 }
 
+// ── Published expert portfolios (premium perk) ──────────────────────────────
+// Verified experts can publish their portfolio; premium users see them here
+// as reference portfolios. Hidden for basic users and when nothing is published.
+function ExpertPortfoliosSection() {
+  const navigate = useNavigate();
+  const [portfolios, setPortfolios] = useState([]);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch(`${import.meta.env.VITE_API_URL}/expert/published-portfolios`)
+      .then(r => r.json())
+      .then(res => {
+        if (cancelled) return;
+        if (res.success && (res.portfolios || []).length > 0) {
+          setPortfolios(res.portfolios);
+          setVisible(true);
+        }
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <section>
+      <SectionHeader
+        title="Expert Portfolios"
+        subtitle="Reference portfolios published by our verified experts — a Premium perk"
+        dark={false}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {portfolios.map((p) => {
+          const up = (p.return_pct ?? 0) >= 0;
+          return (
+            <div
+              key={p.portfolio_id}
+              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`); }}
+              className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8] shrink-0">
+                    <Briefcase size={19} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
+                    <p className="text-xs text-slate-500 truncate">by {p.expert_name}</p>
+                  </div>
+                </div>
+                <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
+                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {up ? "+" : ""}{Number(p.return_pct ?? 0).toFixed(1)}%
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{p.description || p.investment_objective}</p>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
+                <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
+                <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
+                <span className="inline-flex items-center gap-1 text-[#00A9C4] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function PricingTeaserSection() {
   const navigate = useNavigate();
   return (
@@ -950,6 +1033,7 @@ function LoggedInHomePage() {
         <AIInsightsSection portfolioData={portfolioData} />
         <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
         <WatchlistSection />
+        <ExpertPortfoliosSection />
 
         <PricingTeaserSection />
         <PlatformFeaturesSection />

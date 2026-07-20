@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import ExpertHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import ChatPanel from "../../components/chat/ChatPanel.jsx";
 

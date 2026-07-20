@@ -38,16 +38,12 @@ const BuyStockPage = lazy(() => import("./pages/investor/BuyStockPage.jsx"));
 const SellStockPage = lazy(() => import("./pages/investor/SellStockPage.jsx"));
 const TransactionHistoryPage = lazy(() => import("./pages/investor/TransactionHistoryPage.jsx"));
 const PortfolioOverviewPage = lazy(() => import("./pages/investor/PortfolioOverviewPage.jsx"));
-const UpdateExpertParticularPage = lazy(() => import("./pages/expert/UpdateParticular.jsx"));
 const ExpertDocumentPage = lazy(() => import("./pages/expert/ExpertDocumentPage.jsx"));
-const ExpertProfilePage = lazy(() => import("./pages/expert/ExpertProfilePage.jsx"));
-const ExpertLoggedInPage = lazy(() => import("./pages/expert/ExpertLoggedInPage.jsx"));
 const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
 const ExpertPortfolioPage = lazy(() => import("./pages/expert/ExpertPortfolioPage.jsx"));
 const CreateExpertPortfolioPage = lazy(() => import("./pages/expert/CreateExpertPortfolioPage.jsx"));
 const ExpertQuestionsPage = lazy(() => import("./pages/expert/ExpertQuestionsPage.jsx"));
-const ExpertNotificationPage = lazy(() => import("./pages/expert/ExpertNotificationPage.jsx"));
-const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensationPage.jsx"));
+const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.jsx"));
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
@@ -75,6 +71,11 @@ function wrapWithStocks(Component) {
 
 function protect(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><S><Component /></S></ProtectedRoute>;
+}
+
+// Expert-only pages: investors with the is_expert flag (merged roles).
+function protectExpert(Component) {
+    return <ProtectedRoute allowedRoles={["investor", "expert"]} requireExpert><S><Component /></S></ProtectedRoute>;
 }
 
 function protectWithStocks(roles, Component) {
@@ -111,6 +112,7 @@ export const router = createBrowserRouter([
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
     { path: "/investor/expertdetails", element: protect(["investor", "expert"], ExpertDetails) },
+    { path: "/investor/become-expert", element: protect(["investor", "expert"], BecomeExpertPage) },
 
     { path: "/adminpanel", element: protect(["admin"], AdminPanelPage) },
     { path: "/adminpanel/useraccounts", element: protect(["admin"], UserAccountsPage) },
@@ -125,14 +127,12 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
-    { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
-    { path: "/expert", element: protect(["expert"], ExpertLoggedInPage) },
-    { path: "/expert/knowledge-hub", element: protect(["expert"], ExpertKnowledgeHub) },
-    { path: "/expert/portfolio", element: protect(["expert"], ExpertPortfolioPage) },
-    { path: "/expert/create-portfolio", element: protect(["expert"], CreateExpertPortfolioPage) },
-    { path: "/expert/questions", element: protect(["expert"], ExpertQuestionsPage) },
-    { path: "/expert/notifications", element: protect(["expert"], ExpertNotificationPage) },
-    { path: "/expert/updateparticular", element: protect(["expert"], UpdateExpertParticularPage) },
-    { path: "/expert/documents", element: protect(["expert"], ExpertDocumentPage) },
-    { path: "/expert/compensation", element: protect(["expert"], ExpertCompensationPage) },
+    // Merged roles: expert features are reached from the investor UI by
+    // accounts with the is_expert flag. Remaining /expert pages are kept in
+    // the codebase for reference but are no longer routed standalone.
+    { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
+    { path: "/expert/portfolio", element: protectExpert(ExpertPortfolioPage) },
+    { path: "/expert/create-portfolio", element: protectExpert(CreateExpertPortfolioPage) },
+    { path: "/expert/documents", element: protectExpert(ExpertDocumentPage) },
+    { path: "/expert/questions", element: protectExpert(ExpertQuestionsPage) },
 ]);

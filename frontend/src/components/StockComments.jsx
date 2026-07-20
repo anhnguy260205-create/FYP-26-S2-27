@@ -181,7 +181,8 @@ function PremiumBlurGate({ children, count, symbol }) {
 
 export default function StockComments({ symbol }) {
   const me = currentUser();
-  const canPost = isExpert(me.role);
+  // Merged roles: experts are investors with the is_expert flag.
+  const canPost = isExpert(me.role) || me.is_expert === true;
   // Reading expert ideas is a premium perk; experts/consultants/admins always can.
   const canRead = canPost || (me.subscription_status || "").toLowerCase() === "premium";
   const [posts, setPosts] = useState([]);

@@ -12,6 +12,82 @@ from app.control.services.auth import get_current_user
 
 router = APIRouter(prefix="/expert", tags=["Expert"])
 
+# Expert-upgrade requirements (merged roles: investors apply to become experts)
+EXPERT_MIN_DISTINCT_STOCKS = 30
+EXPERT_MIN_PROFIT_MARGIN = 200.0  # percent
+
+
+# ── Expert upgrade: eligibility & application (investor-facing) ─────────────
+
+@router.get("/eligibility")
+def expert_eligibility(current_user: dict = Depends(get_current_user)):
+    """Progress towards the expert upgrade: 30 distinct stocks traded and a
+    200% profit margin. Also reports the current application status."""
+    from app.entity.models.investor import Investor
+    from app.entity.models.expertverification import ExpertVerification
+
+    eligibility = Investor.getExpertEligibility(
+        current_user["user_id"],
+        EXPERT_MIN_DISTINCT_STOCKS,
+        EXPERT_MIN_PROFIT_MARGIN,
+    )
+    if eligibility is None:
+        return {"success": False, "message": "Investor account not found"}
+
+    verification_status = None
+    expert = None
+    from app.entity.database.session import get_session
+    with get_session() as session:
+        expert = session.query(Expert).filter(
+            Expert.user_id == current_user["user_id"]).first()
+        expert_id = expert.expert_id if expert else None
+    if expert_id:
+        verification = ExpertVerification.get_for_expert(expert_id)
+        verification_status = verification.get("verification_status") if verification else None
+
+    return {
+        "success": True,
+        **eligibility,
+        "has_applied": expert_id is not None,
+        "verification_status": verification_status,
+    }
+
+
+@router.post("/apply")
+def apply_for_expert(current_user: dict = Depends(get_current_user)):
+    """Create the expert application (expert row + verification record) once
+    the trading requirements are met. Documents are then submitted via
+    POST /expert/documents and reviewed by an administrator."""
+    from app.entity.models.investor import Investor
+
+    eligibility = Investor.getExpertEligibility(
+        current_user["user_id"],
+        EXPERT_MIN_DISTINCT_STOCKS,
+        EXPERT_MIN_PROFIT_MARGIN,
+    )
+    if eligibility is None:
+        return {"success": False, "message": "Investor account not found"}
+    if not eligibility["eligible"]:
+        return {
+            "success": False,
+            "message": (
+                f"Not eligible yet — trade {EXPERT_MIN_DISTINCT_STOCKS} different stocks "
+                f"and reach a {EXPERT_MIN_PROFIT_MARGIN:.0f}% profit margin first."
+            ),
+            **eligibility,
+        }
+
+    result = Expert.create_for_existing_user(current_user["user_id"])
+    return {
+        "success": True,
+        "message": (
+            "Application created — upload your supporting documents for review."
+            if result["created"] else "You have already applied."
+        ),
+        "expert_id": result["expert_id"],
+        "created": result["created"],
+    }
+
 
 # ── Public expert directory & profiles (investor-facing) ────────────────────
 
@@ -204,6 +280,42 @@ def save_portfolio(
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
     return ExpertPortfolioController().save_portfolio(user_id, data.dict())
+
+
+# ── Publish portfolio to homepage (premium-gated) ───────────────────────────
+
+class PublishPortfolioRequest(BaseModel):
+    published: bool = True
+
+
+@router.post("/portfolio-publish")
+def publish_portfolio(
+    data: PublishPortfolioRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Verified experts publish (or unpublish) their portfolio so premium
+    users can reference it on the homepage."""
+    return ExpertPortfolioRepository.set_published(current_user["user_id"], data.published)
+
+
+@router.get("/published-portfolios")
+def published_portfolios(current_user: dict = Depends(get_current_user)):
+    """Published expert portfolios for the homepage — premium users only
+    (verified experts hold complimentary premium)."""
+    from app.entity.models.investor import Investor
+
+    investor = Investor.getInvestorByUserId(current_user["user_id"])
+    is_premium = (
+        investor is None  # admins have no investor row
+        or (investor.get("investor_subscription_status") or "").lower() == "premium"
+    )
+    if not is_premium:
+        return {
+            "success": False,
+            "premium_required": True,
+            "message": "Upgrade to Premium to view expert portfolios.",
+        }
+    return {"success": True, "portfolios": ExpertPortfolioRepository.get_published()}
 
 
 # ── Expert profile & documents ─────────────────────────────────────────────────

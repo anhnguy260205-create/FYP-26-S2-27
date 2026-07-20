@@ -102,7 +102,9 @@ function EducationContent() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const role = String(currentUser?.role || "").toLowerCase();
-  const isExpert = role === "expert";
+  // Merged roles: experts are investors with the is_expert flag. The write
+  // button is hidden from regular investors — only expert accounts see it.
+  const isExpert = currentUser?.is_expert === true || role === "expert";
   // Unverified experts still see the button — clicking through to
   // /expert/knowledge-hub is what prompts them to submit documents
   // (ExpertKnowledgeHub's own VerificationWall handles that gate).
@@ -143,7 +145,7 @@ function EducationContent() {
       <motion.div className="min-h-screen flex flex-col"
         style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+        {role === "expert" ? <ExpertHeader /> : <GeneralHeader />}
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
           <div style={{ paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>

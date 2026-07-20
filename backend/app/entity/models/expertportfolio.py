@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
@@ -30,6 +30,8 @@ class ExpertPortfolio(Base):
     time_horizon = Column(String(80), nullable=True, default="3-5 years")
     target_audience = Column(String(160), nullable=True)
     status = Column(String(20), default="Active")
+    # Published portfolios appear on the logged-in homepage for premium users.
+    is_published = Column(Boolean, default=False, nullable=False)
     created_by = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=_now)
     last_rebalanced = Column(DateTime, default=_now)
@@ -103,6 +105,7 @@ def _serialise_portfolio(portfolio):
         "time_horizon": portfolio.time_horizon,
         "target_audience": portfolio.target_audience,
         "status": portfolio.status,
+        "is_published": bool(portfolio.is_published),
         "created_by": portfolio.created_by,
         "created_at": portfolio.created_at.isoformat() if portfolio.created_at else None,
         "last_rebalanced": portfolio.last_rebalanced.isoformat() if portfolio.last_rebalanced else None,
@@ -189,6 +192,62 @@ class ExpertPortfolioRepository:
                 ))
             session.flush()
             return _serialise_portfolio(portfolio)
+
+    @staticmethod
+    def set_published(user_id, published: bool):
+        """Publish/unpublish the expert's portfolio to the homepage. Only
+        verified experts may publish."""
+        from app.entity.models.expertverification import ExpertVerification
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if not expert:
+                return {"success": False, "message": "Expert profile not found"}
+
+            if published:
+                verification = ExpertVerification.get_for_expert(expert.expert_id)
+                status = (verification or {}).get("verification_status")
+                if status not in ("approved", "active"):
+                    return {"success": False, "message": "Only verified experts can publish their portfolio"}
+
+            portfolio = session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id).first()
+            if not portfolio:
+                return {"success": False, "message": "Create your portfolio first"}
+            portfolio.is_published = published
+            session.flush()
+            return {"success": True, "is_published": bool(portfolio.is_published)}
+
+    @staticmethod
+    def get_published():
+        """All published portfolios with the owning expert's display info —
+        shown on the logged-in homepage to premium users."""
+        from app.entity.models.useraccount import UserAccount
+        with get_session() as session:
+            rows = (
+                session.query(ExpertPortfolio, Expert, UserAccount)
+                .join(Expert, Expert.expert_id == ExpertPortfolio.expert_id)
+                .join(UserAccount, UserAccount.user_id == Expert.user_id)
+                .filter(ExpertPortfolio.is_published == True)  # noqa: E712
+                .all()
+            )
+            out = []
+            for portfolio, expert, user in rows:
+                data = _serialise_portfolio(portfolio)
+                total_value = sum(
+                    float(h.units or 0) * float(h.current_price or 0)
+                    for h in portfolio.holdings)
+                invested = data["total_invested"] or 0
+                data.update({
+                    "expert_user_id": expert.user_id,
+                    "expert_name": user.full_name or user.username or "Expert",
+                    "expert_rating": expert.rating,
+                    "experience_years": expert.experience_years,
+                    "total_value": round(total_value, 2),
+                    "return_pct": round((total_value - invested) / invested * 100, 2) if invested > 0 else 0.0,
+                })
+                out.append(data)
+            return out
 
     @staticmethod
     def _create_demo(session, expert_id):

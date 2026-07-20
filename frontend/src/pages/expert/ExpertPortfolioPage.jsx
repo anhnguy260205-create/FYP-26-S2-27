@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Briefcase, PieChart, Search, Share2, Edit3, TrendingUp, Wallet, Layers, Clock3 } from "lucide-react";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import ExpertHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertPortfolio } from "../../api/expertApi.js";
+import { authFetch } from "../../api/apiClient.js";
 
 const STORAGE_KEY = "rocketTradeExpertPortfolio";
 
@@ -84,6 +85,29 @@ export default function ExpertPortfolioPage() {
   const loggedInName = currentUser?.full_name || currentUser?.name || currentUser?.username || currentUser?.email || "Consultant";
   const [portfolio, setPortfolio] = useState(DEFAULT_PORTFOLIO);
   const [search, setSearch] = useState("");
+  const [publishing, setPublishing] = useState(false);
+
+  // Publish the portfolio to the investor homepage (premium users can view it).
+  const togglePublish = async () => {
+    setPublishing(true);
+    try {
+      const res = await authFetch(`${import.meta.env.VITE_API_URL}/expert/portfolio-publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: !portfolio.is_published }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPortfolio((p) => ({ ...p, is_published: data.is_published }));
+      } else {
+        alert(data.message || "Failed to update publish status.");
+      }
+    } catch {
+      alert("Could not reach backend.");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -134,8 +158,12 @@ export default function ExpertPortfolioPage() {
               <button onClick={() => navigate("/expert/create-portfolio")} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
                 <Edit3 size={16} /> Edit Portfolio
               </button>
-              <button className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                <Share2 size={16} /> Share
+              <button onClick={togglePublish} disabled={publishing}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 ${portfolio.is_published
+                  ? "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                <Share2 size={16} />
+                {publishing ? "Saving…" : portfolio.is_published ? "Published ✓ (click to unpublish)" : "Publish to Homepage"}
               </button>
             </div>
           </div>

@@ -113,7 +113,8 @@ export default function ExpertPortfolio() {
     const navigate = useNavigate();
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const role = String(currentUser?.role || "").toLowerCase();
-    const isExpert = role === "expert";
+    // Merged roles: experts are investors with the is_expert flag.
+    const isExpert = currentUser?.is_expert === true || role === "expert";
     const canManage = isExpert && currentUser?.verification_status === "approved";
 
     const [query, setQuery] = useState("");
@@ -156,7 +157,7 @@ export default function ExpertPortfolio() {
         <motion.div className="min-h-screen flex flex-col"
             style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)", color: C.text }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            {role === "expert" ? <ExpertHeader /> : <GeneralHeader />}
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
                 {/* Header */}

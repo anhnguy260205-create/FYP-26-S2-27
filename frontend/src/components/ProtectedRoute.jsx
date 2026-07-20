@@ -11,7 +11,7 @@ function getCurrentUser() {
   }
 }
 
-function ProtectedRoute({ allowedRoles, children }) {
+function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
   const currentUser = getCurrentUser();
 
   useEffect(() => {
@@ -27,6 +27,11 @@ function ProtectedRoute({ allowedRoles, children }) {
 
   if (!allowedRoles.includes(currentUser.role)) {
     return <Navigate to="/" replace />;
+  }
+
+  // Expert-only pages (merged roles): investors with the is_expert flag.
+  if (requireExpert && !(currentUser.is_expert === true || currentUser.role === "expert")) {
+    return <Navigate to="/investor" replace />;
   }
 
   return children;
