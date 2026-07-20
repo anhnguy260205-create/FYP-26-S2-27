@@ -134,11 +134,12 @@ export default function ExpertPortfolio() {
             .catch(() => { });
     }, []);
 
+    const returnPositive = (publicStats?.avg_return ?? 0) >= 0;
     const STATS = [
-        { icon: Users, title: "Total Experts", value: publicStats ? publicStats.total_experts : "—", desc: "Active on platform" },
-        { icon: Star, title: "Top Rated", value: publicStats?.top_rated?.name || "—", desc: publicStats?.top_rated ? `${publicStats.top_rated.rating.toFixed(1)} rating` : "No ratings yet" },
-        { icon: PieChart, title: "Avg. Return", value: publicStats ? `${publicStats.avg_return >= 0 ? "+" : ""}${publicStats.avg_return.toFixed(2)}%` : "—", desc: "All time" },
-        { icon: UserRound, title: "Total Followers", value: publicStats ? publicStats.total_followers.toLocaleString() : "—", desc: "Across all experts" },
+        { icon: Users, title: "Total Experts", value: publicStats ? publicStats.total_experts : "—", desc: "Active on platform", color: C.cyan, bg: "rgba(14,116,144,0.12)" },
+        { icon: Star, title: "Top Rated", value: publicStats?.top_rated?.name || "—", desc: publicStats?.top_rated ? `${publicStats.top_rated.rating.toFixed(1)} rating` : "No ratings yet", color: C.amber, bg: "rgba(180,83,9,0.12)" },
+        { icon: PieChart, title: "Avg. Return", value: publicStats ? `${publicStats.avg_return >= 0 ? "+" : ""}${publicStats.avg_return.toFixed(2)}%` : "—", desc: "All time", color: returnPositive ? C.success : C.danger, bg: returnPositive ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)" },
+        { icon: UserRound, title: "Total Followers", value: publicStats ? publicStats.total_followers.toLocaleString() : "—", desc: "Across all experts", color: "#7C3AED", bg: "rgba(124,58,237,0.12)" },
     ];
 
     const filtered = experts.filter(e =>
@@ -154,21 +155,22 @@ export default function ExpertPortfolio() {
 
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)", color: C.text }}
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)", color: C.text }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
                 {/* Header */}
                 <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
                     <div>
                         <h1
                             style={{
                                 fontFamily: "'DM Mono', monospace",
-                                fontSize: "28px",
-                                fontWeight: 700,
+                                fontSize: "clamp(26px, 6vw, 40px)",
+                                fontWeight: 800,
                                 color: PAGE.heading,
-                                letterSpacing: "0.03em",
+                                letterSpacing: "0.02em",
+                                lineHeight: 1,
                             }}
                         >
                             Expert Portfolio
@@ -253,7 +255,7 @@ export default function ExpertPortfolio() {
                 </div>
 
                 {/* Statistics */}
-                <div className="grid grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                     {STATS.map((item, index) => {
                         const Icon = item.icon;
 
@@ -261,33 +263,35 @@ export default function ExpertPortfolio() {
                             <div
                                 key={index}
                                 style={{
-                                    padding: "20px",
+                                    padding: "18px 20px",
                                     borderRadius: "16px",
                                     background: C.card,
                                     border: `1px solid ${C.border}`,
                                 }}
                             >
-                                <Icon
-                                    size={18}
-                                    color={C.cyan}
-                                />
-
-                                <div
-                                    style={{
-                                        marginTop: "12px",
-                                        fontSize: "12px",
-                                        color: C.muted,
-                                    }}
-                                >
-                                    {item.title}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                                    <span style={{
+                                        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        background: item.bg, color: item.color,
+                                    }}>
+                                        <Icon size={16} strokeWidth={2.25} />
+                                    </span>
+                                    <span style={{
+                                        fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                                        textTransform: "uppercase", color: C.muted,
+                                    }}>
+                                        {item.title}
+                                    </span>
                                 </div>
 
                                 <div
                                     style={{
-                                        marginTop: "4px",
+                                        fontFamily: "'DM Mono', monospace",
                                         fontSize: "20px",
-                                        fontWeight: 700,
-                                        color: C.text,
+                                        fontWeight: 800,
+                                        color: item.color,
+                                        lineHeight: 1.15,
                                     }}
                                 >
                                     {item.value}
@@ -297,6 +301,7 @@ export default function ExpertPortfolio() {
                                     style={{
                                         fontSize: "12px",
                                         color: C.mutedLight,
+                                        marginTop: "2px",
                                     }}
                                 >
                                     {item.desc}

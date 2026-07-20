@@ -14,7 +14,7 @@ function PaymentFail() {
             className="min-h-screen flex flex-col"
             style={{
                 fontFamily: "'DM Sans', sans-serif",
-                background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 30%, #FFFFFF 100%)",
+                background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)",
             }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

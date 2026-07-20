@@ -29,8 +29,8 @@ import {
  */
 
 const CARD = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#FFFFFF",
+    border: "1px solid rgba(11,29,79,0.25)",
     borderRadius: "20px",
 };
 
@@ -38,22 +38,27 @@ function initials(name = "?") {
     return name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function StatCard({ icon: Icon, color, value, label }) {
+function StatCard({ icon: Icon, color, bg, value, label }) {
     return (
-        <div className="p-5 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-            <Icon size={20} color={color} />
-            <h3 className="mt-2 text-xl font-bold">{value ?? "—"}</h3>
-            <p style={{ color: "rgba(255,255,255,0.45)" }}>{label}</p>
+        <div className="p-5 rounded-xl" style={{ background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)" }}>
+            <span style={{
+                width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                background: bg || "rgba(0,146,184,0.12)", color,
+            }}>
+                <Icon size={17} strokeWidth={2.25} />
+            </span>
+            <h3 className="mt-3 text-xl font-bold" style={{ fontFamily: "'DM Mono', monospace", color: "#0B1D4F" }}>{value ?? "—"}</h3>
+            <p style={{ color: "#5B6C88", fontSize: 12 }}>{label}</p>
         </div>
     );
 }
 
 function InfoCard({ icon: Icon, label, children }) {
     return (
-        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }}>
-            <Icon size={16} color="#60a5fa" />
+        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)" }}>
+            <Icon size={16} color="#0092b8" />
             <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{label}</div>
+                <div style={{ fontSize: 11, color: "#5B6C88" }}>{label}</div>
                 {children}
             </div>
         </div>
@@ -128,7 +133,7 @@ function AllocationPie({ holdings }) {
                 <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
                     style={{ transform: "rotate(-90deg)", overflow: "visible" }}>
                     <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
-                        stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+                        stroke="rgba(11,29,79,0.08)" strokeWidth={strokeWidth} />
                     {arcs.map((arc, i) => (
                         <circle key={i} cx={size / 2} cy={size / 2} r={radius} fill="none"
                             stroke={arc.color}
@@ -157,15 +162,15 @@ function AllocationPie({ holdings }) {
                 }}>
                     {hoveredArc ? (
                         <>
-                            <div className="text-3xl font-bold">{hoveredArc.pct.toFixed(1)}%</div>
-                            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                            <div className="text-3xl font-bold" style={{ color: "#0B1D4F" }}>{hoveredArc.pct.toFixed(1)}%</div>
+                            <div style={{ fontSize: 13, color: "#5B6C88" }}>
                                 {hoveredArc.label}
                             </div>
                         </>
                     ) : (
                         <>
-                            <div className="text-3xl font-bold">{sorted.length}</div>
-                            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                            <div className="text-3xl font-bold" style={{ color: "#0B1D4F" }}>{sorted.length}</div>
+                            <div style={{ fontSize: 13, color: "#5B6C88" }}>
                                 {sorted.length === 1 ? "Holding" : "Holdings"}
                             </div>
                         </>
@@ -178,7 +183,7 @@ function AllocationPie({ holdings }) {
                         style={{
                             padding: "5px 10px", borderRadius: 8, cursor: "pointer",
                             opacity: hovered == null || hovered === i ? 1 : 0.45,
-                            background: hovered === i ? "rgba(255,255,255,0.07)" : "transparent",
+                            background: hovered === i ? "rgba(11,29,79,0.06)" : "transparent",
                             transition: "opacity 150ms ease, background 150ms ease",
                         }}
                         onMouseEnter={() => setHovered(i)}
@@ -187,8 +192,8 @@ function AllocationPie({ holdings }) {
                             width: 10, height: 10, borderRadius: 3,
                             background: arc.color, flexShrink: 0,
                         }} />
-                        <span style={{ fontWeight: 600, color: "#f8fafc" }}>{arc.label}</span>
-                        <span style={{ color: "rgba(255,255,255,0.45)" }}>{arc.pct.toFixed(1)}%</span>
+                        <span style={{ fontWeight: 600, color: "#0F172A" }}>{arc.label}</span>
+                        <span style={{ color: "#5B6C88" }}>{arc.pct.toFixed(1)}%</span>
                     </div>
                 ))}
             </div>
@@ -200,7 +205,7 @@ function PortfolioSection({ portfolio, error }) {
     if (error) {
         return (
             <div style={{ ...CARD, padding: 24 }} className="mt-6 text-center">
-                <p style={{ fontSize: 13, color: "#f87171" }}>
+                <p style={{ fontSize: 13, color: "#DC2626" }}>
                     Could not load this expert's portfolio: {error}
                 </p>
             </div>
@@ -210,8 +215,8 @@ function PortfolioSection({ portfolio, error }) {
     const holdings = Array.isArray(portfolio.holdings) ? portfolio.holdings : [];
     const totalInvested = holdings.reduce((s, h) => s + Number(h.total_invested || 0), 0);
 
-    const TH = { padding: "10px 14px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "rgba(255,255,255,0.35)", textAlign: "left", whiteSpace: "nowrap" };
-    const TD = { padding: "12px 14px", fontSize: 13, color: "rgba(255,255,255,0.75)", verticalAlign: "top" };
+    const TH = { padding: "10px 14px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#5B6C88", textAlign: "left", whiteSpace: "nowrap" };
+    const TD = { padding: "12px 14px", fontSize: 13, color: "#0F172A", verticalAlign: "top" };
 
     return (
         <div style={{ ...CARD, padding: 30 }}>
@@ -221,13 +226,13 @@ function PortfolioSection({ portfolio, error }) {
                     <div className="flex items-center justify-center"
                         style={{
                             width: 44, height: 44, borderRadius: 12,
-                            background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.25)",
+                            background: "rgba(0,146,184,0.12)", border: "1px solid rgba(0,146,184,0.3)",
                         }}>
-                        <Briefcase size={20} color="#00D3F2" />
+                        <Briefcase size={20} color="#0092b8" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold">{portfolio.portfolio_name || "Expert Portfolio"}</h2>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                        <h2 className="text-xl font-bold" style={{ color: "#0B1D4F" }}>{portfolio.portfolio_name || "Expert Portfolio"}</h2>
+                        <p style={{ fontSize: 13, color: "#5B6C88" }}>
                             Created {formatDate(portfolio.created_at)}
                             {portfolio.last_rebalanced ? ` · Rebalanced ${formatDate(portfolio.last_rebalanced)}` : ""}
                         </p>
@@ -235,46 +240,46 @@ function PortfolioSection({ portfolio, error }) {
                 </div>
                 <span style={{
                     padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600,
-                    background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e",
+                    background: "rgba(15,157,88,0.12)", border: "1px solid rgba(15,157,88,0.3)", color: "#0F9D58",
                 }}>
                     ● {portfolio.status || "Active"}
                 </span>
             </div>
 
             {portfolio.description && (
-                <p className="mt-4" style={{ fontSize: 14, lineHeight: 1.6, color: "rgba(255,255,255,0.55)" }}>
+                <p className="mt-4" style={{ fontSize: 14, lineHeight: 1.6, color: "#33477A" }}>
                     {portfolio.description}
                 </p>
             )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-6">
-                <StatCard icon={TrendingUp} color="#22c55e" value={formatCurrency(totalInvested)} label="Total Invested" />
-                <StatCard icon={Layers} color="#60a5fa" value={holdings.length} label="Holdings" />
-                <StatCard icon={Wallet} color="#f59e0b" value={formatCurrency(portfolio.cash_balance)} label="Cash Balance" />
-                <StatCard icon={Clock3} color="#00D3F2" value={formatDate(portfolio.last_rebalanced)} label="Last Rebalanced" />
+                <StatCard icon={TrendingUp} color="#0F9D58" bg="rgba(15,157,88,0.12)" value={formatCurrency(totalInvested)} label="Total Invested" />
+                <StatCard icon={Layers} color="#1D4ED8" bg="rgba(29,78,216,0.12)" value={holdings.length} label="Holdings" />
+                <StatCard icon={Wallet} color="#B45309" bg="rgba(180,83,9,0.12)" value={formatCurrency(portfolio.cash_balance)} label="Cash Balance" />
+                <StatCard icon={Clock3} color="#0092b8" bg="rgba(0,146,184,0.12)" value={formatDate(portfolio.last_rebalanced)} label="Last Rebalanced" />
             </div>
 
             {/* Overview */}
             <div className="grid gap-3 md:grid-cols-2 mt-6">
                 <InfoCard icon={Target} label="Investment Objective">
-                    <div style={{ fontSize: 13 }}>{portfolio.investment_objective || "—"}</div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.investment_objective || "—"}</div>
                 </InfoCard>
                 <InfoCard icon={Clock3} label="Time Horizon">
-                    <div style={{ fontSize: 13 }}>{portfolio.time_horizon || "—"}</div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.time_horizon || "—"}</div>
                 </InfoCard>
                 <InfoCard icon={Shield} label="Risk Level">
-                    <div style={{ fontSize: 13 }}>{portfolio.risk_level || "—"}</div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.risk_level || "—"}</div>
                 </InfoCard>
                 <InfoCard icon={PieChart} label="Target Audience">
-                    <div style={{ fontSize: 13 }}>{portfolio.target_audience || "—"}</div>
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.target_audience || "—"}</div>
                 </InfoCard>
             </div>
 
             {/* Allocation */}
             {holdings.length > 0 && (
                 <div className="mt-6">
-                    <h3 className="text-sm font-bold mb-2" style={{ color: "rgba(255,255,255,0.7)" }}>
+                    <h3 className="text-sm font-bold mb-2" style={{ color: "#0B1D4F" }}>
                         Allocation
                     </h3>
                     <AllocationPie holdings={holdings} />
@@ -283,17 +288,17 @@ function PortfolioSection({ portfolio, error }) {
 
             {/* Holdings table */}
             <div className="mt-6">
-                <h3 className="text-lg font-bold mb-3">Holdings</h3>
+                <h3 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>Holdings</h3>
                 {holdings.length === 0 ? (
                     <div className="p-6 text-center rounded-xl"
-                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+                        style={{ background: "#F8FAFC", color: "#5B6C88", fontSize: 13 }}>
                         This expert has not added any holdings yet.
                     </div>
                 ) : (
                     <div className="overflow-x-auto rounded-xl"
-                        style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                        style={{ border: "1px solid rgba(11,29,79,0.15)" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                            <thead style={{ background: "rgba(255,255,255,0.04)" }}>
+                            <thead style={{ background: "#F1F5F9" }}>
                                 <tr>
                                     <th style={TH}>#</th>
                                     <th style={TH}>Ticker</th>
@@ -309,23 +314,23 @@ function PortfolioSection({ portfolio, error }) {
                             <tbody>
                                 {holdings.map((h, i) => (
                                     <tr key={`${h.ticker}-${i}`}
-                                        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                                        <td style={{ ...TD, color: "rgba(255,255,255,0.4)" }}>{i + 1}</td>
-                                        <td style={{ ...TD, fontWeight: 700, color: "#00D3F2" }}>{h.ticker}</td>
-                                        <td style={{ ...TD, fontWeight: 500, color: "#f8fafc" }}>{h.company_name || "—"}</td>
+                                        style={{ borderTop: "1px solid rgba(15,23,42,0.08)" }}>
+                                        <td style={{ ...TD, color: "#5B6C88" }}>{i + 1}</td>
+                                        <td style={{ ...TD, fontWeight: 700, color: "#0092b8" }}>{h.ticker}</td>
+                                        <td style={{ ...TD, fontWeight: 500, color: "#0F172A" }}>{h.company_name || "—"}</td>
                                         <td style={TD}>{h.sector || h.asset_class || "—"}</td>
                                         <td style={TD}>{Number(h.units || 0).toLocaleString()}</td>
                                         <td style={TD}>${Number(h.average_buy_price || 0).toFixed(2)}</td>
-                                        <td style={{ ...TD, fontWeight: 600, color: "#f8fafc" }}>{formatCurrency(h.total_invested)}</td>
+                                        <td style={{ ...TD, fontWeight: 600, color: "#0F172A" }}>{formatCurrency(h.total_invested)}</td>
                                         <td style={TD}>
                                             <span style={{
                                                 padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700,
-                                                background: "rgba(0,211,243,0.1)", color: "#00D3F2",
+                                                background: "rgba(0,146,184,0.1)", color: "#0092b8",
                                             }}>
                                                 {Number(h.allocation_percentage || 0).toFixed(1)}%
                                             </span>
                                         </td>
-                                        <td style={{ ...TD, maxWidth: 280, color: "rgba(255,255,255,0.5)" }}>
+                                        <td style={{ ...TD, maxWidth: 280, color: "#5B6C88" }}>
                                             {h.purchase_rationale || "—"}
                                         </td>
                                     </tr>
@@ -344,8 +349,8 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
         <div style={{ ...CARD, padding: 30 }}>
             <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
-                    <h2 className="text-xl font-bold">Portfolio Reviews</h2>
-                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                    <h2 className="text-xl font-bold" style={{ color: "#0B1D4F" }}>Portfolio Reviews</h2>
+                    <p style={{ fontSize: 13, color: "#5B6C88" }}>
                         What other investors and experts think of this portfolio
                     </p>
                 </div>
@@ -355,8 +360,8 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
                         style={{
                             padding: "10px 18px", borderRadius: 12,
                             cursor: "pointer", fontWeight: 600, fontSize: 14,
-                            color: "#e2e8f0", background: "rgba(255,255,255,0.08)",
-                            border: "1px solid rgba(255,255,255,0.2)",
+                            color: "#0B1D4F", background: "rgba(0,146,184,0.1)",
+                            border: "1px solid rgba(0,146,184,0.3)",
                         }}>
                         <Star size={16} />
                         {myReview ? "Edit Your Review" : "Write a Review"}
@@ -365,16 +370,16 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
             </div>
 
             <div className="flex items-center gap-4 mt-5">
-                <div className="text-4xl font-bold">{stats.total ? stats.average.toFixed(1) : "—"}</div>
+                <div className="text-4xl font-bold" style={{ fontFamily: "'DM Mono', monospace", color: "#0B1D4F" }}>{stats.total ? stats.average.toFixed(1) : "—"}</div>
                 <div>
                     <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map(n => (
                             <Star key={n} size={16}
-                                fill={stats.average >= n ? "#f59e0b" : "none"}
-                                color={stats.average >= n ? "#f59e0b" : "rgba(255,255,255,0.3)"} />
+                                fill={stats.average >= n ? "#B45309" : "none"}
+                                color={stats.average >= n ? "#B45309" : "rgba(11,29,79,0.2)"} />
                         ))}
                     </div>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+                    <p style={{ fontSize: 12, color: "#5B6C88" }}>
                         {stats.total} review{stats.total === 1 ? "" : "s"}
                     </p>
                 </div>
@@ -383,33 +388,33 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
             <div className="mt-6 flex flex-col gap-3">
                 {loading ? (
                     <>
-                        <div className="h-16 bg-slate-800/40 rounded-xl animate-pulse" />
-                        <div className="h-16 bg-slate-800/40 rounded-xl animate-pulse" />
+                        <div className="h-16 bg-slate-200 rounded-xl animate-pulse" />
+                        <div className="h-16 bg-slate-200 rounded-xl animate-pulse" />
                     </>
                 ) : reviews.length === 0 ? (
                     <div className="p-6 text-center rounded-xl"
-                        style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+                        style={{ background: "#F8FAFC", color: "#5B6C88", fontSize: 13 }}>
                         No reviews yet — be the first to rate this portfolio.
                     </div>
                 ) : (
                     reviews.map(r => (
                         <div key={r.review_id} className="p-4 rounded-xl"
-                            style={{ background: "rgba(255,255,255,0.04)" }}>
+                            style={{ background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.1)" }}>
                             <div className="flex justify-between items-center mb-1">
-                                <span style={{ fontWeight: 600, fontSize: 14 }}>{r.reviewer_name}</span>
-                                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                                <span style={{ fontWeight: 600, fontSize: 14, color: "#0F172A" }}>{r.reviewer_name}</span>
+                                <span style={{ fontSize: 12, color: "#5B6C88" }}>
                                     {formatDate(r.updated_at || r.created_at)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1 mb-2">
                                 {[1, 2, 3, 4, 5].map(n => (
                                     <Star key={n} size={13}
-                                        fill={r.rating >= n ? "#f59e0b" : "none"}
-                                        color={r.rating >= n ? "#f59e0b" : "rgba(255,255,255,0.25)"} />
+                                        fill={r.rating >= n ? "#B45309" : "none"}
+                                        color={r.rating >= n ? "#B45309" : "rgba(11,29,79,0.2)"} />
                                 ))}
                             </div>
                             {r.comment && (
-                                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>
+                                <p style={{ fontSize: 13, color: "#33477A", lineHeight: 1.5 }}>
                                     {r.comment}
                                 </p>
                             )}
@@ -430,10 +435,10 @@ function LimitLock({ viewsLimit, navigate }) {
                 background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)",
                 display: "flex", alignItems: "center", justifyContent: "center",
             }}>🔒</div>
-            <h2 className="text-xl font-bold text-slate-100">
+            <h2 className="text-xl font-bold" style={{ color: "#0B1D4F" }}>
                 You've used all {viewsLimit ?? 3} free profile views
             </h2>
-            <p style={{ color: "#94a3b8", fontSize: 14, maxWidth: 420 }}>
+            <p style={{ color: "#5B6C88", fontSize: 14, maxWidth: 420 }}>
                 Basic accounts can view up to {viewsLimit ?? 3} expert profiles.
                 Upgrade to Premium for unlimited access to every expert — plus
                 one-on-one messaging in the Messages section.
@@ -626,12 +631,13 @@ function ExpertDetails() {
 
     return (
         <motion.div
-            className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+            className="min-h-screen flex flex-col"
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
         >
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
                 {/* Back Button */}
                 <button
@@ -639,8 +645,8 @@ function ExpertDetails() {
                     className="flex items-center gap-2 mb-6"
                     style={{
                         padding: "10px 18px", borderRadius: "10px",
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#FFFFFF", color: "#0B1D4F",
+                        border: "1px solid rgba(11,29,79,0.25)",
                     }}
                 >
                     <ArrowLeft size={16} />
@@ -650,7 +656,7 @@ function ExpertDetails() {
                 {/* Free-quota banner (basic investors only — experts/premium get unlimited views) */}
                 {!limitReached && quota.views_limit != null && (
                     <div className="mb-4 px-4 py-2.5 rounded-lg text-xs"
-                        style={{ color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                        style={{ color: "#B45309", background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.25)" }}>
                         Basic plan: {quota.views_used} of {quota.views_limit} free expert profile views used.
                         Re-viewing this profile is free.
                     </div>
@@ -658,13 +664,13 @@ function ExpertDetails() {
 
                 {loading ? (
                     <div style={{ ...CARD, padding: 30 }}>
-                        <div className="h-6 w-52 bg-slate-700/40 rounded animate-pulse mb-4" />
-                        <div className="h-24 bg-slate-800/40 rounded-xl animate-pulse" />
+                        <div className="h-6 w-52 bg-slate-200 rounded animate-pulse mb-4" />
+                        <div className="h-24 bg-slate-200 rounded-xl animate-pulse" />
                     </div>
                 ) : limitReached ? (
                     <LimitLock viewsLimit={quota.views_limit} navigate={navigate} />
                 ) : error ? (
-                    <div style={{ ...CARD, padding: 30 }} className="text-center text-slate-400 text-sm">{error}</div>
+                    <div style={{ ...CARD, padding: 30 }} className="text-center text-slate-600 text-sm">{error}</div>
                 ) : profile && (
                     <>
                         <div style={{ ...CARD, padding: 30 }}>
@@ -674,18 +680,18 @@ function ExpertDetails() {
                                         style={{
                                             width: 80, height: 80, borderRadius: "50%",
                                             background: "linear-gradient(135deg,#f59e0b,#b45309)",
-                                            fontSize: 24, fontWeight: 700,
+                                            fontSize: 24, fontWeight: 700, color: "#fff",
                                         }}>
                                         {initials(profile.full_name || profile.username)}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h1 className="text-3xl font-bold">{profile.full_name || profile.username}</h1>
+                                            <h1 className="text-3xl font-bold" style={{ fontFamily: "'DM Mono', monospace", fontWeight: 800, letterSpacing: "0.01em", color: "#0B1D4F" }}>{profile.full_name || profile.username}</h1>
                                             {profile.verification_status === "approved" && (
-                                                <BadgeCheck size={22} color="#22c55e" />
+                                                <BadgeCheck size={22} color="#0F9D58" />
                                             )}
                                         </div>
-                                        <p style={{ color: "rgba(255,255,255,0.5)" }}>
+                                        <p style={{ color: "#5B6C88" }}>
                                             Verified Investment Expert
                                             {profile.experience_years ? ` · ${profile.experience_years} years experience` : ""}
                                         </p>
@@ -724,9 +730,9 @@ function ExpertDetails() {
                                             cursor: followBusy ? "not-allowed" : "pointer",
                                             fontWeight: 600, fontSize: 14,
                                             opacity: followBusy ? 0.7 : 1,
-                                            color: following ? "#e2e8f0" : "#0f172a",
-                                            background: following ? "rgba(255,255,255,0.08)" : "#fff",
-                                            border: following ? "1px solid rgba(255,255,255,0.2)" : "none",
+                                            color: following ? "#0B1D4F" : "#004450",
+                                            background: following ? "#F1F5F9" : "#00D3F2",
+                                            border: following ? "1px solid rgba(11,29,79,0.2)" : "none",
                                         }}>
                                         {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
                                         {following ? "Following" : "Follow"}
@@ -737,9 +743,9 @@ function ExpertDetails() {
                                             padding: "10px 18px", borderRadius: 12,
                                             cursor: "pointer",
                                             fontWeight: 600, fontSize: 14,
-                                            color: "#e2e8f0",
-                                            background: "rgba(255,255,255,0.08)",
-                                            border: "1px solid rgba(255,255,255,0.2)",
+                                            color: "#0B1D4F",
+                                            background: "#F1F5F9",
+                                            border: "1px solid rgba(11,29,79,0.2)",
                                         }}>
                                         <Star size={16} />
                                         {myReview ? "Edit Rating" : "Rate"}
@@ -749,16 +755,16 @@ function ExpertDetails() {
 
                             {/* Stats */}
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mt-8">
-                                <StatCard icon={Users} color="#a855f7"
+                                <StatCard icon={Users} color="#7C3AED" bg="rgba(124,58,237,0.12)"
                                     value={followerCount.toLocaleString()} label="Followers" />
-                                <StatCard icon={Star} color="#f59e0b"
+                                <StatCard icon={Star} color="#B45309" bg="rgba(180,83,9,0.12)"
                                     value={portfolioRating.total ? `${portfolioRating.average.toFixed(1)} (${portfolioRating.total})` : "—"}
                                     label="Portfolio Rating" />
-                                <StatCard icon={Briefcase} color="#60a5fa"
+                                <StatCard icon={Briefcase} color="#1D4ED8" bg="rgba(29,78,216,0.12)"
                                     value={profile.experience_years ? `${profile.experience_years} Years` : "—"} label="Experience" />
-                                <StatCard icon={Shield} color="#22c55e"
+                                <StatCard icon={Shield} color="#0F9D58" bg="rgba(15,157,88,0.12)"
                                     value={profile.risk_tolerance || "—"} label="Risk Style" />
-                                <StatCard icon={BadgeCheck} color="#00D3F2"
+                                <StatCard icon={BadgeCheck} color="#0092b8" bg="rgba(0,146,184,0.12)"
                                     value={profile.verification_status || "—"} label="Verification" />
                             </div>
                         </div>
@@ -766,14 +772,14 @@ function ExpertDetails() {
                         {/* Tab bar — header above stays put; only the panel below switches */}
                         <div style={{
                             display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
-                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                            borderBottom: "1px solid rgba(11,29,79,0.25)",
                         }}>
                             {TABS.map((t) => (
                                 <button key={t.key} onClick={() => setTab(t.key)}
                                     style={{
                                         padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
-                                        cursor: "pointer", color: tab === t.key ? "#fff" : "#94a3b8",
-                                        borderBottom: tab === t.key ? "2px solid #3b82f6" : "2px solid transparent",
+                                        cursor: "pointer", color: tab === t.key ? "#0B1D4F" : "#5B6C88",
+                                        borderBottom: tab === t.key ? "2px solid #0092b8" : "2px solid transparent",
                                     }}>
                                     {t.label}
                                 </button>
@@ -782,25 +788,25 @@ function ExpertDetails() {
 
                         {tab === "overview" && (
                             <div style={{ ...CARD, padding: 30 }}>
-                                <h2 className="text-lg font-bold mb-3">Core Information</h2>
+                                <h2 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>Core Information</h2>
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <InfoCard icon={Mail} label="Email">
-                                        <div style={{ fontSize: 14 }}>{profile.email_address || "—"}</div>
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.email_address || "—"}</div>
                                     </InfoCard>
                                     <InfoCard icon={Link2} label="LinkedIn">
                                         {profile.linked_in_url ? (
                                             <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
                                                 target="_blank" rel="noreferrer"
-                                                style={{ fontSize: 14, color: "#00D3F2", wordBreak: "break-all" }}>
+                                                style={{ fontSize: 14, color: "#0092b8", wordBreak: "break-all" }}>
                                                 {profile.linked_in_url}
                                             </a>
-                                        ) : <div style={{ fontSize: 14 }}>—</div>}
+                                        ) : <div style={{ fontSize: 14, color: "#0F172A" }}>—</div>}
                                     </InfoCard>
                                     <InfoCard icon={MapPin} label="Location">
-                                        <div style={{ fontSize: 14 }}>{profile.address || "—"}</div>
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.address || "—"}</div>
                                     </InfoCard>
                                     <InfoCard icon={Shield} label="Username">
-                                        <div style={{ fontSize: 14 }}>@{profile.username || "—"}</div>
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>@{profile.username || "—"}</div>
                                     </InfoCard>
                                 </div>
                             </div>
@@ -833,14 +839,14 @@ function ExpertDetails() {
                     onClick={() => setShowRateModal(false)}>
                     <div style={{
                         ...CARD, padding: 26, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto",
-                        background: "#0f172a", border: "1px solid rgba(255,255,255,0.12)",
-                        boxShadow: "0 25px 60px -15px rgba(0,0,0,0.6)",
+                        background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)",
+                        boxShadow: "0 25px 60px -15px rgba(15,23,42,0.35)",
                     }}
                         onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Rate this portfolio</h2>
+                            <h2 className="text-xl font-bold" style={{ color: "#0B1D4F" }}>Rate this portfolio</h2>
                             <button onClick={() => setShowRateModal(false)}
-                                style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)" }}>
+                                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#5B6C88" }}>
                                 <X size={20} />
                             </button>
                         </div>
@@ -852,8 +858,8 @@ function ExpertDetails() {
                                     onMouseEnter={() => setRateHover(n)}
                                     onMouseLeave={() => setRateHover(0)}
                                     style={{ cursor: "pointer" }}
-                                    fill={(rateHover || rateValue) >= n ? "#f59e0b" : "none"}
-                                    color={(rateHover || rateValue) >= n ? "#f59e0b" : "rgba(255,255,255,0.3)"}
+                                    fill={(rateHover || rateValue) >= n ? "#B45309" : "none"}
+                                    color={(rateHover || rateValue) >= n ? "#B45309" : "rgba(11,29,79,0.2)"}
                                 />
                             ))}
                         </div>
@@ -866,8 +872,8 @@ function ExpertDetails() {
                             className="w-full mb-4"
                             style={{
                                 padding: 12, borderRadius: 10, resize: "vertical",
-                                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                                color: "#fff", fontSize: 14,
+                                background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.2)",
+                                color: "#0F172A", fontSize: 14,
                             }}
                         />
 
@@ -877,7 +883,7 @@ function ExpertDetails() {
                                 style={{
                                     padding: "10px 18px", borderRadius: 10, border: "none",
                                     cursor: rateBusy ? "not-allowed" : "pointer", opacity: rateBusy ? 0.7 : 1,
-                                    fontWeight: 600, fontSize: 14, color: "#0f172a", background: "#fff",
+                                    fontWeight: 600, fontSize: 14, color: "#004450", background: "#00D3F2",
                                 }}>
                                 {myReview ? "Update Review" : "Submit Review"}
                             </button>
@@ -887,8 +893,8 @@ function ExpertDetails() {
                                     style={{
                                         padding: "10px 14px", borderRadius: 10,
                                         cursor: rateBusy ? "not-allowed" : "pointer",
-                                        background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
-                                        color: "#f87171",
+                                        background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)",
+                                        color: "#DC2626",
                                     }}>
                                     <Trash2 size={16} />
                                 </button>

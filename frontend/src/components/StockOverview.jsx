@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 import { fetchOverview } from "../api/stockInfoApi.js";
 
 const CARD = {
-  background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-  border: "1px solid rgba(99,179,237,0.15)",
+  background: "#FFFFFF",
+  border: "1px solid rgba(11,29,79,0.25)",
   borderRadius: "12px",
 };
 
 const LABEL = {
-  fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6",
+  fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#0092b8",
   letterSpacing: "0.14em", textTransform: "uppercase",
 };
 
@@ -57,7 +57,7 @@ export default function StockOverview({ symbol, live }) {
   ];
 
   if (loading) {
-    return <div style={CARD} className="p-6"><div className="h-24 bg-slate-800/40 rounded animate-pulse" /></div>;
+    return <div style={CARD} className="p-6"><div className="h-24 bg-slate-200 rounded animate-pulse" /></div>;
   }
 
   return (
@@ -71,7 +71,7 @@ export default function StockOverview({ symbol, live }) {
           {stats.map((s) => (
             <div key={s.label}>
               <div className="text-[11px] text-slate-500">{s.label}</div>
-              <div className="text-sm font-semibold text-slate-100 tabular-nums">{s.value}</div>
+              <div className="text-sm font-semibold text-slate-900 tabular-nums">{s.value}</div>
             </div>
           ))}
         </div>
@@ -83,19 +83,19 @@ export default function StockOverview({ symbol, live }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
           <div>
             <div className="text-[11px] text-slate-500">Next report date</div>
-            <div className="text-sm font-semibold text-slate-100">
+            <div className="text-sm font-semibold text-slate-900">
               {d?.nextEarningsDate ? String(d.nextEarningsDate).slice(0, 10) : "—"}
             </div>
           </div>
           <div>
             <div className="text-[11px] text-slate-500">EPS estimate</div>
-            <div className="text-sm font-semibold text-slate-100 tabular-nums">
+            <div className="text-sm font-semibold text-slate-900 tabular-nums">
               {d?.epsEstimate != null ? `${num(d.epsEstimate)} USD` : "—"}
             </div>
           </div>
           <div>
             <div className="text-[11px] text-slate-500">Revenue estimate</div>
-            <div className="text-sm font-semibold text-slate-100 tabular-nums">
+            <div className="text-sm font-semibold text-slate-900 tabular-nums">
               {d?.revenueEstimate != null ? `${big(d.revenueEstimate)} USD` : "—"}
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function StockOverview({ symbol, live }) {
           <Info label="Website" value={d?.website} link />
         </div>
         {d?.description && (
-          <p className="text-sm text-slate-400 leading-relaxed">{d.description}</p>
+          <p className="text-sm text-slate-600 leading-relaxed">{d.description}</p>
         )}
       </div>
     </div>
@@ -126,9 +126,9 @@ function Info({ label, value, link }) {
       <div className="text-[11px] text-slate-500">{label}</div>
       {link && value ? (
         <a href={value.startsWith("http") ? value : `https://${value}`} target="_blank" rel="noreferrer"
-          className="text-sm font-semibold text-cyan-400 hover:underline break-all">{value}</a>
+          className="text-sm font-semibold text-cyan-600 hover:underline break-all">{value}</a>
       ) : (
-        <div className="text-sm font-semibold text-slate-100 break-words">{value || "—"}</div>
+        <div className="text-sm font-semibold text-slate-900 break-words">{value || "—"}</div>
       )}
     </div>
   );

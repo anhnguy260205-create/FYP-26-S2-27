@@ -8,6 +8,7 @@ import { authFetch } from "../../api/apiClient.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { useNavigate } from "react-router-dom";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
+import { Activity, TrendingUp, TrendingDown, Database } from "lucide-react";
 
 // The 11 GICS primary sectors — every pool stock carries a matching
 // `sector` field in its snapshot (set by the backend), used for filtering.
@@ -73,6 +74,31 @@ function MarketStatus({ marketStatus, lastUpdated }) {
       </span>
       <span className="text-slate-400">|</span>
       <span className="text-slate-500">Last Updated: {lastUpdated}</span>
+    </div>
+  );
+}
+
+function StatTile({ icon: Icon, iconColor, iconBg, label, value, valueColor, sub }) {
+  return (
+    <div style={{
+      flex: "1 1 150px", padding: "14px 16px", borderRadius: 14,
+      background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{
+          width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+          background: iconBg, color: iconColor, flexShrink: 0,
+        }}>
+          <Icon size={15} strokeWidth={2.25} />
+        </span>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#5B6C88" }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 800, color: valueColor || "#0B1D4F", lineHeight: 1.1 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 12, fontWeight: 600, color: valueColor || "#5B6C88", marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
@@ -239,8 +265,12 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
   }, [navigate]);
 
   const filtered = useMemo(() => {
-    if (!categoryFilter || categoryFilter === "All") return stockList;
-    return stockList.filter(s => s.sector === categoryFilter);
+    const bySector = !categoryFilter || categoryFilter === "All"
+      ? stockList
+      : stockList.filter(s => s.sector === categoryFilter);
+    return [...bySector]
+      .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0))
+      .slice(0, 10);
   }, [stockList, categoryFilter]);
 
   return (
@@ -406,24 +436,70 @@ function RealTimeDashBoardPage() {
 
   const browseTabs = ["All", ...GICS_SECTORS];
 
+  const marketStats = useMemo(() => {
+    const list = Object.values(stocks ?? {});
+    let topGainer = null, topLoser = null;
+    list.forEach(s => {
+      if (s.price == null || !s.previousClose) return;
+      const pct = ((s.price - s.previousClose) / s.previousClose) * 100;
+      if (!topGainer || pct > topGainer.pct) topGainer = { symbol: s.symbol, pct };
+      if (!topLoser || pct < topLoser.pct) topLoser = { symbol: s.symbol, pct };
+    });
+    return { stocksTracked: list.length, topGainer, topLoser };
+  }, [stocks]);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
       {isExpert ? <ExpertHeader /> : <GeneralHeader />}
-      <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
         {/* ── Page header ────────────────────────────────────── */}
-        <div>
-          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(20px, 5vw, 30px)", fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
-            Real-Time Dashboard
-          </h1>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{
+              width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+              background: marketStatus === "OPEN" ? "#0F9D58" : "#94A3B8",
+              boxShadow: marketStatus === "OPEN" ? "0 0 0 5px rgba(15,157,88,0.18)" : "none",
+            }} className={marketStatus === "OPEN" ? "animate-pulse" : ""} />
+            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(26px, 6vw, 40px)", fontWeight: 800, letterSpacing: "0.02em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
+              Real-Time Dashboard
+            </h1>
+          </div>
           <div className="mt-2">
             <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
           {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
+        </div>
+
+        {/* ── Stat highlight row ─────────────────────────────── */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
+          <StatTile
+            icon={Database} iconColor="#0092b8" iconBg="rgba(0,146,184,0.12)"
+            label="Stocks Tracked" value={marketStats.stocksTracked || "—"}
+          />
+          <StatTile
+            icon={TrendingUp} iconColor="#0F9D58" iconBg="rgba(15,157,88,0.12)"
+            label="Top Gainer" valueColor="#0F9D58"
+            value={marketStats.topGainer ? marketStats.topGainer.symbol : "—"}
+            sub={marketStats.topGainer ? `+${marketStats.topGainer.pct.toFixed(2)}%` : undefined}
+          />
+          <StatTile
+            icon={TrendingDown} iconColor="#DC2626" iconBg="rgba(220,38,38,0.12)"
+            label="Top Loser" valueColor="#DC2626"
+            value={marketStats.topLoser ? marketStats.topLoser.symbol : "—"}
+            sub={marketStats.topLoser ? `${marketStats.topLoser.pct.toFixed(2)}%` : undefined}
+          />
+          <StatTile
+            icon={Activity}
+            iconColor={marketStatus === "OPEN" ? "#0F9D58" : "#5B6C88"}
+            iconBg={marketStatus === "OPEN" ? "rgba(15,157,88,0.12)" : "rgba(91,108,136,0.12)"}
+            label="Market" valueColor={marketStatus === "OPEN" ? "#0F9D58" : "#5B6C88"}
+            value={marketStatus === "OPEN" ? "Open" : "Closed"}
+          />
         </div>
 
         {/* ── Section 1: Recommended ─────────────────────────── */}
@@ -506,7 +582,7 @@ function RealTimeDashBoardPage() {
               <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: "#0B1D4F", margin: 0 }}>
                 Browse Stocks
               </h2>
-              <p className="text-xs text-slate-500 mt-1">Filter by sector or search any symbol</p>
+              <p className="text-xs text-slate-500 mt-1">Top 10 most popular by volume — filter by sector or search any symbol</p>
             </div>
           </div>
 

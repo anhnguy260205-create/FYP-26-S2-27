@@ -10,14 +10,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 // on the stock page. Colours match the existing dashboard palette.
 
 const CARD = {
-  background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-  border: "1px solid rgba(99,179,237,0.15)",
+  background: "#FFFFFF",
+  border: "1px solid rgba(11,29,79,0.25)",
   borderRadius: "12px",
 };
 
-const UP = "#34d399";
-const DOWN = "#f87171";
-const BLUE = "#63b3ed";
+const UP = "#0F9D58";
+const DOWN = "#DC2626";
+const BLUE = "#0092b8";
 
 const DAY_OPTIONS = [7, 14, 30];
 
@@ -52,7 +52,7 @@ function PredictionPaywall({ symbol, viewsUsed, viewsLimit }) {
       <div style={{
         position: "absolute", inset: 0, display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center",
-        background: "linear-gradient(180deg, rgba(15,23,42,0.25), rgba(15,23,42,0.78))",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.92))",
         padding: 20,
       }}>
         <div style={{
@@ -60,10 +60,10 @@ function PredictionPaywall({ symbol, viewsUsed, viewsLimit }) {
           background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.35)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>🔒</div>
-        <div className="text-slate-100 font-semibold text-sm">
+        <div className="text-slate-900 font-semibold text-sm">
           You've used all {viewsLimit ?? 3} free AI predictions
         </div>
-        <div className="text-slate-400 text-xs max-w-70">
+        <div className="text-slate-600 text-xs max-w-70">
           Upgrade to Premium for unlimited AI forecasts on {symbol} and every other S&P 500 stock.
         </div>
         <button onClick={() => navigate("/investor/subscription")}
@@ -117,8 +117,8 @@ export default function StockPrediction({ symbol, livePrice }) {
   if (loading) {
     return (
       <div style={CARD} className="p-6">
-        <div className="h-5 w-40 bg-slate-700/40 rounded animate-pulse mb-4" />
-        <div className="h-24 bg-slate-800/40 rounded-xl animate-pulse" />
+        <div className="h-5 w-40 bg-slate-200 rounded animate-pulse mb-4" />
+        <div className="h-24 bg-slate-200 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -129,7 +129,7 @@ export default function StockPrediction({ symbol, livePrice }) {
 
   if (error || !data?.predictions?.length) {
     return (
-      <div style={CARD} className="p-6 text-center text-slate-400 text-sm">
+      <div style={CARD} className="p-6 text-center text-slate-600 text-sm">
         {error || `No forecast available for ${symbol}.`}
       </div>
     );
@@ -151,7 +151,7 @@ export default function StockPrediction({ symbol, livePrice }) {
 
       {/* Horizon selector */}
       <div className="flex items-center justify-between">
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6",
+        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#0092b8",
           letterSpacing: "0.14em", textTransform: "uppercase" }}>
           AI Price Forecast · {symbol}
         </p>
@@ -160,9 +160,9 @@ export default function StockPrediction({ symbol, livePrice }) {
             <button key={d} onClick={() => setDays(d)}
               className="text-xs px-3 py-1 rounded-full border transition"
               style={{
-                color: d === days ? "#fff" : "#94a3b8",
-                background: d === days ? "rgba(59,130,246,0.25)" : "transparent",
-                borderColor: d === days ? "rgba(96,165,250,0.6)" : "rgba(99,179,237,0.2)",
+                color: d === days ? "#0B1D4F" : "#5B6C88",
+                background: d === days ? "rgba(0,146,184,0.15)" : "transparent",
+                borderColor: d === days ? "rgba(0,146,184,0.5)" : "rgba(11,29,79,0.2)",
               }}>
               {d}d
             </button>
@@ -173,7 +173,7 @@ export default function StockPrediction({ symbol, livePrice }) {
       {/* Free-quota reminder (basic plan only) */}
       {data.views_limit != null && (
         <div className="text-[11px] px-3 py-2 rounded-lg"
-          style={{ color: "#fbbf24", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
+          style={{ color: "#B45309", background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.25)" }}>
           Basic plan: {data.views_used} of {data.views_limit} free stock predictions used. Viewing {symbol} again is free.
         </div>
       )}
@@ -198,7 +198,7 @@ export default function StockPrediction({ symbol, livePrice }) {
         <div className="flex items-end justify-between mb-4">
           <div>
             <div className="text-[11px] text-slate-500 uppercase tracking-wide">Current</div>
-            <div className="text-lg font-bold text-slate-100 tabular-nums">
+            <div className="text-lg font-bold text-slate-900 tabular-nums">
               ${(livePrice ?? lastClose)?.toFixed(2)}
             </div>
           </div>
@@ -225,8 +225,8 @@ export default function StockPrediction({ symbol, livePrice }) {
               return (
                 <div key={i} className="flex items-center gap-3 text-xs">
                   <span className="text-slate-500 w-14 shrink-0">Day {p.day ?? "+"}</span>
-                  <span className="text-slate-200 w-16 tabular-nums shrink-0">${p.price?.toFixed(2) ?? "—"}</span>
-                  <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <span className="text-slate-800 w-16 tabular-nums shrink-0">${p.price?.toFixed(2) ?? "—"}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${width}%`, background: chg >= 0 ? UP : DOWN }} />
                   </div>
                   <span className="w-14 text-right tabular-nums shrink-0" style={{ color: chg >= 0 ? UP : DOWN }}>

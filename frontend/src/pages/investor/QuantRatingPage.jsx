@@ -169,7 +169,7 @@ export default function QuantRatingPage() {
   const metrics = rating?.modelMetrics || {};
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}>
       <GeneralHeader />
 
       <main className="max-w mx-auto ">
