@@ -233,15 +233,15 @@ function SubscriptionPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, rgba(0,211,242,0.14) 0%, #F8FAFC 42%, #F8FAFC 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
     >
       <GeneralHeader />
-      <main className="flex-1 px-4 sm:px-7.5">
+      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          style={{ textAlign: "center", paddingTop: "64px" }}
+          style={{ textAlign: "center" }}
         >
           <h1 style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 700, color: "#0F172A", margin: "0 0 10px", letterSpacing: "-0.01em" }}>
             Choose your plan

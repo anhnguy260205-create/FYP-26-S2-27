@@ -51,8 +51,8 @@ function Button({ marketStatus, symbol }) {
         style={{
           padding: "10px 32px", borderRadius: "8px",
           border: "1px solid rgba(52,211,153,0.4)",
-          background: "linear-gradient(135deg, rgba(6,78,59,0.8), rgba(16,185,129,0.25))",
-          color: "#6ee7b7", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+          background: "rgba(15,157,88,0.1)",
+          color: "#0F9D58", fontFamily: "'DM Mono', monospace", fontWeight: 600,
           fontSize: "13px", letterSpacing: "0.08em",
           cursor: isOpen ? "pointer" : "not-allowed",
           transition: "all 0.2s ease", textTransform: "uppercase",
@@ -60,11 +60,11 @@ function Button({ marketStatus, symbol }) {
         }}
         onMouseEnter={e => {
           if (!isOpen) return;
-          e.currentTarget.style.background = "linear-gradient(135deg, rgba(6,78,59,0.95), rgba(16,185,129,0.5))";
-          e.currentTarget.style.boxShadow = "0 0 20px rgba(52,211,153,0.3)";
+          e.currentTarget.style.background = "rgba(15,157,88,0.18)";
+          e.currentTarget.style.boxShadow = "0 4px 14px rgba(15,157,88,0.2)";
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.background = "linear-gradient(135deg, rgba(6,78,59,0.8), rgba(16,185,129,0.25))";
+          e.currentTarget.style.background = "rgba(15,157,88,0.1)";
           e.currentTarget.style.boxShadow = "none";
         }}
       >
@@ -75,9 +75,9 @@ function Button({ marketStatus, symbol }) {
         disabled={!isOpen}
         style={{
           padding: "10px 32px", borderRadius: "8px",
-          border: "1px solid rgba(239,68,68,0.4)",
-          background: "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(239,68,68,0.25))",
-          color: "#fca5a5", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+          border: "1px solid rgba(220,38,38,0.4)",
+          background: "rgba(220,38,38,0.1)",
+          color: "#DC2626", fontFamily: "'DM Mono', monospace", fontWeight: 600,
           fontSize: "13px", letterSpacing: "0.08em",
           cursor: isOpen ? "pointer" : "not-allowed",
           transition: "all 0.2s ease", textTransform: "uppercase",
@@ -85,11 +85,11 @@ function Button({ marketStatus, symbol }) {
         }}
         onMouseEnter={e => {
           if (!isOpen) return;
-          e.currentTarget.style.background = "linear-gradient(135deg, rgba(127,29,29,0.95), rgba(239,68,68,0.5))";
-          e.currentTarget.style.boxShadow = "0 0 20px rgba(239,68,68,0.3)";
+          e.currentTarget.style.background = "rgba(220,38,38,0.18)";
+          e.currentTarget.style.boxShadow = "0 4px 14px rgba(220,38,38,0.2)";
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.background = "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(239,68,68,0.25))";
+          e.currentTarget.style.background = "rgba(220,38,38,0.1)";
           e.currentTarget.style.boxShadow = "none";
         }}
       >
@@ -127,9 +127,9 @@ function WatchlistButton({ stock_symbol, currentUser }) {
   };
 
   const feedbackColors = {
-    success: { bg: "rgba(52,211,153,0.1)", border: "rgba(52,211,153,0.3)", text: "#34d399" },
-    error: { bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.3)", text: "#f87171" },
-    limit: { bg: "rgba(255,215,0,0.08)", border: "rgba(255,215,0,0.3)", text: "#FFD700" },
+    success: { bg: "rgba(15,157,88,0.1)", border: "rgba(15,157,88,0.3)", text: "#0F9D58" },
+    error: { bg: "rgba(220,38,38,0.1)", border: "rgba(220,38,38,0.3)", text: "#DC2626" },
+    limit: { bg: "rgba(255,215,0,0.1)", border: "rgba(255,215,0,0.4)", text: "#92700C" },
   };
 
   return (
@@ -162,7 +162,7 @@ function WatchlistButton({ stock_symbol, currentUser }) {
               onClick={() => navigate("/investor/subscription")}
               style={{
                 display: "block", marginTop: "6px", fontSize: "10px", fontWeight: 700,
-                color: "#FFD700", background: "none", border: "none",
+                color: "#92700C", background: "none", border: "none",
                 cursor: "pointer", padding: 0, textDecoration: "underline",
                 fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em",
               }}
@@ -186,7 +186,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
     ? (((stock.price - stock.previousClose) / stock.previousClose) * 100).toFixed(3)
     : null;
   const isUp = chg === null ? true : Number(chg) >= 0;
-  const changeColor = isUp ? "#34d399" : "#f87171";
+  const changeColor = isUp ? "#0F9D58" : "#DC2626";
   const isMarketOpen = marketStatus === "OPEN";
 
 
@@ -195,7 +195,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
 
       style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        paddingBottom: "20px", borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: "24px",
+        paddingBottom: "20px", borderBottom: "1px solid rgba(11,29,79,0.25)", marginBottom: "24px",
       }}
     >
       {/* Left: symbol + company name + market status */}
@@ -203,13 +203,13 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
         <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
           <h1 style={{
             fontFamily: "'DM Mono', monospace", fontSize: "36px", fontWeight: 700,
-            letterSpacing: "0.04em", color: "#e2e8f0", margin: 0, lineHeight: 1,
+            letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1,
           }}>
             {symbol}
           </h1>
           <span style={{
             fontFamily: "'DM Sans', sans-serif", fontSize: "15px",
-            color: "#64748b", fontWeight: 400, letterSpacing: "0.02em",
+            color: "#5B6C88", fontWeight: 400, letterSpacing: "0.02em",
           }}>
             {stock?.name ?? companyName(selectedStock)}
           </span>
@@ -217,20 +217,20 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
           <span style={{
             width: "6px", height: "6px", borderRadius: "50%",
-            background: isMarketOpen ? "#34d399" : "#ef4444",
-            boxShadow: isMarketOpen ? "0 0 8px #34d399" : "0 0 8px #ef4444",
+            background: isMarketOpen ? "#0F9D58" : "#DC2626",
+            boxShadow: isMarketOpen ? "0 0 8px rgba(15,157,88,0.5)" : "0 0 8px rgba(220,38,38,0.5)",
             display: "inline-block",
           }} />
           <span style={{
             fontFamily: "'DM Mono', monospace", fontSize: "11px",
-            color: isMarketOpen ? "#34d399" : "#ef4444",
+            color: isMarketOpen ? "#0F9D58" : "#DC2626",
             letterSpacing: "0.1em", textTransform: "uppercase",
           }}>
             Market {marketStatus || "Loading"}
           </span>
-          <p className="text-gray-400">|</p>
+          <p className="text-slate-400">|</p>
           <span style={{
-            fontFamily: "'DM Mono', monospace", fontSize: "11px"
+            fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#5B6C88",
           }}>
             Lasted update: {lastUpdated || "Loading..."}
           </span>
@@ -266,13 +266,13 @@ function StatPill({ label, value }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "12px 20px", flex: 1 }}>
       <span style={{
         fontFamily: "'DM Mono', monospace", fontSize: "10px",
-        color: "#475569", letterSpacing: "0.12em", textTransform: "uppercase",
+        color: "#5B6C88", letterSpacing: "0.12em", textTransform: "uppercase",
       }}>
         {label}
       </span>
       <span style={{
         fontFamily: "'DM Mono', monospace", fontSize: "17px",
-        color: "#cbd5e1", fontWeight: 600, letterSpacing: "0.03em",
+        color: "#0F172A", fontWeight: 600, letterSpacing: "0.03em",
       }}>
         {value}
       </span>
@@ -339,37 +339,37 @@ function AlertBoard({ symbol }) {
 
   const inputStyle = {
     width: "100%", padding: "9px 12px", borderRadius: "7px",
-    border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.6)",
-    color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: "13px",
+    border: "1px solid rgba(11,29,79,0.25)", background: "#F1F5F9",
+    color: "#0F172A", fontFamily: "'DM Mono', monospace", fontSize: "13px",
     outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
   };
   const labelStyle = {
-    fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#475569",
+    fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88",
     letterSpacing: "0.05em", marginBottom: "4px", textTransform: "uppercase",
   };
   const sectionHeadStyle = {
-    fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#3b82f6",
+    fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#0092b8",
     letterSpacing: "0.12em", textTransform: "uppercase",
-    margin: "16px 0 10px", borderBottom: "1px solid rgba(59,130,246,0.2)", paddingBottom: "6px",
+    margin: "16px 0 10px", borderBottom: "1px solid rgba(0,146,184,0.25)", paddingBottom: "6px",
   };
 
   return (
     <div
       style={{
         width: "100%",
-        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-        border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
+        background: "#FFFFFF",
+        border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
         padding: "24px",
       }}
     >
       <p style={{
-        fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#3b82f6",
+        fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#0092b8",
         letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 10px",
       }}>
         🔔 Stock Alerts
       </p>
-      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#94a3b8", margin: "0 0 4px", lineHeight: 1.5 }}>
-        Get notified when <span style={{ color: "#60a5fa", fontWeight: 600 }}>{symbol}</span> hits your target.
+      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#5B6C88", margin: "0 0 4px", lineHeight: 1.5 }}>
+        Get notified when <span style={{ color: "#0092b8", fontWeight: 600 }}>{symbol}</span> hits your target.
       </p>
 
       {submitted ? (
@@ -384,16 +384,16 @@ function AlertBoard({ symbol }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p style={{ color: "#34d399", fontFamily: "'DM Mono', monospace", fontSize: "13px" }}>Alert activated!</p>
-          <p style={{ color: "#64748b", fontFamily: "'DM Sans', sans-serif", fontSize: "11px", marginTop: "4px" }}>
+          <p style={{ color: "#0F9D58", fontFamily: "'DM Mono', monospace", fontSize: "13px" }}>Alert activated!</p>
+          <p style={{ color: "#5B6C88", fontFamily: "'DM Sans', sans-serif", fontSize: "11px", marginTop: "4px" }}>
             Email will be sent to {formData.notification_email}
           </p>
           <button
             onClick={() => { setSubmitted(false); setFormData(p => ({ ...p, price_above: "", price_below: "", pct_increase: "", pct_decrease: "" })); }}
             style={{
               marginTop: "16px", padding: "8px 20px", borderRadius: "7px",
-              background: "rgba(37,99,235,0.2)", border: "1px solid rgba(59,130,246,0.4)",
-              color: "#60a5fa", fontFamily: "'DM Mono', monospace", fontSize: "12px", cursor: "pointer",
+              background: "rgba(0,146,184,0.12)", border: "1px solid rgba(0,146,184,0.4)",
+              color: "#0092b8", fontFamily: "'DM Mono', monospace", fontSize: "12px", cursor: "pointer",
             }}
           >
             Add Another
@@ -407,15 +407,15 @@ function AlertBoard({ symbol }) {
               <p style={labelStyle}>Price above ($)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_above} placeholder="e.g. 200.00"
                 onChange={(e) => handleChange("price_above", e.target.value)}
-                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
             <div>
               <p style={labelStyle}>Price below ($)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_below} placeholder="e.g. 150.00"
                 onChange={(e) => handleChange("price_below", e.target.value)}
-                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
           </div>
           <p style={sectionHeadStyle}>% Change Alerts</p>
@@ -424,15 +424,15 @@ function AlertBoard({ symbol }) {
               <p style={labelStyle}>Increase by (%)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.pct_increase} placeholder="e.g. 5"
                 onChange={(e) => handleChange("pct_increase", e.target.value)}
-                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
             <div>
               <p style={labelStyle}>Decrease by (%)</p>
               <input style={inputStyle} type="number" step="0.01" min="0" value={formData.pct_decrease} placeholder="e.g. 5"
                 onChange={(e) => handleChange("pct_decrease", e.target.value)}
-                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
           </div>
           <p style={sectionHeadStyle}>Notification</p>
@@ -441,8 +441,8 @@ function AlertBoard({ symbol }) {
               <p style={labelStyle}>Send email to</p>
               <input style={inputStyle} type="email" required value={formData.notification_email} placeholder="your@email.com"
                 onChange={(e) => handleChange("notification_email", e.target.value)}
-                onFocus={e => e.target.style.borderColor = "rgba(59,130,246,0.6)"}
-                onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
+                onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
           </div>
           {error && (
@@ -484,7 +484,7 @@ function PremiumLockCard() {
     <div
       style={{
         width: "100%",
-        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
+        background: "#FFFFFF",
         border: "1px solid rgba(255,215,0,0.2)", borderRadius: "12px",
         padding: "48px 24px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         gap: "14px", textAlign: "center",
@@ -498,16 +498,16 @@ function PremiumLockCard() {
         🔒
       </div>
       <h2 style={{
-        fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "#FFD700",
+        fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "#92700C",
         fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0,
       }}>
         Premium Feature
       </h2>
       <p style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
-        color: "#94a3b8", lineHeight: 1.6, margin: 0, maxWidth: "360px",
+        color: "#5B6C88", lineHeight: 1.6, margin: 0, maxWidth: "360px",
       }}>
-        Custom stock alerts are available for <span style={{ color: "#FFD700" }}>Premium</span> members only.
+        Custom stock alerts are available for <span style={{ color: "#92700C" }}>Premium</span> members only.
         Upgrade to get notified when prices hit your targets.
       </p>
       <button
@@ -515,7 +515,7 @@ function PremiumLockCard() {
         style={{
           marginTop: "6px", padding: "11px 28px", borderRadius: "8px",
           background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
-          border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700",
+          border: "1px solid rgba(255,215,0,0.4)", color: "#92700C",
           fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px",
           letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
           transition: "all 0.2s",
@@ -543,8 +543,8 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
         {/* Stats strip */}
         <div style={{
           display: "flex",
-          background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-          border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
+          background: "#FFFFFF",
+          border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
         }}>
           {[
             // Ensure the system work smoothly even if some data points are missing by showing "N/A"
@@ -567,13 +567,13 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
         <div
 
           style={{
-            background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-            border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
+            background: "#FFFFFF",
+            border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
             padding: "20px",
           }}
         >
           <p style={{
-            fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
+            fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8",
             letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px",
           }}>
             Price Chart
@@ -683,46 +683,46 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   }
 
   const lbl = {
-    fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#475569",
+    fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#5B6C88",
     letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 6px",
   };
   const inputStyle = {
     height: "42px", padding: "0 14px", borderRadius: "8px",
-    background: "rgba(15,23,42,0.6)", border: "1px solid rgba(99,179,237,0.2)",
-    color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: "15px", fontWeight: 600, outline: "none",
+    background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.25)",
+    color: "#0F172A", fontFamily: "'DM Mono', monospace", fontSize: "15px", fontWeight: 600, outline: "none",
   };
 
-  const statusColor = { pending: "#fbbf24", partial: "#60a5fa", filled: "#34d399", cancelled: "#64748b" };
+  const statusColor = { pending: "#B45309", partial: "#1D4ED8", filled: "#0F9D58", cancelled: "#5B6C88" };
 
   return (
     <div
 
       style={{
         marginTop: "16px",
-        background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-        border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px", padding: "20px 24px",
+        background: "#FFFFFF",
+        border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px", padding: "20px 24px",
       }}
     >
       {/* Header */}
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 4px" }}>
+      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 4px" }}>
         Hybrid Trading Engine
       </p>
-      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#475569", margin: "0 0 16px", lineHeight: 1.5 }}>
-        Submit limit orders for <span style={{ color: "#60a5fa" }}>{symbol}</span>. Orders match between investors first; remainder fills at live market price.
+      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88", margin: "0 0 16px", lineHeight: 1.5 }}>
+        Submit limit orders for <span style={{ color: "#0092b8" }}>{symbol}</span>. Orders match between investors first; remainder fills at live market price.
       </p>
 
       {!isMarketOpen && (
         <div style={{
           display: "flex", alignItems: "center", gap: "10px",
-          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+          background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.3)",
           borderRadius: "10px", padding: "12px 14px", marginBottom: "20px",
         }}>
           <span style={{ fontSize: "16px" }}>🔒</span>
           <div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#fca5a5" }}>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", fontWeight: 600, color: "#DC2626" }}>
               Market closed — trading unavailable
             </div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88", marginTop: "2px" }}>
               US markets are open Mon–Fri, 9:30am–4:00pm ET (about 9:30pm–4:00am Singapore time).
             </div>
           </div>
@@ -733,32 +733,32 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
         <div>
           <p style={lbl}>Live Price</p>
-          <div style={{ background: "rgba(0,211,243,0.06)", border: "1px solid rgba(0,211,243,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: livePrice ? "#00D3F2" : "#475569" }}>
+          <div style={{ background: "rgba(0,146,184,0.06)", border: "1px solid rgba(0,146,184,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: livePrice ? "#0092b8" : "#5B6C88" }}>
               {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
             </span>
           </div>
         </div>
         <div>
           <p style={lbl}>Paper Balance</p>
-          <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: "#34d399" }}>
+          <div style={{ background: "rgba(15,157,88,0.06)", border: "1px solid rgba(15,157,88,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: "#0F9D58" }}>
               {portfolio?.paper_money != null ? `$${Number(portfolio.paper_money).toFixed(2)}` : "—"}
             </span>
           </div>
         </div>
         <div>
           <p style={lbl}>You Own</p>
-          <div style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: currentHolding ? "#fbbf24" : "#475569" }}>
+          <div style={{ background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: currentHolding ? "#B45309" : "#5B6C88" }}>
               {currentHolding ? `${currentHolding.quantity} shares` : "0 shares"}
             </span>
           </div>
         </div>
         <div>
           <p style={lbl}>Order Value</p>
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: estimatedTotal ? "#e2e8f0" : "#475569" }}>
+          <div style={{ background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.15)", borderRadius: "8px", padding: "10px 14px" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: estimatedTotal ? "#0F172A" : "#5B6C88" }}>
               {estimatedTotal ? `$${estimatedTotal}` : "—"}
             </span>
           </div>
@@ -775,8 +775,8 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
             placeholder="0"
             disabled={!isMarketOpen}
             style={{ ...inputStyle, width: "100px", opacity: isMarketOpen ? 1 : 0.45, cursor: isMarketOpen ? "text" : "not-allowed" }}
-            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(59,130,246,0.6)"; }}
-            onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"}
+            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(0,146,184,0.6)"; }}
+            onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"}
           />
         </div>
         <div>
@@ -787,8 +787,8 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
             placeholder={livePrice ? livePrice.toFixed(2) : "0.00"}
             disabled={!isMarketOpen}
             style={{ ...inputStyle, width: "120px", opacity: isMarketOpen ? 1 : 0.45, cursor: isMarketOpen ? "text" : "not-allowed" }}
-            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(59,130,246,0.6)"; }}
-            onBlur={e => e.target.style.borderColor = "rgba(99,179,237,0.2)"}
+            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(0,146,184,0.6)"; }}
+            onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"}
           />
         </div>
 
@@ -797,9 +797,9 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
           disabled={!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null}
           style={{
             height: "42px", padding: "0 28px", borderRadius: "8px",
-            border: "1px solid rgba(52,211,153,0.4)",
-            background: "linear-gradient(135deg, rgba(6,78,59,0.8), rgba(16,185,129,0.25))",
-            color: "#6ee7b7", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+            border: "1px solid rgba(15,157,88,0.4)",
+            background: "rgba(15,157,88,0.1)",
+            color: "#0F9D58", fontFamily: "'DM Mono', monospace", fontWeight: 600,
             fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
             cursor: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
             opacity: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
@@ -814,9 +814,9 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
           disabled={!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null}
           style={{
             height: "42px", padding: "0 28px", borderRadius: "8px",
-            border: "1px solid rgba(239,68,68,0.4)",
-            background: "linear-gradient(135deg, rgba(127,29,29,0.8), rgba(239,68,68,0.25))",
-            color: "#fca5a5", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+            border: "1px solid rgba(220,38,38,0.4)",
+            background: "rgba(220,38,38,0.1)",
+            color: "#DC2626", fontFamily: "'DM Mono', monospace", fontWeight: 600,
             fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
             cursor: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
             opacity: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
@@ -831,9 +831,9 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
       {message && (
         <div style={{
           marginTop: "14px", padding: "11px 16px", borderRadius: "8px",
-          background: message.type === "success" ? "rgba(52,211,153,0.08)" : "rgba(248,113,113,0.08)",
-          border: `1px solid ${message.type === "success" ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
-          color: message.type === "success" ? "#34d399" : "#f87171",
+          background: message.type === "success" ? "rgba(15,157,88,0.08)" : "rgba(220,38,38,0.08)",
+          border: `1px solid ${message.type === "success" ? "rgba(15,157,88,0.3)" : "rgba(220,38,38,0.3)"}`,
+          color: message.type === "success" ? "#0F9D58" : "#DC2626",
           fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
         }}>
           {message.type === "success" ? "✓ " : "⚠ "}{message.text}
@@ -903,13 +903,14 @@ function AStockDashBoardPage() {
   return (
     <>
       <motion.div
-        className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+        className="min-h-screen flex flex-col"
+        style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
         {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", position: "relative", zIndex: 1 }}>
+        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px", position: "relative", zIndex: 1 }}>
 
           <FirstLevel
             symbol={symbol}
@@ -922,12 +923,12 @@ function AStockDashBoardPage() {
           {/* Persistent price chart — stays fixed above the tabs on every view */}
           {stock && (
             <div style={{
-              background: "linear-gradient(145deg, rgba(15,23,42,0.85), rgba(30,41,59,0.65))",
-              border: "1px solid rgba(99,179,237,0.15)", borderRadius: "12px",
+              background: "#FFFFFF",
+              border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
               padding: "20px", marginTop: "16px",
             }}>
               <p style={{
-                fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#3b82f6",
+                fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8",
                 letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px"
               }}>
                 Price Chart
@@ -946,14 +947,14 @@ function AStockDashBoardPage() {
           {/* Tab bar — chart above stays put; only the panel below switches */}
           <div style={{
             display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
-            borderBottom: "1px solid rgba(99,179,237,0.15)"
+            borderBottom: "1px solid rgba(11,29,79,0.25)"
           }}>
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 style={{
                   padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
-                  cursor: "pointer", color: tab === t.key ? "#fff" : "#94a3b8",
-                  borderBottom: tab === t.key ? "2px solid #3b82f6" : "2px solid transparent",
+                  cursor: "pointer", color: tab === t.key ? "#0B1D4F" : "#5B6C88",
+                  borderBottom: tab === t.key ? "2px solid #0092b8" : "2px solid transparent",
                 }}>
                 {t.label}
               </button>

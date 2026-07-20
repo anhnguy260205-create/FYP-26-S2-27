@@ -9,7 +9,7 @@ const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
 const C = {
-    bg:      "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)",
+    bg:      "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)",
     card:    "#FFFFFF",
     card2:   "#F1F5F9",
     border:  "rgba(11,29,79,0.25)",

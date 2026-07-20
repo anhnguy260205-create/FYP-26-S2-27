@@ -85,7 +85,7 @@ function UpdateParticularPage() {
   return (
     <motion.div
       className="min-h-screen flex items-center justify-center px-4 py-8"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 28%, #FFFFFF 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
