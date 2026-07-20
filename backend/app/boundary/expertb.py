@@ -268,7 +268,19 @@ class PortfolioRequest(BaseModel):
 
 @router.get("/portfolio/{user_id}")
 def get_portfolio(user_id: str, current_user: dict = Depends(get_current_user)):
-    return ExpertPortfolioController().get_portfolio(user_id)
+    # Owners (and admins) always see their own portfolio (management view).
+    if current_user["user_id"] == user_id or current_user["role"] == "admin":
+        return ExpertPortfolioController().get_portfolio(user_id)
+
+    # Investors only see portfolios the expert has explicitly published.
+    portfolio = ExpertPortfolioRepository.get_by_user(user_id)
+    if not portfolio or not portfolio.get("is_published"):
+        return {
+            "success": False,
+            "not_published": True,
+            "message": "This expert has not published their portfolio yet.",
+        }
+    return {"success": True, "portfolio": portfolio}
 
 
 @router.post("/portfolio/{user_id}")
@@ -286,6 +298,13 @@ def save_portfolio(
 
 class PublishPortfolioRequest(BaseModel):
     published: bool = True
+
+
+@router.post("/publish-my-portfolio")
+def publish_my_portfolio(current_user: dict = Depends(get_current_user)):
+    """Publish the expert's REAL trading portfolio (from the transactions
+    section's Portfolio Overview) to their expert profile."""
+    return ExpertPortfolioRepository.publish_real_portfolio(current_user["user_id"])
 
 
 @router.post("/portfolio-publish")

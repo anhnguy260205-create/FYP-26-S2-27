@@ -250,6 +250,37 @@ class Expert(Base):
             return True
 
 
+def _promote_seed_expert(email_address: str):
+    """Merged-roles: make a seeded expert account a fully verified expert —
+    investor row (everyone trades as an investor), approved verification,
+    and the complimentary premium tier. Idempotent; safe on every startup."""
+    from app.entity.models.investor import Investor
+
+    with get_session() as session:
+        user = session.query(UserAccount).filter(
+            UserAccount.email_address == email_address).first()
+        if not user:
+            return
+        user_id = user.user_id
+        expert = session.query(Expert).filter(
+            Expert.user_id == user_id).first()
+        expert_id = expert.expert_id if expert else None
+
+        investor = session.query(Investor).filter(
+            Investor.user_id == user_id).first()
+        if not investor:
+            session.add(Investor(
+                user_id=user_id, investor_subscription_status="premium"))
+        elif investor.investor_subscription_status != "premium":
+            investor.investor_subscription_status = "premium"
+
+    if expert_id:
+        ExpertVerification.create_for_expert(expert_id)
+        verification = ExpertVerification.get_for_expert(expert_id)
+        if verification["verification_status"] not in ("approved", "active"):
+            ExpertVerification.set_status(expert_id, "approved")
+
+
 def seed_expert_account():
     Expert.createAccount(
         username="Anh",
@@ -257,6 +288,7 @@ def seed_expert_account():
         experience_year=3,
         linked_in_url="@anh"
     )
+    _promote_seed_expert("kimhi@gmail.com")
 
 
 def seed_jordan_account():
@@ -266,3 +298,4 @@ def seed_jordan_account():
         experience_year=5,
         linked_in_url="https://linkedin.com/in/jordan"
     )
+    _promote_seed_expert("jordan@gmail.com")
