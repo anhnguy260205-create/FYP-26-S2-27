@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ThumbsUp, Pencil, Trash2, Check, X, Flag, AlertCircle } from "lucide-react";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import {
   acknowledgeRemoval, createReview, deleteReview, flagReview, getMyReview,
@@ -463,7 +463,7 @@ const SORT_OPTIONS = [
 
 export default function ReviewsPage() {
   const currentUser = useMemo(() => getCurrentUser(), []);
-  const isExpert = String(currentUser?.role || "").toLowerCase() === "expert";
+  const isExpert = isExpertUser(currentUser);
 
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState({ average: 0, total: 0, distribution: {} });
@@ -586,7 +586,7 @@ export default function ReviewsPage() {
     <motion.div className="min-h-screen flex flex-col"
       style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-      {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+      <RoleHeader />
 
       <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
 

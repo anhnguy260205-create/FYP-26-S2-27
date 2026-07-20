@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getArticles } from "../../api/knowledgeHubApi.js";
 
@@ -145,7 +144,7 @@ function EducationContent() {
       <motion.div className="min-h-screen flex flex-col"
         style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        {role === "expert" ? <ExpertHeader /> : <GeneralHeader />}
+        <RoleHeader />
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
           <div style={{ paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>

@@ -1,4 +1,5 @@
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
@@ -14,7 +15,6 @@ import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -851,8 +851,7 @@ function AStockDashBoardPage() {
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
-  const role = String(currentUser?.role || "").toLowerCase();
-  const isExpert = role === "expert";
+  const isExpert = isExpertUser(currentUser);
 
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
@@ -908,7 +907,7 @@ function AStockDashBoardPage() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
-        {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+        <RoleHeader />
 
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px", position: "relative", zIndex: 1 }}>
 

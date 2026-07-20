@@ -8,9 +8,9 @@ import {
     Flame, Users, BookOpen, Clock, Star, FileText,
     MessageSquare, Pin, Inbox,
 } from "lucide-react";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { isExpertUser } from "../../utils/userRole.js";
 import {
     createForumPost, updateForumPost, deleteForumPost, deleteForumReply,
     updateForumReply, getForumPost, getForumPosts,
@@ -244,8 +244,7 @@ function RoleBadge({ role }) {
 export default function ForumPage() {
     const navigate = useNavigate();
     const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}"));
-    const role = String(currentUser?.role || "").toLowerCase();
-    const isExpert = role === "expert";
+    const isExpert = isExpertUser(currentUser);
     const userId = currentUser?.user_id || currentUser?.id || "";
     const userName = currentUser?.full_name || currentUser?.name || currentUser?.username || "RocketTrade User";
 
@@ -400,7 +399,7 @@ export default function ForumPage() {
         if (creating) return;
         setCreating(true);
         const tempId = `post_${Date.now()}`;
-        const tempPost = normalisePost({ ...payload, id: tempId, user_id: userId, author: userName, author_role: currentUser?.role || "investor", likes: 0, views: 0, replies: [], created_at: new Date().toISOString() });
+        const tempPost = normalisePost({ ...payload, id: tempId, user_id: userId, author: userName, author_role: isExpert ? "expert" : "investor", likes: 0, views: 0, replies: [], created_at: new Date().toISOString() });
         setPosts(prev => [tempPost, ...prev]);
         setShowCreate(false);
         try {
@@ -420,7 +419,7 @@ export default function ForumPage() {
             id: `reply_${Date.now()}`,
             user_id: userId,
             author: userName,
-            author_role: currentUser?.role || "investor",
+            author_role: isExpert ? "expert" : "investor",
             content,
             time: new Date().toISOString(),
             likes: 0,
@@ -452,7 +451,7 @@ export default function ForumPage() {
         <motion.div className="min-h-screen flex flex-col"
             style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            <RoleHeader />
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
@@ -1226,7 +1225,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onDel
 
                 {/* Reply input */}
                 <div style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 10, alignItems: "flex-end" }}>
-                    <Avatar name={currentUser?.full_name || currentUser?.username || "You"} size={32} role={currentUser?.role} />
+                    <Avatar name={currentUser?.full_name || currentUser?.username || "You"} size={32} role={isExpertUser(currentUser) ? "expert" : currentUser?.role} />
                     <div style={{ flex: 1, position: "relative" }}>
                         <textarea
                             value={replyText}
