@@ -29,7 +29,6 @@ const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"))
 const PaymentFail = lazy(() => import("./pages/investor/PaymentFail.jsx"));
 const InvestorProfilePage = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
 const Watchlist = lazy(() => import("./pages/shared/Watchlist.jsx"));
-const Notification = lazy(() => import("./pages/investor/Notification.jsx"));
 const ExpertPortfolio = lazy(() => import("./pages/shared/ExpertPortfolio.jsx"));
 const EducationContent = lazy(() => import("./pages/shared/EducationContent.jsx"));
 const AIChatbot = lazy(() => import("./pages/investor/AIChatbot.jsx"));
@@ -46,7 +45,6 @@ const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.
 const ExpertPortfolioPage = lazy(() => import("./pages/expert/ExpertPortfolioPage.jsx"));
 const CreateExpertPortfolioPage = lazy(() => import("./pages/expert/CreateExpertPortfolioPage.jsx"));
 const ExpertQuestionsPage = lazy(() => import("./pages/expert/ExpertQuestionsPage.jsx"));
-const ExpertNotificationPage = lazy(() => import("./pages/expert/ExpertNotificationPage.jsx"));
 const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensationPage.jsx"));
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
@@ -106,7 +104,6 @@ export const router = createBrowserRouter([
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
     { path: "/watchlist", element: protectWithStocks(["investor", "expert"], Watchlist) },
-    { path: "/investor/notification", element: protect(["investor"], Notification) },
     { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
@@ -131,7 +128,6 @@ export const router = createBrowserRouter([
     { path: "/expert/portfolio", element: protect(["expert"], ExpertPortfolioPage) },
     { path: "/expert/create-portfolio", element: protect(["expert"], CreateExpertPortfolioPage) },
     { path: "/expert/questions", element: protect(["expert"], ExpertQuestionsPage) },
-    { path: "/expert/notifications", element: protect(["expert"], ExpertNotificationPage) },
     { path: "/expert/updateparticular", element: protect(["expert"], UpdateExpertParticularPage) },
     { path: "/expert/documents", element: protect(["expert"], ExpertDocumentPage) },
     { path: "/expert/compensation", element: protect(["expert"], ExpertCompensationPage) },
