@@ -34,6 +34,7 @@ function LoginPage() {
     }
     else if (role === "expert") navigate(!user.full_name ? "/expert/updateparticular" : "/expert");
     else if (role === "admin") navigate("/adminpanel");
+    else if (role === "hr") navigate("/finance-admin/document-verification")
     else setError("Unknown role: " + role);
   };
 

@@ -23,6 +23,7 @@ const UserProfilesPage = lazy(() => import("./pages/administrator/UserProfilesPa
 const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
+const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
@@ -121,6 +122,8 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
+
+    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage),},
 
     { path: "/expert/edit-profile", element: protect(["expert"], ExpertProfilePage) },
     { path: "/expert", element: protect(["expert"], ExpertLoggedInPage) },

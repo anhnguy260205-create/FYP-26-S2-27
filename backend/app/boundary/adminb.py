@@ -12,7 +12,10 @@ from app.control.controller.knowledgehub_c import (
 )
 from app.control.controller.notificationc import create_notification
 from app.control.services.firebase_admin_service import delete_firebase_user_by_email
-from app.control.services.auth import require_admin
+from app.control.services.auth import (
+    require_admin,
+    require_admin_or_hr,
+)
 from app.control.services.email_service import send_expert_verified_email, send_expert_rejected_email, send_expert_verification_cancelled_email
 from app.entity.models.expert import Expert
 from app.entity.models.expertverification import ExpertVerification
@@ -356,7 +359,7 @@ def reject_article(article_id: str, current_user: dict = Depends(require_admin))
 
 
 @router.get("/experts")
-def get_all_experts(current_user: dict = Depends(require_admin)):
+def get_all_experts(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     experts = boundary.getAllExperts()
 
@@ -368,7 +371,7 @@ def get_all_experts(current_user: dict = Depends(require_admin)):
 
 
 @router.post("/experts/{expert_id}/approve")
-def approve_expert(expert_id: str, current_user: dict = Depends(require_admin)):
+def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     success = boundary.setExpertVerificationStatus(expert_id, "approved")
 
@@ -392,7 +395,7 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin)):
 
 
 @router.post("/experts/{expert_id}/reject")
-def reject_expert(expert_id: str, current_user: dict = Depends(require_admin)):
+def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     success = boundary.setExpertVerificationStatus(expert_id, "rejected")
 
@@ -416,7 +419,7 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin)):
 
 
 @router.post("/experts/{expert_id}/cancel")
-def cancel_expert_verification(expert_id: str, current_user: dict = Depends(require_admin)):
+def cancel_expert_verification(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     """Revoke a previously-approved expert's verified status, putting them
     back into the not-submitted state so they must resubmit to reapply.
     Also clears their submitted documents — cancelling wipes the slate
