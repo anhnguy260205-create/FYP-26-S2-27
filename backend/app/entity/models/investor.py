@@ -217,6 +217,8 @@ class Investor(Base):
         from app.entity.models.notification import Notification
         from app.entity.models.expertfollow import ExpertFollow
         from app.entity.models.expertportfolioreview import ExpertPortfolioReview
+        from app.entity.models.expertprofileview import ExpertProfileView
+        from app.entity.models.chat import Conversation, ChatMessage
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -253,6 +255,26 @@ class Investor(Base):
                 (ExpertPortfolioReview.reviewer_user_id == user_id) |
                 (ExpertPortfolioReview.expert_user_id == user_id)
             ).delete()
+            session.query(ExpertProfileView).filter(
+                ExpertProfileView.investor_id == investor.investor_id
+            ).delete()
+
+            # Chat conversations & messages involving this user — messages are
+            # deleted first since they FK to the conversation, which FKs to
+            # user_account; both must go before the user row can be dropped.
+            conv_ids = [
+                c.conv_id for c in session.query(Conversation).filter(
+                    (Conversation.user_a_id == user_id) |
+                    (Conversation.user_b_id == user_id)
+                ).all()
+            ]
+            if conv_ids:
+                session.query(ChatMessage).filter(
+                    ChatMessage.conv_id.in_(conv_ids)
+                ).delete(synchronize_session=False)
+                session.query(Conversation).filter(
+                    Conversation.conv_id.in_(conv_ids)
+                ).delete(synchronize_session=False)
 
             # 2. Alerts and notifications (keyed by user_id, not investor_id)
             session.query(StockAlert).filter(
