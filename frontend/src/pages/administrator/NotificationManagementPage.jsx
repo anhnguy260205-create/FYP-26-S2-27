@@ -191,7 +191,9 @@ function NotificationManagementPage() {
             </thead>
 
             <tbody>
-              {history.map((b) => (
+              {historyLoading ? (
+                <tr><td colSpan="5" className="px-5 py-10 text-center text-gray-400">Loading notifications…</td></tr>
+              ) : history.map((b) => (
                 <tr key={b.broadcast_id} className="border-b border-gray-100">
                   <td className="px-5 py-5">
                     <div className="flex items-center gap-4">
@@ -214,11 +216,12 @@ function NotificationManagementPage() {
                   <td className="px-5 py-5 text-slate-600">{b.recipient_count}</td>
                   <td className="px-5 py-5 text-slate-600">{formatDate(b.created_at)}</td>
                   <td className="px-5 py-5">
-                    <Trash2
-                      size={18}
+                    <button
                       onClick={() => handleDelete(b.broadcast_id)}
-                      className="text-red-600 cursor-pointer"
-                    />
+                      className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors"
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
                   </td>
                 </tr>
               ))}

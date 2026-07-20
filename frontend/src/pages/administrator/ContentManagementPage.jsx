@@ -47,6 +47,7 @@ function ContentManagementPage() {
   const [form, setForm] = useState({ title: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("hero");
+  const [loading, setLoading] = useState(true);
 
   const fetchContent = async () => {
     const res = await authFetch(API);
@@ -54,7 +55,10 @@ function ContentManagementPage() {
     if (data.success) setContent(data.content);
   };
 
-  useEffect(() => { fetchContent(); }, []);
+  useEffect(() => {
+    setLoading(true);
+    fetchContent().finally(() => setLoading(false));
+  }, []);
 
   const startEdit = (item) => {
     setEditing(item.content_id);
@@ -191,6 +195,10 @@ function ContentManagementPage() {
         <p className="text-xs text-slate-400 mb-4">{activeHint}</p>
       )}
 
+      {loading ? (
+        <div className="bg-white rounded-lg p-10 text-center text-gray-400">Loading content…</div>
+      ) : (
+      <>
       {/* Membership Plans — two columns */}
       {activeTab === "membership" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -453,6 +461,8 @@ function ContentManagementPage() {
             : activeItems.map(renderRow)
           }
         </div>
+      )}
+      </>
       )}
     </AdminLayout>
   );
