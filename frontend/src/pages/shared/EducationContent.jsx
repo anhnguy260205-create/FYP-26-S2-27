@@ -143,10 +143,10 @@ function EducationContent() {
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <motion.div className="min-h-screen flex flex-col"
-        style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 10%, #FFFFFF 100%)" }}
+        style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         {role === "expert" ? <ExpertHeader /> : <GeneralHeader />}
-        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+        <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
           <div style={{ paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
             <div>

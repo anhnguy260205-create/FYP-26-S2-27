@@ -140,11 +140,11 @@ export default function Watchlist() {
     });
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 15%, #FFFFFF 100%)" }}
+            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             {isExpert ? <ExpertHeader /> : <GeneralHeader />}
 
-            <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+            <main style={{ flex: 1, maxWidth: 1100, minHeight: "100vh", margin: "0 auto", width: "100%", padding: "88px 24px 48px", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
 
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
@@ -257,7 +257,7 @@ export default function Watchlist() {
                 )}
 
                 {/* Table */}
-                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}` }}>
+                <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${C.border}`, background: C.card, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
                     {/* Header row */}
                     <div
                         className="grid text-xs uppercase tracking-widest px-5 py-3"
@@ -266,6 +266,7 @@ export default function Watchlist() {
                             color: C.muted,
                             background: C.card2,
                             borderBottom: `1px solid ${C.border}`,
+                            flexShrink: 0,
                         }}
                     >
                         <span>Symbol</span>
@@ -279,20 +280,20 @@ export default function Watchlist() {
                     {/* Data rows */}
                     <AnimatePresence initial={false}>
                         {loading && (
-                            <div className="text-center py-16 text-sm" style={{ color: C.muted, background: C.card }}>
+                            <div className="flex-1 flex items-center justify-center text-sm" style={{ color: C.muted, background: C.card }}>
                                 Loading watchlist...
                             </div>
                         )}
 
                         {!loading && !userId && (
-                            <div className="text-center py-16 text-sm" style={{ color: C.muted, background: C.card }}>
+                            <div className="flex-1 flex items-center justify-center text-sm" style={{ color: C.muted, background: C.card }}>
                                 Please log in to view your watchlist.
                             </div>
                         )}
 
                         {!loading && userId && rows.length === 0 && (
                             <div
-                                className="text-center py-16 text-sm"
+                                className="flex-1 flex items-center justify-center text-sm"
                                 style={{ color: C.muted, background: C.card }}
 
                             >

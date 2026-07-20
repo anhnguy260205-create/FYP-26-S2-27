@@ -1019,7 +1019,7 @@ function LoggedInHomePage() {
       className="relative min-h-screen flex flex-col"
       style={{
         fontFamily: "'DM Sans', sans-serif",
-        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 600px, #FFFFFF 100%)",
+        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 500px, #FFFFFF 100%)",
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1030,6 +1030,7 @@ function LoggedInHomePage() {
       <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8">
         <Hero name={name} portfolioData={portfolioData} />
 
+
         <AIInsightsSection portfolioData={portfolioData} />
         <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
         <WatchlistSection />
@@ -1038,6 +1039,7 @@ function LoggedInHomePage() {
         <PricingTeaserSection />
         <PlatformFeaturesSection />
         <RealtimeDashboardSection />
+
       </main>
       <Footer />
     </motion.div>

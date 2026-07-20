@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../images/logo.png";
 import { logoutAccount } from "../api/userApi";
-import { getNotifications } from "../api/notificationApi.js";
 import { BellRing, ChevronDown, Menu, X } from "lucide-react";
+import NotificationDock from "../components/notifications/NotificationDock.jsx";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -111,17 +111,12 @@ function ExpertHeader() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const notifDockRef = useRef(null);
+  const desktopRightRef = useRef(null);
 
   // localStorage first — sessionStorage clears on tab close
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
-  const [hasUnread, setHasUnread] = useState(false);
-
-  useEffect(() => {
-    if (!currentUser?.user_id) return;
-    getNotifications(currentUser.user_id)
-      .then((res) => { if (res.success) setHasUnread(res.notifications.some((n) => n.is_unread)); })
-      .catch(() => {});
-  }, [currentUser?.user_id]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -191,8 +186,6 @@ function ExpertHeader() {
 
   const isActive = (link) =>
     link.activePaths?.some((p) => location.pathname.startsWith(p)) ?? false;
-  const notifActive = location.pathname.startsWith("/expert/notifications");
-  const notifHighlighted = notifActive || hasUnread;
 
   return (
     <>
@@ -234,15 +227,22 @@ function ExpertHeader() {
         </div>
 
         {/* Desktop right — md and above */}
-        <div className="hidden md:flex items-center gap-3 lg:gap-6">
+        <div className="hidden md:flex items-center gap-3 lg:gap-6" ref={desktopRightRef}>
           <button
-            onClick={() => navigate("/expert/notifications")}
-            className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            data-notification-trigger
+            onClick={() => notifDockRef.current?.toggleOpen(desktopRightRef.current.getBoundingClientRect())}
+            className={`group relative flex items-center gap-2 rounded-full px-3 py-2 font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D3F2] ${notifUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+            aria-label="Notifications"
           >
             <BellRing size={25} />
             <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
               Notification
             </span>
+            {notifUnread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                {notifUnread > 99 ? "99+" : notifUnread}
+              </span>
+            )}
           </button>
           <ProfileButton />
         </div>
@@ -250,14 +250,20 @@ function ExpertHeader() {
         {/* Mobile right */}
         <div className="flex md:hidden items-center gap-2">
           <button
-            onClick={() => navigate("/expert/notifications")}
-            className={`group relative p-2 rounded-full transition-colors duration-150 ${notifHighlighted ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
+            data-notification-trigger
+            onClick={(e) => notifDockRef.current?.toggleOpen(e.currentTarget.getBoundingClientRect())}
+            className={`group relative p-2 rounded-full transition-colors duration-150 ${notifUnread > 0 ? "bg-[#00D3F2]/10 text-[#00D3F2]" : "text-slate-600 hover:bg-slate-100"}`}
             aria-label="Notification"
           >
             <BellRing size={25} />
             <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-150 z-50">
               Notification
             </span>
+            {notifUnread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                {notifUnread > 99 ? "99+" : notifUnread}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -327,6 +333,9 @@ function ExpertHeader() {
           </div>
         </div>
       )}
+
+      {/* Notification panel — triggered from the nav bar bell icon */}
+      <NotificationDock ref={notifDockRef} onUnreadChange={setNotifUnread} />
     </>
   );
 }

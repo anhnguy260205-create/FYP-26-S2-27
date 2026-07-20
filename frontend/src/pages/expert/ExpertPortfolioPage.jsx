@@ -8,28 +8,6 @@ import Footer from "../../layout/Footer.jsx";
 import { getExpertPortfolio } from "../../api/expertApi.js";
 import { authFetch } from "../../api/apiClient.js";
 
-const STORAGE_KEY = "rocketTradeExpertPortfolio";
-
-const DEFAULT_PORTFOLIO = {
-  portfolio_name: "Balanced Growth Portfolio",
-  status: "Active",
-  created_at: "2026-05-06T10:00:00+08:00",
-  last_rebalanced: "2026-05-06T10:00:00+08:00",
-  target_audience: "Premium investors seeking diversified equity exposure",
-  investment_objective: "Generate steady long-term capital growth while keeping sector concentration and downside risk controlled.",
-  time_horizon: "3-5 years",
-  risk_level: "Moderate",
-  description: "A consultant-managed model portfolio focused on resilient large-cap stocks, quality technology exposure and defensive income holdings.",
-  cash_balance: 5000,
-  holdings: [
-    { ticker: "AAPL", company_name: "Apple Inc.", asset_class: "Equity", sector: "Technology", units: 30, average_buy_price: 172.5, current_price: 181.6, total_invested: 5175, allocation_percentage: 20, purchase_rationale: "Strong brand loyalty, stable cash generation and potential upside from services growth." },
-    { ticker: "MSFT", company_name: "Microsoft Corporation", asset_class: "Equity", sector: "Technology", units: 18, average_buy_price: 395, current_price: 412.8, total_invested: 7110, allocation_percentage: 25, purchase_rationale: "Cloud and AI exposure with diversified enterprise revenue streams." },
-    { ticker: "DBS.SI", company_name: "DBS Group Holdings", asset_class: "Equity", sector: "Financials", units: 220, average_buy_price: 36.2, current_price: 38.1, total_invested: 7964, allocation_percentage: 25, purchase_rationale: "Local banking leader with attractive dividends and resilient earnings." },
-    { ticker: "JNJ", company_name: "Johnson & Johnson", asset_class: "Equity", sector: "Healthcare", units: 35, average_buy_price: 151.2, current_price: 156.8, total_invested: 5292, allocation_percentage: 15, purchase_rationale: "Defensive healthcare exposure to reduce cyclical volatility." },
-    { ticker: "KO", company_name: "The Coca-Cola Company", asset_class: "Equity", sector: "Consumer Staples", units: 70, average_buy_price: 61.1, current_price: 63.4, total_invested: 4277, allocation_percentage: 15, purchase_rationale: "Defensive consumer staples holding with dividend stability." },
-  ],
-};
-
 function formatCurrency(value) {
   const n = Number(value || 0);
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -83,7 +61,8 @@ export default function ExpertPortfolioPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const loggedInName = currentUser?.full_name || currentUser?.name || currentUser?.username || currentUser?.email || "Consultant";
-  const [portfolio, setPortfolio] = useState(DEFAULT_PORTFOLIO);
+  const [portfolio, setPortfolio] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [publishing, setPublishing] = useState(false);
 
@@ -110,26 +89,16 @@ export default function ExpertPortfolioPage() {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setPortfolio(JSON.parse(saved));
-      } catch {
-        setPortfolio(DEFAULT_PORTFOLIO);
-      }
-    }
-
-    getExpertPortfolio(currentUser?.user_id)
+    if (!currentUser?.user_id) { setLoading(false); return; }
+    getExpertPortfolio(currentUser.user_id)
       .then((data) => {
-        if (data?.success && data.portfolio) {
-          setPortfolio(data.portfolio);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.portfolio));
-        }
+        if (data?.success && data.portfolio) setPortfolio(data.portfolio);
       })
-      .catch(() => { });
+      .catch(() => { })
+      .finally(() => setLoading(false));
   }, [currentUser?.user_id]);
 
-  const holdings = Array.isArray(portfolio.holdings) ? portfolio.holdings : [];
+  const holdings = Array.isArray(portfolio?.holdings) ? portfolio.holdings : [];
   const filteredHoldings = holdings.filter((h) => {
     const q = search.toLowerCase().trim();
     if (!q) return true;
@@ -151,23 +120,44 @@ export default function ExpertPortfolioPage() {
             <div>
 
               <h1 className="text-3xl font-bold text-white">View My Portfolio</h1>
-              <p className="mt-1 text-sm text-slate-300">Long-term growth portfolio focused on leading technology and innovation-driven companies</p>
+              <p className="mt-1 text-sm text-slate-300">Manage and review the portfolio you've published to investors</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">● {portfolio.status || "Active"}</span>
-              <button onClick={() => navigate("/expert/create-portfolio")} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
-                <Edit3 size={16} /> Edit Portfolio
-              </button>
-              <button onClick={togglePublish} disabled={publishing}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 ${portfolio.is_published
-                  ? "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
-                <Share2 size={16} />
-                {publishing ? "Saving…" : portfolio.is_published ? "Published ✓ (click to unpublish)" : "Publish to Homepage"}
-              </button>
-            </div>
+            {portfolio && (
+              <div className="flex flex-wrap gap-3">
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">● {portfolio.status || "Active"}</span>
+                <button onClick={() => navigate("/expert/create-portfolio")} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">
+                  <Edit3 size={16} /> Edit Portfolio
+                </button>
+                <button onClick={togglePublish} disabled={publishing}
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60 ${portfolio.is_published
+                    ? "border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                  <Share2 size={16} />
+                  {publishing ? "Saving…" : portfolio.is_published ? "Published ✓ (click to unpublish)" : "Publish to Homepage"}
+                </button>
+              </div>
+            )}
           </div>
 
+          {loading ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="h-6 w-52 bg-slate-200 rounded animate-pulse mb-4" />
+              <div className="h-24 bg-slate-100 rounded-2xl animate-pulse" />
+            </div>
+          ) : !portfolio ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center flex flex-col items-center gap-3">
+              <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700"><Briefcase size={28} /></div>
+              <h2 className="text-xl font-bold text-slate-950">You haven't created a portfolio yet</h2>
+              <p className="text-sm text-slate-500 max-w-md">
+                Build a model portfolio to share your holdings, allocation and rationale with investors.
+              </p>
+              <button onClick={() => navigate("/expert/create-portfolio")}
+                className="mt-2 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800">
+                <Edit3 size={16} /> Create Portfolio
+              </button>
+            </div>
+          ) : (
+          <>
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -264,6 +254,8 @@ export default function ExpertPortfolioPage() {
               {filteredHoldings.length === 0 && <div className="p-8 text-center text-sm text-slate-500">No holdings match your search.</div>}
             </div>
           </section>
+          </>
+          )}
         </div>
       </main>
       <Footer />

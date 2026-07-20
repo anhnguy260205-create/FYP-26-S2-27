@@ -207,7 +207,7 @@ function PortfolioOverviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}>
         <GeneralHeader />
         <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: 40, height: 40, border: `3px solid rgba(0,211,242,0.2)`, borderTopColor: C.accentBorder, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -220,11 +220,11 @@ function PortfolioOverviewPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
-      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px", boxSizing: "border-box" }}>
+      <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px", boxSizing: "border-box" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
