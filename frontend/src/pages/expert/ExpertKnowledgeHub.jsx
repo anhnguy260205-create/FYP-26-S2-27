@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ExpertHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getMyArticles, createArticle, updateArticle, deleteArticle } from "../../api/knowledgeHubApi.js";
+import { getPageBackground } from "../../utils/userRole.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -31,8 +32,8 @@ function StatusBadge({ status }) {
 
 const inputStyle = {
   width: "100%", padding: "10px 14px", borderRadius: 8,
-  border: "1px solid rgba(99,179,237,0.2)", background: "rgba(15,23,42,0.7)",
-  color: "#e2e8f0", fontFamily: mono, fontSize: 13,
+  border: "1px solid rgba(178,115,255,0.2)", background: "#f8fafc",
+  color: "#0f172a", fontFamily: mono, fontSize: 13,
 };
 
 function ArticleForm({ initial, onSave, onCancel, saving }) {
@@ -49,9 +50,9 @@ function ArticleForm({ initial, onSave, onCancel, saving }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      style={{ background: "linear-gradient(145deg,rgba(15,23,42,0.9),rgba(30,41,59,0.75))", border: "1px solid rgba(99,179,237,0.2)", borderRadius: 14, padding: "28px 30px" }}>
+      style={{ background: "linear-gradient(145deg,#ffffff,#f8fafc)", border: "1px solid rgba(178,115,255,0.2)", borderRadius: 14, padding: "28px 30px" }}>
 
-      <h2 style={{ fontFamily: mono, fontSize: 16, fontWeight: 700, color: "#e2e8f0", margin: "0 0 22px" }}>
+      <h2 style={{ fontFamily: mono, fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 22px" }}>
         {initial ? "Edit Article" : "Write New Article"}
       </h2>
 
@@ -90,13 +91,13 @@ function ArticleForm({ initial, onSave, onCancel, saving }) {
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 8, flexWrap: "wrap" }}>
           <button onClick={onCancel} style={{
             padding: "10px 22px", borderRadius: 8, cursor: "pointer",
-            border: "1px solid rgba(99,179,237,0.2)", background: "transparent",
+            border: "1px solid rgba(178,115,255,0.2)", background: "transparent",
             color: "#64748b", fontFamily: mono, fontSize: 12, fontWeight: 700,
           }}>Cancel</button>
           <button onClick={() => onSave(form)} disabled={saving || !valid} style={{
             padding: "10px 28px", borderRadius: 8, cursor: "pointer",
-            border: "1px solid rgba(99,179,237,0.5)", background: "rgba(99,179,237,0.15)",
-            color: "#63b3ed", fontFamily: mono, fontSize: 12, fontWeight: 700,
+            border: "1px solid rgba(178,115,255,0.5)", background: "rgba(178,115,255,0.15)",
+            color: "#B273FF", fontFamily: mono, fontSize: 12, fontWeight: 700,
             opacity: saving || !valid ? 0.5 : 1,
           }}>{saving ? "Saving…" : "Submit for Review"}</button>
         </div>
@@ -108,11 +109,11 @@ function ArticleForm({ initial, onSave, onCancel, saving }) {
 function ArticleRow({ article, onEdit, onDelete }) {
   return (
     <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-      style={{ background: "linear-gradient(145deg,rgba(15,23,42,0.85),rgba(30,41,59,0.65))", border: "1px solid rgba(99,179,237,0.1)", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      style={{ background: "linear-gradient(145deg,#ffffff,#f8fafc)", border: "1px solid rgba(178,115,255,0.1)", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>{article.title}</span>
-          <span style={{ fontFamily: mono, fontSize: 9, color: "#64748b", background: "rgba(99,179,237,0.08)", border: "1px solid rgba(99,179,237,0.15)", borderRadius: 4, padding: "2px 8px", textTransform: "uppercase" }}>{article.category}</span>
+          <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{article.title}</span>
+          <span style={{ fontFamily: mono, fontSize: 9, color: "#64748b", background: "rgba(178,115,255,0.08)", border: "1px solid rgba(178,115,255,0.15)", borderRadius: 4, padding: "2px 8px", textTransform: "uppercase" }}>{article.category}</span>
           <StatusBadge status={article.status} />
         </div>
         <p style={{ fontFamily: sans, fontSize: 11, color: "#64748b", margin: 0 }}>
@@ -130,8 +131,8 @@ function ArticleRow({ article, onEdit, onDelete }) {
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         <button onClick={() => onEdit(article)} style={{
           padding: "7px 16px", borderRadius: 7, cursor: "pointer",
-          border: "1px solid rgba(99,179,237,0.3)", background: "rgba(99,179,237,0.08)",
-          color: "#63b3ed", fontFamily: mono, fontSize: 11, fontWeight: 700,
+          border: "1px solid rgba(178,115,255,0.3)", background: "rgba(178,115,255,0.08)",
+          color: "#B273FF", fontFamily: mono, fontSize: 11, fontWeight: 700,
         }}>Edit</button>
         <button onClick={() => onDelete(article)} style={{
           padding: "7px 16px", borderRadius: 7, cursor: "pointer",
@@ -148,22 +149,23 @@ function VerificationWall({ status }) {
   const isPending = status === "pending";
 
   return (
-    <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+    <motion.div className="min-h-screen flex flex-col"
+      style={{ background: getPageBackground() }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <ExpertHeader />
       <main className="flex-1 flex items-center justify-center p-6">
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-          style={{ maxWidth: 520, width: "100%", background: "linear-gradient(145deg,rgba(15,23,42,0.9),rgba(30,41,59,0.75))", border: "1px solid rgba(99,179,237,0.15)", borderRadius: 18, padding: "44px 40px", textAlign: "center" }}>
+          style={{ maxWidth: 520, width: "100%", background: "linear-gradient(145deg,#ffffff,#f8fafc)", border: "1px solid rgba(178,115,255,0.15)", borderRadius: 18, padding: "44px 40px", textAlign: "center" }}>
 
           <div style={{ fontSize: 48, marginBottom: 20 }}>
             {isPending ? "⏳" : "🔒"}
           </div>
 
-          <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 700, color: "#e2e8f0", margin: "0 0 12px", letterSpacing: "0.03em" }}>
+          <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 700, color: "#0f172a", margin: "0 0 12px", letterSpacing: "0.03em" }}>
             {isPending ? "Verification Pending" : "Verification Required"}
           </h2>
 
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#94a3b8", lineHeight: 1.7, margin: "0 0 28px" }}>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#64748b", lineHeight: 1.7, margin: "0 0 28px" }}>
             {isPending
               ? "Your verification request is under review by the admin. You will be able to create and submit articles once approved."
               : "Only verified experts can create and publish educational content. Please submit your verification documents to get started."}
@@ -174,7 +176,7 @@ function VerificationWall({ status }) {
               style={{
                 padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontFamily: "'DM Mono', monospace",
                 fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
-                border: "1px solid rgba(99,179,237,0.5)", background: "rgba(99,179,237,0.15)", color: "#63b3ed",
+                border: "1px solid rgba(178,115,255,0.5)", background: "rgba(178,115,255,0.15)", color: "#B273FF",
               }}>
               Apply for Verification
             </button>
@@ -264,16 +266,17 @@ function ExpertKnowledgeHub() {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <motion.div className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      <motion.div className="min-h-screen flex flex-col"
+        style={{ background: getPageBackground() }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <ExpertHeader />
         <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
-            style={{ paddingBottom: 20, borderBottom: "1px solid rgba(99,179,237,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+            style={{ paddingBottom: 20, borderBottom: "1px solid rgba(178,115,255,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#e2e8f0", margin: 0, letterSpacing: "0.04em" }}>My Articles</h1>
-              <p style={{ fontFamily: sans, fontSize: 13, color: "#94a3b8", margin: "4px 0 0" }}>Write and publish educational content for investors</p>
+              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: "0.04em" }}>My Articles</h1>
+              <p style={{ fontFamily: sans, fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>Write and publish educational content for investors</p>
             </div>
             {mode === "list" && (
               <button onClick={() => { setEditing(null); setMode("create"); }} style={{
@@ -289,9 +292,9 @@ function ExpertKnowledgeHub() {
               {STATUS_TABS.map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)} style={{
                   padding: "6px 16px", borderRadius: 20, cursor: "pointer", fontFamily: mono, fontSize: 11, fontWeight: 700, transition: "all 0.2s",
-                  border: activeTab === tab ? "1px solid rgba(99,179,237,0.5)" : "1px solid rgba(99,179,237,0.15)",
-                  background: activeTab === tab ? "rgba(99,179,237,0.15)" : "rgba(15,23,42,0.5)",
-                  color: activeTab === tab ? "#63b3ed" : "#475569",
+                  border: activeTab === tab ? "1px solid rgba(178,115,255,0.5)" : "1px solid rgba(178,115,255,0.15)",
+                  background: activeTab === tab ? "rgba(178,115,255,0.15)" : "#f1f5f9",
+                  color: activeTab === tab ? "#B273FF" : "#475569",
                 }}>
                   {tab} {counts[tab] > 0 ? <span style={{ opacity: 0.7 }}>({counts[tab]})</span> : ""}
                 </button>
@@ -315,18 +318,18 @@ function ExpertKnowledgeHub() {
               <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 {loading ? (
                   <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-                    <div style={{ width: 36, height: 36, border: "3px solid rgba(99,179,237,0.2)", borderTopColor: "#63b3ed", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <div style={{ width: 36, height: 36, border: "3px solid rgba(178,115,255,0.2)", borderTopColor: "#B273FF", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                   </div>
                 ) : filtered.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "80px 0" }}>
-                    <p style={{ fontFamily: mono, fontSize: 13, color: "#94a3b8", marginBottom: 20 }}>
+                    <p style={{ fontFamily: mono, fontSize: 13, color: "#64748b", marginBottom: 20 }}>
                       {articles.length === 0 ? "You haven't written any articles yet." : `No ${activeTab.toLowerCase()} articles.`}
                     </p>
                     {articles.length === 0 && (
                       <button onClick={() => setMode("create")} style={{
                         padding: "10px 24px", borderRadius: 8, cursor: "pointer",
-                        border: "1px solid rgba(99,179,237,0.4)", background: "rgba(99,179,237,0.1)",
-                        color: "#63b3ed", fontFamily: mono, fontSize: 12, fontWeight: 700,
+                        border: "1px solid rgba(178,115,255,0.4)", background: "rgba(178,115,255,0.1)",
+                        color: "#B273FF", fontFamily: mono, fontSize: 12, fontWeight: 700,
                       }}>Write your first article</button>
                     )}
                   </div>

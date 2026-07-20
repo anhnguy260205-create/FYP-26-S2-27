@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import RoleHeader from "../../layout/RoleHeader.jsx";
-import { isExpertUser } from "../../utils/userRole.js";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useCallback, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -139,7 +139,7 @@ export default function Watchlist() {
     });
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+            style={{ background: getPageBackground() }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             <RoleHeader />
 

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground, getAvatarGradient } from "../../utils/userRole.js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
@@ -183,7 +184,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
             {/* Avatar */}
             <div style={{ position: "relative", padding: "0 18px", marginTop: "-34px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "10px" }}>
                 <div className="relative group" style={{ cursor: "pointer" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #FFFFFF" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: getAvatarGradient(), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #FFFFFF" }}>
                         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
                     </div>
                 </div>
@@ -414,8 +415,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 width: "56px",
                                 height: "56px",
                                 borderRadius: "50%",
-                                background:
-                                    "linear-gradient(135deg, #3b82f6, #0092b8)",
+                                background: getAvatarGradient(),
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -1417,7 +1417,7 @@ function InvestorProfilePage() {
             className="min-h-screen flex flex-col"
             style={{
                 fontFamily: "'DM Sans', sans-serif",
-                background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)",
+                background: getPageBackground(),
             }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

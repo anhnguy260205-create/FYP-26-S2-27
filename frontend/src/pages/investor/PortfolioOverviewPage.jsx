@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground } from "../../utils/userRole.js";
 import { getPortalTransactions, getPortalSummary, getPortfolio } from "../../api/tradingApi.js";
 import useLiveStocks from "../../api/useLiveStocks.js";
 
@@ -207,7 +208,7 @@ function PortfolioOverviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: getPageBackground() }}>
         <GeneralHeader />
         <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: 40, height: 40, border: `3px solid rgba(0,211,242,0.2)`, borderTopColor: C.accentBorder, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -220,7 +221,7 @@ function PortfolioOverviewPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+      style={{ background: getPageBackground() }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
