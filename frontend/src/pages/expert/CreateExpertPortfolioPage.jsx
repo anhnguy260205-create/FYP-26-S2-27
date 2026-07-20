@@ -22,22 +22,16 @@ const emptyHolding = {
   purchase_rationale: "",
 };
 
-const DEFAULT_PORTFOLIO = {
-  portfolio_name: "Balanced Growth Portfolio",
+const EMPTY_PORTFOLIO = {
+  portfolio_name: "",
   status: "Active",
-  target_audience: "Premium investors seeking diversified equity exposure",
-  investment_objective: "Generate steady long-term capital growth while keeping sector concentration and downside risk controlled.",
-  time_horizon: "3-5 years",
+  target_audience: "",
+  investment_objective: "",
+  time_horizon: "",
   risk_level: "Moderate",
-  description: "A consultant-managed model portfolio focused on resilient large-cap stocks, quality technology exposure and defensive income holdings.",
-  cash_balance: 5000,
-  holdings: [
-    { ...emptyHolding, ticker: "AAPL", company_name: "Apple Inc.", asset_class: "Equity", sector: "Technology", units: 30, average_buy_price: 172.5, current_price: 181.6, total_invested: 5175, allocation_percentage: 20, purchase_rationale: "Strong brand loyalty, stable cash generation and potential upside from services growth." },
-    { ...emptyHolding, ticker: "MSFT", company_name: "Microsoft Corporation", asset_class: "Equity", sector: "Technology", units: 18, average_buy_price: 395, current_price: 412.8, total_invested: 7110, allocation_percentage: 25, purchase_rationale: "Cloud and AI exposure with diversified enterprise revenue streams." },
-    { ...emptyHolding, ticker: "DBS.SI", company_name: "DBS Group Holdings", asset_class: "Equity", sector: "Financials", units: 220, average_buy_price: 36.2, current_price: 38.1, total_invested: 7964, allocation_percentage: 25, purchase_rationale: "Local banking leader with attractive dividends and resilient earnings." },
-    { ...emptyHolding, ticker: "JNJ", company_name: "Johnson & Johnson", asset_class: "Equity", sector: "Healthcare", units: 35, average_buy_price: 151.2, current_price: 156.8, total_invested: 5292, allocation_percentage: 15, purchase_rationale: "Defensive healthcare exposure to reduce cyclical volatility." },
-    { ...emptyHolding, ticker: "KO", company_name: "The Coca-Cola Company", asset_class: "Equity", sector: "Consumer Staples", units: 70, average_buy_price: 61.1, current_price: 63.4, total_invested: 4277, allocation_percentage: 15, purchase_rationale: "Defensive consumer staples holding with dividend stability." },
-  ],
+  description: "",
+  cash_balance: 0,
+  holdings: [],
 };
 
 function normaliseHoldings(holdings) {
@@ -45,39 +39,17 @@ function normaliseHoldings(holdings) {
   return holdings.map((h) => ({ ...emptyHolding, ...h }));
 }
 
-function mergeMissingDemoHoldings(portfolio) {
-  const currentHoldings = normaliseHoldings(portfolio.holdings);
-  const isOldDemoPortfolio =
-    (portfolio.portfolio_name || "") === DEFAULT_PORTFOLIO.portfolio_name &&
-    currentHoldings.length > 0 &&
-    currentHoldings.length < DEFAULT_PORTFOLIO.holdings.length;
-
-  if (!isOldDemoPortfolio) {
-    return { ...portfolio, holdings: currentHoldings };
-  }
-
-  const existingTickers = new Set(currentHoldings.map((h) => String(h.ticker || "").toUpperCase()));
-  const missingDefaults = DEFAULT_PORTFOLIO.holdings.filter(
-    (h) => !existingTickers.has(String(h.ticker || "").toUpperCase())
-  );
-
-  return {
-    ...DEFAULT_PORTFOLIO,
-    ...portfolio,
-    holdings: [...currentHoldings, ...missingDefaults],
-  };
-}
-
 function loadInitialPortfolio() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
-      return mergeMissingDemoHoldings(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      return { ...EMPTY_PORTFOLIO, ...parsed, holdings: normaliseHoldings(parsed.holdings) };
     } catch {
       /* ignore broken local data */
     }
   }
-  return DEFAULT_PORTFOLIO;
+  return EMPTY_PORTFOLIO;
 }
 
 export default function CreateExpertPortfolioPage() {
@@ -95,16 +67,12 @@ export default function CreateExpertPortfolioPage() {
     getExpertPortfolio(currentUser?.user_id)
       .then((data) => {
         if (!active || !data?.success || !data?.portfolio) return;
-        const backendPortfolio = mergeMissingDemoHoldings(data.portfolio);
-        setPortfolio((prev) => {
-          const backendCount = backendPortfolio.holdings?.length || 0;
-          const currentCount = prev.holdings?.length || 0;
-          return backendCount >= currentCount ? backendPortfolio : prev;
-        });
+        const backendPortfolio = { ...EMPTY_PORTFOLIO, ...data.portfolio, holdings: normaliseHoldings(data.portfolio.holdings) };
+        setPortfolio(backendPortfolio);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(backendPortfolio));
       })
       .catch(() => {
-        // Local/default data is still enough for frontend testing.
+        // Backend unavailable — keep the locally-drafted portfolio.
       });
     return () => {
       active = false;
