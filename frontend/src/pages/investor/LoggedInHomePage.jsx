@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
+import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
@@ -1019,7 +1020,7 @@ function LoggedInHomePage() {
       className="relative min-h-screen flex flex-col"
       style={{
         fontFamily: "'DM Sans', sans-serif",
-        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 500px, #FFFFFF 100%)",
+        background: getPageBackground(500),
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

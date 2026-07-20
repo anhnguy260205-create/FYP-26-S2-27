@@ -6,6 +6,7 @@ import { BellRing, ChevronDown, Menu, MessageCircle, X } from "lucide-react";
 
 import ChatDock from "../components/chat/ChatDock.jsx";
 import NotificationDock from "../components/notifications/NotificationDock.jsx";
+import { getAvatarGradient } from "../utils/userRole.js";
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ function Profile() {
       style={{ height: "41px", padding: "0 8px", color: "black", fontSize: "14px", fontWeight: 600 }}
     >
       <div style={{
-        width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)",
+        width: "40px", height: "40px", borderRadius: "50%", background: getAvatarGradient(),
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
       }}>
         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground } from "../../utils/userRole.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -114,7 +115,6 @@ export default function ExpertPortfolio() {
     const role = String(currentUser?.role || "").toLowerCase();
     // Merged roles: experts are investors with the is_expert flag.
     const isExpert = currentUser?.is_expert === true || role === "expert";
-    const canManage = isExpert && currentUser?.verification_status === "approved";
 
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
@@ -155,7 +155,7 @@ export default function ExpertPortfolio() {
 
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)", color: C.text }}
+            style={{ background: getPageBackground(), color: C.text }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
             <RoleHeader />
 
@@ -187,24 +187,6 @@ export default function ExpertPortfolio() {
                         </p>
                     </div>
 
-                    {canManage && (
-                        <button
-                            onClick={() => navigate("/expert/portfolio")}
-                            style={{
-                                padding: "10px 20px",
-                                borderRadius: "10px",
-                                cursor: "pointer",
-                                background: "rgba(0,211,242,0.12)",
-                                border: "1px solid rgba(0,211,242,0.3)",
-                                color: C.cyan,
-                                fontWeight: 600,
-                                fontSize: 14,
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            My Portfolio
-                        </button>
-                    )}
                 </div>
                 <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
 

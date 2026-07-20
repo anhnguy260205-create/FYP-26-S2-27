@@ -93,7 +93,7 @@ export default function BecomeExpertPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #B273FF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 

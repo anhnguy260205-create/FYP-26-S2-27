@@ -31,3 +31,14 @@ export function isPremiumUser(user) {
     isVerifiedExpert(user)
   );
 }
+
+export function getPageBackground(fadeAt = 130) {
+  const top = isExpertUser(getStoredUser()) ? "#B273FF" : "#73ADFF";
+  return `linear-gradient(to bottom, ${top} 0px, #FFFFFF ${fadeAt}px, #FFFFFF 100%)`;
+}
+
+export function getAvatarGradient() {
+  return isExpertUser(getStoredUser())
+    ? "linear-gradient(135deg, #4338ca, #7e22ce)"
+    : "linear-gradient(135deg, #0092b8, #155dfc)";
+}
