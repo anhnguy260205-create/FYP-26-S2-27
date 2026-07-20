@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { auth } from "../../firebase.js";
 import { changePassword } from "../../api/userApi.js";
 
 const inputStyle = {
@@ -88,24 +86,12 @@ function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      // Verify current password via Firebase client SDK (most reliable method)
-      const user = auth.currentUser;
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-    } catch (err) {
-      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
-        setError("Current password is incorrect.");
-      } else {
-        setError("Failed to verify current password. Please try again.");
-      }
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const result = await changePassword(newPassword);
+      // Current password is verified server-side. (Client-side reauthenticate
+      // starts a new Firebase session, which invalidates the MFA session and
+      // makes the backend reject the request.)
+      const result = await changePassword(currentPassword, newPassword);
       if (!result.success) {
-        setError(result.message || "Failed to change password.");
+        setError(result.message || result.detail?.message || "Failed to change password.");
         return;
       }
       setSuccess(true);
@@ -118,7 +104,10 @@ function ChangePasswordPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col"
+      style={{
+        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 600px, #FFFFFF 100%)",
+      }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -127,8 +116,12 @@ function ChangePasswordPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[460px]">
           <div
-            className="bg-[rgba(255,255,255,0.82)] w-full flex flex-col justify-center"
-            style={{ borderRadius: "30px", padding: "36px 28px" }}
+            className="bg-white w-full flex flex-col justify-center"
+            style={{
+              borderRadius: "30px",
+              padding: "36px 28px",
+              boxShadow: "0 20px 45px rgba(15,23,42,0.12)",
+            }}
           >
             {/* Icon + title */}
             <div className="flex flex-col items-center mb-6">

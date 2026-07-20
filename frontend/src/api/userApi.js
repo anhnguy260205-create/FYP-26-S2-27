@@ -212,10 +212,13 @@ export const updateSubscriptionStatus = async (userId, planType) => {
   return result;
 };
 
-export const changePassword = async (newPassword) => {
+export const changePassword = async (currentPassword, newPassword) => {
   const response = await authFetch(`${BASE_URL}/change-password`, {
     method: "POST",
-    body: JSON.stringify({ new_password: newPassword }),
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
   });
   return response.json();
 };

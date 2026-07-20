@@ -100,6 +100,7 @@ def reset_password(request: Request, data: ResetPasswordRequest):
 
 # ---- Change password (authenticated users) ----
 class ChangePasswordRequest(BaseModel):
+    current_password: str
     new_password: str
 
 
@@ -107,13 +108,15 @@ class ChangePasswordBoundary:
     def __init__(self):
         self.controller = ChangePasswordController()
 
-    def change_password(self, email, new_password):
-        return self.controller.change_password(email, new_password)
+    def change_password(self, email, current_password, new_password):
+        return self.controller.change_password(email, current_password, new_password)
 
 
 @router.post("/change-password")
 def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
-    if len(data.new_password) < 8:
-        return {"success": False, "message": "Password must be at least 8 characters"}
+    if len(data.new_password) < 8 or len(data.new_password) > 24:
+        return {"success": False, "message": "Password must be 8-24 characters"}
+    if data.new_password == data.current_password:
+        return {"success": False, "message": "New password must be different from your current password"}
     boundary = ChangePasswordBoundary()
-    return boundary.change_password(current_user["email"], data.new_password)
+    return boundary.change_password(current_user["email"], data.current_password, data.new_password)
