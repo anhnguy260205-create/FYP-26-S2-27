@@ -14,6 +14,14 @@ const RANGE_OPTIONS = [
   { label: "12M", months: 12 },
 ];
 
+// The three things the platform earns from. Keys must match REVENUE_SOURCES
+// in backend/app/entity/models/wallet.py.
+const REVENUE_SOURCES = [
+  { key: "subscription", label: "Subscriptions", dot: "bg-green-500" },
+  { key: "trade_fee", label: "Trading fees", dot: "bg-sky-500" },
+  { key: "gift_commission", label: "Gift commission", dot: "bg-amber-500" },
+];
+
 function SubscriptionManagementPage() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -84,7 +92,7 @@ function SubscriptionManagementPage() {
                 <DollarSign size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-900">Revenue</h3>
+                <h3 className="font-bold text-lg text-slate-900">Platform Revenue</h3>
                 <p className="text-sm text-gray-500">
                   <span className="font-semibold text-slate-900">
                     ${revenueStats.total.toLocaleString("en-US")}
@@ -126,6 +134,28 @@ function SubscriptionManagementPage() {
               <RevenueBarChart series={revenueStats.series} loading={revenueLoading} />
             )}
           </div>
+
+          {/* Where the total comes from. Without this the headline number is
+              unexplainable — it is no longer just subscriptions. */}
+          {revenueStats.by_source && (
+            <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {REVENUE_SOURCES.map((source) => (
+                <div key={source.key} className="rounded-xl bg-gray-50 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-2 h-2 rounded-sm ${source.dot}`} />
+                    <span className="text-xs font-medium text-gray-500">
+                      {source.label}
+                    </span>
+                  </div>
+                  <div className="font-bold text-slate-900 tabular-nums">
+                    ${(revenueStats.by_source[source.key] ?? 0).toLocaleString("en-US", {
+                      minimumFractionDigits: 2, maximumFractionDigits: 2,
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Investor Tiers */}

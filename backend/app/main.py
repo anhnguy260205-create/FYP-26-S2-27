@@ -52,7 +52,13 @@ from app.entity.models.predictionusage import PredictionUsage
 from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
 from app.entity.models.expertfollow import ExpertFollow
 from app.entity.models.expertportfolioreview import ExpertPortfolioReview
-from app.entity.models.expertcompensation import ExpertCompensationLedger
+from app.entity.models.expertcompensation import (
+    ExpertCompensationLedger, ensure_compensation_schema,
+)
+from app.entity.models.wallet import (
+    WalletTransaction, PlatformRevenue, backfill_subscription_revenue,
+)
+from app.entity.models.gift import Gift
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
@@ -75,6 +81,7 @@ from app.boundary.contentb import router as content_router
 from app.boundary.chatbotb import router as chatbot_router
 from app.boundary.reviewb import router as review_router
 from app.boundary.chatb import router as chat_router
+from app.boundary.walletb import router as wallet_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 from app.control.services.email_service import send_renewal_reminder_email
@@ -344,13 +351,16 @@ async def renewal_reminder_poller():
 
 
 async def expert_compensation_poller():
-    """Once a day, materialize any completed calendar months of expert
-    compensation that haven't been recorded yet (idempotent — safe to run
-    repeatedly)."""
+    """Once a day, settle the most recently completed calendar month: snapshot
+    each expert's premium follower count, credit their paper_money, and log the
+    payout to the wallet ledger.
+
+    Idempotent — a month already marked paid is skipped, so running daily (and
+    re-running after a restart) never double-pays."""
     await asyncio.sleep(45)  # short delay after server start
     while True:
         try:
-            await asyncio.to_thread(ExpertCompensationLedger.materialize_completed_months)
+            await asyncio.to_thread(ExpertCompensationLedger.run_monthly_payout)
         except Exception as e:
             print(f"[COMPENSATION] Poller error: {e}")
         await asyncio.sleep(86400)  # once a day
@@ -395,6 +405,12 @@ if RUN_SCHEMA_PATCHES:
     ensure_forum_schema(engine)
     ensure_all_schemas(engine)
     ensure_forum_schema(engine)
+    # create_all() adds missing TABLES but never missing COLUMNS — the
+    # compensation rewrite added columns to an existing table.
+    try:
+        ensure_compensation_schema()
+    except Exception as _e:
+        print(f"[SCHEMA] Compensation schema patch skipped: {_e}")
 else:
     print("[STARTUP] Schema patches skipped")
 
@@ -409,6 +425,12 @@ if RUN_SEEDS:
     seed_landing_content()
     seed_forum_posts()
     seed_reviews()
+    # Pull pre-existing subscriptions into the revenue ledger so the finance
+    # dashboard isn't blank on first run. Idempotent.
+    try:
+        backfill_subscription_revenue()
+    except Exception as _e:
+        print(f"[REVENUE] Subscription backfill skipped: {_e}")
 else:
     print("[STARTUP] Seed data skipped")
 
@@ -439,6 +461,7 @@ app.include_router(content_router)
 app.include_router(chatbot_router)
 app.include_router(review_router)
 app.include_router(chat_router)
+app.include_router(wallet_router)
 
 
 @app.middleware("http")

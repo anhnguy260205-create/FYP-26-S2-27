@@ -172,10 +172,15 @@ function GeneralHeader() {
     },
     {
       label: "Transactions",
-      activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
+      activePaths: [
+        "/investor/portfolio-overview",
+        "/investor/transaction-history",
+        "/investor/cash",
+      ],
       submenu: [
         { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
         { title: "Transaction History", path: "/investor/transaction-history" },
+        { title: "Cash In / Cash Out", path: "/investor/cash" },
       ],
     },
 

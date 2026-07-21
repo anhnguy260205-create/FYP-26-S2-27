@@ -201,7 +201,19 @@ function AllocationPie({ holdings }) {
     );
 }
 
-function PortfolioSection({ portfolio, error }) {
+function PortfolioSection({ portfolio, error, notPublished }) {
+    if (notPublished) {
+        return (
+            <div style={{ ...CARD, padding: 28 }} className="mt-6 text-center">
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#0B1D4F", margin: 0 }}>
+                    Portfolio not published
+                </p>
+                <p style={{ fontSize: 13, color: "#5B6C88", margin: "6px 0 0" }}>
+                    This expert hasn't published their trading portfolio yet — check back later.
+                </p>
+            </div>
+        );
+    }
     if (error) {
         return (
             <div style={{ ...CARD, padding: 24 }} className="mt-6 text-center">
@@ -469,6 +481,7 @@ function ExpertDetails() {
     const [profile, setProfile] = useState(null);
     const [portfolio, setPortfolio] = useState(null);   // expert-created portfolio
     const [portfolioError, setPortfolioError] = useState("");
+    const [portfolioNotPublished, setPortfolioNotPublished] = useState(false);
     const [quota, setQuota] = useState({});      // views_used / views_limit
     const [limitReached, setLimitReached] = useState(false);
     const [error, setError] = useState("");
@@ -507,6 +520,7 @@ function ExpertDetails() {
                     getExpertPortfolio(userId)
                         .then(p => {
                             if (p?.success && p.portfolio) setPortfolio(p.portfolio);
+                            else if (p?.not_published) setPortfolioNotPublished(true);
                             else setPortfolioError(p?.message || "Portfolio not available.");
                         })
                         .catch(err => {
@@ -812,7 +826,7 @@ function ExpertDetails() {
                         )}
 
                         {tab === "portfolio" && (
-                            <PortfolioSection portfolio={portfolio} error={portfolioError} />
+                            <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />
                         )}
 
                         {tab === "reviews" && (

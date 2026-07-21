@@ -5,6 +5,7 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
 import { getPortalTransactions } from "../../api/tradingApi.js";
+import { getWalletOverview } from "../../api/walletApi.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -39,25 +40,44 @@ function fmtDate(iso) {
 }
 
 /* ─── Type badge ───────────────────────────────────────────────────────── */
+// Stock trades plus the non-trade money movements (deposits, fees, gifts,
+// compensation) that now share this timeline.
+const BADGES = {
+  buy: { label: "▲ BUY", color: C.success },
+  sell: { label: "▼ SELL", color: C.danger },
+  cash_in: { label: "↓ DEPOSIT", color: C.success },
+  cash_out: { label: "↑ WITHDRAW", color: C.danger },
+  platform_fee: { label: "● FEE", color: C.danger },
+  gift_sent: { label: "🎁 GIFT SENT", color: C.danger },
+  gift_received: { label: "🎁 GIFT", color: C.success },
+  compensation: { label: "★ PAYOUT", color: C.success },
+};
+
 function TypeBadge({ type }) {
-  const buy = type === "buy";
+  const meta = BADGES[type] ?? { label: String(type).toUpperCase(), color: C.muted };
+  const positive = meta.color === C.success;
   return (
     <span style={{
       fontFamily: mono, fontSize: 11, fontWeight: 700,
       letterSpacing: "0.1em", textTransform: "uppercase",
-      padding: "3px 10px", borderRadius: 20,
-      color: buy ? C.success : C.danger,
-      background: buy ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)",
-      border: `1px solid ${buy ? "rgba(15,157,88,0.3)" : "rgba(220,38,38,0.3)"}`,
+      padding: "3px 10px", borderRadius: 20, whiteSpace: "nowrap",
+      color: meta.color,
+      background: positive ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)",
+      border: `1px solid ${positive ? "rgba(15,157,88,0.3)" : "rgba(220,38,38,0.3)"}`,
     }}>
-      {buy ? "▲ BUY" : "▼ SELL"}
+      {meta.label}
     </span>
   );
 }
 
 /* ─── Table row ────────────────────────────────────────────────────────── */
 function TxRow({ tx, index }) {
-  const buy = tx.transaction_type === "buy";
+  // Wallet rows carry a signed amount and have no symbol/qty/price; trades
+  // carry a positive total whose direction comes from buy vs sell.
+  const isWallet = tx.kind === "wallet";
+  const negative = isWallet ? tx.signed_amount < 0 : tx.transaction_type === "buy";
+  const magnitude = isWallet ? Math.abs(tx.signed_amount) : tx.total_amount;
+
   return (
     <motion.tr
       initial={{ opacity: 0, y: 6 }}
@@ -69,15 +89,19 @@ function TxRow({ tx, index }) {
       }}
     >
       <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 11, color: C.muted }}>{fmtDate(tx.transaction_date)}</td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.heading, letterSpacing: "0.05em" }}>{tx.symbol}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.heading, letterSpacing: "0.05em" }}>
+        {isWallet
+          ? <span style={{ fontWeight: 400, fontSize: 12, color: C.muted, letterSpacing: 0 }}>{tx.description || "—"}</span>
+          : tx.symbol}
+      </td>
       <td style={{ padding: "12px 14px" }}><TypeBadge type={tx.transaction_type} /></td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.heading, textAlign: "right" }}>{tx.quantity}</td>
-      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.muted, textAlign: "right" }}>{fmt$(tx.price)}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.heading, textAlign: "right" }}>{isWallet ? "—" : tx.quantity}</td>
+      <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 13, color: C.muted, textAlign: "right" }}>{isWallet ? "—" : fmt$(tx.price)}</td>
       <td style={{
         padding: "12px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, textAlign: "right",
-        color: buy ? C.danger : C.success
+        color: negative ? C.danger : C.success
       }}>
-        {buy ? "-" : "+"}{fmt$(tx.total_amount)}
+        {negative ? "-" : "+"}{fmt$(magnitude)}
       </td>
     </motion.tr>
   );
@@ -119,15 +143,52 @@ function TransactionHistoryPage() {
 
   useEffect(() => {
     if (!currentUser?.user_id) { setLoading(false); return; }
-    getPortalTransactions(currentUser.user_id, { limit: 200 })
-      .then(res => { if (res.success) setTransactions(res.transactions); })
+
+    // Trades and wallet movements live in separate tables; merge them into one
+    // chronological statement so fees, gifts and payouts sit alongside trades.
+    Promise.all([
+      getPortalTransactions(currentUser.user_id, { limit: 200 }),
+      getWalletOverview().catch(() => ({ success: false })),
+    ])
+      .then(([tradeRes, walletRes]) => {
+        const trades = tradeRes.success
+          ? tradeRes.transactions.map(t => ({ ...t, kind: "trade" }))
+          : [];
+
+        const wallet = walletRes.success
+          ? (walletRes.transactions || []).map(w => ({
+            kind: "wallet",
+            transaction_id: w.wallet_txn_id,
+            transaction_date: w.created_at,
+            transaction_type: w.txn_type,
+            description: w.description,
+            signed_amount: w.amount,
+            symbol: "",
+          }))
+          : [];
+
+        setTransactions(
+          [...trades, ...wallet].sort(
+            (a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)
+          )
+        );
+      })
       .finally(() => setLoading(false));
   }, [currentUser?.user_id]);
 
   const filtered = transactions.filter(tx => {
-    if (filterSymbol !== "ALL" && tx.symbol !== filterSymbol) return false;
-    if (filterType !== "ALL" && tx.transaction_type !== filterType) return false;
-    if (search && !tx.symbol.toLowerCase().includes(search.toLowerCase())) return false;
+    const isWallet = tx.kind === "wallet";
+    // Symbol filters only make sense for trades — a symbol filter hides wallet
+    // rows entirely rather than matching them against an empty string.
+    if (filterSymbol !== "ALL" && (isWallet || tx.symbol !== filterSymbol)) return false;
+    if (filterType === "trades" && isWallet) return false;
+    if (filterType === "wallet" && !isWallet) return false;
+    if (filterType !== "ALL" && filterType !== "trades" && filterType !== "wallet"
+      && tx.transaction_type !== filterType) return false;
+    if (search) {
+      const haystack = `${tx.symbol || ""} ${tx.description || ""}`.toLowerCase();
+      if (!haystack.includes(search.toLowerCase())) return false;
+    }
     return true;
   });
 
@@ -156,7 +217,7 @@ function TransactionHistoryPage() {
             Transaction History
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-            All executed buy &amp; sell orders
+            Executed trades, plus deposits, fees, gifts and expert payouts
           </p>
           <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(15,23,42,0.1)" }} />
         </div>
@@ -197,7 +258,7 @@ function TransactionHistoryPage() {
             <option value="ALL">All Symbols</option>
             {SYMBOLS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          {["ALL", "buy", "sell"].map(t => (
+          {["ALL", "buy", "sell", "wallet"].map(t => (
             <button key={t} onClick={() => setFilterType(t)} style={{
               height: 36, padding: "0 14px", borderRadius: 8, cursor: "pointer",
               border: filterType === t ? `1px solid rgba(0,211,242,0.5)` : `1px solid ${C.border}`,
@@ -205,7 +266,7 @@ function TransactionHistoryPage() {
               color: filterType === t ? C.accentText : C.muted,
               fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
             }}>
-              {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : "▼ Sells"}
+              {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : t === "sell" ? "▼ Sells" : "Cash & Fees"}
             </button>
           ))}
           {hasFilter && (
