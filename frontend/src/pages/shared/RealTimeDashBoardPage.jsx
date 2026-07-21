@@ -463,7 +463,7 @@ function RealTimeDashBoardPage() {
               background: marketStatus === "OPEN" ? "#0F9D58" : "#94A3B8",
               boxShadow: marketStatus === "OPEN" ? "0 0 0 5px rgba(15,157,88,0.18)" : "none",
             }} className={marketStatus === "OPEN" ? "animate-pulse" : ""} />
-            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(26px, 6vw, 40px)", fontWeight: 800, letterSpacing: "0.02em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
+            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
               Real-Time Dashboard
             </h1>
           </div>

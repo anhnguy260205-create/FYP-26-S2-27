@@ -546,7 +546,7 @@ function ForumHome({
                             <ArrowLeft size={15} /> All Topics
                         </button>
                     )}
-                    <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: 0, lineHeight: 1 }}>
+                    <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: 0, lineHeight: 1 }}>
                         {activeRoom || "Community Forum"}
                     </h1>
                     {activeRoom && (

@@ -148,7 +148,7 @@ export default function Watchlist() {
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
                             My Watchlist
                         </h1>
                         <p className="mt-1.5 text-sm" style={{ color: C.muted }}>

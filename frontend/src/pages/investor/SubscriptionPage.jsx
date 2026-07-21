@@ -243,7 +243,7 @@ function SubscriptionPage() {
           transition={{ duration: 0.3 }}
           style={{ textAlign: "center" }}
         >
-          <h1 style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 700, color: "#0F172A", margin: "0 0 10px", letterSpacing: "-0.01em" }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, color: "#0F172A", margin: "0 0 10px", letterSpacing: "0.04em" }}>
             Choose your plan
           </h1>
           <p style={{ fontSize: "15px", color: "#64748B", margin: "0 auto", maxWidth: "480px" }}>
