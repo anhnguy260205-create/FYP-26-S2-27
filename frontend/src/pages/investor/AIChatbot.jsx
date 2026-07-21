@@ -406,11 +406,11 @@ function AIChatbot() {
                                     disabled={loading}
                                     placeholder="Ask about a stock, indicator, strategy… (Enter to send, Shift+Enter for newline)"
                                     rows={1}
+                                    className="border border-[rgba(0,211,242,0.2)] focus:border-[#00D3F2] transition-colors"
                                     style={{
                                         flex: 1, minHeight: "46px", maxHeight: "120px",
                                         borderRadius: "12px",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        background: "rgba(255,255,255,0.05)",
+                                        background: "rgba(0,211,242,0.05)",
                                         padding: "13px 16px",
                                         outline: "none",
                                         resize: "none",
