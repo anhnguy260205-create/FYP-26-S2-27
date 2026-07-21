@@ -1,4 +1,6 @@
+import { signOut } from "firebase/auth";
 import { authFetch } from "./apiClient";
+import { auth } from "../firebase";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/user`;
 
@@ -107,13 +109,19 @@ export const resendLoginOtp = async () => {
 
 export const logoutAccount = async () => {
   const response = await authFetch(`${BASE_URL}/logout`, { method: "POST" });
-  return response.json();
+  const result = await response.json();
+  // End the Firebase session too — otherwise auth_time (and the email-OTP
+  // verification tied to it) survives the app-level logout, letting the
+  // next login skip the OTP step.
+  await signOut(auth).catch(() => {});
+  return result;
 };
 
 /** Fire-and-forget logout for tab close/navigation-away — keepalive lets the
  * request finish after the page starts unloading. */
 export const logoutOnUnload = () => {
   authFetch(`${BASE_URL}/logout`, { method: "POST", keepalive: true });
+  signOut(auth).catch(() => {});
 };
 
 export const getInvestorInformation = async (userId) => {

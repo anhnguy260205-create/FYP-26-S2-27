@@ -33,7 +33,7 @@ function formatFullDate(isoDate) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-const CHART_HEIGHT = 200;
+const CHART_HEIGHT = 320;
 const Y_AXIS_WIDTH = 36;
 const PADDING_BOTTOM = 24;
 const PADDING_TOP = 12;
