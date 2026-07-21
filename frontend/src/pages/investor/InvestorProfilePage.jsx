@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
-import { getPageBackground, getAvatarGradient } from "../../utils/userRole.js";
+import { getPageBackground, getAvatarGradient, isExpertUser } from "../../utils/userRole.js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
@@ -204,7 +204,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{currentUser?.role}</span>
+                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{isExpertUser(currentUser) ? "Expert" : "Investor"}</span>
                 </div>
             </div>
 
