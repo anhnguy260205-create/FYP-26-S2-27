@@ -270,6 +270,7 @@ class Investor(Base):
         from app.entity.models.expertportfolioreview import ExpertPortfolioReview
         from app.entity.models.expertprofileview import ExpertProfileView
         from app.entity.models.chat import Conversation, ChatMessage
+        from app.entity.models.wallet import WalletTransaction
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -282,6 +283,9 @@ class Investor(Base):
             # exists for almost any real account).
             session.query(Transaction).filter(
                 Transaction.investor_id == investor.investor_id
+            ).delete()
+            session.query(WalletTransaction).filter(
+                WalletTransaction.investor_id == investor.investor_id
             ).delete()
             session.query(Holding).filter(
                 Holding.investor_id == investor.investor_id

@@ -3,12 +3,16 @@ from datetime import datetime
 from app.entity.models.expert import Expert
 from app.entity.models.expertverification import ExpertVerification
 from app.entity.models.expertfollow import ExpertFollow
+from app.entity.models.expertportfolioreview import ExpertPortfolioReview
 from app.entity.models.gift import Gift
 from app.entity.models.expertcompensation import (
     ExpertCompensationLedger,
     RATE_PER_PREMIUM_FOLLOWER,
     FOLLOWER_THRESHOLD,
+    FOLLOWER_COUNT_THRESHOLD,
+    RATING_THRESHOLD,
     calculate_compensation,
+    is_compensation_eligible,
     TZ,
     _month_start,
     _add_month,
@@ -28,8 +32,10 @@ class ExpertCompensationController:
 
         follower_count = ExpertFollow.get_follower_count(user_id)
         premium_follower_count = ExpertFollow.get_premium_follower_count(user_id)
+        rating_average = ExpertPortfolioReview.get_stats(user_id)["average"]
 
-        eligible = verified and premium_follower_count > FOLLOWER_THRESHOLD
+        eligible = is_compensation_eligible(
+            verified, follower_count, rating_average)
         # What the current month is worth SO FAR. The figure is snapshotted
         # when the month closes, so it moves as followers come and go until
         # then — it's a projection, not a promise.
@@ -47,8 +53,11 @@ class ExpertCompensationController:
             "eligible": eligible,
             "follower_count": follower_count,
             "premium_follower_count": premium_follower_count,
+            "rating_average": rating_average,
             "rate_per_premium_follower": RATE_PER_PREMIUM_FOLLOWER,
             "follower_threshold": FOLLOWER_THRESHOLD,
+            "follower_count_threshold": FOLLOWER_COUNT_THRESHOLD,
+            "rating_threshold": RATING_THRESHOLD,
             "projected_payout": projected_payout,
             # Kept under the old key so existing UI bindings keep working.
             "pending_payout": projected_payout,
@@ -58,15 +67,17 @@ class ExpertCompensationController:
             "gift_count": gift_totals["gift_count"],
             "total_gifts_received": gift_totals["total_received"],
             "ineligible_reason": self._ineligible_reason(
-                verified, premium_follower_count),
+                verified, follower_count, rating_average),
         }
 
     @staticmethod
-    def _ineligible_reason(verified, premium_follower_count):
+    def _ineligible_reason(verified, follower_count, rating_average):
         if not verified:
             return "Your expert account is not verified yet."
-        if premium_follower_count <= FOLLOWER_THRESHOLD:
-            return "You have no premium followers yet."
+        if follower_count < FOLLOWER_COUNT_THRESHOLD:
+            return f"Reach {FOLLOWER_COUNT_THRESHOLD} followers to unlock compensation (currently {follower_count})."
+        if rating_average < RATING_THRESHOLD:
+            return f"Keep your rating at {RATING_THRESHOLD}★ or higher to unlock compensation (currently {rating_average}★)."
         return None
 
     @staticmethod

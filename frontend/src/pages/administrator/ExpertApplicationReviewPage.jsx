@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban, DollarSign, Users, Star, Lock, Calendar } from "lucide-react";
-import FinanceAdminLayout from "../../layout/FinanceAdminPage.jsx";
+import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import LoginActivityChart from "../../components/admin/LoginActivityChart.jsx";
 
@@ -47,7 +47,7 @@ function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
   return (
     <div>
       <button onClick={onBack} className="mb-6 bg-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-700">
-        <ArrowLeft size={16} /> Back to Applications
+        Back to Applications
       </button>
 
       <div className="bg-white rounded-lg p-8 space-y-8">
@@ -197,7 +197,7 @@ function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
   );
 }
 
-function VerifyDocumentationPage() {
+function ExpertApplicationReviewPage() {
   const [experts, setExperts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -280,7 +280,6 @@ function VerifyDocumentationPage() {
   const filtered = filter === "all" ? experts : experts.filter(e => e.verification_status === filter);
   const counts = {
     all: experts.length,
-    not_submitted: experts.filter(e => e.verification_status === "not_submitted").length,
     pending: experts.filter(e => e.verification_status === "pending").length,
     approved: experts.filter(e => e.verification_status === "approved").length,
     rejected: experts.filter(e => e.verification_status === "rejected").length,
@@ -288,20 +287,19 @@ function VerifyDocumentationPage() {
 
   if (selected) {
     return (
-      <FinanceAdminLayout title="Expert Document Verification" subtitle="Review and verify documents submitted by expert applicants">
+      <AdminLayout title="Expert Application Review" subtitle="Review and verify documents submitted by expert applicants">
         <DetailView application={selected} onBack={() => setSelected(null)} onApprove={handleApprove} onReject={handleReject} onCancel={handleCancel} />
-      </FinanceAdminLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <FinanceAdminLayout title="Expert Document Verification" subtitle="Review and verify documents submitted by expert applicants">
+    <AdminLayout title="Expert Application Review" subtitle="Review and verify documents submitted by expert applicants">
       <div className="space-y-5">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { key: "all", label: "Total", color: "border-blue-200 bg-blue-50 text-blue-700" },
-            { key: "not_submitted", label: "Unverified", color: "border-gray-200 bg-gray-50 text-gray-600" },
             { key: "pending", label: "Pending", color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
             { key: "approved", label: "Approved", color: "border-green-200 bg-green-50 text-green-700" },
             { key: "rejected", label: "Rejected", color: "border-red-200 bg-red-50 text-red-700" },
@@ -324,7 +322,7 @@ function VerifyDocumentationPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Expert</th>
-                  <th className="px-6 py4">Experience</th>
+                  <th className="px-6 py-4">Experience</th>
                   <th className="px-6 py-4">Documents</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Compensation</th>
@@ -359,7 +357,6 @@ function VerifyDocumentationPage() {
                       </td>
                       <td className="px-6 py-5">
                         <CompensationBadge eligible={!!app.compensation_eligible} />
-                        <p className="text-xs text-slate-400 mt-1">{(app.follower_count ?? 0).toLocaleString()} followers · {(app.rating_average ?? 0).toFixed(1)}★</p>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3 w-fit">
@@ -389,8 +386,8 @@ function VerifyDocumentationPage() {
           )}
         </div>
       </div>
-    </FinanceAdminLayout>
+    </AdminLayout>
   );
 }
 
-export default VerifyDocumentationPage;
+export default ExpertApplicationReviewPage;

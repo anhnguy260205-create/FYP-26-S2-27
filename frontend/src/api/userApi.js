@@ -118,10 +118,12 @@ export const logoutAccount = async () => {
 };
 
 /** Fire-and-forget logout for tab close/navigation-away — keepalive lets the
- * request finish after the page starts unloading. */
+ * request finish after the page starts unloading. This fires on every
+ * pagehide (refresh, HMR reload, actual tab close) so it must NOT sign out
+ * of Firebase — that would kill the session on every reload, not just real
+ * logouts. Only the explicit logoutAccount() ends the Firebase session. */
 export const logoutOnUnload = () => {
   authFetch(`${BASE_URL}/logout`, { method: "POST", keepalive: true });
-  signOut(auth).catch(() => {});
 };
 
 export const getInvestorInformation = async (userId) => {

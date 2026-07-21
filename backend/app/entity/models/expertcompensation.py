@@ -1,15 +1,25 @@
 """
 Expert compensation — paid monthly, per premium follower.
 
-An expert earns RATE_PER_PREMIUM_FOLLOWER for each premium user following them.
-There is no follower threshold: one premium follower earns $0.10.
+An expert earns RATE_PER_PREMIUM_FOLLOWER for each premium user following them,
+but the payout only unlocks once ALL of these are true for the closed month:
+
+  * verified (approved/active)
+  * follower_count (total followers) >= FOLLOWER_COUNT_THRESHOLD
+  * portfolio rating average >= RATING_THRESHOLD
+
+There is no minimum on premium_follower_count itself — the amount earned is
+simply premium_follower_count * RATE_PER_PREMIUM_FOLLOWER once unlocked (so
+it can be $0 in a month where the expert qualifies but has no premium
+followers yet).
 
 Payout runs for the month that just closed. The daily poller in main.py calls
 run_monthly_payout(), which:
 
-  1. snapshots the expert's premium follower count for the closed month,
+  1. snapshots the expert's follower/premium-follower counts and rating for
+     the closed month,
   2. writes a ledger row (the permanent record — it does NOT change later if
-     someone unfollows),
+     someone unfollows or the rating moves),
   3. credits the expert's paper_money,
   4. writes a wallet_transaction so the payout appears in Transaction History
      the way a salary credit does on a bank statement.
@@ -18,8 +28,8 @@ Idempotency: the (expert_id, period_start) unique constraint plus a `paid`
 flag mean the poller can run every day — and re-run after a crash — without
 paying twice.
 
-Only VERIFIED experts are paid. An unverified expert still gets a ledger row
-(amount 0) so the history shows why nothing arrived.
+Only VERIFIED experts are paid. An expert who doesn't meet the bar still gets
+a ledger row (amount 0) so the history shows why nothing arrived.
 """
 from sqlalchemy import Column, ForeignKey, String, DateTime, Integer, Float, Boolean, UniqueConstraint
 from sqlalchemy import text
@@ -32,13 +42,29 @@ from uuid import uuid4
 # $0.10 per premium follower, per month.
 RATE_PER_PREMIUM_FOLLOWER = 0.10
 
-# No minimum follower count — kept as a named constant so the intent reads as
-# deliberate rather than as a missing check.
+# No minimum on premium followers specifically — kept as a named constant so
+# the intent reads as deliberate rather than as a missing check. The real
+# unlock gate is FOLLOWER_COUNT_THRESHOLD + RATING_THRESHOLD below.
 FOLLOWER_THRESHOLD = 0
+
+# Compensation unlock gate (in addition to being verified).
+FOLLOWER_COUNT_THRESHOLD = 100
+RATING_THRESHOLD = 4.5
 
 TZ = ZoneInfo("Asia/Singapore")
 
 _APPROVED_VERIFICATION = ("verified", "approved", "active")
+
+
+def is_compensation_eligible(verified: bool, follower_count: int, rating_average: float) -> bool:
+    """The shared unlock rule — verified + 100 followers + 4.5★ rating.
+    Used by both the live summary endpoint and the monthly payout job so
+    they can never disagree on who qualifies."""
+    return bool(
+        verified
+        and follower_count >= FOLLOWER_COUNT_THRESHOLD
+        and rating_average >= RATING_THRESHOLD
+    )
 
 
 def _month_start(dt):
@@ -98,6 +124,7 @@ class ExpertCompensationLedger(Base):
         from app.entity.models.expert import Expert
         from app.entity.models.expertfollow import ExpertFollow
         from app.entity.models.expertverification import ExpertVerification
+        from app.entity.models.expertportfolioreview import ExpertPortfolioReview
         from app.entity.models.investor import Investor
         from app.entity.models.wallet import WalletTransaction, TXN_COMPENSATION
 
@@ -130,8 +157,11 @@ class ExpertCompensationLedger(Base):
                 follower_count = ExpertFollow.get_follower_count(expert.user_id)
                 premium_count = ExpertFollow.get_premium_follower_count(
                     expert.user_id)
+                rating_average = ExpertPortfolioReview._stats(
+                    session, expert.user_id)["average"]
 
-                eligible = verified and premium_count > FOLLOWER_THRESHOLD
+                eligible = is_compensation_eligible(
+                    verified, follower_count, rating_average)
                 amount = calculate_compensation(
                     premium_count) if eligible else 0.0
 

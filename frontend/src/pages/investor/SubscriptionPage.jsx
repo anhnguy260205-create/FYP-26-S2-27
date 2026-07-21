@@ -211,6 +211,42 @@ function SubscriptionPage() {
 
   const isPremium = currentSubscriptionStatus === "premium";
   const isBasic = currentSubscriptionStatus === "basic";
+  // Verified experts get premium access as a complimentary perk of their
+  // expert status, not a purchased plan — show that instead of pricing cards.
+  const isVerifiedExpert =
+    user?.is_expert === true &&
+    ["approved", "active"].includes(String(user?.verification_status || "").toLowerCase());
+
+  if (isVerifiedExpert) {
+    return (
+      <div
+        className="min-h-screen flex flex-col"
+        style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+      >
+        <GeneralHeader />
+        <main style={{ flex: 1, maxWidth: 700, margin: "0 auto", width: "100%", padding: "88px 24px 96px", display: "flex", alignItems: "center" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ textAlign: "center", width: "100%", background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.15)", borderRadius: 20, padding: "48px 36px" }}
+          >
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.4)", color: "#F97316", fontSize: 13, fontWeight: 700, marginBottom: 18 }}>
+              ★ Expert
+            </div>
+            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 26, fontWeight: 700, color: "#0F172A", margin: "0 0 12px", letterSpacing: "0.04em" }}>
+              You already have full Premium access
+            </h1>
+            <p style={{ fontSize: "14px", color: "#64748B", margin: "0 auto", maxWidth: "460px", lineHeight: 1.7 }}>
+              As a verified expert, every premium investor feature is unlocked on your account automatically —
+              no subscription to buy or renew. This stays active for as long as your expert verification does.
+            </p>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div

@@ -124,3 +124,52 @@ class LoginMfaSession(Base):
             _verified_cache.add(key)
             return True
         return False
+
+    @staticmethod
+    def get_login_days_this_week(email_address: str) -> int:
+        """Distinct calendar days in the last 7 with at least one fresh
+        login (a new Firebase auth_time, i.e. a real sign-in — not a token
+        refresh). There's no "hours online" tracking anywhere in the app;
+        this is the closest real signal to "how often do they show up,"
+        used as a login-frequency proxy on the expert review page."""
+        now = datetime.now(ZoneInfo("Asia/Singapore"))
+        cutoff = now - timedelta(days=7)
+        with get_session() as session:
+            rows = session.query(LoginMfaSession.verified_at).filter(
+                LoginMfaSession.email_address == email_address,
+                LoginMfaSession.verified_at >= cutoff,
+            ).all()
+        days = {v.date() for (v,) in rows if v is not None}
+        return len(days)
+
+    @staticmethod
+    def get_login_counts_by_day(email_address: str, days: int = 7) -> list[dict]:
+        """Login count per calendar day for the last `days` days, oldest
+        first, zero-filled — feeds the "logins per date" column chart on the
+        expert review page. Counts fresh logins (see get_login_days_this_week),
+        not hours online, which isn't tracked."""
+        now = datetime.now(ZoneInfo("Asia/Singapore"))
+        today = now.date()
+        start_date = today - timedelta(days=days - 1)
+        cutoff = datetime.combine(start_date, datetime.min.time(), tzinfo=ZoneInfo("Asia/Singapore"))
+
+        with get_session() as session:
+            rows = session.query(LoginMfaSession.verified_at).filter(
+                LoginMfaSession.email_address == email_address,
+                LoginMfaSession.verified_at >= cutoff,
+            ).all()
+
+        counts = {}
+        for (v,) in rows:
+            if v is None:
+                continue
+            d = v.date()
+            counts[d] = counts.get(d, 0) + 1
+
+        return [
+            {
+                "date": (start_date + timedelta(days=i)).isoformat(),
+                "count": counts.get(start_date + timedelta(days=i), 0),
+            }
+            for i in range(days)
+        ]

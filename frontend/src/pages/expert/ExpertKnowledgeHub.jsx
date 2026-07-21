@@ -9,6 +9,10 @@ import { getPageBackground } from "../../utils/userRole.js";
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 const CATEGORIES = ["Beginner", "Technical Analysis", "Fundamental", "Risk Management", "Market News", "Strategy"];
+const PAGE = {
+  heading: "#0B1D4F",
+  sub: "#33477A",
+};
 
 const STATUS_TABS = ["All", "In Review", "Published", "Rejected"];
 
@@ -172,7 +176,7 @@ function VerificationWall({ status }) {
           </p>
 
           {!isPending && (
-            <button onClick={() => navigate("/expert/documents")}
+            <button onClick={() => navigate("/investor/become-expert")}
               style={{
                 padding: "12px 32px", borderRadius: 10, cursor: "pointer", fontFamily: "'DM Mono', monospace",
                 fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
@@ -270,12 +274,19 @@ function ExpertKnowledgeHub() {
         style={{ background: getPageBackground() }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <ExpertHeader />
-        <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
+        <main className="flex flex-col gap-1" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(178,115,255,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: "0.04em" }}>My Articles</h1>
+              <h1 style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 28,
+                fontWeight: 700,
+                color: PAGE.heading,
+                letterSpacing: "0.04em",
+                lineHeight: 1,
+              }}>My Articles</h1>
               <p style={{ fontFamily: sans, fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>Write and publish educational content for investors</p>
             </div>
             {mode === "list" && (
@@ -283,7 +294,7 @@ function ExpertKnowledgeHub() {
                 padding: "10px 22px", borderRadius: 8, cursor: "pointer",
                 border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.1)",
                 color: "#34d399", fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
-              }}>+ Write Article</button>
+              }}>Write Article</button>
             )}
           </motion.div>
 

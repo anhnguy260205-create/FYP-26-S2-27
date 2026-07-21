@@ -43,8 +43,18 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
     return <Navigate to="/" replace />;
   }
 
-  // Expert-only pages (merged roles): investors with the is_expert flag.
-  if (requireExpert && !(currentUser.is_expert === true || currentUser.role === "expert")) {
+  // Expert-only pages (merged roles). is_expert means VERIFIED expert, so an
+  // in-progress applicant (Expert row exists, not yet approved) also needs
+  // through here — that's what verification_status being set indicates —
+  // to reach the document-upload/knowledge-hub pages during review.
+  if (
+    requireExpert &&
+    !(
+      currentUser.is_expert === true ||
+      currentUser.role === "expert" ||
+      currentUser.verification_status != null
+    )
+  ) {
     return <Navigate to="/investor" replace />;
   }
 

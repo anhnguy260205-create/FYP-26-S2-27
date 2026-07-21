@@ -16,8 +16,7 @@ class Expert(Base):
     rating = Column(Float, default=0)
     experience_years = Column(Integer, nullable=True)
     linked_in_url = Column(String(255), nullable=True)
-    risk_tolerance = Column(String(30), nullable=True)
-    interests = Column(String(255), nullable=True)
+    
     # Verification/application state (status, documents, approved_date) lives
     # on ExpertVerification, not here — see that model.
 
@@ -73,7 +72,7 @@ class Expert(Base):
         return {"expert_id": expert_id, "created": True}
 
     @staticmethod
-    def update_profile(user_id, experience_years=None, linked_in_url=None, risk_tolerance=None, interests=None):
+    def update_profile(user_id, experience_years=None, linked_in_url=None):
         with get_session() as session:
             expert = session.query(Expert).filter(
                 Expert.user_id == user_id).first()
@@ -83,10 +82,6 @@ class Expert(Base):
                 expert.experience_years = experience_years
             if linked_in_url is not None:
                 expert.linked_in_url = linked_in_url
-            if risk_tolerance is not None:
-                expert.risk_tolerance = risk_tolerance
-            if interests is not None:
-                expert.interests = interests
             return True
 
     @staticmethod
@@ -163,6 +158,11 @@ class Expert(Base):
 
     @staticmethod
     def get_all_for_admin():
+        from app.entity.models.expertfollow import ExpertFollow
+        from app.entity.models.expertportfolioreview import ExpertPortfolioReview
+        from app.entity.models.expertcompensation import is_compensation_eligible
+        from app.entity.models.login_mfa import LoginMfaSession
+
         with get_session() as session:
             experts = session.query(Expert).all()
             verification_by_expert = ExpertVerification.get_all_by_expert_id()
@@ -175,6 +175,14 @@ class Expert(Base):
                     "documents": [],
                     "approved_date": None,
                 })
+                verified = str(verification.get("verification_status", "")).lower() in (
+                    "verified", "approved", "active")
+                follower_count = ExpertFollow.get_follower_count(e.user_id)
+                rating_average = ExpertPortfolioReview._stats(
+                    session, e.user_id)["average"]
+                login_days_this_week = LoginMfaSession.get_login_days_this_week(
+                    user.email_address) if user else 0
+
                 result.append({
                     "expert_id": e.expert_id,
                     "user_id": e.user_id,
@@ -185,8 +193,11 @@ class Expert(Base):
                     "address": user.address if user else "",
                     "experience_years": e.experience_years,
                     "linked_in_url": e.linked_in_url,
-                    "risk_tolerance": e.risk_tolerance,
-                    "interests": e.interests,
+                    "follower_count": follower_count,
+                    "rating_average": rating_average,
+                    "login_days_this_week": login_days_this_week,
+                    "compensation_eligible": is_compensation_eligible(
+                        verified, follower_count, rating_average),
                     **verification,
                 })
             return result
@@ -204,8 +215,6 @@ class Expert(Base):
             rating = expert.rating
             experience_years = expert.experience_years
             linked_in_url = expert.linked_in_url
-            risk_tolerance = expert.risk_tolerance
-            interests = expert.interests
 
         verification = ExpertVerification.get_for_expert(expert_id)
         return {
@@ -214,8 +223,6 @@ class Expert(Base):
             "rating": rating,
             "experience_years": experience_years,
             "linked_in_url": linked_in_url,
-            "risk_tolerance": risk_tolerance,
-            "interests": interests,
             **verification,
         }
 

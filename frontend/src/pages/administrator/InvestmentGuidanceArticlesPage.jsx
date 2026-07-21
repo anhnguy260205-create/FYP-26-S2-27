@@ -9,8 +9,8 @@ const STATUS_FILTERS = ["All", "Pending Review", "Published", "Rejected"];
 
 const STATUS_STYLE = {
   published: { bg: "bg-green-100", text: "text-green-700", label: "Published" },
-  pending:   { bg: "bg-amber-100", text: "text-amber-700", label: "In Review" },
-  rejected:  { bg: "bg-red-100",   text: "text-red-700",   label: "Rejected"  },
+  pending: { bg: "bg-amber-100", text: "text-amber-700", label: "In Review" },
+  rejected: { bg: "bg-red-100", text: "text-red-700", label: "Rejected" },
 };
 
 function StatusBadge({ status }) {
@@ -40,10 +40,10 @@ function InvestmentGuidanceArticlesPage() {
   }, []);
 
   const filtered = articles.filter(a => {
-    if (statusFilter === "All")            return true;
+    if (statusFilter === "All") return true;
     if (statusFilter === "Pending Review") return a.status === "pending";
-    if (statusFilter === "Published")      return a.status === "published";
-    if (statusFilter === "Rejected")       return a.status === "rejected";
+    if (statusFilter === "Published") return a.status === "published";
+    if (statusFilter === "Rejected") return a.status === "rejected";
     return true;
   });
 
@@ -136,7 +136,7 @@ function InvestmentGuidanceArticlesPage() {
 
   // ── List ──
   return (
-    <AdminPage title="Education Articles" subtitle="Review and manage articles written by experts.">
+    <AdminPage title="Article Management" subtitle="Review and manage articles written by experts.">
 
       {pendingCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-3 mb-5 text-sm text-amber-700 font-medium">

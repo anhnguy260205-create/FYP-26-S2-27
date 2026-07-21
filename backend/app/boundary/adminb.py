@@ -15,6 +15,7 @@ from app.control.services.firebase_admin_service import delete_firebase_user_by_
 from app.control.services.auth import (
     require_admin,
     require_admin_or_hr,
+    invalidate_profile_cache,
 )
 from app.control.services.email_service import send_expert_verified_email, send_expert_rejected_email, send_expert_verification_cancelled_email
 from app.entity.models.expert import Expert
@@ -385,6 +386,32 @@ def get_all_experts(current_user: dict = Depends(require_admin_or_hr)):
     }
 
 
+@router.get("/experts/{expert_id}/login-activity")
+def get_expert_login_activity(
+    expert_id: str, days: int = 7,
+    current_user: dict = Depends(require_admin_or_hr),
+):
+    """Logins per day for the review page's activity chart. Counts fresh
+    logins, not hours online — there's no duration tracking anywhere."""
+    from app.entity.models.expert import Expert
+    from app.entity.models.login_mfa import LoginMfaSession
+
+    user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if not user_id:
+        return {"success": False, "message": "Expert not found"}
+
+    info = UserAccount.get_user_information(user_id)
+    if not info:
+        return {"success": False, "message": "Expert not found"}
+
+    days = max(1, min(days, 90))
+    return {
+        "success": True,
+        "days": LoginMfaSession.get_login_counts_by_day(
+            info["email_address"], days=days),
+    }
+
+
 @router.post("/experts/{expert_id}/approve")
 def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
@@ -403,6 +430,9 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
     _user_id = Expert.get_user_id_by_expert_id(expert_id)
     if _user_id:
         Investor.setSubscriptionStatus(_user_id, "premium")
+        info = UserAccount.get_user_information(_user_id)
+        if info:
+            invalidate_profile_cache(info["email_address"])
 
     _notify_expert_verification(
         expert_id,
@@ -427,6 +457,12 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
             "success": False,
             "message": "Expert not found",
         }
+
+    _user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if _user_id:
+        info = UserAccount.get_user_information(_user_id)
+        if info:
+            invalidate_profile_cache(info["email_address"])
 
     _notify_expert_verification(
         expert_id,
@@ -474,6 +510,10 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
             "success": False,
             "message": "Expert not found",
         }
+
+    info = UserAccount.get_user_information(_user_id)
+    if info:
+        invalidate_profile_cache(info["email_address"])
 
     return {
         "success": True,

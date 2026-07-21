@@ -97,7 +97,7 @@ function FinanceAdminLayout({ title, subtitle, children }) {
         <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
           <div>
             <h1 className="text-[15px] font-bold text-slate-900">
-              Finance & Operations Admin
+              Finance Admin
             </h1>
 
             <p className="text-[9px] text-slate-500">

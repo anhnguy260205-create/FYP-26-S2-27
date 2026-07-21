@@ -147,10 +147,14 @@ class UserAccount(Base):
                 "full_name": user.full_name,
                 "email_address": user.email_address,
                 "role": role,
-                "is_expert": expert is not None,
+                # is_expert means VERIFIED expert, not merely "has applied" —
+                # an Expert row exists from the moment someone applies, but
+                # they must stay a plain investor (with an in-progress
+                # application) until an admin approves it.
+                "is_expert": is_verified_expert,
                 "subscription_status": subscription_status,
-                "interests": (investor.interests if investor else None) or (expert.interests if expert else None),
-                "risk_tolerance": (investor.risk_tolerance if investor else None) or (expert.risk_tolerance if expert else None),
+                "interests": investor.interests if investor else None,
+                "risk_tolerance": investor.risk_tolerance if investor else None,
                 "verification_status": verification_status,
                 "first_login": first_login,
             }
@@ -206,7 +210,8 @@ class UserAccount(Base):
                 "user_id": user.user_id,
                 "email": email,
                 "role": role,
-                "is_expert": expert is not None,
+                # is_expert means VERIFIED expert — see login() above.
+                "is_expert": is_verified_expert,
                 "verification_status": verification_status,
                 "subscription_status": subscription_status,
             }

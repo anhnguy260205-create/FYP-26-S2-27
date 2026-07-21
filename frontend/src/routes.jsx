@@ -23,6 +23,7 @@ const UserProfilesPage = lazy(() => import("./pages/administrator/UserProfilesPa
 const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
+const ExpertApplicationReviewPage = lazy(() => import("./pages/administrator/ExpertApplicationReviewPage.jsx"));
 const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
 const FinanceAdminDashboardPage = lazy(() => import("./pages/financeadmin/FinanceAdminDashboardPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
@@ -39,8 +40,8 @@ const BuyStockPage = lazy(() => import("./pages/investor/BuyStockPage.jsx"));
 const SellStockPage = lazy(() => import("./pages/investor/SellStockPage.jsx"));
 const TransactionHistoryPage = lazy(() => import("./pages/investor/TransactionHistoryPage.jsx"));
 const PortfolioOverviewPage = lazy(() => import("./pages/investor/PortfolioOverviewPage.jsx"));
-const ExpertDocumentPage = lazy(() => import("./pages/expert/ExpertDocumentPage.jsx"));
 const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
+const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensationPage.jsx"));
 const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/financeadmin/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
@@ -112,6 +113,9 @@ export const router = createBrowserRouter([
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
     { path: "/investor/expertdetails", element: protect(["investor", "expert"], ExpertDetails) },
     { path: "/investor/become-expert", element: protect(["investor", "expert"], BecomeExpertPage) },
+    // Reachable by any investor — the page itself shows a "verified experts
+    // only" block for anyone who isn't a qualified verified expert yet.
+    { path: "/investor/compensation", element: protect(["investor", "expert"], ExpertCompensationPage) },
 
     { path: "/adminpanel", element: protect(["admin"], AdminPanelPage) },
     { path: "/adminpanel/useraccounts", element: protect(["admin"], UserAccountsPage) },
@@ -120,6 +124,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/posts", element: protect(["admin"], CommunityPostsPage) },
     { path: "/adminpanel/posts/:postId", element: protect(["admin"], CommunityPostDetailsPage) },
     { path: "/adminpanel/articles", element: protect(["admin"], InvestmentGuidanceArticlesPage) },
+    { path: "/adminpanel/expert-applications", element: protect(["admin"], ExpertApplicationReviewPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
@@ -131,6 +136,7 @@ export const router = createBrowserRouter([
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in
     // the codebase for reference but are no longer routed standalone.
+    // The application form (particulars + documents) lives inline on
+    // /investor/become-expert now — ExpertDocumentPage is no longer routed.
     { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
-    { path: "/expert/documents", element: protectExpert(ExpertDocumentPage) },
 ]);

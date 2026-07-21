@@ -6,7 +6,6 @@ import Footer from "../../layout/Footer.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
 import { getPortalTransactions, getPortalSummary, getPortfolio } from "../../api/tradingApi.js";
 import useLiveStocks from "../../api/useLiveStocks.js";
-import { authFetch } from "../../api/apiClient.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -172,28 +171,6 @@ function PortfolioOverviewPage() {
   const [summary, setSummary] = useState(null);
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [publishing, setPublishing] = useState(false);
-  const [publishMsg, setPublishMsg] = useState("");
-
-  // Verified experts can publish this (real) portfolio to their expert
-  // profile so investors browsing the expert directory can see it.
-  const isVerifiedExpert =
-    currentUser?.is_expert === true &&
-    ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
-
-  const publishPortfolio = async () => {
-    setPublishing(true);
-    setPublishMsg("");
-    try {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL}/expert/publish-my-portfolio`, { method: "POST" });
-      const data = await res.json();
-      setPublishMsg(data.message || (data.success ? "Published!" : "Failed to publish."));
-    } catch {
-      setPublishMsg("Could not reach backend.");
-    } finally {
-      setPublishing(false);
-    }
-  };
 
   useEffect(() => {
     if (!currentUser?.user_id) { setLoading(false); return; }
@@ -252,33 +229,13 @@ function PortfolioOverviewPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
-                Portfolio Overview
-              </h1>
-              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-                Full trading analytics, holdings, and order history
-              </p>
-            </div>
-            {isVerifiedExpert && (
-              <div style={{ textAlign: "right" }}>
-                <button onClick={publishPortfolio} disabled={publishing || holdings.length === 0}
-                  title={holdings.length === 0 ? "Make some trades first" : "Publish this portfolio to your expert profile"}
-                  style={{
-                    padding: "10px 20px", borderRadius: 12, border: "none", cursor: "pointer",
-                    fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
-                    background: "#F97316", color: "white",
-                    boxShadow: "0 6px 16px rgba(249,115,22,0.35)",
-                    opacity: publishing || holdings.length === 0 ? 0.6 : 1,
-                  }}>
-                  {publishing ? "Publishing…" : "Publish to Expert Profile"}
-                </button>
-                {publishMsg && (
-                  <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "6px 0 0" }}>{publishMsg}</p>
-                )}
-              </div>
-            )}
+          <div>
+            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
+              Portfolio Overview
+            </h1>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
+              Full trading analytics, holdings, and order history
+            </p>
           </div>
           <hr style={{ marginTop: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
         </div>

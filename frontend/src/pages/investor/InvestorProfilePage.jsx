@@ -597,6 +597,14 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
     const role = currentUser?.role;
     const userId = currentUser?.user_id;
+    // Gate on VERIFIED expert, not merely is_expert — see the same pattern
+    // used for the profile badge above.
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
+    const accountTypeLabel = isVerifiedExpert
+        ? "Expert"
+        : role ? role.charAt(0).toUpperCase() + role.slice(1) : "Investor";
     const isEditing = (section) => editingSection === section;
 
     useEffect(() => {
@@ -706,8 +714,10 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                         <div className="flex items-center gap-4">
                             <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#00D3F2" }}>$</div>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: "18px", color: HEADING }}>{role}</div>
-                                <div style={{ color: TEXT_MUTED2 }}>Trade & track your portfolio</div>
+                                <div style={{ fontWeight: 700, fontSize: "18px", color: HEADING }}>{accountTypeLabel}</div>
+                                <div style={{ color: TEXT_MUTED2 }}>
+                                    {isVerifiedExpert ? "Share your expertise & track your portfolio" : "Trade & track your portfolio"}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1110,6 +1120,12 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const plan = investorInfo?.investor_subscription_status?.toLowerCase() || "inactive";
+    // Verified experts get premium access as a complimentary perk of their
+    // expert status, not a purchased/renewable plan — no renewal countdown
+    // or cancel/renew buttons make sense for them.
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
 
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -1168,6 +1184,64 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     );
 
     const history = details?.history || [];
+
+    /* ── Verified expert: complimentary, no renewal ──────────── */
+    if (isVerifiedExpert) {
+        return (
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Expert Access</p>
+                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>
+                                Full premium access, complimentary for verified experts
+                            </p>
+                        </div>
+                        <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.5)", color: "#F97316", fontSize: "12px", fontWeight: 700 }}>
+                            ★ Expert
+                        </div>
+                    </div>
+
+                    <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6 }}>
+                        As a verified expert, you have full access to every premium investor feature automatically —
+                        no subscription to renew or manage. This stays active for as long as your expert verification does.
+                    </p>
+
+                    {/* Past subscription history, if any (e.g. from before becoming an expert) */}
+                    {!loading && history.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                            <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead>
+                                        <tr style={{ background: CARD_BG_MUTED }}>
+                                            {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {history.map((row, i) => (
+                                            <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
+                                                <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px" }}>
+                                                    <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
+                                                        {row.sub_status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </GlassCard>
+        );
+    }
 
     /* ── Inactive ───────────────────────────────────────────── */
     if (plan === "inactive") {

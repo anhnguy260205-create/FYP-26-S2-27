@@ -183,6 +183,14 @@ function GeneralHeader() {
         { title: "Cash In / Cash Out", path: "/investor/cash" },
       ],
     },
+    {
+      label: "Expert",
+      activePaths: ["/investor/become-expert", "/investor/compensation"],
+      submenu: [
+        { title: "Expert Application", path: "/investor/become-expert" },
+        { title: "Compensation", path: "/investor/compensation" },
+      ],
+    },
 
   ];
 
