@@ -870,7 +870,7 @@ function RealtimeDashboardSection() {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") navigate("/realtimedashboard"); }}
-      className="group relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 ring-1 ring-white/10 shadow-xl shadow-black/30 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00D3F2]/10"
+      className={`group relative overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-200 p-8 md:p-12 cursor-pointer transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30`}
     >
       <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
 
@@ -879,10 +879,10 @@ function RealtimeDashboardSection() {
           <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
             Live Market Data
           </span>
-          <h2 className="text-white font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
+          <h2 className="text-slate-900 font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
             The Realtime Trading Dashboard
           </h2>
-          <p className="text-slate-300 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
+          <p className="text-slate-600 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
             One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.
           </p>
         </div>
@@ -890,11 +890,11 @@ function RealtimeDashboardSection() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8]">
                 <Icon size={19} />
               </div>
-              <p className="text-white font-semibold text-[15px]">{title}</p>
-              <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+              <p className="text-slate-900 font-semibold text-[15px]">{title}</p>
+              <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
