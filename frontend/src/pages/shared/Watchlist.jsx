@@ -210,7 +210,7 @@ export default function Watchlist() {
                             title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
                             className="group relative overflow-hidden text-sm font-semibold px-4 py-2 rounded-lg"
                             style={{
-                                background: isAtLimit ? C.card2 : "#0092b8",
+                                background: isAtLimit ? C.card2 : C.success,
                                 color: isAtLimit ? C.muted : "white",
                                 cursor: isAtLimit ? "not-allowed" : "pointer",
                             }}
@@ -219,7 +219,7 @@ export default function Watchlist() {
                                 <span
                                     aria-hidden="true"
                                     className="absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
-                                    style={{ background: "linear-gradient(90deg, #00D3F2, #0092b8)" }}
+                                    style={{ background: "linear-gradient(90deg, #22C55E, #0F9D58)" }}
                                 />
                             )}
                             <span className="relative">+ Add Symbol</span>
