@@ -180,13 +180,7 @@ function AIChatbot() {
             <GeneralHeader />
 
             <main className="flex-1 p-5" style={{ minHeight: 0 }}>
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "240px 1fr",
-                    gap: "20px",
-                    height: "calc(100vh - 200px)",
-                    maxHeight: "1300px",
-                }}>
+                <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 h-auto lg:h-[calc(100vh-200px)] lg:max-h-[1300px]">
 
                     {/* ── SIDEBAR ── */}
                     <div style={{
@@ -304,7 +298,7 @@ function AIChatbot() {
                     </div>
 
                     {/* ── CHAT AREA ── */}
-                    <div style={{
+                    <div className="min-h-[70vh] lg:min-h-0" style={{
                         background: "#0B1D4F",
                         border: "1px solid rgba(255,255,255,0.1)",
                         boxShadow: "0 4px 20px rgba(0,22,52,0.35)",
