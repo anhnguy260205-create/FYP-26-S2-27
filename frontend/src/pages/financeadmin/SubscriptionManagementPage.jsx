@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DollarSign, Loader2, Users } from "lucide-react";
-import AdminLayout from "../../layout/AdminPage.jsx";
+import FinanceAdminLayout from "../../layout/FinanceAdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import RevenueBarChart from "../../components/admin/RevenueBarChart.jsx";
 import UserTypesPieChart from "../../components/admin/UserTypesPieChart.jsx";
@@ -73,7 +73,7 @@ function SubscriptionManagementPage() {
   const investorTotal = investorBreakdown.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <AdminLayout title="Subscription Management" subtitle="View all investor subscriptions">
+    <FinanceAdminLayout title="Subscription Management" subtitle="View all investor subscriptions">
       {/* Revenue + Investor Tiers */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
         {/* Revenue Chart */}
@@ -223,7 +223,7 @@ function SubscriptionManagementPage() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
+    </FinanceAdminLayout>
   );
 }
 

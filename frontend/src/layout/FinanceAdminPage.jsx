@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FileCheck2, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { DollarSign, FileCheck2, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { logoutAccount } from "../api/userApi";
 
 const menuItems = [
@@ -13,6 +13,11 @@ const menuItems = [
     name: "Expert Document Verification",
     path: "/finance-admin/document-verification",
     icon: FileCheck2,
+  },
+  {
+    name: "Subscription Management",
+    path: "/finance-admin/subscriptions",
+    icon: DollarSign,
   },
 ];
 
@@ -92,11 +97,11 @@ function FinanceAdminLayout({ title, subtitle, children }) {
         <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
           <div>
             <h1 className="text-[15px] font-bold text-slate-900">
-              Finance Admin
+              Finance & Operations Admin
             </h1>
 
             <p className="text-[9px] text-slate-500">
-              Operations Panel
+              Administration Panel
             </p>
           </div>
 

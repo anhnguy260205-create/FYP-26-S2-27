@@ -239,7 +239,7 @@ def get_signup_stats(days: int = 30, current_user: dict = Depends(require_admin)
 
 
 @router.get("/user-types")
-def get_user_types(current_user: dict = Depends(require_admin)):
+def get_user_types(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getUserTypeBreakdown()}
 
@@ -251,13 +251,13 @@ def get_revenue_stats(current_user: dict = Depends(require_admin)):
 
 
 @router.get("/revenue-by-month")
-def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin)):
+def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueByMonth(months)}
 
 
 @router.get("/subscriptions")
-def get_subscriptions(current_user: dict = Depends(require_admin)):
+def get_subscriptions(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     subs = boundary.getSubscriptions()
     return {"success": True, "subscriptions": subs}

@@ -43,7 +43,7 @@ const ExpertDocumentPage = lazy(() => import("./pages/expert/ExpertDocumentPage.
 const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
 const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.jsx"));
 const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
-const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
+const SubscriptionManagementPage = lazy(() => import("./pages/financeadmin/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
@@ -120,13 +120,13 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/posts/:postId", element: protect(["admin"], CommunityPostDetailsPage) },
     { path: "/adminpanel/articles", element: protect(["admin"], InvestmentGuidanceArticlesPage) },
     { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
-    { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
     { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
+    { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in
