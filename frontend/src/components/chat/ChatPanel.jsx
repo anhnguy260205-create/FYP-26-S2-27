@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Search } from "lucide-react";
+import { Send, Search, Gift } from "lucide-react";
 import {
     sendChatMessage, getConversations, getChatMessages, searchChatUsers,
 } from "../../api/chatApi.js";
+import { getConversationGifts } from "../../api/walletApi.js";
+import GiftDialog from "./GiftDialog.jsx";
+import { isPremiumUser } from "../../utils/userRole.js";
 
 /*
  * ChatPanel — embedded two-pane messenger (conversations + thread).
@@ -51,6 +54,30 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [sending, setSending] = useState(false);
+    const [gifts, setGifts] = useState([]);
+    const [giftOpen, setGiftOpen] = useState(false);
+
+    // Gifting is premium-only and expert-only, mirroring the backend rule.
+    const canGift =
+        !!active &&
+        active.other.role === "expert" &&
+        active.other.user_id !== me.user_id &&
+        isPremiumUser(me);
+
+    const loadGifts = useCallback(async (otherUserId) => {
+        if (!otherUserId) return;
+        try {
+            const res = await getConversationGifts(otherUserId);
+            if (res.success) setGifts(res.gifts || []);
+        } catch (e) {
+            console.warn("Could not load gifts:", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (active?.other?.user_id) loadGifts(active.other.user_id);
+        else setGifts([]);
+    }, [active?.other?.user_id, loadGifts]);
 
     const bottomRef = useRef(null);
     const activeRef = useRef(null);
@@ -237,20 +264,57 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
                         </div>
 
                         <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column", gap: 7 }}>
-                            {messages.map(m => {
-                                const mine = m.sender_id === me.user_id;
-                                return (
-                                    <div key={m.message_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
-                                        <div style={{
-                                            maxWidth: "66%", padding: "9px 13px", fontSize: 13.5, lineHeight: 1.5,
-                                            color: "#f1f5f9", whiteSpace: "pre-wrap", wordBreak: "break-word",
-                                            borderRadius: mine ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                                            background: mine ? GRADIENT : "rgba(255,255,255,0.08)",
-                                        }}>{m.content}</div>
-                                    </div>
-                                );
-                            })}
-                            {messages.length === 0 && (
+                            {/* Messages and gifts are separate tables, so merge
+                                them into one timeline sorted by timestamp. */}
+                            {[
+                                ...messages.map(m => ({ kind: "message", at: m.created_at, data: m })),
+                                ...gifts.map(g => ({ kind: "gift", at: g.created_at, data: g })),
+                            ]
+                                .sort((a, b) => new Date(a.at) - new Date(b.at))
+                                .map(item => {
+                                    if (item.kind === "gift") {
+                                        const g = item.data;
+                                        const mine = g.sender_user_id === me.user_id;
+                                        return (
+                                            <div key={g.gift_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
+                                                <div style={{
+                                                    maxWidth: "66%", padding: "11px 14px", borderRadius: 14,
+                                                    background: "linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)",
+                                                    color: "#fff",
+                                                }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, fontSize: 14 }}>
+                                                        <Gift size={15} />
+                                                        {mine ? "You sent" : "Gift received"} ${g.amount.toFixed(2)}
+                                                    </div>
+                                                    {g.message && (
+                                                        <div style={{ fontSize: 12.5, marginTop: 5, opacity: 0.95 }}>
+                                                            “{g.message}”
+                                                        </div>
+                                                    )}
+                                                    <div style={{ fontSize: 11, marginTop: 5, opacity: 0.8 }}>
+                                                        {mine
+                                                            ? `${g.expert_share.toFixed(2)} to expert after fee`
+                                                            : `+$${g.expert_share.toFixed(2)} credited`}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    const m = item.data;
+                                    const mine = m.sender_id === me.user_id;
+                                    return (
+                                        <div key={m.message_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
+                                            <div style={{
+                                                maxWidth: "66%", padding: "9px 13px", fontSize: 13.5, lineHeight: 1.5,
+                                                color: "#f1f5f9", whiteSpace: "pre-wrap", wordBreak: "break-word",
+                                                borderRadius: mine ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                                                background: mine ? GRADIENT : "rgba(255,255,255,0.08)",
+                                            }}>{m.content}</div>
+                                        </div>
+                                    );
+                                })}
+                            {messages.length === 0 && gifts.length === 0 && (
                                 <div style={{ textAlign: "center", color: "#64748b", fontSize: 13, marginTop: 60 }}>
                                     Say hi to {active.other.full_name || active.other.username} 👋
                                 </div>
@@ -259,6 +323,17 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
                         </div>
 
                         <div style={{ padding: 12, borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 10 }}>
+                            {canGift && (
+                                <button onClick={() => setGiftOpen(true)} title="Send a gift"
+                                    style={{
+                                        width: 40, height: 40, borderRadius: 12, border: "none",
+                                        cursor: "pointer", color: "#fff", flexShrink: 0,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        background: "linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)",
+                                    }}>
+                                    <Gift size={17} />
+                                </button>
+                            )}
                             <input value={text} onChange={e => setText(e.target.value)}
                                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
                                 placeholder="Type a message…"
@@ -281,6 +356,14 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
                     </>
                 )}
             </div>
+
+            {giftOpen && active && (
+                <GiftDialog
+                    expert={active.other}
+                    onClose={() => setGiftOpen(false)}
+                    onSent={() => loadGifts(active.other.user_id)}
+                />
+            )}
         </div>
     );
 }

@@ -43,7 +43,7 @@ def seed_profiles():
     profiles = [
         ("admin", "System administrator"),
         ("investor", "Investor account"),
-        ("expert", "Expert account")
+        ("expert", "Expert account"),
     ]
 
     try:

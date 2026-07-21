@@ -50,6 +50,7 @@ const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
+const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 
 function S({ children }) {
     const { pathname } = useLocation();
@@ -92,6 +93,7 @@ export const router = createBrowserRouter([
     { path: "/buy/:symbol", element: protectWithStocks(["investor"], BuyStockPage) },
     { path: "/sell/:symbol", element: protectWithStocks(["investor"], SellStockPage) },
     { path: "/investor/transaction-history", element: protect(["investor"], TransactionHistoryPage) },
+    { path: "/investor/cash", element: protect(["investor"], CashPortalPage) },
     { path: "/investor/portfolio-overview", element: protectWithStocks(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
     { path: "/investor", element: protectWithStocks(["investor"], LoggedInHomePage) },

@@ -18,9 +18,78 @@ from app.entity.database.session import get_session
 from app.entity.models.order_book import OrderBook
 from app.entity.models.investor import Investor
 from app.entity.models.holding import Holding
+from app.entity.models.wallet import (
+    WalletTransaction, PlatformRevenue, TXN_PLATFORM_FEE, REV_TRADE_FEE,
+)
 from app.boundary.stock_ws import get_live_price
 
 _SGT = ZoneInfo("Asia/Singapore")
+
+
+# ── Platform commission ───────────────────────────────────────────────────────
+#
+# Charged on the executed value of an order: whichever is GREATER of a flat
+# minimum and a percentage. So a $1,000 trade pays the $4 floor; a $10,000
+# trade pays 0.1% = $10.
+#
+# NOTE: PLATFORM_FEE_RATE is 0.1% (0.001). If the intent was 1%, change this
+# single constant to 0.01 — nothing else needs to move.
+PLATFORM_FEE_MIN = 4.00
+PLATFORM_FEE_RATE = 0.001
+
+
+def calculate_platform_fee(trade_value: float) -> float:
+    """Commission on `trade_value` dollars. Zero for a zero-value trade so
+    unfilled orders aren't charged."""
+    if not trade_value or trade_value <= 0:
+        return 0.0
+    return round(max(PLATFORM_FEE_MIN, trade_value * PLATFORM_FEE_RATE), 2)
+
+
+def _charge_platform_fee(session, investor_id: str, user_id: str | None,
+                         trade_value: float, symbol: str, order_type: str,
+                         order_id: str) -> float:
+    """Debit the commission from paper_money and book it as revenue.
+
+    Returns the fee actually charged. If the investor can't cover the full
+    fee (possible on a sell that barely moved, or after a partial fill), we
+    take what's there rather than pushing the balance negative — the shortfall
+    is dropped, not carried as debt.
+    """
+    fee = calculate_platform_fee(trade_value)
+    if fee <= 0:
+        return 0.0
+
+    row = session.execute(
+        text("SELECT paper_money FROM investor WHERE investor_id=:iid"),
+        {"iid": investor_id},
+    ).fetchone()
+    if not row:
+        return 0.0
+
+    fee = min(fee, round(float(row.paper_money), 2))
+    if fee <= 0:
+        return 0.0
+
+    session.execute(
+        text("UPDATE investor SET paper_money=paper_money-:f WHERE investor_id=:iid"),
+        {"f": fee, "iid": investor_id},
+    )
+    balance_after = round(float(row.paper_money) - fee, 2)
+
+    WalletTransaction.record(
+        session, investor_id, TXN_PLATFORM_FEE, -fee,
+        description=f"Platform fee — {order_type} {symbol}",
+        reference_id=order_id,
+        balance_after=balance_after,
+    )
+    PlatformRevenue.record(
+        session, REV_TRADE_FEE, fee,
+        user_id=user_id,
+        reference_id=order_id,
+        description=f"{order_type.capitalize()} {symbol} — ${trade_value:,.2f} executed",
+    )
+    return fee
 
 
 # ── low-level helpers (all accept an open SQLAlchemy session) ──────────────────
@@ -126,11 +195,20 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
 
     # ── 2. Pre-flight validation ─────────────────────────────────────────────
     if order_type == "buy":
-        needed = round(limit_price * quantity, 2)
+        gross = round(limit_price * quantity, 2)
+        # The commission is charged on top of the buy, so the investor must be
+        # able to cover both — otherwise the fill succeeds and the fee then
+        # can't be collected.
+        est_fee = calculate_platform_fee(gross)
+        needed = round(gross + est_fee, 2)
         if investor["paper_money"] < needed:
             return {
                 "success": False,
-                "message": f"Insufficient funds — need ${needed:,.2f}, have ${investor['paper_money']:,.2f}",
+                "message": (
+                    f"Insufficient funds — need ${needed:,.2f} "
+                    f"(${gross:,.2f} + ${est_fee:,.2f} platform fee), "
+                    f"have ${investor['paper_money']:,.2f}"
+                ),
             }
     else:
         holding = Holding.getHolding(investor_id, symbol)
@@ -212,8 +290,22 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
                         fills.append({"source": "market_maker", "qty": remaining, "price": fill_price})
                         remaining = 0
 
-    # ── 6. Build summary ─────────────────────────────────────────────────────
+    # ── 6. Platform commission ───────────────────────────────────────────────
+    # Charged ONCE per order on the total executed value, not per fill —
+    # otherwise an order broken into three fills would pay the $4 minimum
+    # three times. Only the order initiator is charged; a resting order that
+    # gets hit is not separately commissioned.
     total_filled = quantity - remaining
+    executed_value = round(sum(f["qty"] * f["price"] for f in fills), 2)
+    platform_fee = 0.0
+    if executed_value > 0:
+        with get_session() as session:
+            platform_fee = _charge_platform_fee(
+                session, investor_id, user_id, executed_value,
+                symbol, order_type, order_id,
+            )
+
+    # ── 7. Build summary ─────────────────────────────────────────────────────
     avg_price = (
         round(sum(f["qty"] * f["price"] for f in fills) / total_filled, 4)
         if total_filled > 0 else None
@@ -221,6 +313,14 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
     final_status = "filled" if remaining == 0 else ("partial" if total_filled > 0 else "pending")
 
     updated = Investor.getInvestorByUserId(user_id)
+
+    if avg_price:
+        message = (
+            f"{total_filled}/{quantity} shares {order_type} filled @ avg "
+            f"${avg_price:.2f} — platform fee ${platform_fee:,.2f}"
+        )
+    else:
+        message = "Order pending"
 
     return {
         "success": True,
@@ -233,6 +333,12 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         "remaining": remaining,
         "avg_fill_price": avg_price,
         "fills": fills,
+        "executed_value": executed_value,
+        "platform_fee": platform_fee,
+        # What actually left (buy) or landed in (sell) the account, fee included.
+        "net_amount": round(
+            executed_value + platform_fee if order_type == "buy"
+            else executed_value - platform_fee, 2),
         "paper_money": updated["paper_money"] if updated else None,
-        "message": f"{total_filled}/{quantity} shares {order_type} filled @ avg ${avg_price:.2f}" if avg_price else "Order pending",
+        "message": message,
     }

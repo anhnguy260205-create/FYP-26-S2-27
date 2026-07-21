@@ -92,11 +92,18 @@ class Investor(Base):
         """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
+        from app.entity.models.wallet import (
+            WalletTransaction, PlatformRevenue, TXN_PLATFORM_FEE, REV_TRADE_FEE,
+        )
+        from app.control.services.trading_engine import calculate_platform_fee
 
         if quantity <= 0 or price <= 0:
             return {"success": False, "message": "Invalid quantity or price"}
 
         total_cost = round(price * quantity, 2)
+        # Commission sits ON TOP of a buy — the investor needs both.
+        platform_fee = calculate_platform_fee(total_cost)
+        total_debit = round(total_cost + platform_fee, 2)
 
         with get_session() as session:
             investor = session.query(Investor).filter(
@@ -105,15 +112,36 @@ class Investor(Base):
             if not investor:
                 return {"success": False, "message": "Investor not found"}
 
-            if investor.paper_money < total_cost:
-                return {"success": False, "message": "Insufficient paper funds"}
+            if investor.paper_money < total_debit:
+                return {
+                    "success": False,
+                    "message": (
+                        f"Insufficient paper funds — need ${total_debit:,.2f} "
+                        f"(${total_cost:,.2f} + ${platform_fee:,.2f} platform fee), "
+                        f"have ${investor.paper_money:,.2f}"
+                    ),
+                }
 
-            investor.paper_money -= total_cost
+            investor.paper_money -= total_debit
+            # used_amount tracks capital deployed into positions, so the fee
+            # (an expense, not a position) is deliberately excluded.
             investor.used_amount += total_cost
             investor_id = investor.investor_id
             session.flush()
 
             new_balance = investor.paper_money
+
+            if platform_fee > 0:
+                WalletTransaction.record(
+                    session, investor_id, TXN_PLATFORM_FEE, -platform_fee,
+                    description=f"Platform fee — buy {symbol}",
+                    balance_after=new_balance,
+                )
+                PlatformRevenue.record(
+                    session, REV_TRADE_FEE, platform_fee,
+                    user_id=user_id,
+                    description=f"Buy {symbol} — ${total_cost:,.2f} executed",
+                )
 
         Holding.addShares(investor_id, symbol, quantity, price)
         transaction_id = Transaction.createTransaction(
@@ -125,7 +153,9 @@ class Investor(Base):
             "message": "Buy order executed successfully",
             "transaction_id": transaction_id,
             "paper_money": new_balance,
-            "total_amount": total_cost
+            "total_amount": total_cost,
+            "platform_fee": platform_fee,
+            "net_amount": total_debit,
         }
 
     @staticmethod
@@ -136,6 +166,10 @@ class Investor(Base):
         """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
+        from app.entity.models.wallet import (
+            WalletTransaction, PlatformRevenue, TXN_PLATFORM_FEE, REV_TRADE_FEE,
+        )
+        from app.control.services.trading_engine import calculate_platform_fee
 
         if quantity <= 0 or price <= 0:
             return {"success": False, "message": "Invalid quantity or price"}
@@ -155,6 +189,9 @@ class Investor(Base):
 
         total_proceeds = round(price * quantity, 2)
         cost_basis = round(existing_holding["average_cost"] * quantity, 2)
+        # Commission comes OUT of the proceeds on a sell.
+        platform_fee = calculate_platform_fee(total_proceeds)
+        net_proceeds = round(total_proceeds - platform_fee, 2)
 
         removed = Holding.removeShares(investor_id, symbol, quantity)
         if not removed:
@@ -164,12 +201,24 @@ class Investor(Base):
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
-            investor.paper_money += total_proceeds
+            investor.paper_money += net_proceeds
             investor.used_amount -= cost_basis
             if investor.used_amount < 0:
                 investor.used_amount = 0
             session.flush()
             new_balance = investor.paper_money
+
+            if platform_fee > 0:
+                WalletTransaction.record(
+                    session, investor_id, TXN_PLATFORM_FEE, -platform_fee,
+                    description=f"Platform fee — sell {symbol}",
+                    balance_after=new_balance,
+                )
+                PlatformRevenue.record(
+                    session, REV_TRADE_FEE, platform_fee,
+                    user_id=user_id,
+                    description=f"Sell {symbol} — ${total_proceeds:,.2f} executed",
+                )
 
         transaction_id = Transaction.createTransaction(
             investor_id, symbol, "sell", quantity, price, total_proceeds
@@ -180,7 +229,9 @@ class Investor(Base):
             "message": "Sell order executed successfully",
             "transaction_id": transaction_id,
             "paper_money": new_balance,
-            "total_amount": total_proceeds
+            "total_amount": total_proceeds,
+            "platform_fee": platform_fee,
+            "net_amount": net_proceeds,
         }
 
     @staticmethod

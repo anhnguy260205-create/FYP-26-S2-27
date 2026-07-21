@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { buyStock } from "../../api/tradingApi.js";
 import { getInvestorInformation } from "../../api/userApi.js";
+import { calculatePlatformFee, PLATFORM_FEE_LABEL } from "../../utils/platformFee.js";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function companyName(symbol) {
@@ -46,7 +47,10 @@ function BuyStockPage() {
   const isMarketOpen = marketStatus === "OPEN";
 
   const estimatedTotal = price != null ? price * quantity : 0;
-  const insufficientFunds = paperMoney != null && estimatedTotal > paperMoney;
+  // Commission is charged on top of a buy, so the funds check must cover both.
+  const platformFee = calculatePlatformFee(estimatedTotal);
+  const totalWithFee = estimatedTotal + platformFee;
+  const insufficientFunds = paperMoney != null && totalWithFee > paperMoney;
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
@@ -89,7 +93,12 @@ function BuyStockPage() {
         return;
       }
       setPaperMoney(result.paper_money);
-      alert(`Bought ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each. Total: ${formatCurrency(result.total_amount)}`);
+      alert(
+        `Bought ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each.\n` +
+        `Subtotal: ${formatCurrency(result.total_amount)}\n` +
+        `Platform fee: ${formatCurrency(result.platform_fee ?? 0)}\n` +
+        `Total charged: ${formatCurrency(result.net_amount ?? result.total_amount)}`
+      );
       navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
@@ -250,8 +259,29 @@ function BuyStockPage() {
               display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px",
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                <span style={{ color: "#5B6C88" }}>Estimated Total</span>
+                <span style={{ color: "#5B6C88" }}>Subtotal</span>
                 <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>{formatCurrency(estimatedTotal)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
+                <span style={{ color: "#5B6C88" }}>
+                  Platform Fee
+                  <span style={{ fontSize: "11px", color: "#94A3B8", marginLeft: "6px" }}>
+                    ({PLATFORM_FEE_LABEL})
+                  </span>
+                </span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
+                  {formatCurrency(platformFee)}
+                </span>
+              </div>
+              <div style={{
+                display: "flex", justifyContent: "space-between",
+                fontFamily: "'DM Sans', sans-serif", fontSize: "14px",
+                paddingTop: "10px", borderTop: "1px solid rgba(15,23,42,0.10)",
+              }}>
+                <span style={{ color: "#0F172A", fontWeight: 600 }}>Estimated Total</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#0F172A" }}>
+                  {formatCurrency(totalWithFee)}
+                </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
                 <span style={{ color: "#5B6C88" }}>Available Paper Funds</span>
@@ -261,7 +291,7 @@ function BuyStockPage() {
               </div>
               {insufficientFunds && (
                 <div style={{ color: "#DC2626", fontSize: "12px", fontFamily: "'DM Sans', sans-serif" }}>
-                  Insufficient funds for this order.
+                  Insufficient funds — this order costs {formatCurrency(totalWithFee)} including the platform fee.
                 </div>
               )}
             </div>

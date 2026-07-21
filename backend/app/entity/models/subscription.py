@@ -67,6 +67,21 @@ class Subscription(Base):
                 investor.investor_subscription_status = plan_type
 
             session.flush()
+
+            # Book the subscription into the platform revenue ledger so the
+            # finance dashboard reads from ONE table instead of stitching
+            # subscriptions and everything else together. Amount is stored in
+            # cents here but revenue is kept in dollars.
+            from app.entity.models.wallet import PlatformRevenue, REV_SUBSCRIPTION
+            PlatformRevenue.record_once(
+                session,
+                REV_SUBSCRIPTION,
+                round((subscription.amount or 0) / 100.0, 2),
+                reference_id=subscription.sub_id,
+                user_id=investor.user_id if investor else None,
+                description=f"{plan_type.capitalize()} subscription",
+            )
+
             print("SUBSCRIPTION CREATED")
             return subscription.sub_id
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, UniqueConstraint
+from sqlalchemy import Column, String, DateTime, UniqueConstraint, func
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
 from datetime import datetime
@@ -78,3 +78,42 @@ class ExpertFollow(Base):
             return session.query(ExpertFollow).filter(
                 ExpertFollow.expert_user_id == expert_user_id
             ).count()
+
+    @staticmethod
+    def get_premium_follower_count(expert_user_id) -> int:
+        """Followers on the premium plan — the only ones that earn the expert
+        compensation. Verified experts get complimentary premium, so they're
+        counted too (mirrors isPremiumUser() on the frontend)."""
+        from app.entity.models.investor import Investor
+        from app.entity.models.expertverification import ExpertVerification
+
+        with get_session() as session:
+            follower_ids = [
+                uid for (uid,) in session.query(
+                    ExpertFollow.follower_user_id
+                ).filter(
+                    ExpertFollow.expert_user_id == expert_user_id
+                ).all()
+            ]
+            if not follower_ids:
+                return 0
+
+            premium = set(
+                uid for (uid,) in session.query(Investor.user_id).filter(
+                    Investor.user_id.in_(follower_ids),
+                    Investor.investor_subscription_status == "premium",
+                ).all()
+            )
+
+            # Verified experts who follow this expert also count as premium.
+            verified_expert_followers = session.query(Expert.user_id).join(
+                ExpertVerification,
+                ExpertVerification.expert_id == Expert.expert_id,
+            ).filter(
+                Expert.user_id.in_(follower_ids),
+                func.lower(ExpertVerification.verification_status).in_(
+                    ("approved", "active", "verified")),
+            ).all()
+            premium.update(uid for (uid,) in verified_expert_followers)
+
+            return len(premium)

@@ -15,9 +15,37 @@ from app.control.controller.tradingc import (
     CancelOrderController,
 )
 from app.control.services.auth import get_current_user
+from app.control.services.trading_engine import (
+    calculate_platform_fee, PLATFORM_FEE_MIN, PLATFORM_FEE_RATE,
+)
 from app.boundary.stock_ws import get_live_price, get_market_status
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
+
+
+@router.get("/fee-schedule")
+def get_fee_schedule():
+    """Lets the Buy/Sell screens show the commission before the user commits,
+    using the same numbers the server will actually charge."""
+    return {
+        "success": True,
+        "minimum": PLATFORM_FEE_MIN,
+        "rate": PLATFORM_FEE_RATE,
+        "rate_percent": round(PLATFORM_FEE_RATE * 100, 4),
+        "description": (
+            f"${PLATFORM_FEE_MIN:.2f} minimum, or "
+            f"{PLATFORM_FEE_RATE * 100:g}% of trade value — whichever is greater"
+        ),
+    }
+
+
+@router.get("/fee-quote")
+def get_fee_quote(trade_value: float):
+    return {
+        "success": True,
+        "trade_value": round(trade_value, 2),
+        "fee": calculate_platform_fee(trade_value),
+    }
 
 
 class BuyRequest(BaseModel):

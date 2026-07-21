@@ -99,6 +99,9 @@ class AdminUserAccountPage:
     def getRevenueByMonth(self, months=6):
         return self.controller.getRevenueByMonth(months)
 
+    def getRevenueLedger(self, source=None, limit=100):
+        return self.controller.getRevenueLedger(source, limit)
+
     def getSubscriptions(self):
         return self.controller.getSubscriptions()
 
@@ -251,6 +254,15 @@ def get_revenue_stats(current_user: dict = Depends(require_admin)):
 def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueByMonth(months)}
+
+
+@router.get("/revenue-ledger")
+def get_revenue_ledger(source: str = None, limit: int = 100,
+                       current_user: dict = Depends(require_admin)):
+    """Line-by-line platform revenue, optionally filtered to one source
+    (subscription / trade_fee / gift_commission)."""
+    boundary = AdminUserAccountPage()
+    return boundary.getRevenueLedger(source, limit)
 
 
 @router.get("/subscriptions")
