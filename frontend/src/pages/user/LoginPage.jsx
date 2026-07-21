@@ -35,6 +35,7 @@ function LoginPage() {
       else navigate("/investor");
     }
     else if (role === "admin") navigate("/adminpanel");
+    else if (role === "hr") navigate("/finance-admin/document-verification")
     else setError("Unknown role: " + role);
   };
 

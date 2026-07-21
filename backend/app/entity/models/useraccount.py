@@ -230,6 +230,17 @@ def seed_admin_account():
         address="123 Admin Street"
     )
 
+def seed_hr_account():
+    UserAccount.createAccount(
+        email_address="fyphr123@gmail.com",
+        profile_name="hr",
+        username="finance_hr",
+        full_name="Finance Admin User",
+        phone_number="1234567890",
+        address="Finance Operations Department",
+    )
+
 
 if __name__ == "__main__":
     seed_admin_account()
+    seed_hr_account()
