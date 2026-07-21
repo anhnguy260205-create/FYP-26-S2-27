@@ -166,10 +166,10 @@ export default function ExpertPortfolio() {
                         <h1
                             style={{
                                 fontFamily: "'DM Mono', monospace",
-                                fontSize: "clamp(26px, 6vw, 40px)",
-                                fontWeight: 800,
+                                fontSize: 28,
+                                fontWeight: 700,
                                 color: PAGE.heading,
-                                letterSpacing: "0.02em",
+                                letterSpacing: "0.04em",
                                 lineHeight: 1,
                             }}
                         >
