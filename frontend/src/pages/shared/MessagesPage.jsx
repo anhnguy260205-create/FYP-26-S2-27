@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import {
   sendChatMessage, getConversations, getChatMessages, searchChatUsers,
@@ -80,7 +79,8 @@ export default function MessagesPage() {
     } catch { return {}; }
   })();
   const role = String(me?.role || "").toLowerCase();
-  const isExpert = role === "expert";
+  // Merged roles: experts are investors with the is_expert flag.
+  const isExpert = role === "expert" || me?.is_expert === true;
   const isPremium = String(me?.subscription_status || "").toLowerCase() === "premium";
   const hasAccess = isExpert || isPremium;
 
@@ -209,7 +209,7 @@ export default function MessagesPage() {
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
-      {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+      <RoleHeader />
 
       <main className="flex-1 p-4 md:p-7 flex flex-col">
         <div className="mb-5">

@@ -381,6 +381,14 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
             "message": "Expert not found",
         }
 
+    # Verified experts automatically enjoy premium benefits (alerts, unlimited
+    # predictions, etc.) without a paid subscription.
+    from app.entity.models.expert import Expert
+    from app.entity.models.investor import Investor
+    _user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if _user_id:
+        Investor.setSubscriptionStatus(_user_id, "premium")
+
     _notify_expert_verification(
         expert_id,
         notif_title="Your expert account has been verified",
@@ -435,6 +443,14 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
         }
 
     ExpertVerification.update_documents(expert_id, [])
+
+    # Revoking verified status also removes the complimentary premium tier
+    # (falls back to any paid subscription the user still has).
+    from app.entity.models.expert import Expert
+    from app.entity.models.investor import Investor
+    _user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if _user_id:
+        Investor.revokeExpertPremium(_user_id)
 
     _notify_expert_verification(
         expert_id,

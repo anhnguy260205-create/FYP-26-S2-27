@@ -7,13 +7,10 @@ from app.control.services.firebase_admin_service import delete_firebase_user_by_
 
 class CreateAccountController:
     def createAccount(self, role, username, email_address) -> bool:
-        role = role.strip().lower()
-
-        if role == "investor":
-            return Investor.createAccount(username=username, email_address=email_address)
-        if role == "expert":
-            return Expert.createAccount(username=username, email_address=email_address)
-        return False
+        # Roles were merged: every new signup is an investor. Users can later
+        # upgrade to expert (trade 30 stocks + 200% profit margin, then submit
+        # documents for review) — see /expert/eligibility and /expert/apply.
+        return Investor.createAccount(username=username, email_address=email_address)
 
 
 class LogoutController:

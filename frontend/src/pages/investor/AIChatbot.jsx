@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground } from "../../utils/userRole.js";
 import { useRef, useState } from "react";
 import {
     Bot, Send, MessageSquare, TrendingUp, Brain,
@@ -171,7 +172,7 @@ function AIChatbot() {
     return (
         <motion.div
             className="min-h-screen flex flex-col text-white"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+            style={{ background: getPageBackground() }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}

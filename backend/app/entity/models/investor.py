@@ -284,6 +284,39 @@ class Investor(Base):
                 Notification.user_id == user_id
             ).delete()
 
+            # 2b. Merged roles: the account may also have an expert row —
+            # remove its children first so the user_account delete succeeds.
+            from app.entity.models.expert import Expert
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if expert:
+                from app.entity.models.article import Article
+                from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+                from app.entity.models.expertverification import ExpertVerification
+                from app.entity.models.expertcompensation import ExpertCompensationLedger
+
+                portfolio_ids = [
+                    p.portfolio_id for p in session.query(ExpertPortfolio).filter(
+                        ExpertPortfolio.expert_id == expert.expert_id
+                    ).all()
+                ]
+                if portfolio_ids:
+                    session.query(ExpertPortfolioHolding).filter(
+                        ExpertPortfolioHolding.portfolio_id.in_(portfolio_ids)
+                    ).delete(synchronize_session=False)
+                session.query(ExpertPortfolio).filter(
+                    ExpertPortfolio.expert_id == expert.expert_id
+                ).delete()
+                session.query(Article).filter(
+                    Article.expert_id == expert.expert_id
+                ).delete()
+                session.query(ExpertCompensationLedger).filter(
+                    ExpertCompensationLedger.expert_id == expert.expert_id
+                ).delete()
+                ExpertVerification.delete_for_expert(session, expert.expert_id)
+                session.delete(expert)
+
             # 3. Investor row (child of user_account)
             session.delete(investor)
             session.flush()
@@ -314,6 +347,71 @@ class Investor(Base):
                 return {"success": False, "message": f"Balance cannot exceed ${MAX_BALANCE:,.0f}"}
             investor.paper_money = new_balance
             return {"success": True, "paper_money": new_balance}
+
+    @staticmethod
+    def setSubscriptionStatus(user_id, status: str):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            investor.investor_subscription_status = status
+            return True
+
+    @staticmethod
+    def revokeExpertPremium(user_id):
+        """Called when expert verification is rejected/cancelled: fall back to
+        the latest active paid subscription plan, or inactive if none."""
+        from app.entity.models.subscription import Subscription
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return False
+            paid = (
+                session.query(Subscription)
+                .filter(
+                    Subscription.investor_id == investor.investor_id,
+                    Subscription.sub_status == "active",
+                )
+                .order_by(Subscription.sub_date.desc())
+                .first()
+            )
+            investor.investor_subscription_status = paid.plan_type if paid else "inactive"
+            return True
+
+    @staticmethod
+    def getExpertEligibility(user_id, min_distinct_stocks=30, min_profit_margin=200.0):
+        """Expert-upgrade requirements: traded >= 30 distinct stocks and hit a
+        realized profit margin of >= 200% on the S$2,000 starting capital.
+        Profit = paper_money + used_amount (cost basis of holdings) - 2000."""
+        from app.entity.models.transaction import Transaction
+
+        STARTING_CAPITAL = 2000.0
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return None
+            investor_id = investor.investor_id
+            paper_money = investor.paper_money or 0
+            used_amount = investor.used_amount or 0
+
+        distinct_stocks = Transaction.getDistinctSymbolCount(investor_id)
+        profit = round(paper_money + used_amount - STARTING_CAPITAL, 2)
+        profit_margin = round(profit / STARTING_CAPITAL * 100, 2)
+
+        return {
+            "distinct_stocks": distinct_stocks,
+            "required_stocks": min_distinct_stocks,
+            "profit": profit,
+            "profit_margin": profit_margin,
+            "required_profit_margin": min_profit_margin,
+            "eligible": distinct_stocks >= min_distinct_stocks and profit_margin >= min_profit_margin,
+        }
 
     @staticmethod
     def update_investor_stock_level(user_id, stock_level):

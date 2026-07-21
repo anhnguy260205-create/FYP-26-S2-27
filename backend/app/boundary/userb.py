@@ -54,7 +54,8 @@ def _send_or_queue_login_otp(background_tasks: BackgroundTasks, email: str, otp:
 #  Public: registration 
 
 class CreateAccountRequest(BaseModel):
-    role: str
+    # Kept for backward compatibility but ignored — all signups are investors.
+    role: Optional[str] = "investor"
     username: str
     email_address: str
     recaptcha_token: Optional[str] = None

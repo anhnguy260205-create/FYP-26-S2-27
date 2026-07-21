@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useCallback, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -66,8 +66,7 @@ export default function Watchlist() {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
-    const role = String(currentUser?.role || "").toLowerCase();
-    const isExpert = role === "expert";
+    const isExpert = isExpertUser(currentUser);
 
     const { stocks: liveStocks, candles } = useLiveStocks();
 
@@ -140,9 +139,9 @@ export default function Watchlist() {
     });
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+            style={{ background: getPageBackground() }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            <RoleHeader />
 
             <main style={{ flex: 1, maxWidth: 1100, minHeight: "100vh", margin: "0 auto", width: "100%", padding: "88px 24px 48px", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
 
