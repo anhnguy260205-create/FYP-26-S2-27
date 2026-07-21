@@ -137,9 +137,9 @@ function WatchlistButton({ stock_symbol, currentUser }) {
       <button onClick={handleSubmit}
         style={{
           width: "200px", padding: "11px", borderRadius: "8px",
-          background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
+          background: "linear-gradient(90deg, #0F9D58, #16a34a)", color: "#fff",
           fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
-          cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
+          cursor: "pointer", boxShadow: "0 4px 16px rgba(15,157,88,0.3)", transition: "all 0.2s",
         }}>
         + Add to Watchlist
       </button>

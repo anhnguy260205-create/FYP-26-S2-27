@@ -599,7 +599,7 @@ export default function ReviewsPage() {
         </AnimatePresence>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.02em", color: PAGE.heading, margin: "0 0 6px" }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: "0 0 6px" }}>
             RocketTrade Reviews
           </h1>
           <p style={{ fontSize: 14, color: PAGE.sub, margin: 0 }}>

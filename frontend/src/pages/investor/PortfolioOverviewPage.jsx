@@ -229,7 +229,7 @@ function PortfolioOverviewPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.03em" }}>
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
             Portfolio Overview
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>

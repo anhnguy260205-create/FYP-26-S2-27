@@ -1,13 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FileCheck2, LogOut, Menu, X } from "lucide-react";
+import { DollarSign, FileCheck2, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { logoutAccount } from "../api/userApi";
 
 const menuItems = [
   {
-    name: "Document Verification",
+    name: "Dashboard",
+    path: "/finance-admin",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Expert Document Verification",
     path: "/finance-admin/document-verification",
     icon: FileCheck2,
+  },
+  {
+    name: "Subscription Management",
+    path: "/finance-admin/subscriptions",
+    icon: DollarSign,
   },
 ];
 
@@ -78,21 +88,20 @@ function FinanceAdminLayout({ title, subtitle, children }) {
           border-r border-gray-200 bg-white
           transition-transform duration-300 ease-in-out
           md:static
-          ${
-            sidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full md:translate-x-0"
+          ${sidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"
           }
         `}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
           <div>
             <h1 className="text-[15px] font-bold text-slate-900">
-              Finance Admin
+              Finance & Operations Admin
             </h1>
 
             <p className="text-[9px] text-slate-500">
-              Operations Panel
+              Administration Panel
             </p>
           </div>
 
@@ -109,9 +118,7 @@ function FinanceAdminLayout({ title, subtitle, children }) {
           {menuItems.map((item) => {
             const Icon = item.icon;
 
-            const active =
-              location.pathname === item.path ||
-              location.pathname.startsWith(`${item.path}/`);
+            const active = location.pathname === item.path;
 
             return (
               <Link
@@ -121,10 +128,9 @@ function FinanceAdminLayout({ title, subtitle, children }) {
                 className={`
                   flex items-center gap-2 rounded px-3 py-2.5
                   text-[11px] font-medium
-                  ${
-                    active
-                      ? "bg-blue-50 text-blue-600"
-                      : "text-slate-700 hover:bg-slate-100"
+                  ${active
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-700 hover:bg-slate-100"
                   }
                 `}
               >

@@ -148,7 +148,7 @@ export default function Watchlist() {
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
                             My Watchlist
                         </h1>
                         <p className="mt-1.5 text-sm" style={{ color: C.muted }}>
@@ -179,7 +179,11 @@ export default function Watchlist() {
                                     <button
                                         onClick={() => { setAdding(false); setNewSymbol(""); }}
                                         className="text-xs px-3 py-2 rounded-lg"
-                                        style={{ background: C.card2, color: C.muted }}
+                                        style={{
+                                            background: "rgba(239,68,68,0.1)",
+                                            border: "1px solid rgba(239,68,68,0.25)",
+                                            color: C.danger,
+                                        }}
                                     >
                                         Cancel
                                     </button>
@@ -204,14 +208,21 @@ export default function Watchlist() {
                             }}
                             disabled={isAtLimit}
                             title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
-                            className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity"
+                            className="group relative overflow-hidden text-sm font-semibold px-4 py-2 rounded-lg"
                             style={{
-                                background: isAtLimit ? C.card2 : "linear-gradient(90deg, #00D3F2, #0092b8)",
+                                background: isAtLimit ? C.card2 : C.success,
                                 color: isAtLimit ? C.muted : "white",
                                 cursor: isAtLimit ? "not-allowed" : "pointer",
                             }}
                         >
-                            + Add Symbol
+                            {!isAtLimit && (
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
+                                    style={{ background: "linear-gradient(90deg, #22C55E, #0F9D58)" }}
+                                />
+                            )}
+                            <span className="relative">+ Add Symbol</span>
                         </button>
                     </div>
                 </div>
