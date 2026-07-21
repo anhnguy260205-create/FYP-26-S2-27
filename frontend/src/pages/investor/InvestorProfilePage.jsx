@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground, getAvatarGradient, isExpertUser } from "../../utils/userRole.js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
@@ -183,7 +184,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
             {/* Avatar */}
             <div style={{ position: "relative", padding: "0 18px", marginTop: "-34px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "10px" }}>
                 <div className="relative group" style={{ cursor: "pointer" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #0092b8, #155dfc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #FFFFFF" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: getAvatarGradient(), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 0 3px #FFFFFF" }}>
                         <span style={{ fontSize: "16px", fontWeight: 700, color: "white" }}>{initials}</span>
                     </div>
                 </div>
@@ -203,7 +204,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{currentUser?.role}</span>
+                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{isExpertUser(currentUser) ? "Expert" : "Investor"}</span>
                 </div>
             </div>
 
@@ -414,8 +415,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 width: "56px",
                                 height: "56px",
                                 borderRadius: "50%",
-                                background:
-                                    "linear-gradient(135deg, #3b82f6, #0092b8)",
+                                background: getAvatarGradient(),
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -1417,7 +1417,7 @@ function InvestorProfilePage() {
             className="min-h-screen flex flex-col"
             style={{
                 fontFamily: "'DM Sans', sans-serif",
-                background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)",
+                background: getPageBackground(),
             }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

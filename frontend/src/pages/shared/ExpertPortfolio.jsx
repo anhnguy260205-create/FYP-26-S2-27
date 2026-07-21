@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground } from "../../utils/userRole.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -113,8 +113,8 @@ export default function ExpertPortfolio() {
     const navigate = useNavigate();
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const role = String(currentUser?.role || "").toLowerCase();
-    const isExpert = role === "expert";
-    const canManage = isExpert && currentUser?.verification_status === "approved";
+    // Merged roles: experts are investors with the is_expert flag.
+    const isExpert = currentUser?.is_expert === true || role === "expert";
 
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
@@ -155,9 +155,9 @@ export default function ExpertPortfolio() {
 
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)", color: C.text }}
+            style={{ background: getPageBackground(), color: C.text }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} >
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            <RoleHeader />
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
                 {/* Header */}
@@ -166,10 +166,10 @@ export default function ExpertPortfolio() {
                         <h1
                             style={{
                                 fontFamily: "'DM Mono', monospace",
-                                fontSize: "clamp(26px, 6vw, 40px)",
-                                fontWeight: 800,
+                                fontSize: 28,
+                                fontWeight: 700,
                                 color: PAGE.heading,
-                                letterSpacing: "0.02em",
+                                letterSpacing: "0.04em",
                                 lineHeight: 1,
                             }}
                         >
@@ -187,24 +187,6 @@ export default function ExpertPortfolio() {
                         </p>
                     </div>
 
-                    {canManage && (
-                        <button
-                            onClick={() => navigate("/expert/portfolio")}
-                            style={{
-                                padding: "10px 20px",
-                                borderRadius: "10px",
-                                cursor: "pointer",
-                                background: "rgba(0,211,242,0.12)",
-                                border: "1px solid rgba(0,211,242,0.3)",
-                                color: C.cyan,
-                                fontWeight: 600,
-                                fontSize: 14,
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            My Portfolio
-                        </button>
-                    )}
                 </div>
                 <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
 
@@ -243,9 +225,9 @@ export default function ExpertPortfolio() {
                         style={{
                             width: "120px",
                             borderRadius: "10px",
-                            background: C.accent,
+                            background: C.success,
                             border: "none",
-                            color: C.accentText,
+                            color: "#fff",
                             fontWeight: 700,
                             cursor: "pointer",
                         }}

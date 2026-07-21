@@ -88,7 +88,7 @@ export default function TransactionPortalPage() {
                 {/* Page header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
                     <div>
-                        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Transaction Portal</h1>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", margin: 0 }}>Transaction Portal</h1>
                         <p style={{ color: C.muted, margin: "4px 0 0", fontSize: 13 }}>
                             Full overview of your paper trading activity
                         </p>

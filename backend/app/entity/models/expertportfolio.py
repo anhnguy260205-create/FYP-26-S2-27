@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
@@ -30,6 +30,8 @@ class ExpertPortfolio(Base):
     time_horizon = Column(String(80), nullable=True, default="3-5 years")
     target_audience = Column(String(160), nullable=True)
     status = Column(String(20), default="Active")
+    # Published portfolios appear on the logged-in homepage for premium users.
+    is_published = Column(Boolean, default=False, nullable=False)
     created_by = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=_now)
     last_rebalanced = Column(DateTime, default=_now)
@@ -103,6 +105,7 @@ def _serialise_portfolio(portfolio):
         "time_horizon": portfolio.time_horizon,
         "target_audience": portfolio.target_audience,
         "status": portfolio.status,
+        "is_published": bool(portfolio.is_published),
         "created_by": portfolio.created_by,
         "created_at": portfolio.created_at.isoformat() if portfolio.created_at else None,
         "last_rebalanced": portfolio.last_rebalanced.isoformat() if portfolio.last_rebalanced else None,
@@ -189,6 +192,153 @@ class ExpertPortfolioRepository:
                 ))
             session.flush()
             return _serialise_portfolio(portfolio)
+
+    @staticmethod
+    def get_by_user(user_id):
+        """The expert's portfolio WITHOUT demo seeding and without falling
+        back to another expert — used for investor-facing views."""
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if not expert:
+                return None
+            portfolio = session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id).first()
+            return _serialise_portfolio(portfolio)
+
+    @staticmethod
+    def publish_real_portfolio(user_id):
+        """Sync the expert's REAL trading portfolio (holdings + paper cash
+        from the transactions section) into their expert portfolio and mark
+        it published so investors can see it on the expert's profile."""
+        from app.entity.models.expertverification import ExpertVerification
+        from app.entity.models.investor import Investor
+        from app.entity.models.holding import Holding
+        from app.entity.models.useraccount import UserAccount
+
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if not expert:
+                return {"success": False, "message": "Expert profile not found"}
+            verification = ExpertVerification.get_for_expert(expert.expert_id)
+            if (verification or {}).get("verification_status") not in ("approved", "active"):
+                return {"success": False, "message": "Only verified experts can publish their portfolio"}
+            expert_id = expert.expert_id
+            risk_level = expert.risk_tolerance
+
+        investor = Investor.getInvestorByUserId(user_id)
+        if not investor:
+            return {"success": False, "message": "Investor account not found"}
+
+        holdings = Holding.getHoldingsByInvestor(investor["investor_id"])
+        if not holdings:
+            return {"success": False, "message": "You have no holdings to publish — make some trades first."}
+
+        user = UserAccount.get_user_information(user_id) or {}
+        display_name = user.get("full_name") or user.get("username") or "Expert"
+
+        total_invested_all = sum(
+            float(h["quantity"]) * float(h["average_cost"]) for h in holdings) or 1.0
+
+        with get_session() as session:
+            portfolio = session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert_id).first()
+            if not portfolio:
+                portfolio = ExpertPortfolio(
+                    portfolio_id=f"portfolio_{uuid4()}", expert_id=expert_id)
+                session.add(portfolio)
+
+            portfolio.portfolio_name = f"{display_name}'s Trading Portfolio"
+            portfolio.description = (
+                "Snapshot of this expert's actual RocketTrade paper-trading "
+                "portfolio, published from their Portfolio Overview.")
+            portfolio.investment_objective = portfolio.investment_objective or \
+                "Grow capital through active stock selection."
+            portfolio.risk_level = risk_level or portfolio.risk_level or "Moderate"
+            portfolio.created_by = display_name
+            portfolio.cash_balance = float(investor.get("paper_money") or 0)
+            portfolio.is_published = True
+            portfolio.last_rebalanced = _now()
+
+            portfolio.holdings[:] = []
+            for h in holdings:
+                invested = round(float(h["quantity"]) * float(h["average_cost"]), 2)
+                portfolio.holdings.append(ExpertPortfolioHolding(
+                    holding_id=f"holding_{uuid4()}",
+                    ticker=str(h["symbol"]).upper(),
+                    company_name=str(h["symbol"]).upper(),
+                    asset_class="Equity",
+                    sector="",
+                    units=float(h["quantity"]),
+                    average_buy_price=float(h["average_cost"]),
+                    current_price=float(h["average_cost"]),
+                    total_invested=invested,
+                    allocation_percentage=round(invested / total_invested_all * 100, 1),
+                    purchase_rationale="",
+                ))
+            session.flush()
+            return {
+                "success": True,
+                "message": "Portfolio published to your expert profile",
+                "portfolio": _serialise_portfolio(portfolio),
+            }
+
+    @staticmethod
+    def set_published(user_id, published: bool):
+        """Publish/unpublish the expert's portfolio to the homepage. Only
+        verified experts may publish."""
+        from app.entity.models.expertverification import ExpertVerification
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if not expert:
+                return {"success": False, "message": "Expert profile not found"}
+
+            if published:
+                verification = ExpertVerification.get_for_expert(expert.expert_id)
+                status = (verification or {}).get("verification_status")
+                if status not in ("approved", "active"):
+                    return {"success": False, "message": "Only verified experts can publish their portfolio"}
+
+            portfolio = session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id).first()
+            if not portfolio:
+                return {"success": False, "message": "Create your portfolio first"}
+            portfolio.is_published = published
+            session.flush()
+            return {"success": True, "is_published": bool(portfolio.is_published)}
+
+    @staticmethod
+    def get_published():
+        """All published portfolios with the owning expert's display info —
+        shown on the logged-in homepage to premium users."""
+        from app.entity.models.useraccount import UserAccount
+        with get_session() as session:
+            rows = (
+                session.query(ExpertPortfolio, Expert, UserAccount)
+                .join(Expert, Expert.expert_id == ExpertPortfolio.expert_id)
+                .join(UserAccount, UserAccount.user_id == Expert.user_id)
+                .filter(ExpertPortfolio.is_published == True)  # noqa: E712
+                .all()
+            )
+            out = []
+            for portfolio, expert, user in rows:
+                data = _serialise_portfolio(portfolio)
+                total_value = sum(
+                    float(h.units or 0) * float(h.current_price or 0)
+                    for h in portfolio.holdings)
+                invested = data["total_invested"] or 0
+                data.update({
+                    "expert_user_id": expert.user_id,
+                    "expert_name": user.full_name or user.username or "Expert",
+                    "expert_rating": expert.rating,
+                    "experience_years": expert.experience_years,
+                    "total_value": round(total_value, 2),
+                    "return_pct": round((total_value - invested) / invested * 100, 2) if invested > 0 else 0.0,
+                })
+                out.append(data)
+            return out
 
     @staticmethod
     def _create_demo(session, expert_id):

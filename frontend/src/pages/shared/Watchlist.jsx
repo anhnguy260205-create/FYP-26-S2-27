@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { useState, useCallback, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -66,8 +66,7 @@ export default function Watchlist() {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
-    const role = String(currentUser?.role || "").toLowerCase();
-    const isExpert = role === "expert";
+    const isExpert = isExpertUser(currentUser);
 
     const { stocks: liveStocks, candles } = useLiveStocks();
 
@@ -140,16 +139,16 @@ export default function Watchlist() {
     });
     return (
         <motion.div className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+            style={{ background: getPageBackground() }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            <RoleHeader />
 
             <main style={{ flex: 1, maxWidth: 1100, minHeight: "100vh", margin: "0 auto", width: "100%", padding: "88px 24px 48px", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
 
                 {/* Page header */}
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 30, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: C.heading, margin: 0, lineHeight: 1 }}>
                             My Watchlist
                         </h1>
                         <p className="mt-1.5 text-sm" style={{ color: C.muted }}>
@@ -180,7 +179,11 @@ export default function Watchlist() {
                                     <button
                                         onClick={() => { setAdding(false); setNewSymbol(""); }}
                                         className="text-xs px-3 py-2 rounded-lg"
-                                        style={{ background: C.card2, color: C.muted }}
+                                        style={{
+                                            background: "rgba(239,68,68,0.1)",
+                                            border: "1px solid rgba(239,68,68,0.25)",
+                                            color: C.danger,
+                                        }}
                                     >
                                         Cancel
                                     </button>
@@ -205,14 +208,21 @@ export default function Watchlist() {
                             }}
                             disabled={isAtLimit}
                             title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
-                            className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity"
+                            className="group relative overflow-hidden text-sm font-semibold px-4 py-2 rounded-lg"
                             style={{
-                                background: isAtLimit ? C.card2 : "linear-gradient(90deg, #00D3F2, #0092b8)",
+                                background: isAtLimit ? C.card2 : C.success,
                                 color: isAtLimit ? C.muted : "white",
                                 cursor: isAtLimit ? "not-allowed" : "pointer",
                             }}
                         >
-                            + Add Symbol
+                            {!isAtLimit && (
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
+                                    style={{ background: "linear-gradient(90deg, #22C55E, #0F9D58)" }}
+                                />
+                            )}
+                            <span className="relative">+ Add Symbol</span>
                         </button>
                     </div>
                 </div>

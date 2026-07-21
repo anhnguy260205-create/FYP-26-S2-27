@@ -56,6 +56,15 @@ class Transaction(Base):
             ]
 
     @staticmethod
+    def getDistinctSymbolCount(investor_id):
+        """Number of distinct stock symbols this investor has ever traded —
+        used for the expert-upgrade eligibility check."""
+        with get_session() as session:
+            return session.query(Transaction.symbol).filter(
+                Transaction.investor_id == investor_id
+            ).distinct().count()
+
+    @staticmethod
     def getTransactionsByUserId(user_id, limit=100, symbol=None,
                                  transaction_type=None):
         """

@@ -1,5 +1,5 @@
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import useLiveStocks from "../../api/useLiveStocks.js";
@@ -54,7 +54,7 @@ function SearchBar({ onSearch, loading }) {
         onClick={handleSearch}
         disabled={loading}
         className="px-6 h-10 text-white font-semibold text-[16px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all whitespace-nowrap disabled:opacity-50"
-        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,146,184,0.25)" }}
+        style={{ background: "linear-gradient(90deg, #0F9D58, #16a34a)", boxShadow: "0px 10px 20px rgba(15,157,88,0.25)" }}
       >
         {loading ? "Searching…" : "Search"}
       </button>
@@ -318,9 +318,9 @@ function RealTimeDashBoardPage() {
   });
   const [browseCategory, setBrowseCategory] = useState("All");
   const navigate = useNavigate();
-  const editProfilePath = JSON.parse(sessionStorage.getItem("currentUser") || "{}").role === "expert"
-    ? "/expert/edit-profile"
-    : "/investor/edit-profile";
+  // Merged roles: everyone (including verified experts) edits their profile
+  // via the investor profile page — /expert/edit-profile is no longer routed.
+  const editProfilePath = "/investor/edit-profile";
 
   useEffect(() => {
     const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
@@ -329,7 +329,7 @@ function RealTimeDashBoardPage() {
     // This dashboard is shared between investors and experts — each role's
     // interests/risk tolerance live on a different record, so fetch the
     // right one instead of always assuming investor.
-    const isExpert = stored.role === "expert";
+    const isExpert = isExpertUser(stored);
     const endpoint = isExpert ? "expert-information" : "investor-information";
     const infoKey = isExpert ? "expert_information" : "investor_information";
     authFetch(`${import.meta.env.VITE_API_URL}/user/${endpoint}/${userId}`)
@@ -430,9 +430,7 @@ function RealTimeDashBoardPage() {
     );
   }, [stocks, searchQuery]);
   const [currentUser] = useState(() => JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}"));
-  const role = String(currentUser?.role || "").toLowerCase();
-
-  const isExpert = role === "expert";
+  const isExpert = isExpertUser(currentUser);
 
   const browseTabs = ["All", ...GICS_SECTORS];
 
@@ -451,10 +449,10 @@ function RealTimeDashBoardPage() {
   return (
     <motion.div
       className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+      style={{ background: getPageBackground() }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
     >
-      {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+      <RoleHeader />
       <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
         {/* ── Page header ────────────────────────────────────── */}
@@ -465,7 +463,7 @@ function RealTimeDashBoardPage() {
               background: marketStatus === "OPEN" ? "#0F9D58" : "#94A3B8",
               boxShadow: marketStatus === "OPEN" ? "0 0 0 5px rgba(15,157,88,0.18)" : "none",
             }} className={marketStatus === "OPEN" ? "animate-pulse" : ""} />
-            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: "clamp(26px, 6vw, 40px)", fontWeight: 800, letterSpacing: "0.02em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
+            <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
               Real-Time Dashboard
             </h1>
           </div>

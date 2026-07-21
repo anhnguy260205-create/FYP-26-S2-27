@@ -63,7 +63,9 @@ def _profile(session, user_id):
     investor = session.query(Investor).filter(
         Investor.user_id == user_id).first()
     expert = session.query(Expert).filter(Expert.user_id == user_id).first()
-    role = "investor" if investor else "expert" if expert else "admin"
+    # Merged roles: experts also have an investor row, but for the expert-
+    # consultation channel their expert identity takes precedence.
+    role = "expert" if expert else "investor" if investor else "admin"
     premium = bool(investor) and investor.investor_subscription_status == "premium"
     return {
         "user_id": user.user_id,
