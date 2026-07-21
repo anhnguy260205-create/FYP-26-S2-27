@@ -1,50 +1,85 @@
 import { useEffect, useState } from "react";
-import { Edit, Check, X, Image, ArrowUp, ArrowDown, Rocket, Sparkles, CreditCard, Link2, LayoutGrid, Eye } from "lucide-react";
+import {
+  Edit, Check, X, GripVertical, Eye, ChevronDown,
+  Rocket, Compass, ShieldCheck, Sparkles, Award, Layers,
+  PlayCircle, ListChecks, HelpCircle, CreditCard, Link2,
+} from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
-import imgTechnical from "../../images/techinical analysis.jpg";
-import imgAI from "../../images/aiprediction.jpg";
-import imgStrategy from "../../images/strategy.jpg";
-import imgNews from "../../images/news.jpg";
-import imgBeginner from "../../images/beginner.jpg";
-import imgTrading from "../../images/trading tip.jpg";
-import imgIT from "../../images/information technology.jpg";
-import imgFinancials from "../../images/financials.jpg";
-import imgConsumer from "../../images/consumer discretionary.jpg";
-import imgComm from "../../images/communication services.jpg";
-import imgEnergy from "../../images/energy.jpeg";
-import imgRealEstate from "../../images/real estate.jpg";
-
-const ROOM_IMAGES = {
-  "Technical Analysis": imgTechnical,
-  "AI Predictions": imgAI,
-  "Portfolio Strategy": imgStrategy,
-  "Market News": imgNews,
-  "Beginners Corner": imgBeginner,
-  "Trading Tips": imgTrading,
-  "Information Technology": imgIT,
-  "Financials": imgFinancials,
-  "Consumer Discretionary": imgConsumer,
-  "Communication Services": imgComm,
-  "Energy": imgEnergy,
-  "Real Estate": imgRealEstate,
-};
 
 const API = `${import.meta.env.VITE_API_URL}/admin/content`;
 
-const TABS = [
-  { key: "hero",       label: "Landing Page",    icon: Rocket,      hint: "Hero title and subtitle shown to guests on the home page." },
-  { key: "feature",    label: "Feature Bubbles", icon: Sparkles,    hint: "Floating feature cards on the landing and investor home pages." },
-  { key: "membership", label: "Membership Plans", icon: CreditCard, hint: "Feature lists shown on the Free and Premium plan cards in the Subscription page." },
-  { key: "expert",     label: "Expert",           icon: Rocket,      hint: "Hero title and subtitle shown on the Expert home page after login." },
-  { key: "footer",     label: "Footer",           icon: Link2,       hint: "Brand name, tagline, and all footer links (Product, Company, Contact)." },
-  { key: "forum",      label: "Forum Rooms",      icon: LayoutGrid,  hint: "Cover images assigned to each forum room. Images are bundled with the app." },
+// ── Tabs ──────────────────────────────────────────────────────────────────
+// Every tab here maps to a section that's actually rendered on the public
+// landing page (Homepage.jsx) or Footer — confirmed by searching the whole
+// frontend for where each section/content_id is read. Three tabs that used
+// to exist here (Feature Bubbles, Expert hero, Forum Rooms) were removed
+// because nothing in the app ever reads those sections; editing them did
+// nothing on any real page.
+//
+// kind: "hero"       — a single title+subtitle item, no items list below
+//       "generic"     — an optional header item (headerId) + a list of
+//                        cards (itemsSection), both editable
+//       "membership"  — the existing two-column Free/Premium plan editor
+//       "footer"      — the existing footer editor
+// ── Landing Page subtabs ─────────────────────────────────────────────────
+const LANDING_SUBTABS = [
+  { key: "hero",               label: "Landing Hero",     icon: Rocket,       kind: "hero",
+    hint: "The big headline at the very top of the home page." },
+  { key: "path",                label: "Choose Your Path", icon: Compass,      kind: "generic", preview: "role_toggle",
+    headerId: "header_path", itemsSection: "role_options",
+    hint: "The Investor / Expert role-picker section." },
+  { key: "why_investor",        label: "Why RocketTrade",  icon: ShieldCheck,  kind: "generic", preview: "cards",
+    headerId: "header_why_investor", itemsSection: "why_investor",
+    hint: "Investor trust cards (Zero-Risk Learning, etc.)." },
+  { key: "platform_features",   label: "Platform Features", icon: Sparkles,    kind: "generic", preview: "cards",
+    headerId: "header_features_investor", itemsSection: "platform_features",
+    hint: "\u201cEverything You Need to Invest Smarter\u201d cards." },
+  { key: "why_expert",          label: "Why Become Expert", icon: Award,       kind: "generic", preview: "cards",
+    headerId: "header_why_expert", itemsSection: "why_expert",
+    hint: "Expert trust cards (Get Paid, etc.)." },
+  { key: "expert_features",     label: "Expert Features",  icon: Layers,       kind: "generic", preview: "cards",
+    headerId: "header_features_expert", itemsSection: "expert_features",
+    hint: "\u201cEverything You Get as an Expert\u201d cards." },
+  { key: "video",               label: "Video Section",    icon: PlayCircle,   kind: "generic", preview: "video",
+    headerId: "header_video", itemsSection: null,
+    hint: "Heading above the product walkthrough video." },
+  { key: "get_started",         label: "Get Started Steps", icon: ListChecks,  kind: "generic", preview: "steps",
+    headerId: "header_started", itemsSection: "get_started_steps",
+    hint: "The 4-step signup guide." },
+  { key: "faq",                 label: "FAQ",              icon: HelpCircle,   kind: "generic", preview: "faq",
+    headerId: "header_faq", itemsSection: "faq",
+    hint: "Questions and answers shown near the bottom of the page." },
 ];
 
-// Sections where item order is meaningful and can be nudged up/down.
+// ── Main tabs ─────────────────────────────────────────────────────────────
+// "Landing Page" groups every section that only appears on Homepage.jsx,
+// via its subtabs above. Membership Plans and Footer are their own main
+// tabs (not landing subtabs) because both are read by more than the
+// landing page — Membership Plans also drives SubscriptionPage.jsx, and
+// Footer renders on every page in the app via layout/Footer.jsx.
+const MAIN_TABS = [
+  { key: "landing",    label: "Landing Page",     icon: Rocket,     subtabs: LANDING_SUBTABS },
+  { key: "membership", label: "Membership Plans", icon: CreditCard, kind: "membership",
+    hint: "Pricing heading plus the Free/Premium plan cards \u2014 used on both the landing page and the Subscription page." },
+  { key: "footer",     label: "Footer",           icon: Link2,      kind: "footer",
+    hint: "Brand name, tagline, and footer links \u2014 shown on every page." },
+];
+
+// Sections where item order is meaningful and can be dragged to reorder.
 const ORDERABLE_SECTIONS = new Set([
-  "feature", "free_investor", "premium_investor",
-  "footer_product", "footer_company", "footer_contact", "forum_room",
+  "role_options", "why_investor", "platform_features", "why_expert", "expert_features",
+  "get_started_steps", "faq",
+  "free_investor", "premium_investor",
+  "footer_product", "footer_company", "footer_contact",
+]);
+
+// sections/tabs that show the description/subtitle field when editing a card
+const DESCRIPTION_SECTIONS = new Set([
+  "hero", "page_headers",
+  "role_options", "why_investor", "platform_features", "why_expert", "expert_features",
+  "get_started_steps", "faq",
+  "footer_brand", "footer_product", "footer_company", "footer_contact",
 ]);
 
 // ── Live preview mockups — lightweight, brand-matched approximations of how
@@ -64,29 +99,133 @@ function PreviewFrame({ label, children }) {
   );
 }
 
-function HeroPreview({ title, description, tone = "investor" }) {
-  const bg = tone === "expert"
-    ? "linear-gradient(135deg, #0B1D4F 0%, #0E7490 100%)"
-    : "linear-gradient(135deg, #73ADFF 0%, #0B1D4F 100%)";
+function HeroPreview({ title, description }) {
   return (
-    <div style={{ background: bg }} className="p-8 text-center">
-      <p className="text-white text-xl font-bold leading-tight mb-2">{title || "Your headline goes here"}</p>
-      <p className="text-white/80 text-sm mb-4">{description || "Your subtitle goes here"}</p>
-      <span className="inline-block bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-full">Get Started</span>
+    <div className="relative overflow-hidden text-center py-10 px-6" style={{ background: "linear-gradient(to bottom, #000000, #172554)" }}>
+      <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 50% 30%, rgba(59,130,246,0.22) 0%, transparent 60%)" }} />
+      <div className="relative">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 mb-4 text-[9px] font-semibold tracking-wide text-cyan-300 uppercase">
+          <Sparkles size={10} /> AI-Powered Investing Platform
+        </span>
+        <p className="text-lg font-extrabold leading-tight mb-2 bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #22d3ee, #60a5fa)" }}>
+          {title || "Your headline goes here"}
+        </p>
+        <p className="text-slate-400 text-xs mb-5">{description || "Your subtitle goes here"}</p>
+        <div className="flex gap-2 justify-center">
+          <span className="px-4 py-1.5 rounded-lg bg-cyan-500 text-white text-[10px] font-semibold">Get Started</span>
+          <span className="px-4 py-1.5 rounded-lg border border-slate-500 text-white text-[10px] font-semibold">Login</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-function FeaturePreview({ items }) {
+function CardGridPreview({ heading, description, items }) {
+  const shown = items.length ? items : [{ content_id: "placeholder", title: "Card title", description: "Card description" }];
   return (
-    <div className="p-6 bg-gradient-to-b from-blue-50 to-white">
-      <div className="flex flex-wrap gap-2 justify-center">
-        {(items.length ? items : [{ content_id: "placeholder", title: "Feature", description: "Description" }]).map(it => (
-          <div key={it.content_id} className="bg-white rounded-full border border-blue-100 shadow-sm px-4 py-2 text-center min-w-[110px]">
-            <p className="text-[11px] font-bold text-slate-800 leading-tight">{it.title}</p>
-            <p className="text-[9px] text-slate-400 leading-tight">{it.description}</p>
+    <div className="p-6 bg-white">
+      {(heading || description) && (
+        <div className="text-center mb-4">
+          <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
+          <p className="text-slate-500 text-[10px] mt-0.5">{description}</p>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        {shown.slice(0, 6).map(it => (
+          <div key={it.content_id} className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+            <div className="w-6 h-6 rounded-md bg-cyan-100 flex items-center justify-center mb-1.5">
+              <Sparkles size={12} className="text-cyan-600" />
+            </div>
+            <p className="text-[10px] font-bold text-slate-900 leading-tight">{it.title}</p>
+            <p className="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-2">{it.description}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function RoleTogglePreview({ heading, description, items }) {
+  const shown = items.length ? items : [{ content_id: "ph1", title: "Role" }, { content_id: "ph2", title: "Role" }];
+  return (
+    <div className="p-6 bg-white text-center">
+      <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
+      <p className="text-slate-500 text-[10px] mt-0.5 mb-4">{description}</p>
+      <div className="flex flex-col gap-2">
+        {shown.map((it, i) => (
+          <div key={it.content_id} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left ${i === 0 ? "border-cyan-500 bg-cyan-50" : "border-slate-200 bg-white"}`}>
+            <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${i === 0 ? "bg-cyan-100 text-cyan-600" : "bg-slate-100 text-slate-500"}`}>
+              <Compass size={14} />
+            </span>
+            <span>
+              <span className="block text-[11px] font-bold text-slate-800">{it.title}</span>
+              <span className="block text-[9px] text-slate-400">{it.description}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepsPreview({ heading, description, items }) {
+  const shown = items.length ? items : [{ content_id: "ph", title: "Step title", description: "Step description" }];
+  return (
+    <div className="p-6 bg-white">
+      <div className="text-center mb-4">
+        <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
+        <p className="text-slate-500 text-[10px] mt-0.5">{description}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {shown.slice(0, 4).map((it, i) => (
+          <div key={it.content_id} className="relative rounded-xl border border-blue-100 bg-blue-50 p-3">
+            <span className="absolute top-2 right-2 text-[8px] font-bold text-cyan-400">STEP {i + 1}</span>
+            <div className="w-6 h-6 rounded-md bg-cyan-100 flex items-center justify-center mb-1.5">
+              <Sparkles size={12} className="text-cyan-600" />
+            </div>
+            <p className="text-[10px] font-bold text-slate-900 leading-tight">{it.title}</p>
+            <p className="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-2">{it.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FaqPreview({ heading, description, items }) {
+  const shown = items.length ? items : [{ content_id: "ph", title: "Question", description: "Answer" }];
+  return (
+    <div className="p-6 bg-white">
+      <div className="text-center mb-4">
+        <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
+        <p className="text-slate-500 text-[10px] mt-0.5">{description}</p>
+      </div>
+      <div className="space-y-1.5">
+        {shown.slice(0, 4).map((it, i) => (
+          <div key={it.content_id} className="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <span className="text-[10px] font-semibold text-slate-900">{it.title}</span>
+              <ChevronDown size={12} className={`text-cyan-600 shrink-0 ${i === 0 ? "rotate-180" : ""}`} />
+            </div>
+            {i === 0 && <p className="px-3 pb-2 text-[9px] text-slate-500">{it.description}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VideoPreview({ heading, description }) {
+  return (
+    <div className="p-6 bg-white">
+      <div className="text-center mb-4">
+        <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
+        <p className="text-slate-400 text-[10px] mt-0.5">{description}</p>
+      </div>
+      <div className="relative aspect-video w-full rounded-xl border border-cyan-400/30 bg-slate-900 flex items-center justify-center">
+        <span className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center">
+          <PlayCircle className="text-white" size={16} />
+        </span>
       </div>
     </div>
   );
@@ -110,11 +249,19 @@ function MembershipCard({ name, price, sub, features, highlight }) {
   );
 }
 
-function MembershipPreview({ freeName, freePrice, freePriceSub, premName, premPrice, premPriceSub, freeFeatures, premFeatures }) {
+function MembershipPreview({ heading, description, freeName, freePrice, freePriceSub, premName, premPrice, premPriceSub, freeFeatures, premFeatures }) {
   return (
-    <div className="p-5 bg-slate-50 flex gap-3">
-      <MembershipCard name={freeName} price={freePrice} sub={freePriceSub} features={freeFeatures} />
-      <MembershipCard name={premName} price={premPrice} sub={premPriceSub} features={premFeatures} highlight />
+    <div className="bg-slate-50">
+      {(heading || description) && (
+        <div className="text-center pt-5 px-4">
+          <p className="text-slate-800 text-sm font-extrabold leading-tight">{heading}</p>
+          <p className="text-slate-500 text-[10px] mt-0.5">{description}</p>
+        </div>
+      )}
+      <div className="p-5 flex gap-3">
+        <MembershipCard name={freeName} price={freePrice} sub={freePriceSub} features={freeFeatures} />
+        <MembershipCard name={premName} price={premPrice} sub={premPriceSub} features={premFeatures} highlight />
+      </div>
     </div>
   );
 }
@@ -145,31 +292,15 @@ function FooterPreview({ brand, brandTagline, product, company, contact }) {
   );
 }
 
-function ForumPreview({ rooms }) {
-  return (
-    <div className="p-4 bg-slate-50 grid grid-cols-2 gap-2">
-      {(rooms.length ? rooms : []).slice(0, 4).map(r => {
-        const src = r.description || ROOM_IMAGES[r.title];
-        return (
-          <div key={r.content_id} className="rounded-lg overflow-hidden border border-gray-200 bg-white">
-            <div className="h-14 bg-slate-200">
-              {src && <img src={src} alt={r.title} className="w-full h-full object-cover" onError={e => { e.target.style.display = "none"; }} />}
-            </div>
-            <p className="text-[9px] font-semibold text-slate-700 px-2 py-1 truncate">{r.title}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function ContentManagementPage() {
   const [content, setContent] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ title: "", description: "" });
   const [saving, setSaving] = useState(false);
-  const [reordering, setReordering] = useState(null); // content_id currently moving
-  const [activeTab, setActiveTab] = useState("hero");
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const [activeMainTab, setActiveMainTab] = useState("landing");
+  const [activeSubTab, setActiveSubTab] = useState("hero");
   const [loading, setLoading] = useState(true);
 
   const fetchContent = async () => {
@@ -212,46 +343,73 @@ function ContentManagementPage() {
     }
   };
 
-  const move = async (content_id, direction) => {
-    setReordering(content_id);
-    try {
-      const res = await authFetch(`${API}/${content_id}/reorder`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction }),
-      });
-      const data = await res.json();
-      if (data.success) await fetchContent();
-      // silently ignore edge-of-list no-ops — button will just be disabled next render
-    } finally {
-      setReordering(null);
-    }
+  // ── Drag-and-drop reordering ─────────────────────────────────────────────
+  const reorderSection = async (section, orderedIds) => {
+    const res = await authFetch(`${API}/section/${section}/reorder`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ordered_ids: orderedIds }),
+    });
+    const data = await res.json();
+    if (!data.success) await fetchContent();
   };
 
-  const freePlanInfo    = content.filter((c) => c.section === "free_plan");
-  const premiumPlanInfo = content.filter((c) => c.section === "premium_plan");
-  const freeItems       = content.filter((c) => c.section === "free_investor");
-  const premiumItems    = content.filter((c) => c.section === "premium_investor");
-  const footerBrand     = content.filter((c) => c.section === "footer_brand");
-  const footerProduct   = content.filter((c) => c.section === "footer_product");
-  const footerCompany   = content.filter((c) => c.section === "footer_company");
-  const footerContact   = content.filter((c) => c.section === "footer_contact");
-  const forumRooms      = content.filter((c) => c.section === "forum_room");
-  const activeItems = ["membership", "footer", "forum"].includes(activeTab)
-    ? []
-    : content.filter((c) => c.section === activeTab);
+  const handleDrop = (list, targetId) => {
+    const draggedId = dragId;
+    setDragId(null);
+    setDragOverId(null);
+    if (!draggedId || draggedId === targetId) return;
 
-  const activeTabInfo = TABS.find((t) => t.key === activeTab);
+    const ids = list.map((i) => i.content_id);
+    const from = ids.indexOf(draggedId);
+    const to = ids.indexOf(targetId);
+    if (from === -1 || to === -1) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, draggedId);
 
-  // sections that show the description/subtitle field when editing
-  const showDescription = (section) => ["hero", "expert", "feature", "footer_brand", "footer_product", "footer_company", "footer_contact"].includes(section);
+    const section = list[0].section;
+    setContent((prev) => {
+      const untouched = prev.filter((p) => p.section !== section);
+      const reordered = ids.map((id, idx) => ({ ...prev.find((p) => p.content_id === id), order_index: idx }));
+      return [...untouched, ...reordered];
+    });
+    reorderSection(section, ids);
+  };
+
+  const byId = (id) => content.find((c) => c.content_id === id);
+  const bySection = (section) => content.filter((c) => c.section === section);
+
+  const freePlanInfo    = bySection("free_plan");
+  const premiumPlanInfo = bySection("premium_plan");
+  const freeItems       = bySection("free_investor");
+  const premiumItems    = bySection("premium_investor");
+  const footerBrand     = bySection("footer_brand");
+  const footerProduct   = bySection("footer_product");
+  const footerCompany   = bySection("footer_company");
+  const footerContact   = bySection("footer_contact");
+
+  const currentMainTab = MAIN_TABS.find((t) => t.key === activeMainTab);
+  const activeTabInfo = currentMainTab?.subtabs
+    ? currentMainTab.subtabs.find((t) => t.key === activeSubTab)
+    : currentMainTab;
 
   const renderRow = (item, list) => {
     const isEditing = editing === item.content_id;
-    const idx = list.findIndex(i => i.content_id === item.content_id);
     const orderable = ORDERABLE_SECTIONS.has(item.section) && list.length > 1;
+    const isDragOver = orderable && dragOverId === item.content_id && dragId !== item.content_id;
+    const showDesc = DESCRIPTION_SECTIONS.has(item.section);
     return (
-      <div key={item.content_id} className="bg-white rounded-lg p-5 border border-gray-100 hover:border-blue-200 transition-colors">
+      <div
+        key={item.content_id}
+        draggable={orderable && !isEditing}
+        onDragStart={() => setDragId(item.content_id)}
+        onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+        onDragOver={(e) => { if (orderable) { e.preventDefault(); setDragOverId(item.content_id); } }}
+        onDrop={(e) => { e.preventDefault(); if (orderable) handleDrop(list, item.content_id); }}
+        className={`bg-white rounded-lg p-5 border transition-colors ${
+          isDragOver ? "border-blue-400 border-dashed bg-blue-50/50" : "border-gray-100 hover:border-blue-200"
+        } ${dragId === item.content_id ? "opacity-40" : ""}`}
+      >
         {isEditing ? (
           <div className="space-y-3">
             <div>
@@ -262,10 +420,12 @@ function ContentManagementPage() {
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               />
             </div>
-            {showDescription(item.section) && (
+            {showDesc && (
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
-                  {item.section === "hero" ? "SUBTITLE" : ["footer_product", "footer_company", "footer_contact"].includes(item.section) ? "URL" : "DESCRIPTION"}
+                  {["hero", "page_headers"].includes(item.section) ? "SUBTITLE"
+                    : ["footer_product", "footer_company", "footer_contact"].includes(item.section) ? "URL"
+                    : item.section === "faq" ? "ANSWER" : "DESCRIPTION"}
                 </label>
                 <input
                   value={form.description}
@@ -275,17 +435,12 @@ function ContentManagementPage() {
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button
-                onClick={() => saveEdit(item.content_id)}
-                disabled={saving}
-                className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
-              >
+              <button onClick={() => saveEdit(item.content_id)} disabled={saving}
+                className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
                 <Check size={14} /> Save
               </button>
-              <button
-                onClick={cancelEdit}
-                className="flex items-center gap-1 border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm"
-              >
+              <button onClick={cancelEdit}
+                className="flex items-center gap-1 border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm">
                 <X size={14} /> Cancel
               </button>
             </div>
@@ -294,15 +449,8 @@ function ContentManagementPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               {orderable && (
-                <div className="flex flex-col gap-0.5 pt-0.5">
-                  <button onClick={() => move(item.content_id, "up")} disabled={idx === 0 || !!reordering}
-                    className="text-slate-400 hover:text-blue-600 disabled:opacity-25 disabled:hover:text-slate-400">
-                    <ArrowUp size={14} />
-                  </button>
-                  <button onClick={() => move(item.content_id, "down")} disabled={idx === list.length - 1 || !!reordering}
-                    className="text-slate-400 hover:text-blue-600 disabled:opacity-25 disabled:hover:text-slate-400">
-                    <ArrowDown size={14} />
-                  </button>
+                <div className="pt-0.5 text-slate-300 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                  <GripVertical size={16} />
                 </div>
               )}
               <div>
@@ -312,10 +460,8 @@ function ContentManagementPage() {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => startEdit(item)}
-              className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm shrink-0"
-            >
+            <button onClick={() => startEdit(item)}
+              className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm shrink-0">
               <Edit size={13} /> Edit
             </button>
           </div>
@@ -326,78 +472,80 @@ function ContentManagementPage() {
 
   // Live values fed into the preview — while editing, reflect the in-progress
   // form so the preview updates as you type; otherwise use the saved values.
-  const liveTitle = (item) => (editing === item?.content_id ? form.title : item?.title) || "";
-  const liveDesc  = (item) => (editing === item?.content_id ? form.description : item?.description) || "";
+  const liveItem = (item) => item?.content_id === editing ? { ...item, title: form.title, description: form.description } : item;
+  const liveList = (list) => list.map(liveItem);
 
   const renderPreview = () => {
-    if (activeTab === "hero") {
-      const hero = activeItems[0];
-      return <PreviewFrame label="Landing page"><HeroPreview title={liveTitle(hero)} description={liveDesc(hero)} /></PreviewFrame>;
+    if (activeMainTab === "landing" && activeSubTab === "hero") {
+      const hero = liveItem(byId("content_hero"));
+      return <PreviewFrame label="Landing page"><HeroPreview title={hero?.title} description={hero?.description} /></PreviewFrame>;
     }
-    if (activeTab === "expert") {
-      const hero = activeItems[0];
-      return <PreviewFrame label="Expert home"><HeroPreview title={liveTitle(hero)} description={liveDesc(hero)} tone="expert" /></PreviewFrame>;
-    }
-    if (activeTab === "feature") {
-      const items = editing
-        ? activeItems.map(it => it.content_id === editing ? { ...it, title: form.title, description: form.description } : it)
-        : activeItems;
-      return <PreviewFrame label="Feature bubbles"><FeaturePreview items={items} /></PreviewFrame>;
-    }
-    if (activeTab === "membership") {
-      const withEdit = (list) => editing ? list.map(it => it.content_id === editing ? { ...it, title: form.title, description: form.description } : it) : list;
-      const fp = withEdit(freePlanInfo), pp = withEdit(premiumPlanInfo);
+    if (activeMainTab === "membership") {
+      const header = liveItem(byId("header_pricing"));
+      const fp = liveList(freePlanInfo), pp = liveList(premiumPlanInfo);
       return (
         <PreviewFrame label="Subscription page">
           <MembershipPreview
+            heading={header?.title} description={header?.description}
             freeName={fp.find(i => i.content_id === "free_plan_name")?.title}
             freePrice={fp.find(i => i.content_id === "free_plan_price")?.title}
             freePriceSub={fp.find(i => i.content_id === "free_plan_price")?.description}
             premName={pp.find(i => i.content_id === "premium_plan_name")?.title}
             premPrice={pp.find(i => i.content_id === "premium_plan_price")?.title}
             premPriceSub={pp.find(i => i.content_id === "premium_plan_price")?.description}
-            freeFeatures={withEdit(freeItems)}
-            premFeatures={withEdit(premiumItems)}
+            freeFeatures={liveList(freeItems)}
+            premFeatures={liveList(premiumItems)}
           />
         </PreviewFrame>
       );
     }
-    if (activeTab === "footer") {
-      const withEdit = (list) => editing ? list.map(it => it.content_id === editing ? { ...it, title: form.title, description: form.description } : it) : list;
+    if (activeMainTab === "footer") {
       return (
         <PreviewFrame label="Site footer">
           <FooterPreview
-            brand={withEdit(footerBrand)[0]?.title}
-            brandTagline={withEdit(footerBrand)[0]?.description}
-            product={withEdit(footerProduct)}
-            company={withEdit(footerCompany)}
-            contact={withEdit(footerContact)}
+            brand={liveList(footerBrand)[0]?.title}
+            brandTagline={liveList(footerBrand)[0]?.description}
+            product={liveList(footerProduct)}
+            company={liveList(footerCompany)}
+            contact={liveList(footerContact)}
           />
         </PreviewFrame>
       );
     }
-    if (activeTab === "forum") {
-      const withEdit = editing ? forumRooms.map(it => it.content_id === editing ? { ...it, title: form.title, description: form.description } : it) : forumRooms;
-      return <PreviewFrame label="Community Forum"><ForumPreview rooms={withEdit} /></PreviewFrame>;
+    // generic header + items tabs
+    const tab = activeTabInfo;
+    if (tab?.kind === "generic") {
+      const header = tab.headerId ? liveItem(byId(tab.headerId)) : null;
+      const items = tab.itemsSection ? liveList(bySection(tab.itemsSection)) : [];
+      const heading = header?.title, description = header?.description;
+      if (tab.preview === "video") {
+        return <PreviewFrame label={tab.label}><VideoPreview heading={heading} description={description} /></PreviewFrame>;
+      }
+      if (tab.preview === "role_toggle") {
+        return <PreviewFrame label={tab.label}><RoleTogglePreview heading={heading} description={description} items={items} /></PreviewFrame>;
+      }
+      if (tab.preview === "steps") {
+        return <PreviewFrame label={tab.label}><StepsPreview heading={heading} description={description} items={items} /></PreviewFrame>;
+      }
+      if (tab.preview === "faq") {
+        return <PreviewFrame label={tab.label}><FaqPreview heading={heading} description={description} items={items} /></PreviewFrame>;
+      }
+      return <PreviewFrame label={tab.label}><CardGridPreview heading={heading} description={description} items={items} /></PreviewFrame>;
     }
     return null;
   };
 
   return (
     <AdminLayout title="Content Management" subtitle="Edit landing page and role-specific content">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-5 py-3 mb-6 text-sm text-blue-700">
-        Changes made here will appear on the corresponding page immediately after saving.
-      </div>
-
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {TABS.map((tab) => {
+      {/* Main tabs */}
+      <div className="flex flex-wrap gap-2 mb-2">
+        {MAIN_TABS.map((tab) => {
           const TabIcon = tab.icon;
           return (
             <button
               key={tab.key}
-              onClick={() => { setActiveTab(tab.key); setEditing(null); }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === tab.key
+              onClick={() => { setActiveMainTab(tab.key); setEditing(null); }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeMainTab === tab.key
                 ? "bg-blue-600 text-white shadow-sm"
                 : "bg-white border border-gray-200 text-slate-600 hover:border-blue-300"
                 }`}
@@ -408,7 +556,27 @@ function ContentManagementPage() {
         })}
       </div>
 
-      {/* Hint */}
+      {/* Landing Page subtabs */}
+      {activeMainTab === "landing" && (
+        <div className="flex flex-wrap gap-1.5 mb-2 pl-1">
+          {LANDING_SUBTABS.map((sub) => {
+            const SubIcon = sub.icon;
+            return (
+              <button
+                key={sub.key}
+                onClick={() => { setActiveSubTab(sub.key); setEditing(null); }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeSubTab === sub.key
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-white/60 text-slate-500 hover:bg-white"
+                  }`}
+              >
+                <SubIcon size={12} /> {sub.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {activeTabInfo?.hint && (
         <p className="text-xs text-slate-400 mb-4">{activeTabInfo.hint}</p>
       )}
@@ -418,14 +586,51 @@ function ContentManagementPage() {
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
       <div>
+
+      {/* Hero */}
+      {activeMainTab === "landing" && activeSubTab === "hero" && (
+        <div className="space-y-4">
+          {byId("content_hero") ? renderRow(byId("content_hero"), [byId("content_hero")])
+            : <p className="text-slate-400 text-sm">No content found for this section.</p>}
+        </div>
+      )}
+
+      {/* Generic header + items tabs */}
+      {activeTabInfo?.kind === "generic" && (
+        <div className="space-y-6">
+          {activeTabInfo.headerId && byId(activeTabInfo.headerId) && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
+              {renderRow(byId(activeTabInfo.headerId), [byId(activeTabInfo.headerId)])}
+            </div>
+          )}
+          {activeTabInfo.itemsSection && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Cards</p>
+              <div className="space-y-3">
+                {bySection(activeTabInfo.itemsSection).length === 0
+                  ? <p className="text-slate-400 text-sm">No content found for this section.</p>
+                  : bySection(activeTabInfo.itemsSection).map((item) => renderRow(item, bySection(activeTabInfo.itemsSection)))
+                }
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Membership Plans — two columns */}
-      {activeTab === "membership" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {activeMainTab === "membership" && (
+        <div className="space-y-6">
+          {byId("header_pricing") && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
+              {renderRow(byId("header_pricing"), [byId("header_pricing")])}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Free Plan */}
           <div>
             <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Free Plan</p>
-
-            {/* Plan Details */}
             <div className="space-y-3 mb-5">
               <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
               {freePlanInfo.map((item) => (
@@ -481,8 +686,6 @@ function ContentManagementPage() {
                 </div>
               ))}
             </div>
-
-            {/* Free Features */}
             <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
             <div className="space-y-3">
               {freeItems.length === 0
@@ -495,8 +698,6 @@ function ContentManagementPage() {
           {/* Premium Plan */}
           <div>
             <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-3">Premium Plan</p>
-
-            {/* Plan Details */}
             <div className="space-y-3 mb-5">
               <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
               {premiumPlanInfo.map((item) => (
@@ -552,8 +753,6 @@ function ContentManagementPage() {
                 </div>
               ))}
             </div>
-
-            {/* Premium Features */}
             <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
             <div className="space-y-3">
               {premiumItems.length === 0
@@ -562,138 +761,36 @@ function ContentManagementPage() {
               }
             </div>
           </div>
+          </div>
         </div>
       )}
 
-      {/* Footer tab */}
-      {activeTab === "footer" && (
+      {/* Footer */}
+      {activeMainTab === "footer" && (
         <div className="space-y-8">
-          {/* Brand */}
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Brand</p>
-            <div className="space-y-3">
-              {footerBrand.map((item) => renderRow(item, footerBrand))}
-            </div>
+            <div className="space-y-3">{footerBrand.map((item) => renderRow(item, footerBrand))}</div>
           </div>
-
-          {/* Product links */}
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
             <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-            <div className="space-y-3">
-              {footerProduct.map((item) => renderRow(item, footerProduct))}
-            </div>
+            <div className="space-y-3">{footerProduct.map((item) => renderRow(item, footerProduct))}</div>
           </div>
-
-          {/* Company links */}
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
             <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-            <div className="space-y-3">
-              {footerCompany.map((item) => renderRow(item, footerCompany))}
-            </div>
+            <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
           </div>
-
-          {/* Contact */}
           <div>
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
             <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
-            <div className="space-y-3">
-              {footerContact.map((item) => renderRow(item, footerContact))}
-            </div>
+            <div className="space-y-3">{footerContact.map((item) => renderRow(item, footerContact))}</div>
           </div>
         </div>
       )}
 
-      {/* Forum Rooms tab */}
-      {activeTab === "forum" && (
-        <div>
-          <p className="text-xs text-slate-400 mb-5">
-            Set a custom image URL for each forum room. Leave blank to use the built-in default image. Use the arrows to change the order rooms appear in.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {content.filter((c) => c.section === "forum_room").map((item, idx, list) => {
-              const isEditing = editing === item.content_id;
-              const previewSrc = isEditing
-                ? (form.description || ROOM_IMAGES[item.title])
-                : (item.description || ROOM_IMAGES[item.title]);
-              return (
-                <div key={item.content_id} className="rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-                  <div className="w-full overflow-hidden" style={{ height: 120 }}>
-                    {previewSrc ? (
-                      <img src={previewSrc} alt={item.title} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <Image size={24} className="text-slate-300" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <button onClick={() => move(item.content_id, "up")} disabled={idx === 0 || !!reordering}
-                        className="text-slate-400 hover:text-blue-600 disabled:opacity-25 disabled:hover:text-slate-400">
-                        <ArrowUp size={13} />
-                      </button>
-                      <button onClick={() => move(item.content_id, "down")} disabled={idx === list.length - 1 || !!reordering}
-                        className="text-slate-400 hover:text-blue-600 disabled:opacity-25 disabled:hover:text-slate-400">
-                        <ArrowDown size={13} />
-                      </button>
-                      <p className="text-sm font-semibold text-slate-700 truncate">{item.title}</p>
-                    </div>
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-xs font-bold text-slate-400 mb-1 block">IMAGE URL</label>
-                          <input
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            placeholder="https://example.com/image.jpg"
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
-                          />
-                          <p className="text-xs text-slate-400 mt-1">Leave blank to use the default bundled image.</p>
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <button onClick={() => saveEdit(item.content_id)} disabled={saving}
-                            className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
-                            <Check size={13} /> Save
-                          </button>
-                          <button onClick={cancelEdit}
-                            className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
-                            <X size={13} /> Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-slate-400 truncate">
-                          {item.description ? item.description : <span className="italic">Using default image</span>}
-                        </p>
-                        <button onClick={() => startEdit(item)}
-                          className="flex items-center gap-1 border border-blue-500 text-blue-600 px-2 py-1 rounded text-xs shrink-0">
-                          <Edit size={12} /> Edit
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* All other tabs (hero / feature / expert) */}
-      {!["membership", "footer", "forum"].includes(activeTab) && (
-        <div className="space-y-4">
-          {activeItems.length === 0
-            ? <p className="text-slate-400 text-sm">No content found for this section.</p>
-            : activeItems.map((item) => renderRow(item, activeItems))
-          }
-        </div>
-      )}
       </div>
-
-      {/* Live preview column */}
       <div>{renderPreview()}</div>
       </div>
       )}

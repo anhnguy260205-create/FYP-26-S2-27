@@ -17,5 +17,5 @@ class UpdateContentController:
 
 
 class ReorderContentController:
-    def move(self, content_id: str, direction: str):
-        return ContentManagement.move(content_id, direction)
+    def reorder_section(self, section: str, ordered_ids: list):
+        return ContentManagement.reorder_section(section, ordered_ids)

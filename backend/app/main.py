@@ -193,6 +193,20 @@ def ensure_all_schemas(engine):
 
 
         try:
+            current_type = conn.execute(text(
+                "SELECT DATA_TYPE FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'content_management' AND COLUMN_NAME = 'description'"
+            )).scalar()
+            if current_type and current_type.lower() != "mediumtext":
+                conn.execute(text(
+                    "ALTER TABLE content_management MODIFY COLUMN description MEDIUMTEXT NULL"))
+                conn.commit()
+                print("[SCHEMA] Widened content_management.description to MEDIUMTEXT (for uploaded forum room images)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped content_management.description widen: {e}")
+
+
+        try:
             if not _col_exists(conn, "user_account", "has_welcomed"):
                 conn.execute(text(
                     "ALTER TABLE user_account ADD COLUMN has_welcomed TINYINT(1) NOT NULL DEFAULT 0"))
