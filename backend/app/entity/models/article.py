@@ -116,12 +116,12 @@ class Article(Base):
     # ── Admin CRUD (no expert_id required) ────────────────────────────────────
 
     @staticmethod
-    def admin_create(title, summary, content, category, tags="", status="published"):
+    def admin_create(title, summary, content, category, tags="", status="published", author_name=None):
         with get_session() as session:
             article = Article(
                 expert_id=None,
                 author_type="admin",
-                author_name="Admin",
+                author_name=(author_name.strip() if author_name else None) or "Admin",
                 title=title.strip(),
                 summary=summary.strip() if summary else "",
                 content=content.strip(),
@@ -135,19 +135,21 @@ class Article(Base):
 
     @staticmethod
     def admin_update(article_id, title=None, summary=None,
-                     content=None, category=None, tags=None, status=None):
+                     content=None, category=None, tags=None, status=None, author_name=None):
         with get_session() as session:
             article = session.query(Article).filter(
                 Article.article_id == article_id,
             ).first()
             if not article:
                 return False
-            if title    is not None: article.title    = title.strip()
-            if summary  is not None: article.summary  = summary.strip()
-            if content  is not None: article.content  = content.strip()
-            if category is not None: article.category = category
-            if tags     is not None: article.tags     = tags.strip()
-            if status   is not None: article.status   = status
+            if title       is not None: article.title       = title.strip()
+            if summary     is not None: article.summary     = summary.strip()
+            if content     is not None: article.content     = content.strip()
+            if category    is not None: article.category    = category
+            if tags        is not None: article.tags        = tags.strip()
+            if status      is not None: article.status      = status
+            if author_name is not None and article.author_type == "admin":
+                article.author_name = author_name.strip() or "Admin"
             article.updated_at = datetime.now(ZoneInfo("Asia/Singapore"))
             return True
 

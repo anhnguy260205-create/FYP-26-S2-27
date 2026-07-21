@@ -76,8 +76,8 @@ class AdminListArticlesController:
 
 
 class AdminCreateArticleController:
-    def create(self, title, summary, content, category, tags="", status="published"):
-        article_id = Article.admin_create(title, summary, content, category, tags, status)
+    def create(self, title, summary, content, category, tags="", status="published", author_name=None):
+        article_id = Article.admin_create(title, summary, content, category, tags, status, author_name=author_name)
         return {"success": True, "article_id": article_id}
 
 
