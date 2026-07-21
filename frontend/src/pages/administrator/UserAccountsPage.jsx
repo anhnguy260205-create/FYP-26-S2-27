@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, Eye, Ban, Mail, Phone } from "lucide-react";
-import { UserCheck } from "lucide-react";
+import { Search, Filter, Eye, Ban, Mail, Phone, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layout/AdminPage.jsx";
@@ -11,7 +10,7 @@ const API = `${import.meta.env.VITE_API_URL}/admin`;
 function UserAccountsPage() {
   const [users, setUsers] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [roleFilter, setRoleFilter] = useState("All");
 
@@ -201,7 +200,9 @@ function UserAccountsPage() {
             </thead>
 
             <tbody>
-              {users.map((user) => (
+              {loading ? (
+                <tr><td colSpan="8" className="px-5 py-10 text-center text-gray-400">Loading users…</td></tr>
+              ) : users.map((user) => (
                 <tr key={user.user_id} className="border-b border-gray-100">
                   <td className="px-5 py-5">
                     <div className="flex items-center gap-4">
@@ -252,27 +253,29 @@ function UserAccountsPage() {
                   <td className="px-5 py-5 text-slate-600">{user.last_login}</td>
 
                   <td className="px-5 py-5">
-                    <div className="flex items-center gap-5">
-                      <Eye
-                        size={18}
+                    <div className="flex gap-2 flex-wrap">
+                      <button
                         onClick={() => handleView(user.user_id)}
-                        className="text-blue-600 cursor-pointer"
-                      />
+                        className="flex items-center gap-1 border px-3 py-1.5 rounded text-xs"
+                      >
+                        <Eye size={13} /> View
+                      </button>
 
                       {user.account_status === "suspended" ? (
-                        <UserCheck
-                          size={18}
+                        <button
                           onClick={() => handleActivate(user.user_id)}
-                          className="text-green-600 cursor-pointer"
-                        />
+                          className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold"
+                        >
+                          <UserCheck size={13} /> Activate
+                        </button>
                       ) : (
-                        <Ban
-                          size={18}
+                        <button
                           onClick={() => handleSuspend(user.user_id)}
-                          className="text-orange-600 cursor-pointer"
-                        />
+                          className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold"
+                        >
+                          <Ban size={13} /> Suspend
+                        </button>
                       )}
-
                     </div>
                   </td>
                 </tr>

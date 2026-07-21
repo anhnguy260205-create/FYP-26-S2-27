@@ -43,6 +43,35 @@ class ContentManagement(Base):
             row.description = description
             return True
 
+    @staticmethod
+    def move(content_id: str, direction: str) -> bool:
+        """Swap this item's order_index with its immediate neighbor within the
+        same section. direction is "up" or "down". Used by the admin content
+        manager to reorder feature bubbles, footer links, plan feature lists,
+        and forum room cards without needing a full drag-and-drop payload."""
+        with get_session() as session:
+            row = session.query(ContentManagement).filter(
+                ContentManagement.content_id == content_id
+            ).first()
+            if not row:
+                return False
+
+            siblings = session.query(ContentManagement).filter(
+                ContentManagement.section == row.section
+            ).order_by(ContentManagement.order_index).all()
+
+            idx = next((i for i, s in enumerate(siblings) if s.content_id == content_id), None)
+            if idx is None:
+                return False
+
+            swap_idx = idx - 1 if direction == "up" else idx + 1
+            if swap_idx < 0 or swap_idx >= len(siblings):
+                return False  # already at the edge — no-op, not an error
+
+            other = siblings[swap_idx]
+            row.order_index, other.order_index = other.order_index, row.order_index
+            return True
+
 
 def _serialize(row: ContentManagement) -> dict:
     return {

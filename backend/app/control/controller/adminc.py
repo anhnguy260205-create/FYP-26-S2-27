@@ -167,9 +167,12 @@ class AdminUserAccountController:
             total_premium = session.query(Investor).filter(
                 Investor.investor_subscription_status == "premium"
             ).count()
+            total_investors = session.query(Investor).count()
+            total_basic = total_investors - total_premium
             total_experts = session.query(Expert).count()
             return {
                 "total_users": total_users,
+                "total_basic": total_basic,
                 "total_premium": total_premium,
                 "total_experts": total_experts,
             }

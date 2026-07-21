@@ -66,3 +66,21 @@ export const rejectArticle = async (articleId) => {
   const res = await authFetch(`${ADMIN_BASE}/articles/${articleId}/reject`, { method: "POST" });
   return res.json();
 };
+
+// ── Admin authoring (create/edit articles directly, no expert review needed) ───
+
+export const adminCreateArticle = async (data) => {
+  const res = await authFetch(`${ADMIN_BASE}/articles`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const adminUpdateArticle = async (articleId, data) => {
+  const res = await authFetch(`${ADMIN_BASE}/articles/${articleId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};

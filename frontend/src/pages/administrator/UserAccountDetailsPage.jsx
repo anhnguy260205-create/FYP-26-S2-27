@@ -35,7 +35,7 @@ function UserAccountDetailsPage() {
   if (!user) {
     return (
       <AdminPage title="Account Details" subtitle="View and manage user information">
-        <p className="text-white">Loading...</p>
+        <div className="bg-white rounded-lg p-10 text-center text-gray-400">Loading account details…</div>
       </AdminPage>
     );
   }

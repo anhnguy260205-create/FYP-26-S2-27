@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, Star, BookOpen, TrendingUp, Loader2, ArrowRight } from "lucide-react";
+import { Users, Star, BookOpen, TrendingUp, Loader2 } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import SignupsBarChart from "../../components/admin/SignupsBarChart.jsx";
@@ -14,8 +14,8 @@ const RANGE_OPTIONS = [
 ];
 
 function AdminPanelPage() {
-  const [stats, setStats] = useState({ total_users: 0, total_premium: 0, total_experts: 0 });
-  const [recentSubs, setRecentSubs] = useState([]);
+  const [stats, setStats] = useState({ total_users: 0, total_basic: 0, total_premium: 0, total_experts: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [signupDays, setSignupDays] = useState(30);
   const [signupStats, setSignupStats] = useState({ total: 0, series: [] });
   const [signupsLoading, setSignupsLoading] = useState(false);
@@ -23,13 +23,11 @@ function AdminPanelPage() {
   const [userTypesLoading, setUserTypesLoading] = useState(false);
 
   useEffect(() => {
+    setStatsLoading(true);
     authFetch(`${API}/dashboard-stats`)
       .then((r) => r.json())
-      .then((d) => { if (d.success) setStats(d); });
-
-    authFetch(`${API}/subscriptions`)
-      .then((r) => r.json())
-      .then((d) => { if (d.success) setRecentSubs(d.subscriptions.slice(0, 5)); });
+      .then((d) => { if (d.success) setStats(d); })
+      .finally(() => setStatsLoading(false));
 
     setUserTypesLoading(true);
     authFetch(`${API}/user-types`)
@@ -48,21 +46,16 @@ function AdminPanelPage() {
 
   const statCards = [
     { title: "Total Users", value: stats.total_users, icon: <Users size={24} />, color: "text-blue-600", bg: "bg-blue-50" },
-    { title: "Premium Subscribers", value: stats.total_premium, icon: <Star size={24} />, color: "text-purple-600", bg: "bg-purple-50" },
+    { title: "Basic Investors", value: stats.total_basic, icon: <Users size={24} />, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { title: "Premium Investors", value: stats.total_premium, icon: <Star size={24} />, color: "text-purple-600", bg: "bg-purple-50" },
     { title: "Total Experts", value: stats.total_experts, icon: <BookOpen size={24} />, color: "text-green-600", bg: "bg-green-50" },
   ];
-
-  const planStyle = (plan) =>
-    plan === "premium" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700";
-
-  const statusStyle = (status) =>
-    status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600";
 
   return (
     <AdminLayout title="Dashboard Overview" subtitle="Welcome back! Here's what's happening today.">
       <div className="space-y-6">
         {/* Stat Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
           {statCards.map((stat) => (
             <div
               key={stat.title}
@@ -73,7 +66,9 @@ function AdminPanelPage() {
                   {stat.icon}
                 </div>
                 <p className="text-sm text-gray-500">{stat.title}</p>
-                <h3 className="text-3xl font-bold text-slate-900 mt-0.5">{stat.value}</h3>
+                <h3 className="text-3xl font-bold text-slate-900 mt-0.5">
+                  {statsLoading ? <span className="text-lg text-gray-400 font-medium">Loading…</span> : stat.value}
+                </h3>
               </div>
             </div>
           ))}
@@ -160,57 +155,6 @@ function AdminPanelPage() {
                 loading={userTypesLoading}
               />
             )}
-          </div>
-        </section>
-
-        {/* Recent Subscriptions */}
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-5">
-            <h3 className="font-bold text-lg text-slate-900">Recent Subscriptions</h3>
-            <a
-              href="/adminpanel/subscriptions"
-              className="flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700 transition-colors"
-            >
-              View All <ArrowRight size={14} />
-            </a>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-y border-gray-200">
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
-                  <th className="px-6 py-4">Email</th>
-                  <th className="px-6 py-4">Plan</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Subscribed On</th>
-                  <th className="px-6 py-4">Renewal Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentSubs.map((sub) => (
-                  <tr key={sub.sub_id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900">{sub.email_address}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${planStyle(sub.plan_type)}`}>
-                        {sub.plan_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyle(sub.sub_status)}`}>
-                        {sub.sub_status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{sub.sub_date}</td>
-                    <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{sub.sub_renewal_date ?? "—"}</td>
-                  </tr>
-                ))}
-                {recentSubs.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400">No subscriptions yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </section>
       </div>

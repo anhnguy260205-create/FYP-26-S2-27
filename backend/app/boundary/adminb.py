@@ -69,6 +69,7 @@ class InvestmentArticleRequest(BaseModel):
     summary: Optional[str] = None
     tags: Optional[str] = None
     status: str = "published"
+    author_name: Optional[str] = None
 
 
 class AdminUserAccountPage:
@@ -119,6 +120,7 @@ class AdminUserAccountPage:
             data.category,
             data.tags or "",
             data.status,
+            author_name=data.author_name,
         )
 
     def updateInvestmentArticle(self, article_id, data):
@@ -130,6 +132,7 @@ class AdminUserAccountPage:
             category=data.category,
             tags=data.tags,
             status=data.status,
+            author_name=data.author_name,
         )
 
     def deleteInvestmentArticle(self, article_id):

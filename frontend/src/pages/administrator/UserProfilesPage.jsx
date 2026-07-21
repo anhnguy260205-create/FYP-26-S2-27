@@ -16,6 +16,13 @@ const profiles = [
       "Can provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
   },
   {
+    profile_type: "Finance and Operations",
+    access_level: "Full Access",
+    status: "Active",
+    description:
+      "Responsible for reviewing and approving expert applications, and managing the platform's subscriptions, billing, and profit reporting.",
+  },
+  {
     profile_type: "Investor",
     access_level: "Basic Access / Premium Access",
     status: "Active",
