@@ -225,9 +225,9 @@ export default function ExpertPortfolio() {
                         style={{
                             width: "120px",
                             borderRadius: "10px",
-                            background: C.accent,
+                            background: C.success,
                             border: "none",
-                            color: C.accentText,
+                            color: "#fff",
                             fontWeight: 700,
                             cursor: "pointer",
                         }}
