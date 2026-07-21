@@ -204,14 +204,21 @@ export default function Watchlist() {
                             }}
                             disabled={isAtLimit}
                             title={isAtLimit ? `Basic plan limit: ${BASIC_WATCHLIST_LIMIT} stocks` : undefined}
-                            className="text-sm font-semibold px-4 py-2 rounded-lg transition-opacity"
+                            className="group relative overflow-hidden text-sm font-semibold px-4 py-2 rounded-lg"
                             style={{
-                                background: isAtLimit ? C.card2 : "linear-gradient(90deg, #00D3F2, #0092b8)",
+                                background: isAtLimit ? C.card2 : "#0092b8",
                                 color: isAtLimit ? C.muted : "white",
                                 cursor: isAtLimit ? "not-allowed" : "pointer",
                             }}
                         >
-                            + Add Symbol
+                            {!isAtLimit && (
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
+                                    style={{ background: "linear-gradient(90deg, #00D3F2, #0092b8)" }}
+                                />
+                            )}
+                            <span className="relative">+ Add Symbol</span>
                         </button>
                     </div>
                 </div>
