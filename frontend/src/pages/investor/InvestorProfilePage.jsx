@@ -156,8 +156,16 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
     const subscriptionStatus = investorInfo?.investor_subscription_status?.toLowerCase();
 
-    const subscriptionStyle =
-        subscriptionStatus === "premium"
+    // Merged roles: verified experts show an orange Expert badge instead of
+    // the yellow Premium one (they hold complimentary premium anyway).
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
+
+    const badgeLabel = isVerifiedExpert ? "Expert" : subscriptionStatus === "premium" ? "Premium" : "Basic";
+    const subscriptionStyle = isVerifiedExpert
+        ? { background: "rgba(249, 115, 22, 0.15)", border: "1px solid rgba(249, 115, 22, 0.55)", color: "#F97316" }
+        : subscriptionStatus === "premium"
             ? { background: "rgba(255, 215, 0, 0.15)", border: "1px solid rgba(255, 215, 0, 0.5)", color: "#FFD700" }
             : subscriptionStatus === "basic"
                 ? { background: "rgba(0, 0, 0, 0.35)", border: "1px solid rgba(0, 211, 243, 0.4)", color: "#00D3F2" }
@@ -176,7 +184,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                     {[0, 20, 40, 60, 78].map(y => <line key={y} x1="0" y1={y} x2="256" y2={y} stroke="white" strokeWidth="0.5" />)}
                 </svg>
                 <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", ...subscriptionStyle }}>
-                    ★ {subscriptionStatus === "premium" ? "Premium" : "Basic"}
+                    ★ {badgeLabel}
                 </div>
             </div>
 
@@ -203,7 +211,9 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{currentUser?.role}</span>
+                    <span style={{ fontSize: "10px", color: isVerifiedExpert ? "#F97316" : TEXT_MUTED2, fontWeight: isVerifiedExpert ? 700 : 400 }}>
+                        {isVerifiedExpert ? "expert" : currentUser?.role}
+                    </span>
                 </div>
             </div>
 
