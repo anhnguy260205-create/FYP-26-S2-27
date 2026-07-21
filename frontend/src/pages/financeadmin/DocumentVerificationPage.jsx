@@ -199,7 +199,7 @@ function VerifyDocumentationPage() {
   };
 
   const handleCancel = async (expertId) => {
-    if (!window.confirm("Cancel this expert's verification? They will need to resubmit documents to be reviewed again.")) return;
+    if (!window.confirm("Cancel this expert's verification? They will be demoted to a regular investor — their expert portfolio, articles, and application are removed. They can reapply from scratch.")) return;
     try {
       const res = await authFetch(`${API}/${expertId}/cancel`, { method: "POST" });
       const data = await res.json();
@@ -207,8 +207,8 @@ function VerifyDocumentationPage() {
         alert(data.message || "Failed to cancel verification. Please try again.");
         return;
       }
-      setExperts(prev => prev.map(e => e.expert_id === expertId ? { ...e, verification_status: "not_submitted" } : e));
-      setSelected(prev => prev && { ...prev, verification_status: "not_submitted" });
+      setExperts(prev => prev.filter(e => e.expert_id !== expertId));
+      setSelected(prev => (prev && prev.expert_id === expertId) ? null : prev);
     } catch {
       alert("Could not reach backend. Please try again.");
     }
@@ -225,14 +225,14 @@ function VerifyDocumentationPage() {
 
   if (selected) {
     return (
-      <FinanceAdminLayout title="Document Verification" subtitle="Review and verify documents submitted by expert applicants">
+      <FinanceAdminLayout title="Expert Document Verification" subtitle="Review and verify documents submitted by expert applicants">
         <DetailView application={selected} onBack={() => setSelected(null)} onApprove={handleApprove} onReject={handleReject} onCancel={handleCancel} />
       </FinanceAdminLayout>
     );
   }
 
   return (
-      <FinanceAdminLayout title="Document Verification" subtitle="Review and verify documents submitted by expert applicants">
+    <FinanceAdminLayout title="Expert Document Verification" subtitle="Review and verify documents submitted by expert applicants">
       <div className="space-y-5">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

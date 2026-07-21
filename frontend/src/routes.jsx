@@ -23,6 +23,8 @@ const UserProfilesPage = lazy(() => import("./pages/administrator/UserProfilesPa
 const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
+const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
+const FinanceAdminDashboardPage = lazy(() => import("./pages/financeadmin/FinanceAdminDashboardPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
@@ -122,6 +124,9 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
+
+    { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
+    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in

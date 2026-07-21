@@ -109,6 +109,52 @@ class Expert(Base):
         return ExpertVerification.set_status(expert_id, status)
 
     @staticmethod
+    def demote_to_investor(user_id):
+        """Cancelling a verification fully revokes expert status: the expert
+        row (+ their published portfolio, authored articles, and
+        compensation ledger) is removed, leaving a plain investor account
+        untouched. Unlike deleteExpert, the user_account/investor rows are
+        NOT touched — this is a demotion, not an account deletion. They can
+        reapply from scratch via POST /expert/apply."""
+        from app.entity.models.article import Article
+        from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+        from app.entity.models.expertcompensation import ExpertCompensationLedger
+
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert:
+                return False
+
+            portfolio_ids = [
+                p.portfolio_id for p in session.query(ExpertPortfolio).filter(
+                    ExpertPortfolio.expert_id == expert.expert_id
+                ).all()
+            ]
+            if portfolio_ids:
+                session.query(ExpertPortfolioHolding).filter(
+                    ExpertPortfolioHolding.portfolio_id.in_(portfolio_ids)
+                ).delete(synchronize_session=False)
+
+            session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id
+            ).delete()
+
+            session.query(Article).filter(
+                Article.expert_id == expert.expert_id
+            ).delete()
+
+            session.query(ExpertCompensationLedger).filter(
+                ExpertCompensationLedger.expert_id == expert.expert_id
+            ).delete()
+
+            ExpertVerification.delete_for_expert(session, expert.expert_id)
+
+            session.delete(expert)
+            return True
+
+    @staticmethod
     def get_user_id_by_expert_id(expert_id):
         with get_session() as session:
             expert = session.query(Expert).filter(

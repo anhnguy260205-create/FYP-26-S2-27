@@ -428,38 +428,39 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
 
 @router.post("/experts/{expert_id}/cancel")
 def cancel_expert_verification(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
-    """Revoke a previously-approved expert's verified status, putting them
-    back into the not-submitted state so they must resubmit to reapply.
-    Also clears their submitted documents — cancelling wipes the slate
-    clean rather than leaving stale documents sitting under a cancelled
-    verification."""
-    boundary = AdminUserAccountPage()
-    success = boundary.setExpertVerificationStatus(expert_id, "not_submitted")
+    """Revoke a previously-approved expert's verified status and demote them
+    back to a plain investor: their expert row (+ published portfolio,
+    authored articles, compensation ledger) is removed entirely, so they
+    disappear from expert surfaces immediately. Their investor account is
+    untouched; they can reapply from scratch via Become an Expert."""
+    from app.entity.models.expert import Expert
+    from app.entity.models.investor import Investor
 
+    _user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if not _user_id:
+        return {
+            "success": False,
+            "message": "Expert not found",
+        }
+
+    # Notify + revoke premium before the expert row is removed — both look
+    # the account up by expert_id/user_id.
+    _notify_expert_verification(
+        expert_id,
+        notif_title="Your expert verification has been cancelled",
+        notif_message="An administrator has revoked your verified status and you are now a regular investor. Reapply anytime from Become an Expert.",
+        email_fn=send_expert_verification_cancelled_email,
+    )
+    Investor.revokeExpertPremium(_user_id)
+
+    success = Expert.demote_to_investor(_user_id)
     if not success:
         return {
             "success": False,
             "message": "Expert not found",
         }
 
-    ExpertVerification.update_documents(expert_id, [])
-
-    # Revoking verified status also removes the complimentary premium tier
-    # (falls back to any paid subscription the user still has).
-    from app.entity.models.expert import Expert
-    from app.entity.models.investor import Investor
-    _user_id = Expert.get_user_id_by_expert_id(expert_id)
-    if _user_id:
-        Investor.revokeExpertPremium(_user_id)
-
-    _notify_expert_verification(
-        expert_id,
-        notif_title="Your expert verification has been cancelled",
-        notif_message="An administrator has revoked your verified status. Resubmit your credentials to be reviewed again.",
-        email_fn=send_expert_verification_cancelled_email,
-    )
-
     return {
         "success": True,
-        "message": "Expert verification cancelled",
+        "message": "Expert verification cancelled — account demoted to investor",
     }
