@@ -988,17 +988,17 @@ function ExpertPortfoliosSection() {
 function PricingTeaserSection() {
   const navigate = useNavigate();
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-900 via-slate-950 to-amber-950 ring-1 ring-[#FFD700]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+    <section className={`relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#FFD700]/40 shadow-lg shadow-amber-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-amber-900/10 hover:ring-[#FFD700]/60`}>
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#FFD700]/10 blur-3xl" />
 
       <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-[#FFD700]">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-amber-700">
           <Sparkles size={11} /> RocketTrade Premium
         </span>
-        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
           Stop guessing. Start trading with an edge.
         </h2>
-        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
           Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.
         </p>
       </div>
