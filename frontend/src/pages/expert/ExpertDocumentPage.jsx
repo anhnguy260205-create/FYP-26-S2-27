@@ -97,7 +97,7 @@ function ExpertDocumentPage() {
           <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(0,146,184,0.1)", border: "1px solid rgba(0,146,184,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <FileText size={22} color="#0092b8" />
           </div>
-          <h1 className="font-bold text-black text-2xl leading-tight mb-2">Submit Your Documents</h1>
+          <h1 className="leading-tight mb-2" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>Submit Your Documents</h1>
           <p className="text-gray-500 text-[14px]">
             Add links to your certificates, degrees, or employment letters for admin verification.
           </p>

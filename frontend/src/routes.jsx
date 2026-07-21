@@ -23,6 +23,8 @@ const UserProfilesPage = lazy(() => import("./pages/administrator/UserProfilesPa
 const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
+const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
+const FinanceAdminDashboardPage = lazy(() => import("./pages/financeadmin/FinanceAdminDashboardPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
@@ -39,12 +41,8 @@ const TransactionHistoryPage = lazy(() => import("./pages/investor/TransactionHi
 const PortfolioOverviewPage = lazy(() => import("./pages/investor/PortfolioOverviewPage.jsx"));
 const ExpertDocumentPage = lazy(() => import("./pages/expert/ExpertDocumentPage.jsx"));
 const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
-const ExpertPortfolioPage = lazy(() => import("./pages/expert/ExpertPortfolioPage.jsx"));
-const CreateExpertPortfolioPage = lazy(() => import("./pages/expert/CreateExpertPortfolioPage.jsx"));
-const ExpertQuestionsPage = lazy(() => import("./pages/expert/ExpertQuestionsPage.jsx"));
 const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.jsx"));
-const VerifyDocumnetationPage = lazy(() => import("./pages/administrator/VerifyDocument.jsx"));
-const SubscriptionManagementPage = lazy(() => import("./pages/administrator/SubscriptionManagementPage.jsx"));
+const SubscriptionManagementPage = lazy(() => import("./pages/financeadmin/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
@@ -97,8 +95,9 @@ export const router = createBrowserRouter([
     { path: "/investor/portfolio-overview", element: protectWithStocks(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
     { path: "/investor", element: protectWithStocks(["investor"], LoggedInHomePage) },
-    { path: "/investor/quantrating", element: protectWithStocks(["investor"], QuantRatingPage) },    { path: "/realtimedashboard", element: protectWithStocks(["investor", "expert"], RealTimeDashBoardPage) },
-    { path: "/realtimedashboard/astockdashboard/:symbol", element: protectWithStocks(["investor", "expert"], AStockDashBoardPage) },
+    { path: "/investor/quantrating", element: protectWithStocks(["investor"], QuantRatingPage) },
+    { path: "/realtimedashboard", element: protectWithStocks(["investor"], RealTimeDashBoardPage) },
+    { path: "/realtimedashboard/astockdashboard/:symbol", element: protectWithStocks(["investor"], AStockDashBoardPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
     { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
     { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
@@ -107,7 +106,7 @@ export const router = createBrowserRouter([
     { path: "/investor/payment-success", element: protect(["investor"], PaymentSuccess) },
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
-    { path: "/watchlist", element: protectWithStocks(["investor", "expert"], Watchlist) },
+    { path: "/watchlist", element: protectWithStocks(["investor"], Watchlist) },
     { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
@@ -121,18 +120,17 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/posts", element: protect(["admin"], CommunityPostsPage) },
     { path: "/adminpanel/posts/:postId", element: protect(["admin"], CommunityPostDetailsPage) },
     { path: "/adminpanel/articles", element: protect(["admin"], InvestmentGuidanceArticlesPage) },
-    { path: "/adminpanel/verifydocumentation", element: protect(["admin"], VerifyDocumnetationPage) },
-    { path: "/adminpanel/subscriptions", element: protect(["admin"], SubscriptionManagementPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
+
+    { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
+    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
+    { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in
     // the codebase for reference but are no longer routed standalone.
     { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
-    { path: "/expert/portfolio", element: protectExpert(ExpertPortfolioPage) },
-    { path: "/expert/create-portfolio", element: protectExpert(CreateExpertPortfolioPage) },
     { path: "/expert/documents", element: protectExpert(ExpertDocumentPage) },
-    { path: "/expert/questions", element: protectExpert(ExpertQuestionsPage) },
 ]);

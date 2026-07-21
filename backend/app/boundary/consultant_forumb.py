@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.control.controller.forumc import ForumController
-from app.control.services.auth import get_current_user
+from app.control.services.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/consultant-forum", tags=["Forum"])
 
@@ -98,7 +98,8 @@ def toggle_save(post_id: str, current_user: dict = Depends(get_current_user)):
 
 @router.delete("/posts/{post_id}")
 def delete_post(post_id: str, current_user: dict = Depends(get_current_user)):
-    return ForumController().delete_post(post_id, current_user["user_id"])
+    is_admin = current_user.get("role") == "admin"
+    return ForumController().delete_post(post_id, current_user["user_id"], is_admin=is_admin)
 
 
 @router.put("/posts/{post_id}/replies/{reply_id}")
@@ -117,4 +118,51 @@ def delete_reply(
     post_id: str, reply_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    return ForumController().delete_reply(post_id, reply_id, current_user["user_id"])
+    is_admin = current_user.get("role") == "admin"
+    return ForumController().delete_reply(post_id, reply_id, current_user["user_id"], is_admin=is_admin)
+
+
+# ── Flagging / removal notices ──────────────────────────────────────────────────
+
+class FlagPostRequest(BaseModel):
+    reason: str = "Inappropriate content"
+
+
+@router.post("/posts/{post_id}/flag")
+def flag_post(post_id: str, data: FlagPostRequest, current_user: dict = Depends(get_current_user)):
+    return ForumController().flag_post(post_id, current_user["user_id"], data.reason)
+
+
+@router.get("/removal-notice")
+def get_removal_notice(current_user: dict = Depends(get_current_user)):
+    return ForumController().get_removal_notice(current_user["user_id"])
+
+
+class AcknowledgeRemovalRequest(BaseModel):
+    removal_id: str
+
+
+@router.post("/removal-notice/acknowledge")
+def acknowledge_removal(data: AcknowledgeRemovalRequest, current_user: dict = Depends(get_current_user)):
+    return ForumController().acknowledge_removal(data.removal_id, current_user["user_id"])
+
+
+# ── Admin moderation ────────────────────────────────────────────────────────────
+
+@router.get("/admin/flagged")
+def admin_get_flagged_posts(current_user: dict = Depends(require_admin)):
+    return ForumController().admin_flagged_posts()
+
+
+@router.get("/admin/all")
+def admin_list_posts(current_user: dict = Depends(require_admin)):
+    return ForumController().admin_list_posts()
+
+
+class AdminDeletePostRequest(BaseModel):
+    reason: str = "Violated community guidelines"
+
+
+@router.delete("/admin/{post_id}")
+def admin_delete_post(post_id: str, data: AdminDeletePostRequest, current_user: dict = Depends(require_admin)):
+    return ForumController().admin_delete_post(post_id, admin_user_id=current_user["user_id"], reason=data.reason)

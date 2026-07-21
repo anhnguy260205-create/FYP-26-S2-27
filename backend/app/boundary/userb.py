@@ -151,6 +151,25 @@ def firebase_login(
     return {"success": True, "mfa_required": False, "user": profile}
 
 
+@router.get("/session")
+def get_session(current_user: dict = Depends(get_current_user)):
+    """Lightweight role/is_expert/verification/subscription check the
+    frontend re-runs on every protected-route navigation, so admin-side
+    changes (e.g. an expert's verification being cancelled) show up without
+    requiring the user to log out and back in. No DB write side-effects —
+    backed by the same 60s-cached lookup used for request authorization."""
+    return {
+        "success": True,
+        "user": {
+            "user_id": current_user.get("user_id"),
+            "role": current_user.get("role"),
+            "is_expert": current_user.get("is_expert"),
+            "verification_status": current_user.get("verification_status"),
+            "subscription_status": current_user.get("subscription_status"),
+        },
+    }
+
+
 #  Auth: login email OTP (2nd factor, all roles)
 
 class MfaVerifyRequest(BaseModel):

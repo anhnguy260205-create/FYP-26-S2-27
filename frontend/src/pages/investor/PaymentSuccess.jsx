@@ -64,7 +64,7 @@ function PaymentSuccess() {
             transition={{ duration: 0.25 }}
         >
             <GeneralHeader />
-            <main className="flex-1 flex items-center justify-center p-4 sm:p-7.5">
+            <main className="flex-1 flex items-center justify-center p-4 sm:p-7.5" style={{ minHeight: "calc(100vh)" }}>
                 <div
                     className="w-full max-w-md rounded-2xl bg-white p-8 sm:p-10 flex flex-col items-center text-center gap-4"
                     style={{

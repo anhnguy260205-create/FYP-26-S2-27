@@ -93,7 +93,7 @@ export default function BecomeExpertPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0%, #FFFFFF 12%, #FFFFFF 100%)" }}
+      style={{ background: "linear-gradient(to bottom, #B273FF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
@@ -102,7 +102,7 @@ export default function BecomeExpertPage() {
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(0,211,242,0.12)", border: "1px solid rgba(0,211,242,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
             <Award size={26} color={C.cyan} />
           </div>
-          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: 0 }}>Become an Expert</h1>
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>Become an Expert</h1>
           <p style={{ fontFamily: sans, fontSize: 14, color: C.sub, margin: "8px auto 0", maxWidth: 560 }}>
             Prove your trading skill to unlock expert privileges — publish educational articles,
             share your portfolio with premium users, and enjoy complimentary premium benefits.

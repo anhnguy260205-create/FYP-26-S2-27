@@ -127,3 +127,16 @@ def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
             detail="Admin access required",
         )
     return current_user
+
+def require_admin_or_hr(
+    current_user: dict = Depends(get_current_user)
+) -> dict:
+    role = current_user.get("role")
+
+    if role not in ["admin", "hr"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin or HR access required",
+        )
+
+    return current_user

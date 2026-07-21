@@ -26,6 +26,7 @@ function InvestmentGuidanceArticlesPage() {
   const [selectedArticle, setSelected] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [actioning, setActioning] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchArticles = async () => {
     const res = await authFetch(API_URL);
@@ -33,7 +34,10 @@ function InvestmentGuidanceArticlesPage() {
     if (data.success) setArticles(data.articles);
   };
 
-  useEffect(() => { fetchArticles(); }, []);
+  useEffect(() => {
+    setLoading(true);
+    fetchArticles().finally(() => setLoading(false));
+  }, []);
 
   const filtered = articles.filter(a => {
     if (statusFilter === "All")            return true;
@@ -167,7 +171,11 @@ function InvestmentGuidanceArticlesPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(article => (
+            {loading ? (
+              <tr><td colSpan="7" className="p-8 text-center text-slate-400">Loading articles…</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan="7" className="p-8 text-center text-slate-400">No articles match this filter.</td></tr>
+            ) : filtered.map(article => (
               <tr key={article.article_id} className="border-t hover:bg-slate-50">
                 <td className="p-4 font-medium max-w-xs truncate">{article.title}</td>
                 <td className="p-4">{article.category}</td>
@@ -205,9 +213,6 @@ function InvestmentGuidanceArticlesPage() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan="7" className="p-8 text-center text-slate-400">No articles match this filter.</td></tr>
-            )}
           </tbody>
         </table>
       </div>

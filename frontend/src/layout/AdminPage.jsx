@@ -9,8 +9,6 @@ const menuItems = [
   { name: "User Account Management", path: "/adminpanel/useraccounts" },
   { name: "Community Management", path: "/adminpanel/posts" },
   { name: "Article Management", path: "/adminpanel/articles" },
-  { name: "Subscription Management", path: "/adminpanel/subscriptions" },
-  { name: "Expert Application Review", path: "/adminpanel/verifydocumentation" },
   { name: "Content Management", path: "/adminpanel/contentmanagement" },
   { name: "Review Management", path: "/adminpanel/reviews" },
   { name: "Notification Management", path: "/adminpanel/notifications" },
@@ -19,7 +17,7 @@ const menuItems = [
 function AdminLayout({ title, subtitle, children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);

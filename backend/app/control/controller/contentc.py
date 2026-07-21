@@ -14,3 +14,8 @@ class GetContentBySectionController:
 class UpdateContentController:
     def update(self, content_id: str, title: str, description: str):
         return ContentManagement.update(content_id, title, description)
+
+
+class ReorderContentController:
+    def move(self, content_id: str, direction: str):
+        return ContentManagement.move(content_id, direction)

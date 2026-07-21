@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ThumbsUp, Pencil, Trash2, Check, X, Flag, AlertCircle } from "lucide-react";
 import RoleHeader from "../../layout/RoleHeader.jsx";
-import { isExpertUser } from "../../utils/userRole.js";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import {
   acknowledgeRemoval, createReview, deleteReview, flagReview, getMyReview,
@@ -584,7 +584,7 @@ export default function ReviewsPage() {
 
   return (
     <motion.div className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+      style={{ background: getPageBackground() }}
       initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <RoleHeader />
 
@@ -599,7 +599,7 @@ export default function ReviewsPage() {
         </AnimatePresence>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.02em", color: PAGE.heading, margin: "0 0 6px" }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: "0 0 6px" }}>
             RocketTrade Reviews
           </h1>
           <p style={{ fontSize: 14, color: PAGE.sub, margin: 0 }}>

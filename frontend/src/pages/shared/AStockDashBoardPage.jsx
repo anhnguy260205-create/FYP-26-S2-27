@@ -1,5 +1,5 @@
 import RoleHeader from "../../layout/RoleHeader.jsx";
-import { isExpertUser } from "../../utils/userRole.js";
+import { getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
@@ -137,9 +137,9 @@ function WatchlistButton({ stock_symbol, currentUser }) {
       <button onClick={handleSubmit}
         style={{
           width: "200px", padding: "11px", borderRadius: "8px",
-          background: "linear-gradient(90deg, #0284c7, #2563eb)", color: "#fff",
+          background: "linear-gradient(90deg, #0F9D58, #16a34a)", color: "#fff",
           fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
-          cursor: "pointer", boxShadow: "0 4px 16px rgba(37,99,235,0.3)", transition: "all 0.2s",
+          cursor: "pointer", boxShadow: "0 4px 16px rgba(15,157,88,0.3)", transition: "all 0.2s",
         }}>
         + Add to Watchlist
       </button>
@@ -851,7 +851,6 @@ function AStockDashBoardPage() {
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
-  const isExpert = isExpertUser(currentUser);
 
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
@@ -891,11 +890,10 @@ function AStockDashBoardPage() {
   const [tab, setTab] = useState("overview");
   const TABS = [
     { key: "overview", label: "Overview" },
-    ...(isExpert ? [] : [{ key: "trading", label: "Trading" }]),
+    { key: "trading", label: "Trading" },
     { key: "prediction", label: "Prediction" },
     { key: "comments", label: "Comments" },
-    ...(isExpert ? [] : [{ key: "alerts", label: "Alerts" }]),
-
+    { key: "alerts", label: "Alerts" },
   ];
 
 
@@ -903,7 +901,7 @@ function AStockDashBoardPage() {
     <>
       <motion.div
         className="min-h-screen flex flex-col"
-        style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+        style={{ background: getPageBackground() }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
 
 
@@ -966,7 +964,7 @@ function AStockDashBoardPage() {
             </div>
           )}
 
-          {tab === "trading" && !isExpert && (
+          {tab === "trading" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>

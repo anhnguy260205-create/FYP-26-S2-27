@@ -116,3 +116,34 @@ export const deleteForumReply = (postId, replyId, userId) =>
     method: "DELETE",
     body: JSON.stringify({ user_id: userId || "" }),
   });
+
+// ── Flagging / removal notices ──────────────────────────────────────────────────
+
+export const flagForumPost = (postId, reason) =>
+  requestJson(`${FORUM_BASE_URL}/posts/${postId}/flag`, {
+    method: "POST",
+    body: JSON.stringify({ reason: reason || "Inappropriate content" }),
+  });
+
+export const getForumRemovalNotice = () =>
+  requestJson(`${FORUM_BASE_URL}/removal-notice`);
+
+export const acknowledgeForumRemoval = (removalId) =>
+  requestJson(`${FORUM_BASE_URL}/removal-notice/acknowledge`, {
+    method: "POST",
+    body: JSON.stringify({ removal_id: removalId }),
+  });
+
+// ── Admin moderation ────────────────────────────────────────────────────────────
+
+export const adminGetFlaggedPosts = () =>
+  requestJson(`${FORUM_BASE_URL}/admin/flagged`);
+
+export const adminGetAllPosts = () =>
+  requestJson(`${FORUM_BASE_URL}/admin/all`);
+
+export const adminDeleteForumPost = (postId, reason) =>
+  requestJson(`${FORUM_BASE_URL}/admin/${postId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason: reason || "Violated community guidelines" }),
+  });

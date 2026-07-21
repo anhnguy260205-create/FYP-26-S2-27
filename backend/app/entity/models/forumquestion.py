@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.entity.database.base import Base
@@ -119,6 +119,35 @@ class ForumPostView(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class ForumPostFlag(Base):
+    """Tracks user reports on forum posts — one flag per user per post."""
+    __tablename__ = "forum_post_flag"
+    __table_args__ = (UniqueConstraint("post_id", "user_id", name="uq_forum_post_flag"),)
+
+    id         = Column(String(50), primary_key=True, default=lambda: f"pf_{uuid4()}")
+    post_id    = Column(String(50), ForeignKey("forum_post.post_id"), nullable=False)
+    user_id    = Column(String(50), nullable=False)
+    reason     = Column(String(200), default="Inappropriate content")
+    created_at = Column(DateTime, default=_now)
+
+
+class ForumPostRemoval(Base):
+    """
+    Records an admin-removed post so the original author can still see why
+    their post was taken down, even after the ForumPost row itself is deleted.
+    Kept separate from ForumPost (no FK to it) since the post no longer exists
+    by the time this is queried.
+    """
+    __tablename__ = "forum_post_removal"
+
+    id           = Column(String(50), primary_key=True, default=lambda: f"pr_{uuid4()}")
+    user_id      = Column(String(50), nullable=False)  # original post author
+    post_title   = Column(String(200), nullable=True)
+    reason       = Column(String(300), nullable=False)
+    removed_at   = Column(DateTime, default=_now)
+    acknowledged = Column(Boolean, default=False)  # user has seen/dismissed the notice
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _resolve_user_name(session, user_id):
@@ -176,7 +205,7 @@ def _serialise_reply(reply, user_id=None, session=None):
 
 
 def _serialise_post(session, post, user_id=None, include_replies=True):
-    liked = saved = commented = False
+    liked = saved = commented = flagged_by_me = False
     if user_id:
         liked = session.query(ForumPostLike).filter(
             ForumPostLike.post_id == post.post_id, ForumPostLike.user_id == user_id
@@ -184,9 +213,15 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
         saved = session.query(ForumPostSave).filter(
             ForumPostSave.post_id == post.post_id, ForumPostSave.user_id == user_id
         ).first() is not None
+        flagged_by_me = session.query(ForumPostFlag).filter(
+            ForumPostFlag.post_id == post.post_id, ForumPostFlag.user_id == str(user_id)
+        ).first() is not None
         commented = session.query(ForumReply).filter(
             ForumReply.post_id == post.post_id, ForumReply.user_id == user_id
         ).first() is not None
+    flag_count = session.query(ForumPostFlag).filter(
+        ForumPostFlag.post_id == post.post_id
+    ).count()
     replies = list(post.replies or [])
     sorted_replies = sorted(replies, key=lambda r: r.created_at or datetime.min)
     ticker_list = [t.strip().upper() for t in (post.ticker_tags or "").split(",") if t.strip()]
@@ -212,6 +247,8 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
         "liked_by_me":     liked,
         "saved_by_me":     saved,
         "commented_by_me": commented,
+        "flagged_by_me":   flagged_by_me,
+        "flag_count":      flag_count,
         "created_at":      _safe_dt(post.created_at),
         "updated_at":      _safe_dt(post.updated_at),
         "time":            _safe_dt(post.created_at),
@@ -581,17 +618,22 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def delete_post(post_id, user_id=None):
+    def delete_post(post_id, user_id=None, is_admin=False):
         with get_session() as session:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
                 return False
             uid = str(user_id or "").strip()
-            if not uid or not post.user_id or str(post.user_id).strip() != uid:
+            if not is_admin and (not uid or not post.user_id or str(post.user_id).strip() != uid):
                 return False
+            reply_ids = [r.reply_id for r in session.query(ForumReply).filter(ForumReply.post_id == post_id).all()]
+            if reply_ids:
+                session.query(ForumReplyLike).filter(ForumReplyLike.reply_id.in_(reply_ids)).delete(synchronize_session=False)
+            session.query(ForumReply).filter(ForumReply.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostLike).filter(ForumPostLike.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostSave).filter(ForumPostSave.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostView).filter(ForumPostView.post_id == post_id).delete(synchronize_session=False)
+            session.query(ForumPostFlag).filter(ForumPostFlag.post_id == post_id).delete(synchronize_session=False)
             session.delete(post)
             session.flush()
             return True
@@ -618,7 +660,7 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def delete_reply(post_id, reply_id, user_id=None):
+    def delete_reply(post_id, reply_id, user_id=None, is_admin=False):
         with get_session() as session:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
@@ -626,7 +668,7 @@ class ForumRepository:
             reply = session.query(ForumReply).filter(
                 ForumReply.post_id == post_id, ForumReply.reply_id == reply_id
             ).first()
-            if not reply or not _can_modify_reply(session, reply, user_id):
+            if not reply or (not is_admin and not _can_modify_reply(session, reply, user_id)):
                 return None
             session.query(ForumReplyLike).filter(
                 ForumReplyLike.reply_id == reply_id
@@ -711,3 +753,116 @@ class ForumRepository:
                 "total_likes":   session.query(ForumPostLike).count(),
                 "total_saves":   session.query(ForumPostSave).count(),
             }
+
+    # ── Flagging ─────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def flag_post(post_id, user_id, reason):
+        """Toggle flag — if already flagged by this user, remove it."""
+        if not user_id:
+            return None
+        with get_session() as session:
+            post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
+            if not post:
+                return None
+            existing = session.query(ForumPostFlag).filter(
+                ForumPostFlag.post_id == post_id,
+                ForumPostFlag.user_id == user_id,
+            ).first()
+            if existing:
+                session.delete(existing)
+                session.flush()
+                return {"unflagged": True, "post_id": post_id}
+            session.add(ForumPostFlag(
+                post_id=post_id,
+                user_id=user_id,
+                reason=reason or "Inappropriate content",
+            ))
+            session.flush()
+            return {"flagged": True, "post_id": post_id, "reason": reason}
+
+    # ── Admin moderation ────────────────────────────────────────────────────
+
+    @staticmethod
+    def create_removal_record(user_id, post_title, reason):
+        """Log a post removal so the author can see why their post was taken down."""
+        with get_session() as session:
+            record = ForumPostRemoval(
+                user_id=user_id,
+                post_title=post_title,
+                reason=reason,
+            )
+            session.add(record)
+            session.flush()
+            return record.id
+
+    @staticmethod
+    def get_unacknowledged_removal(user_id):
+        """Return the user's most recent un-dismissed removal notice, if any."""
+        with get_session() as session:
+            record = session.query(ForumPostRemoval).filter(
+                ForumPostRemoval.user_id == user_id,
+                ForumPostRemoval.acknowledged == False,
+            ).order_by(ForumPostRemoval.removed_at.desc()).first()
+            if not record:
+                return None
+            return {
+                "id": record.id,
+                "post_title": record.post_title,
+                "reason": record.reason,
+                "removed_at": _safe_dt(record.removed_at),
+            }
+
+    @staticmethod
+    def acknowledge_removal(removal_id, user_id):
+        """Mark a removal notice as seen/dismissed by the user."""
+        with get_session() as session:
+            record = session.query(ForumPostRemoval).filter(
+                ForumPostRemoval.id == removal_id,
+                ForumPostRemoval.user_id == user_id,
+            ).first()
+            if not record:
+                return False
+            record.acknowledged = True
+            return True
+
+    @staticmethod
+    def get_post_owner_info(post_id):
+        """Return {user_id, title} before deletion — used to notify the author."""
+        with get_session() as session:
+            post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
+            if not post:
+                return None
+            return {"user_id": post.user_id, "title": post.title}
+
+    @staticmethod
+    def admin_list_posts():
+        """All posts, newest first — for the admin moderation queue."""
+        with get_session() as session:
+            posts = session.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
+            return [_serialise_post(session, p, include_replies=False) for p in posts]
+
+    @staticmethod
+    def admin_flagged_posts():
+        """Posts that have been flagged by at least one user, with flag details."""
+        with get_session() as session:
+            flags = session.query(ForumPostFlag).order_by(ForumPostFlag.created_at.desc()).all()
+            by_post = {}
+            for flag in flags:
+                if flag.post_id not in by_post:
+                    by_post[flag.post_id] = []
+                by_post[flag.post_id].append({
+                    "user_id": flag.user_id,
+                    "reason":  flag.reason,
+                    "flagged_at": _safe_dt(flag.created_at),
+                })
+            result = []
+            for post_id, flag_list in by_post.items():
+                post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
+                if post:
+                    data = _serialise_post(session, post, include_replies=False)
+                    data["flags"] = flag_list
+                    data["flag_count"] = len(flag_list)
+                    result.append(data)
+            result.sort(key=lambda p: p["flag_count"], reverse=True)
+            return result

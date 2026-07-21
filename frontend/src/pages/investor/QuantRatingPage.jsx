@@ -175,7 +175,7 @@ export default function QuantRatingPage() {
       <main className="max-w mx-auto ">
         {/* Title */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: PAGE.heading }}>Sector Quant Ratings</h1>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading }}>Sector Quant Ratings</h1>
           <p className="text-sm mt-1" style={{ color: PAGE.sub }}>
             Calibrated machine-learning buy ratings, modelled per GICS sector. Each score is a true,
             calibrated probability — not a black-box index.
