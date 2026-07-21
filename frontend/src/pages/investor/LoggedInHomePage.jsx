@@ -15,7 +15,7 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase,
+  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase, Bell,
 } from "lucide-react";
 import { authFetch } from "../../api/apiClient.js";
 import {
@@ -862,6 +862,11 @@ function RealtimeDashboardSection() {
       title: "Paper Trading",
       description: "Trade against live market prices using virtual funds, zero real-money risk.",
     },
+    {
+      Icon: Bell,
+      title: "Customised Alerts",
+      description: "Set your own price targets on any stock and get notified the moment they're hit.",
+    },
   ];
 
   return (
@@ -887,7 +892,7 @@ function RealtimeDashboardSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8]">
