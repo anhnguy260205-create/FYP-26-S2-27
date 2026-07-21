@@ -70,6 +70,25 @@ export const firebaseLogin = async () => {
   return response.json();
 };
 
+/** Re-check role/is_expert/verification/subscription against the backend and
+ * patch sessionStorage's cached currentUser — catches admin-side changes
+ * (e.g. a cancelled expert verification) without requiring a re-login.
+ * Returns the merged user, or null if the check couldn't run. */
+export const refreshSessionUser = async () => {
+  const stored = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+  if (!stored) return null;
+  try {
+    const response = await authFetch(`${BASE_URL}/session`);
+    const data = await response.json();
+    if (!data.success) return null;
+    const merged = { ...stored, ...data.user };
+    sessionStorage.setItem("currentUser", JSON.stringify(merged));
+    return merged;
+  } catch {
+    return null;
+  }
+};
+
 /** Verify the emailed login OTP (2nd factor; admins never need this). */
 export const verifyLoginOtp = async (otpCode) => {
   const response = await authFetch(`${BASE_URL}/mfa/verify`, {

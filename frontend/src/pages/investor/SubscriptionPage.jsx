@@ -4,6 +4,7 @@ import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { getSubscriptionStatus, updateSubscriptionStatus } from "../../api/userApi.js";
+import { CARD_HOVER } from "../../components/dashboard/DashboardKit.jsx";
 
 const ACCENT = "#00D3F2";
 const ACCENT_TEXT = "#004450";
@@ -91,35 +92,16 @@ function Feature({ children, accent }) {
 }
 
 function PlanCard({ accent, recommended, badgeLabel, plan, features, ctaLabel, lockedLabel, isCurrent, isLocked, onSelect }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, delay: accent ? 0.28 : 0.18 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        background: "#FFFFFF",
-        border: accent
-          ? `1.5px solid ${hovered ? "#00A9C4" : "rgba(0,211,242,0.55)"}`
-          : `1.5px solid ${hovered ? "#334155" : "rgba(51,65,85,0.22)"}`,
-        borderRadius: "20px",
-        padding: "32px",
-        transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
-        transform: hovered ? "translateY(-6px)" : "translateY(0)",
-        boxShadow: accent
-          ? hovered
-            ? "0 20px 45px rgba(0,211,242,0.28)"
-            : "0 10px 30px rgba(0,211,242,0.16)"
-          : hovered
-            ? "0 12px 32px rgba(15,23,42,0.12)"
-            : "0 4px 16px rgba(15,23,42,0.08)",
-      }}
+      className={`relative flex flex-col rounded-2xl bg-white p-8 ${CARD_HOVER} ${
+        accent
+          ? "ring-2 ring-[#00D3F2]/50 shadow-lg shadow-[#00D3F2]/10 hover:shadow-xl hover:shadow-[#00D3F2]/20"
+          : "ring-1 ring-slate-200 shadow-md shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-slate-300"
+      }`}
     >
       {recommended && (
         <span
@@ -243,7 +225,7 @@ function SubscriptionPage() {
           transition={{ duration: 0.3 }}
           style={{ textAlign: "center" }}
         >
-          <h1 style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 700, color: "#0F172A", margin: "0 0 10px", letterSpacing: "-0.01em" }}>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, color: "#0F172A", margin: "0 0 10px", letterSpacing: "0.04em" }}>
             Choose your plan
           </h1>
           <p style={{ fontSize: "15px", color: "#64748B", margin: "0 auto", maxWidth: "480px" }}>

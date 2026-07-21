@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
+import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -462,8 +462,7 @@ function ExpertDetails() {
     const userId = searchParams.get("user_id");
 
     const me = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
-    const role = String(me?.role || "").toLowerCase();
-    const isExpert = role === "expert";
+    const isExpert = isExpertUser(me);
     const isPremium = String(me?.subscription_status || "").toLowerCase() === "premium";
 
     const [loading, setLoading] = useState(true);
@@ -632,10 +631,10 @@ function ExpertDetails() {
     return (
         <motion.div
             className="min-h-screen flex flex-col"
-            style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+            style={{ background: getPageBackground() }}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
         >
-            {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+            <RoleHeader />
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
+import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
@@ -14,8 +15,9 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles,
+  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase, Bell,
 } from "lucide-react";
+import { authFetch } from "../../api/apiClient.js";
 import {
   CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   SectionHeader, PrimaryButton,
@@ -61,12 +63,12 @@ const RISK_TONE = {
 
 const PLATFORM_FEATURES = [
   {
-    Icon: Wallet,
-    title: "Paper Trading Exchange",
-    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
-    to: "/realtimedashboard",
-    badge: "Live market prices",
-    cta: "Start trading",
+    Icon: Eye,
+    title: "Customised Watchlist",
+    description: "Track the stocks that matter most to you in one place, with real-time prices and quick access to buy or sell.",
+    to: "/watchlist",
+    badge: "Real-time prices",
+    cta: "View watchlist",
     accent: "cyan",
     primary: true,
   },
@@ -105,6 +107,15 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
+  },
+  {
+    Icon: Award,
+    title: "Become an Expert",
+    description: "Trade 30 different stocks and hit a 200% profit margin to apply for verified expert status — publish articles and share your portfolio.",
+    to: "/investor/become-expert",
+    badge: "Level up",
+    cta: "Check my progress",
+    accent: "rose",
   },
 ];
 
@@ -851,6 +862,11 @@ function RealtimeDashboardSection() {
       title: "Paper Trading",
       description: "Trade against live market prices using virtual funds, zero real-money risk.",
     },
+    {
+      Icon: Bell,
+      title: "Customised Alerts",
+      description: "Set your own price targets on any stock and get notified the moment they're hit.",
+    },
   ];
 
   return (
@@ -859,7 +875,7 @@ function RealtimeDashboardSection() {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") navigate("/realtimedashboard"); }}
-      className="group relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 ring-1 ring-white/10 shadow-xl shadow-black/30 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00D3F2]/10"
+      className={`group relative overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-200 p-8 md:p-12 cursor-pointer transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30`}
     >
       <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
 
@@ -868,22 +884,22 @@ function RealtimeDashboardSection() {
           <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
             Live Market Data
           </span>
-          <h2 className="text-white font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
+          <h2 className="text-slate-900 font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
             The Realtime Trading Dashboard
           </h2>
-          <p className="text-slate-300 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
+          <p className="text-slate-600 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
             One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8]">
                 <Icon size={19} />
               </div>
-              <p className="text-white font-semibold text-[15px]">{title}</p>
-              <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+              <p className="text-slate-900 font-semibold text-[15px]">{title}</p>
+              <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
@@ -896,20 +912,93 @@ function RealtimeDashboardSection() {
   );
 }
 
+// ── Published expert portfolios (premium perk) ──────────────────────────────
+// Verified experts can publish their portfolio; premium users see them here
+// as reference portfolios. Hidden for basic users and when nothing is published.
+function ExpertPortfoliosSection() {
+  const navigate = useNavigate();
+  const [portfolios, setPortfolios] = useState([]);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch(`${import.meta.env.VITE_API_URL}/expert/published-portfolios`)
+      .then(r => r.json())
+      .then(res => {
+        if (cancelled) return;
+        if (res.success && (res.portfolios || []).length > 0) {
+          setPortfolios(res.portfolios);
+          setVisible(true);
+        }
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <section>
+      <SectionHeader
+        title="Expert Portfolios"
+        subtitle="Reference portfolios published by our verified experts — a Premium perk"
+        dark={false}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {portfolios.map((p) => {
+          const up = (p.return_pct ?? 0) >= 0;
+          return (
+            <div
+              key={p.portfolio_id}
+              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`); }}
+              className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8] shrink-0">
+                    <Briefcase size={19} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
+                    <p className="text-xs text-slate-500 truncate">by {p.expert_name}</p>
+                  </div>
+                </div>
+                <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
+                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {up ? "+" : ""}{Number(p.return_pct ?? 0).toFixed(1)}%
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{p.description || p.investment_objective}</p>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
+                <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
+                <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
+                <span className="inline-flex items-center gap-1 text-[#00A9C4] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function PricingTeaserSection() {
   const navigate = useNavigate();
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-900 via-slate-950 to-amber-950 ring-1 ring-[#FFD700]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+    <section className={`relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#FFD700]/40 shadow-lg shadow-amber-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-amber-900/10 hover:ring-[#FFD700]/60`}>
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#FFD700]/10 blur-3xl" />
 
       <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-[#FFD700]">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-amber-700">
           <Sparkles size={11} /> RocketTrade Premium
         </span>
-        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
           Stop guessing. Start trading with an edge.
         </h2>
-        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
           Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.
         </p>
       </div>
@@ -936,7 +1025,7 @@ function LoggedInHomePage() {
       className="relative min-h-screen flex flex-col"
       style={{
         fontFamily: "'DM Sans', sans-serif",
-        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 500px, #FFFFFF 100%)",
+        background: getPageBackground(500),
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -951,6 +1040,7 @@ function LoggedInHomePage() {
         <AIInsightsSection portfolioData={portfolioData} />
         <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
         <WatchlistSection />
+        <ExpertPortfoliosSection />
 
         <PricingTeaserSection />
         <PlatformFeaturesSection />

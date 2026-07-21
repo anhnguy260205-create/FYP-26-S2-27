@@ -11,11 +11,6 @@ import { auth } from "../../firebase";
 // If unset, the widget is hidden and the backend skips verification (dev mode).
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
-const ACCOUNT_TYPE_STYLES = {
-  investor: { color: "#0092b8", bg: "rgba(0,146,184,0.06)", hover: "hover:border-[#0092b8] hover:bg-[#0092b8]/5" },
-  expert: { color: "#7c3aed", bg: "rgba(124,58,237,0.06)", hover: "hover:border-[#7c3aed] hover:bg-[#7c3aed]/5" },
-};
-
 function RegistrationPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -23,7 +18,6 @@ function RegistrationPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    accountType: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -79,10 +73,6 @@ function RegistrationPage() {
       alert("Username cannot be empty.");
       return;
     }
-    if (!formData.accountType) {
-      alert("Please select an account type (Investor or Expert).");
-      return;
-    }
     if (!passwordValid) {
       alert("Password does not meet the requirements.");
       return;
@@ -107,7 +97,9 @@ function RegistrationPage() {
       const firebaseUser = await createUserWithEmailAndPassword(auth, cleanEmail, formData.password);
 
       const payload = {
-        role: formData.accountType,
+        // Roles are merged — everyone registers as an investor and can later
+        // upgrade to expert from within the app.
+        role: "investor",
         username: formData.username.trim(),
         email_address: cleanEmail,
         recaptcha_token: recaptchaToken,
@@ -250,34 +242,6 @@ function RegistrationPage() {
                   onFocus={focusStyle}
                   onBlur={blurStyle}
                 />
-              </div>
-
-              {/* Account Type */}
-              <div className="flex flex-col gap-2">
-                <label className="font-semibold text-[14px] text-gray-700 pl-1">Account Type</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { value: "investor", label: "Investor", desc: "Grow my portfolio" },
-                    { value: "expert", label: "Expert", desc: "Provide trading insights" },
-                  ].map((type) => {
-                    const accent = ACCOUNT_TYPE_STYLES[type.value];
-                    const selected = formData.accountType === type.value;
-                    return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => handleChange("accountType", type.value)}
-                        className={`flex flex-col items-start px-4 py-3 rounded-[14px] border-2 transition-all text-left cursor-pointer ${selected ? "" : `border-black/10 bg-white ${accent.hover}`}`}
-                        style={selected ? { borderColor: accent.color, background: accent.bg } : undefined}
-                      >
-                        <span className="font-semibold text-[14px]" style={{ color: selected ? accent.color : "#1f2937" }}>
-                          {type.label}
-                        </span>
-                        <span className="text-[12px] text-gray-500 mt-0.5">{type.desc}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Terms */}

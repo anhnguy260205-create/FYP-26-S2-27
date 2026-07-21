@@ -120,14 +120,26 @@ class UserAccount(Base):
             expert = session.query(Expert).filter(
                 Expert.user_id == user.user_id).first()
 
-            if investor:
+            # Merged roles: anyone with an investor OR expert row is an
+            # "investor". Expert is an add-on flag (is_expert) — verified
+            # experts automatically enjoy premium benefits.
+            if investor or expert:
                 role = "investor"
-            elif expert:
-                role = "expert"
             elif profile_name == "admin":
                 role = "admin"
             else:
                 role = profile_name or "unknown"
+
+            verification = (
+                ExpertVerification.get_for_expert(expert.expert_id)
+                if expert else None
+            )
+            verification_status = verification["verification_status"] if verification else None
+            is_verified_expert = verification_status in ("approved", "active")
+
+            subscription_status = investor.investor_subscription_status if investor else "inactive"
+            if is_verified_expert:
+                subscription_status = "premium"
 
             return {
                 "user_id": user.user_id,
@@ -135,18 +147,24 @@ class UserAccount(Base):
                 "full_name": user.full_name,
                 "email_address": user.email_address,
                 "role": role,
-                "subscription_status": investor.investor_subscription_status if investor else "inactive",
-                "interests": investor.interests if investor else None,
-                "risk_tolerance": investor.risk_tolerance if investor else None,
-                "verification_status": ExpertVerification.get_for_expert(expert.expert_id)["verification_status"] if expert else None,
+                "is_expert": expert is not None,
+                "subscription_status": subscription_status,
+                "interests": (investor.interests if investor else None) or (expert.interests if expert else None),
+                "risk_tolerance": (investor.risk_tolerance if investor else None) or (expert.risk_tolerance if expert else None),
+                "verification_status": verification_status,
                 "first_login": first_login,
             }
 
     @staticmethod
     def get_auth_profile(email: str) -> dict | None:
-        """Lightweight lookup for auth middleware — no last_login side-effects."""
+        """Lightweight lookup for auth middleware — no last_login side-effects.
+        Also backs GET /user/session, which the frontend polls on every
+        protected-route navigation to catch admin-side changes (e.g. an
+        expert's verification being cancelled) that sessionStorage — only
+        refreshed at login — would otherwise miss until the user logs out."""
         from app.entity.models.investor import Investor
         from app.entity.models.expert import Expert
+        from app.entity.models.expertverification import ExpertVerification
         from sqlalchemy.orm import joinedload
 
         email = email.strip().lower()
@@ -166,16 +184,32 @@ class UserAccount(Base):
                 Expert.user_id == user.user_id
             ).first()
 
-            if investor:
+            if investor or expert:
                 role = "investor"
-            elif expert:
-                role = "expert"
             elif profile_name == "admin":
                 role = "admin"
             else:
                 role = profile_name or "unknown"
 
-            return {"user_id": user.user_id, "email": email, "role": role}
+            verification = (
+                ExpertVerification.get_for_expert(expert.expert_id)
+                if expert else None
+            )
+            verification_status = verification["verification_status"] if verification else None
+            is_verified_expert = verification_status in ("approved", "active")
+
+            subscription_status = investor.investor_subscription_status if investor else "inactive"
+            if is_verified_expert:
+                subscription_status = "premium"
+
+            return {
+                "user_id": user.user_id,
+                "email": email,
+                "role": role,
+                "is_expert": expert is not None,
+                "verification_status": verification_status,
+                "subscription_status": subscription_status,
+            }
 
     @staticmethod
     def emailExists(email_address) -> bool:
@@ -214,6 +248,17 @@ def seed_admin_account():
         address="123 Admin Street"
     )
 
+def seed_hr_account():
+    UserAccount.createAccount(
+        email_address="fyphr123@gmail.com",
+        profile_name="hr",
+        username="finance_hr",
+        full_name="Finance Admin User",
+        phone_number="1234567890",
+        address="Finance Operations Department",
+    )
+
 
 if __name__ == "__main__":
     seed_admin_account()
+    seed_hr_account()

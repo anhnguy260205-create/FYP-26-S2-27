@@ -134,7 +134,7 @@ function ChangePasswordPage() {
               >
                 <Lock size={26} color="#fff" />
               </div>
-              <h1 className="font-bold text-black text-[32px] leading-tight text-center">
+              <h1 className="leading-tight text-center" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>
                 Change Password
               </h1>
               <p className="text-gray-500 text-[14px] mt-1 text-center">

@@ -52,6 +52,27 @@ class Expert(Base):
             return False
 
     @staticmethod
+    def create_for_existing_user(user_id, experience_years=None, linked_in_url=None):
+        """Attach an expert row (+ verification record) to an EXISTING investor
+        account — the merged-roles upgrade path. Returns the expert dict, or
+        the existing one if the user already applied."""
+        with get_session() as session:
+            existing = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if existing:
+                return {"expert_id": existing.expert_id, "created": False}
+            expert = Expert(
+                user_id=user_id,
+                experience_years=experience_years,
+                linked_in_url=linked_in_url,
+            )
+            session.add(expert)
+            session.flush()
+            expert_id = expert.expert_id
+        ExpertVerification.create_for_expert(expert_id)
+        return {"expert_id": expert_id, "created": True}
+
+    @staticmethod
     def update_profile(user_id, experience_years=None, linked_in_url=None, risk_tolerance=None, interests=None):
         with get_session() as session:
             expert = session.query(Expert).filter(
@@ -86,6 +107,52 @@ class Expert(Base):
             if not expert:
                 return False
         return ExpertVerification.set_status(expert_id, status)
+
+    @staticmethod
+    def demote_to_investor(user_id):
+        """Cancelling a verification fully revokes expert status: the expert
+        row (+ their published portfolio, authored articles, and
+        compensation ledger) is removed, leaving a plain investor account
+        untouched. Unlike deleteExpert, the user_account/investor rows are
+        NOT touched — this is a demotion, not an account deletion. They can
+        reapply from scratch via POST /expert/apply."""
+        from app.entity.models.article import Article
+        from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
+        from app.entity.models.expertcompensation import ExpertCompensationLedger
+
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first()
+            if not expert:
+                return False
+
+            portfolio_ids = [
+                p.portfolio_id for p in session.query(ExpertPortfolio).filter(
+                    ExpertPortfolio.expert_id == expert.expert_id
+                ).all()
+            ]
+            if portfolio_ids:
+                session.query(ExpertPortfolioHolding).filter(
+                    ExpertPortfolioHolding.portfolio_id.in_(portfolio_ids)
+                ).delete(synchronize_session=False)
+
+            session.query(ExpertPortfolio).filter(
+                ExpertPortfolio.expert_id == expert.expert_id
+            ).delete()
+
+            session.query(Article).filter(
+                Article.expert_id == expert.expert_id
+            ).delete()
+
+            session.query(ExpertCompensationLedger).filter(
+                ExpertCompensationLedger.expert_id == expert.expert_id
+            ).delete()
+
+            ExpertVerification.delete_for_expert(session, expert.expert_id)
+
+            session.delete(expert)
+            return True
 
     @staticmethod
     def get_user_id_by_expert_id(expert_id):
@@ -229,6 +296,37 @@ class Expert(Base):
             return True
 
 
+def _promote_seed_expert(email_address: str):
+    """Merged-roles: make a seeded expert account a fully verified expert —
+    investor row (everyone trades as an investor), approved verification,
+    and the complimentary premium tier. Idempotent; safe on every startup."""
+    from app.entity.models.investor import Investor
+
+    with get_session() as session:
+        user = session.query(UserAccount).filter(
+            UserAccount.email_address == email_address).first()
+        if not user:
+            return
+        user_id = user.user_id
+        expert = session.query(Expert).filter(
+            Expert.user_id == user_id).first()
+        expert_id = expert.expert_id if expert else None
+
+        investor = session.query(Investor).filter(
+            Investor.user_id == user_id).first()
+        if not investor:
+            session.add(Investor(
+                user_id=user_id, investor_subscription_status="premium"))
+        elif investor.investor_subscription_status != "premium":
+            investor.investor_subscription_status = "premium"
+
+    if expert_id:
+        ExpertVerification.create_for_expert(expert_id)
+        verification = ExpertVerification.get_for_expert(expert_id)
+        if verification["verification_status"] not in ("approved", "active"):
+            ExpertVerification.set_status(expert_id, "approved")
+
+
 def seed_expert_account():
     Expert.createAccount(
         username="Anh",
@@ -236,6 +334,7 @@ def seed_expert_account():
         experience_year=3,
         linked_in_url="@anh"
     )
+    _promote_seed_expert("kimhi@gmail.com")
 
 
 def seed_jordan_account():
@@ -245,3 +344,4 @@ def seed_jordan_account():
         experience_year=5,
         linked_in_url="https://linkedin.com/in/jordan"
     )
+    _promote_seed_expert("jordan@gmail.com")

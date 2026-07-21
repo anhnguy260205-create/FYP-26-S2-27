@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import GeneralHeader from "../../layout/GeneralHeader.jsx";
-import ExpertHeader from "../../layout/ExpertHeader.jsx";
+import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { getPageBackground } from "../../utils/userRole.js";
 import { getArticles } from "../../api/knowledgeHubApi.js";
 
 const mono = "'DM Mono', monospace";
@@ -102,7 +102,9 @@ function EducationContent() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const role = String(currentUser?.role || "").toLowerCase();
-  const isExpert = role === "expert";
+  // Merged roles: experts are investors with the is_expert flag. The write
+  // button is hidden from regular investors — only expert accounts see it.
+  const isExpert = currentUser?.is_expert === true || role === "expert";
   // Unverified experts still see the button — clicking through to
   // /expert/knowledge-hub is what prompts them to submit documents
   // (ExpertKnowledgeHub's own VerificationWall handles that gate).
@@ -141,9 +143,9 @@ function EducationContent() {
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap'); @keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <motion.div className="min-h-screen flex flex-col"
-        style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
+        style={{ background: getPageBackground() }}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-        {isExpert ? <ExpertHeader /> : <GeneralHeader />}
+        <RoleHeader />
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
           <div style={{ paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
@@ -154,9 +156,9 @@ function EducationContent() {
             {canWrite && (
               <button onClick={() => navigate("/expert/knowledge-hub")} style={{
                 padding: "10px 22px", borderRadius: 50, cursor: "pointer", border: "none",
-                background: C.accent, color: C.accentText,
+                background: C.success, color: "#fff",
                 fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
-                boxShadow: `0 4px 14px rgba(${C.accentRgb},0.35)`,
+                boxShadow: "0 4px 14px rgba(15,157,88,0.35)",
               }}>My Article</button>
             )}
           </div>

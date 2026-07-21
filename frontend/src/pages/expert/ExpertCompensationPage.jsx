@@ -100,7 +100,7 @@ export default function ExpertCompensationPage() {
       <ExpertHeader />
       <main className="flex flex-col gap-8" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "24px 24px 48px" }}>
         <div>
-          <h1 className="text-3xl font-bold text-white">Compensation</h1>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>Compensation</h1>
           <p className="mt-1 text-sm text-slate-300">Track your earnings, payout history, and follower eligibility.</p>
         </div>
 

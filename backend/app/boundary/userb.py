@@ -54,7 +54,8 @@ def _send_or_queue_login_otp(background_tasks: BackgroundTasks, email: str, otp:
 #  Public: registration 
 
 class CreateAccountRequest(BaseModel):
-    role: str
+    # Kept for backward compatibility but ignored — all signups are investors.
+    role: Optional[str] = "investor"
     username: str
     email_address: str
     recaptcha_token: Optional[str] = None
@@ -148,6 +149,25 @@ def firebase_login(
     if not profile:
         raise HTTPException(status_code=404, detail="User not found")
     return {"success": True, "mfa_required": False, "user": profile}
+
+
+@router.get("/session")
+def get_session(current_user: dict = Depends(get_current_user)):
+    """Lightweight role/is_expert/verification/subscription check the
+    frontend re-runs on every protected-route navigation, so admin-side
+    changes (e.g. an expert's verification being cancelled) show up without
+    requiring the user to log out and back in. No DB write side-effects —
+    backed by the same 60s-cached lookup used for request authorization."""
+    return {
+        "success": True,
+        "user": {
+            "user_id": current_user.get("user_id"),
+            "role": current_user.get("role"),
+            "is_expert": current_user.get("is_expert"),
+            "verification_status": current_user.get("verification_status"),
+            "subscription_status": current_user.get("subscription_status"),
+        },
+    }
 
 
 #  Auth: login email OTP (2nd factor, all roles)
