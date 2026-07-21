@@ -63,12 +63,12 @@ const RISK_TONE = {
 
 const PLATFORM_FEATURES = [
   {
-    Icon: Wallet,
-    title: "Paper Trading Exchange",
-    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
-    to: "/realtimedashboard",
-    badge: "Live market prices",
-    cta: "Start trading",
+    Icon: Eye,
+    title: "Customised Watchlist",
+    description: "Track the stocks that matter most to you in one place, with real-time prices and quick access to buy or sell.",
+    to: "/watchlist",
+    badge: "Real-time prices",
+    cta: "View watchlist",
     accent: "cyan",
     primary: true,
   },
