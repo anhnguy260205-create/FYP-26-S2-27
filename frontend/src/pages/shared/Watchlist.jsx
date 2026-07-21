@@ -179,7 +179,11 @@ export default function Watchlist() {
                                     <button
                                         onClick={() => { setAdding(false); setNewSymbol(""); }}
                                         className="text-xs px-3 py-2 rounded-lg"
-                                        style={{ background: C.card2, color: C.muted }}
+                                        style={{
+                                            background: "rgba(239,68,68,0.1)",
+                                            border: "1px solid rgba(239,68,68,0.25)",
+                                            color: C.danger,
+                                        }}
                                     >
                                         Cancel
                                     </button>
