@@ -54,7 +54,7 @@ function SearchBar({ onSearch, loading }) {
         onClick={handleSearch}
         disabled={loading}
         className="px-6 h-10 text-white font-semibold text-[16px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all whitespace-nowrap disabled:opacity-50"
-        style={{ background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,146,184,0.25)" }}
+        style={{ background: "linear-gradient(90deg, #0F9D58, #16a34a)", boxShadow: "0px 10px 20px rgba(15,157,88,0.25)" }}
       >
         {loading ? "Searching…" : "Search"}
       </button>
