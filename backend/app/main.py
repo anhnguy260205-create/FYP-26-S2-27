@@ -178,6 +178,7 @@ def ensure_all_schemas(engine):
         ("notification", "broadcast_id",           "ALTER TABLE notification ADD COLUMN broadcast_id INT NULL"),
         ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
         ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
+        ("expert",       "chat_available",         "ALTER TABLE expert ADD COLUMN chat_available TINYINT(1) NOT NULL DEFAULT 1"),
     ]
 
     with engine.connect() as conn:

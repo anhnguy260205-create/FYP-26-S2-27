@@ -15,7 +15,7 @@ class Investor(Base):
                          default=lambda: f"investor_{uuid4()}")
     interests = Column(String(255), nullable=True)
     risk_tolerance = Column(String(30), nullable=True)
-    paper_money = Column(Float, default=2000)
+    paper_money = Column(Float, default=0)
     used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
 
@@ -441,7 +441,12 @@ class Investor(Base):
     def getExpertEligibility(user_id, min_distinct_stocks=30, min_profit_margin=200.0):
         """Expert-upgrade requirements: traded >= 30 distinct stocks and hit a
         realized profit margin of >= 200% on the S$2,000 starting capital.
-        Profit = paper_money + used_amount (cost basis of holdings) - 2000."""
+
+        Profit = sum of realized_pnl across every sell (Transaction.getRealizedPnl)
+        — earned purely from buy/sell trading activity. Deliberately NOT
+        paper_money + used_amount - starting capital: that balance also moves
+        on deposits, withdrawals, gifts, platform fees and compensation
+        payouts, none of which reflect trading skill."""
         from app.entity.models.transaction import Transaction
 
         STARTING_CAPITAL = 2000.0
@@ -452,11 +457,9 @@ class Investor(Base):
             if not investor:
                 return None
             investor_id = investor.investor_id
-            paper_money = investor.paper_money or 0
-            used_amount = investor.used_amount or 0
 
         distinct_stocks = Transaction.getDistinctSymbolCount(investor_id)
-        profit = round(paper_money + used_amount - STARTING_CAPITAL, 2)
+        profit = Transaction.getRealizedPnl(investor_id)
         profit_margin = round(profit / STARTING_CAPITAL * 100, 2)
 
         return {

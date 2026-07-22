@@ -189,10 +189,7 @@ const NotificationDock = forwardRef(function NotificationDock({ onUnreadChange }
                                 <CheckCheck size={13} /> Mark all read
                             </button>
                         )}
-                        <button onClick={() => setOpen(false)}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: TEXT_SECONDARY, padding: 2 }}>
-                            <X size={16} />
-                        </button>
+
                     </div>
                 </div>
 

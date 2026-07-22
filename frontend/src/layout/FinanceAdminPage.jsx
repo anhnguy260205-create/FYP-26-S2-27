@@ -68,7 +68,7 @@ function FinanceAdminLayout({ title, subtitle, children }) {
       console.error("Logout API error:", error);
     } finally {
       sessionStorage.removeItem("currentUser");
-      navigate("/login");
+      navigate("/");
     }
   };
 
@@ -189,8 +189,7 @@ function FinanceAdminLayout({ title, subtitle, children }) {
                 </p>
 
                 <p className="text-[9px] text-slate-500">
-                  document verification
-                </p>
+                  Financial management                </p>
               </div>
             </button>
 

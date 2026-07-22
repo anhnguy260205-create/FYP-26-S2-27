@@ -1,4 +1,4 @@
-from sqlalchemy import Float, Column, ForeignKey, Integer, String
+from sqlalchemy import Float, Column, ForeignKey, Integer, String, Boolean
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.expertverification import ExpertVerification
 from app.entity.database.base import Base
@@ -16,7 +16,10 @@ class Expert(Base):
     rating = Column(Float, default=0)
     experience_years = Column(Integer, nullable=True)
     linked_in_url = Column(String(255), nullable=True)
-    
+    # Whether this expert is currently accepting NEW chat requests from
+    # investors (existing conversations are unaffected — see chat.py).
+    chat_available = Column(Boolean, default=True, nullable=False)
+
     # Verification/application state (status, documents, approved_date) lives
     # on ExpertVerification, not here — see that model.
 
@@ -82,6 +85,16 @@ class Expert(Base):
                 expert.experience_years = experience_years
             if linked_in_url is not None:
                 expert.linked_in_url = linked_in_url
+            return True
+
+    @staticmethod
+    def set_chat_available(user_id, available: bool):
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.user_id == user_id).first()
+            if not expert:
+                return False
+            expert.chat_available = available
             return True
 
     @staticmethod
@@ -215,6 +228,7 @@ class Expert(Base):
             rating = expert.rating
             experience_years = expert.experience_years
             linked_in_url = expert.linked_in_url
+            chat_available = expert.chat_available
 
         verification = ExpertVerification.get_for_expert(expert_id)
         return {
@@ -223,6 +237,7 @@ class Expert(Base):
             "rating": rating,
             "experience_years": experience_years,
             "linked_in_url": linked_in_url,
+            "chat_available": chat_available,
             **verification,
         }
 

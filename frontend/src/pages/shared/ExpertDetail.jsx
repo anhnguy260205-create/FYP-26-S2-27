@@ -3,11 +3,12 @@ import { motion } from "framer-motion";
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
 import {
     getExpertPortfolio, followExpert, unfollowExpert,
     getPortfolioReviews, submitPortfolioReview, deletePortfolioReview,
+    saveExpertPortfolio, publishPortfolio, setChatAvailability,
 } from "../../api/expertApi.js";
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
@@ -283,9 +284,6 @@ function PortfolioSection({ portfolio, error, notPublished }) {
                 <InfoCard icon={Shield} label="Risk Level">
                     <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.risk_level || "—"}</div>
                 </InfoCard>
-                <InfoCard icon={PieChart} label="Target Audience">
-                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.target_audience || "—"}</div>
-                </InfoCard>
             </div>
 
             {/* Allocation */}
@@ -470,8 +468,15 @@ function LimitLock({ viewsLimit, navigate }) {
 
 function ExpertDetails() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const userId = searchParams.get("user_id");
+
+    // Which page linked here — passed as router state by the caller (Expert
+    // Portfolio listing, Home's published portfolios, …). Falls back to the
+    // Expert Portfolio listing when unset (e.g. a direct link/refresh).
+    const fromPath = location.state?.from || "/investor/expertportfolio";
+    const fromLabel = location.state?.fromLabel || "Expert Portfolio";
 
     const me = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
     const isExpert = isExpertUser(me);
@@ -500,6 +505,13 @@ function ExpertDetails() {
     const [rateComment, setRateComment] = useState("");
     const [rateBusy, setRateBusy] = useState(false);
 
+    // Owner-only settings (Settings tab)
+    const [objectiveDraft, setObjectiveDraft] = useState("");
+    const [savingObjective, setSavingObjective] = useState(false);
+    const [publishBusy, setPublishBusy] = useState(false);
+    const [chatAvailable, setChatAvailableState] = useState(true);
+    const [chatBusy, setChatBusy] = useState(false);
+
     useEffect(() => {
         if (!userId) { setError("No expert selected."); setLoading(false); return; }
         authFetch(`${import.meta.env.VITE_API_URL}/expert/public-profile/${userId}`)
@@ -514,12 +526,16 @@ function ExpertDetails() {
                     setFollowing(!!res.profile?.is_following);
                     setFollowerCount(res.profile?.follower_count ?? 0);
                     setIsSelf(!!res.profile?.is_self);
+                    setChatAvailableState(res.profile?.chat_available !== false);
                     setPortfolioRating(res.profile?.portfolio_rating || { average: 0, total: 0 });
                     // Load the expert-created portfolio only after the profile
                     // view is allowed (keeps the basic-plan limit meaningful).
                     getExpertPortfolio(userId)
                         .then(p => {
-                            if (p?.success && p.portfolio) setPortfolio(p.portfolio);
+                            if (p?.success && p.portfolio) {
+                                setPortfolio(p.portfolio);
+                                setObjectiveDraft(p.portfolio.investment_objective || "");
+                            }
                             else if (p?.not_published) setPortfolioNotPublished(true);
                             else setPortfolioError(p?.message || "Portfolio not available.");
                         })
@@ -552,6 +568,60 @@ function ExpertDetails() {
             alert("Could not update follow status. Check your connection and try again.");
         } finally {
             setFollowBusy(false);
+        }
+    };
+
+    const handleSaveObjective = async () => {
+        if (savingObjective || !portfolio) return;
+        setSavingObjective(true);
+        try {
+            const res = await saveExpertPortfolio(userId, { ...portfolio, investment_objective: objectiveDraft });
+            if (res.success) {
+                setPortfolio(prev => ({ ...prev, investment_objective: objectiveDraft }));
+            } else {
+                alert(res.message || "Could not save investment objective.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] save objective failed:", err);
+            alert("Could not save. Check your connection and try again.");
+        } finally {
+            setSavingObjective(false);
+        }
+    };
+
+    const handleTogglePublish = async () => {
+        if (publishBusy || !portfolio) return;
+        setPublishBusy(true);
+        try {
+            const res = await publishPortfolio(!portfolio.is_published);
+            if (res.success) {
+                setPortfolio(prev => ({ ...prev, is_published: res.is_published }));
+            } else {
+                alert(res.message || "Could not update publish status.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] toggle publish failed:", err);
+            alert("Could not update publish status. Check your connection and try again.");
+        } finally {
+            setPublishBusy(false);
+        }
+    };
+
+    const handleToggleChat = async () => {
+        if (chatBusy) return;
+        setChatBusy(true);
+        try {
+            const res = await setChatAvailability(!chatAvailable);
+            if (res.success) {
+                setChatAvailableState(res.chat_available);
+            } else {
+                alert(res.message || "Could not update chat availability.");
+            }
+        } catch (err) {
+            console.error("[ExpertDetail] toggle chat availability failed:", err);
+            alert("Could not update chat availability. Check your connection and try again.");
+        } finally {
+            setChatBusy(false);
         }
     };
 
@@ -635,11 +705,11 @@ function ExpertDetails() {
 
     // Profile header (avatar, follow/rate, stats) stays fixed above the tabs;
     // only the panel below switches.
-    const [tab, setTab] = useState("overview");
+    const [tab, setTab] = useState("portfolio");
     const TABS = [
-        { key: "overview", label: "Overview" },
         { key: "portfolio", label: "Portfolio" },
         { key: "reviews", label: "Reviews" },
+        ...(isSelf ? [{ key: "settings", label: "Settings" }] : []),
     ];
 
     return (
@@ -652,18 +722,24 @@ function ExpertDetails() {
 
             <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
 
-                {/* Back Button */}
+                {/* Back Button — returns to wherever the user actually came from
+                    (Expert Portfolio listing, Home, …), not a hardcoded page */}
                 <button
-                    onClick={() => navigate("/investor/expertportfolio")}
-                    className="flex items-center gap-2 mb-6"
+                    onClick={() => navigate(fromPath)}
                     style={{
-                        padding: "10px 18px", borderRadius: "10px",
-                        background: "#FFFFFF", color: "#0B1D4F",
-                        border: "1px solid rgba(11,29,79,0.25)",
+                        display: "flex", alignItems: "center", gap: 6, marginBottom: 16,
+                        background: "none", border: "none", cursor: "pointer", padding: 0,
+                        fontSize: 13, fontWeight: 600, color: "#5B6C88",
                     }}
                 >
-                    <ArrowLeft size={16} />
-                    Back
+                    <ArrowLeft size={14} />
+                    {fromLabel}
+                    {profile && (
+                        <>
+                            <span style={{ color: "#94A3B8", fontWeight: 400 }}>/</span>
+                            <span style={{ color: "#0B1D4F" }}>{isSelf ? "My Portfolio" : (profile.full_name || profile.username)}</span>
+                        </>
+                    )}
                 </button>
 
                 {/* Free-quota banner (basic investors only — experts/premium get unlimited views) */}
@@ -708,12 +784,29 @@ function ExpertDetails() {
                                             Verified Investment Expert
                                             {profile.experience_years ? ` · ${profile.experience_years} years experience` : ""}
                                         </p>
+                                        <div className="flex items-center gap-4 flex-wrap" style={{ marginTop: 6 }}>
+                                            <div className="flex items-center gap-1.5" style={{ fontSize: 13, color: "#5B6C88" }}>
+                                                <Mail size={14} color="#0092b8" />
+                                                {profile.email_address || "—"}
+                                            </div>
+                                            <div className="flex items-center gap-1.5" style={{ fontSize: 13, color: "#5B6C88" }}>
+                                                <Link2 size={14} color="#0092b8" />
+                                                {profile.linked_in_url ? (
+                                                    <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
+                                                        target="_blank" rel="noreferrer"
+                                                        style={{ color: "#0092b8", wordBreak: "break-all" }}>
+                                                        {profile.linked_in_url}
+                                                    </a>
+                                                ) : "—"}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Ask Question — premium jumps into Messages. Subscription plans
-                                    are an investor concept, so experts never see this. */}
-                                {!isExpert && (
+                                    are an investor concept, so experts never see this. Hidden
+                                    entirely once the expert turns off new chat requests. */}
+                                {!isExpert && (chatAvailable ? (
                                     <button onClick={askQuestion}
                                         className="flex items-center gap-2"
                                         style={{
@@ -729,7 +822,16 @@ function ExpertDetails() {
                                         <MessageSquare size={16} />
                                         {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
                                     </button>
-                                )}
+                                ) : (
+                                    <span className="flex items-center gap-2" style={{
+                                        padding: "12px 22px", borderRadius: 12,
+                                        color: "#5B6C88", fontWeight: 600, fontSize: 14,
+                                        background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.12)",
+                                    }}>
+                                        <MessageSquare size={16} />
+                                        Not accepting questions right now
+                                    </span>
+                                ))}
                             </div>
 
                             {/* Follow / Rate — any signed-in user may follow or rate another
@@ -799,32 +901,6 @@ function ExpertDetails() {
                             ))}
                         </div>
 
-                        {tab === "overview" && (
-                            <div style={{ ...CARD, padding: 30 }}>
-                                <h2 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>Core Information</h2>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <InfoCard icon={Mail} label="Email">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.email_address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Link2} label="LinkedIn">
-                                        {profile.linked_in_url ? (
-                                            <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
-                                                target="_blank" rel="noreferrer"
-                                                style={{ fontSize: 14, color: "#0092b8", wordBreak: "break-all" }}>
-                                                {profile.linked_in_url}
-                                            </a>
-                                        ) : <div style={{ fontSize: 14, color: "#0F172A" }}>—</div>}
-                                    </InfoCard>
-                                    <InfoCard icon={MapPin} label="Location">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Shield} label="Username">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>@{profile.username || "—"}</div>
-                                    </InfoCard>
-                                </div>
-                            </div>
-                        )}
-
                         {tab === "portfolio" && (
                             <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />
                         )}
@@ -838,6 +914,85 @@ function ExpertDetails() {
                                 myReview={myReview}
                                 onRate={openRateModal}
                             />
+                        )}
+
+                        {tab === "settings" && isSelf && (
+                            <div style={{ ...CARD, padding: 30 }}>
+                                <h2 className="text-lg font-bold mb-4" style={{ color: "#0B1D4F" }}>Portfolio Settings</h2>
+
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2" style={{ color: "#0B1D4F" }}>
+                                        Investment Objective
+                                    </label>
+                                    <textarea
+                                        value={objectiveDraft}
+                                        onChange={(e) => setObjectiveDraft(e.target.value)}
+                                        rows={3}
+                                        placeholder="Describe the goal of this portfolio…"
+                                        className="w-full outline-none"
+                                        style={{
+                                            borderRadius: 12, padding: "12px 14px", fontSize: 14,
+                                            color: "#0F172A", border: "1px solid rgba(11,29,79,0.2)",
+                                            resize: "vertical",
+                                        }}
+                                    />
+                                    <button onClick={handleSaveObjective} disabled={savingObjective || !portfolio}
+                                        style={{
+                                            marginTop: 10, padding: "9px 20px", borderRadius: 10, border: "none",
+                                            background: "#0092b8", color: "#fff", fontWeight: 600, fontSize: 13,
+                                            cursor: savingObjective || !portfolio ? "not-allowed" : "pointer",
+                                            opacity: savingObjective || !portfolio ? 0.7 : 1,
+                                        }}>
+                                        {savingObjective ? "Saving…" : "Save"}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between flex-wrap gap-3"
+                                    style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid rgba(11,29,79,0.12)" }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, color: "#0B1D4F" }}>Portfolio Visibility</div>
+                                        <p style={{ fontSize: 13, color: "#5B6C88", marginTop: 2 }}>
+                                            {portfolio?.is_published
+                                                ? "Published — investors can view this portfolio."
+                                                : "Unpublished — investors can't view this portfolio yet."}
+                                        </p>
+                                    </div>
+                                    <button onClick={handleTogglePublish} disabled={publishBusy || !portfolio}
+                                        style={{
+                                            padding: "10px 20px", borderRadius: 10, border: "none", fontWeight: 600, fontSize: 13,
+                                            cursor: publishBusy || !portfolio ? "not-allowed" : "pointer",
+                                            opacity: publishBusy || !portfolio ? 0.7 : 1,
+                                            background: portfolio?.is_published ? "#F1F5F9" : "#0F9D58",
+                                            color: portfolio?.is_published ? "#0B1D4F" : "#fff",
+                                            border: portfolio?.is_published ? "1px solid rgba(11,29,79,0.2)" : "none",
+                                        }}>
+                                        {publishBusy ? "Updating…" : portfolio?.is_published ? "Unpublish" : "Publish"}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between flex-wrap gap-3"
+                                    style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(11,29,79,0.12)" }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, color: "#0B1D4F" }}>Chat Availability</div>
+                                        <p style={{ fontSize: 13, color: "#5B6C88", marginTop: 2 }}>
+                                            {chatAvailable
+                                                ? "On — investors can start new conversations with you."
+                                                : "Off — you won't receive new chat requests (existing conversations still work)."}
+                                        </p>
+                                    </div>
+                                    <button onClick={handleToggleChat} disabled={chatBusy}
+                                        style={{
+                                            padding: "10px 20px", borderRadius: 10, border: "none", fontWeight: 600, fontSize: 13,
+                                            cursor: chatBusy ? "not-allowed" : "pointer",
+                                            opacity: chatBusy ? 0.7 : 1,
+                                            background: chatAvailable ? "#F1F5F9" : "#0F9D58",
+                                            color: chatAvailable ? "#0B1D4F" : "#fff",
+                                            border: chatAvailable ? "1px solid rgba(11,29,79,0.2)" : "none",
+                                        }}>
+                                        {chatBusy ? "Updating…" : chatAvailable ? "Turn Off" : "Turn On"}
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </>
                 )}

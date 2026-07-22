@@ -21,6 +21,18 @@ export const saveExpertPortfolio = (userId, portfolio) =>
     body: JSON.stringify(portfolio),
   });
 
+export const publishPortfolio = (published) =>
+  requestJson(`${EXPERT_BASE_URL}/portfolio-publish`, {
+    method: "POST",
+    body: JSON.stringify({ published }),
+  });
+
+export const setChatAvailability = (available) =>
+  requestJson(`${EXPERT_BASE_URL}/chat-availability`, {
+    method: "POST",
+    body: JSON.stringify({ available }),
+  });
+
 // ── Public expert directory ────────────────────────────────────────────────────
 
 export const getPublicExpertStats = () =>

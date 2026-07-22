@@ -291,7 +291,9 @@ function PortfolioOverviewPage() {
                     return (
                       <tr key={h.symbol}
                         style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}`, cursor: "pointer" }}
-                        onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`)}
+                        onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`, {
+                          state: { from: "/investor/portfolio-overview", fromLabel: "Portfolio Overview" },
+                        })}
                         onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,211,242,0.06)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                       >

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import ExpertHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getMyArticles, createArticle, updateArticle, deleteArticle } from "../../api/knowledgeHubApi.js";
@@ -203,8 +204,15 @@ function VerificationWall({ status }) {
 }
 
 function ExpertKnowledgeHub() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const isVerified = currentUser?.verification_status === "approved";
+
+  // Which page linked here — passed as router state by the caller (Educational
+  // Content's "Write Article" button, currently the only entry point).
+  const fromPath = location.state?.from || "/investor/educationcontent";
+  const fromLabel = location.state?.fromLabel || "Educational Content";
 
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -275,6 +283,22 @@ function ExpertKnowledgeHub() {
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <ExpertHeader />
         <main className="flex flex-col gap-1" style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
+
+          {/* Back Button — returns to wherever the user actually came from
+              (Educational Content), not a hardcoded page */}
+          <button
+            onClick={() => navigate(fromPath)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, marginBottom: 16,
+              background: "none", border: "none", cursor: "pointer", padding: 0,
+              fontSize: 13, fontWeight: 600, color: "#5B6C88",
+            }}
+          >
+            <ArrowLeft size={14} />
+            {fromLabel}
+            <span style={{ color: "#94A3B8", fontWeight: 400 }}>/</span>
+            <span style={{ color: "#0B1D4F" }}>My Articles</span>
+          </button>
 
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(178,115,255,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>

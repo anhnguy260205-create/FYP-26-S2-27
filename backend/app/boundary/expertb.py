@@ -176,6 +176,7 @@ def public_expert_profile(user_id: str,
             "linked_in_url": info.get("linked_in_url"),
             "verification_status": info.get("verification_status"),
             "address": info.get("address"),
+            "chat_available": info.get("chat_available", True),
             "follower_count": ExpertFollow.get_follower_count(user_id),
             "is_following": ExpertFollow.is_following(current_user["user_id"], user_id),
             "is_self": current_user["user_id"] == user_id,
@@ -354,6 +355,23 @@ def update_expert_profile(
     if not ok:
         return {"success": False, "message": "Expert not found"}
     return {"success": True, "message": "Profile updated"}
+
+
+class ChatAvailabilityRequest(BaseModel):
+    available: bool = True
+
+
+@router.post("/chat-availability")
+def set_chat_availability(
+    data: ChatAvailabilityRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Verified experts toggle whether they're currently accepting new
+    chat requests from investors. Existing conversations are unaffected."""
+    ok = Expert.set_chat_available(current_user["user_id"], data.available)
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "chat_available": data.available}
 
 
 class UpdateDocumentsRequest(BaseModel):
