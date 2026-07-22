@@ -92,6 +92,7 @@ export default function MessagesPage() {
   const [results, setResults] = useState([]);
   const [sending, setSending] = useState(false);
   const [lockedThread, setLockedThread] = useState(false);
+  const [chatUnavailableMsg, setChatUnavailableMsg] = useState("");
 
   const bottomRef = useRef(null);
   const activeRef = useRef(null);
@@ -110,6 +111,13 @@ export default function MessagesPage() {
     setActive(conv);
     setMessages([]);
     setLockedThread(Boolean(conv.locked));
+    // Applies to new AND existing conversations — an expert who's turned
+    // chat off can't be messaged at all until they turn it back on.
+    setChatUnavailableMsg(
+      conv.other?.chat_available === false
+        ? `${conv.other.full_name || conv.other.username} isn't accepting chat messages right now.`
+        : ""
+    );
     if (conv.conv_id) {
       try {
         const res = await getChatMessages(conv.conv_id);
@@ -194,6 +202,8 @@ export default function MessagesPage() {
       const res = await sendChatMessage(active.other.user_id, content);
       if (res.premium_required) {
         setLockedThread(true);
+      } else if (res.chat_unavailable) {
+        setChatUnavailableMsg(res.message || "This expert isn't accepting new chat requests right now.");
       } else if (res.success) {
         setText("");
         setMessages(prev => prev.some(x => x.message_id === res.data.message_id) ? prev : [...prev, res.data]);
@@ -362,6 +372,14 @@ export default function MessagesPage() {
                         }}>
                         Upgrade to Premium →
                       </button>
+                    </div>
+                  ) : chatUnavailableMsg ? (
+                    <div style={{
+                      padding: 18, textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.07)",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    }}>
+                      <span style={{ fontSize: 22 }}>⏸️</span>
+                      <span style={{ color: "#94a3b8", fontSize: 13 }}>{chatUnavailableMsg}</span>
                     </div>
                   ) : (
                     <div style={{ padding: 12, borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", gap: 10 }}>

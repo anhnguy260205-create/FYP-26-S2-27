@@ -187,6 +187,26 @@ export default function ExpertPortfolio() {
                         </p>
                     </div>
 
+                    {isExpert && (
+                        <button
+                            onClick={() => navigate(`/investor/expertdetails?user_id=${currentUser.user_id}`, {
+                                state: { from: "/investor/expertportfolio", fromLabel: "Expert Portfolio" },
+                            })}
+                            style={{
+                                padding: "10px 18px",
+                                borderRadius: "10px",
+                                background: C.accent,
+                                border: "none",
+                                color: C.accentText,
+                                fontWeight: 700,
+                                fontSize: "14px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            My Portfolio
+                        </button>
+                    )}
+
                 </div>
                 <hr style={{ marginTop: 16, marginBottom: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
 
@@ -325,7 +345,9 @@ export default function ExpertPortfolio() {
                     {/* Rows */}
                     {visible.map((expert, index) => (
                         <div
-                            onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`)}
+                            onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`, {
+                                state: { from: "/investor/expertportfolio", fromLabel: "Expert Portfolio" },
+                            })}
                             key={index}
                             className="grid items-center px-5 py-4"
                             style={{

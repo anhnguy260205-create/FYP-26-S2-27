@@ -11,6 +11,7 @@ const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
 const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
+const PAGE_SIZE = 10;
 
 const C = {
   card: "#FFFFFF",
@@ -140,6 +141,7 @@ function TransactionHistoryPage() {
   const [filterSymbol, setFilterSymbol] = useState("ALL");
   const [filterType, setFilterType] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!currentUser?.user_id) { setLoading(false); return; }
@@ -196,6 +198,13 @@ function TransactionHistoryPage() {
   const totalSell = filtered.filter(t => t.transaction_type === "sell").reduce((s, t) => s + t.total_amount, 0);
   const netPnL = totalSell - totalBuy;
   const hasFilter = filterSymbol !== "ALL" || filterType !== "ALL" || !!search;
+
+  // filtered is already sorted newest-first, so this is simply "10 latest per page".
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [filterSymbol, filterType, search]);
 
   const inputStyle = {
     height: 36, padding: "0 12px", borderRadius: 8,
@@ -308,7 +317,7 @@ function TransactionHistoryPage() {
                 </thead>
                 <tbody>
                   <AnimatePresence>
-                    {filtered.map((tx, i) => <TxRow key={tx.transaction_id} tx={tx} index={i} />)}
+                    {paginated.map((tx, i) => <TxRow key={tx.transaction_id} tx={tx} index={i} />)}
                   </AnimatePresence>
                 </tbody>
               </table>
@@ -316,8 +325,42 @@ function TransactionHistoryPage() {
           )}
         </div>
 
+        {/* Pagination — 10 latest transactions per page */}
+        {!loading && filtered.length > PAGE_SIZE && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 16 }}>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+              style={{
+                width: 32, height: 32, borderRadius: 8, cursor: safePage === 1 ? "not-allowed" : "pointer",
+                border: `1px solid ${C.border}`, background: "transparent", color: C.heading,
+                opacity: safePage === 1 ? 0.4 : 1,
+              }}>
+              ◀
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+              <button key={n} onClick={() => setPage(n)}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontFamily: mono, fontSize: 12,
+                  border: n === safePage ? "none" : `1px solid ${C.border}`,
+                  background: n === safePage ? C.accent : "transparent",
+                  color: n === safePage ? C.accentText : C.heading,
+                  fontWeight: n === safePage ? 700 : 400,
+                }}>
+                {n}
+              </button>
+            ))}
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+              style={{
+                width: 32, height: 32, borderRadius: 8, cursor: safePage === totalPages ? "not-allowed" : "pointer",
+                border: `1px solid ${C.border}`, background: "transparent", color: C.heading,
+                opacity: safePage === totalPages ? 0.4 : 1,
+              }}>
+              ▶
+            </button>
+          </div>
+        )}
+
         <p style={{ fontFamily: mono, fontSize: 9, color: C.muted, textAlign: "center", marginTop: 16 }}>
-          Showing {filtered.length} of {transactions.length} transactions · Paper trading only · Not financial advice
+          Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} transactions · Paper trading only · Not financial advice
         </p>
       </main>
 

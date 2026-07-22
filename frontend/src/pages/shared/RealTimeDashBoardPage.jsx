@@ -263,7 +263,9 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
   const handleSelect = useCallback((symbol) => {
-    navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+    navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+      state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+    });
   }, [navigate]);
 
   const filtered = useMemo(() => {
@@ -540,7 +542,9 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {topPicks.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
+                          state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+                        })}
                         isTopPick={true} />
                     ))}
                   </div>
@@ -557,7 +561,9 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {forYou.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
+                          state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+                        })}
                         isTopPick={false} />
                     ))}
                   </div>

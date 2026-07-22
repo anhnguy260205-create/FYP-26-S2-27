@@ -105,7 +105,17 @@ def _safe_dt(value):
     return value.isoformat() if value else None
 
 
-def _serialise_review(review, user_id=None, session=None):
+def _anonymous_label(author_role):
+    return {
+        "expert": "Anonymous Expert",
+        "premium": "Anonymous Premium Investor",
+    }.get(author_role, "Anonymous Investor")
+
+
+def _serialise_review(review, user_id=None, session=None, reveal_author=False):
+    """Platform reviews are anonymous to other users on the public Reviews
+    page — only admins (moderation) and the author's own responses reveal
+    the real name. Pass reveal_author=True for those cases."""
     helpful_by_me = False
     flagged_by_me = False
     flag_count = 0
@@ -122,12 +132,13 @@ def _serialise_review(review, user_id=None, session=None):
         flag_count = session.query(ReviewFlag).filter(
             ReviewFlag.review_id == review.review_id
         ).count()
+    display_name = review.author_name if reveal_author else _anonymous_label(review.author_role)
     return {
         "id":             review.review_id,
         "review_id":      review.review_id,
         "user_id":        review.user_id,
-        "author":         review.author_name,
-        "author_name":    review.author_name,
+        "author":         display_name,
+        "author_name":    display_name,
         "author_role":    review.author_role,
         "rating":         review.rating,
         "title":          review.title or "",
@@ -204,7 +215,7 @@ class ReviewRepository:
             review = session.query(Review).filter(Review.user_id == user_id).first()
             if not review:
                 return None
-            return _serialise_review(review, user_id=user_id, session=session)
+            return _serialise_review(review, user_id=user_id, session=session, reveal_author=True)
 
     @staticmethod
     def create_review(user_id, rating, title, comment):
@@ -230,7 +241,7 @@ class ReviewRepository:
             )
             session.add(review)
             session.flush()
-            return _serialise_review(review, user_id=user_id, session=session)
+            return _serialise_review(review, user_id=user_id, session=session, reveal_author=True)
 
     @staticmethod
     def update_review(review_id, user_id, rating=None, title=None, comment=None):
@@ -249,7 +260,7 @@ class ReviewRepository:
             review.is_edited = 1
             review.updated_at = _now()
             session.flush()
-            return _serialise_review(review, user_id=user_id, session=session)
+            return _serialise_review(review, user_id=user_id, session=session, reveal_author=True)
 
     @staticmethod
     def delete_review(review_id, user_id=None, is_admin=False):
@@ -366,14 +377,14 @@ class ReviewRepository:
             review = session.query(Review).filter(Review.review_id == review_id).first()
             if not review:
                 return None
-            return _serialise_review(review)
+            return _serialise_review(review, reveal_author=True)
 
     @staticmethod
     def admin_list_reviews():
         """All reviews, newest first — for the admin moderation queue."""
         with get_session() as session:
             reviews = session.query(Review).order_by(Review.created_at.desc()).all()
-            return [_serialise_review(r, session=session) for r in reviews]
+            return [_serialise_review(r, session=session, reveal_author=True) for r in reviews]
 
     @staticmethod
     def admin_flagged_reviews():
@@ -394,7 +405,7 @@ class ReviewRepository:
             for review_id, flag_list in by_review.items():
                 review = session.query(Review).filter(Review.review_id == review_id).first()
                 if review:
-                    data = _serialise_review(review, session=session)
+                    data = _serialise_review(review, session=session, reveal_author=True)
                     data["flags"] = flag_list
                     data["flag_count"] = len(flag_list)
                     result.append(data)

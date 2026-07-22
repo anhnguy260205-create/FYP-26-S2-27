@@ -73,15 +73,17 @@ def _profile(session, user_id):
         "full_name": user.full_name,
         "role": role,
         "premium": premium,
+        "chat_available": bool(expert.chat_available) if expert else True,
     }
 
 
 def _can_chat(sender, recipient):
-    """Messages section rules: the conversation must involve an expert, and
-    any investor involved must be premium."""
+    """Messages section rules: strictly one investor talking to one expert —
+    not investor-investor, and not expert-expert. Any investor involved must
+    be premium."""
     roles = {sender["role"], recipient["role"]}
-    if "expert" not in roles:
-        return False  # expert-consultation channel only
+    if roles != {"investor", "expert"}:
+        return False  # expert-consultation channel: investor <-> expert only
     for p in (sender, recipient):
         if p["role"] == "investor" and not p["premium"]:
             return False
@@ -128,10 +130,22 @@ class ChatController:
                     "message": "Chatting with experts is a Premium feature. Upgrade to start the conversation.",
                 }
 
+            # The expert side may have turned off chat — blocks sending into
+            # both new AND existing conversations with them (until they turn
+            # it back on). The expert themselves can always still send.
+            expert_side = sender if sender["role"] == "expert" else recipient if recipient["role"] == "expert" else None
+            if expert_side and not expert_side["chat_available"] and sender_id != expert_side["user_id"]:
+                return {
+                    "success": False,
+                    "chat_unavailable": True,
+                    "message": f"{expert_side['full_name'] or expert_side['username']} isn't accepting chat messages right now.",
+                }
+
             a, b = sorted([sender_id, recipient_id])
             conv = session.query(Conversation).filter(
                 Conversation.user_a_id == a, Conversation.user_b_id == b
             ).first()
+
             if not conv:
                 conv = Conversation(user_a_id=a, user_b_id=b)
                 session.add(conv)
@@ -175,7 +189,7 @@ class ChatController:
                 ).count()
                 out.append({
                     "conv_id": c.conv_id,
-                    "other": {k: other[k] for k in ("user_id", "username", "full_name", "role")},
+                    "other": {k: other[k] for k in ("user_id", "username", "full_name", "role", "chat_available")},
                     "locked": me is not None and not _can_chat(me, other),
                     "last_message": _msg_dict(last) if last else None,
                     "unread": unread,
@@ -241,14 +255,20 @@ class ChatController:
                 if not p or p["role"] == "admin":
                     continue
                 # Messages is an expert-consultation channel: experts are
-                # always listed (locked for basic users, as an upsell);
-                # investors appear only to people allowed to chat with them.
+                # listed for investors (locked for basic ones, as an upsell)
+                # but never for other experts — expert-expert chat is a hard
+                # rule, not a premium paywall, so it shouldn't show a
+                # misleading "upgrade to unlock" lock icon. Investors appear
+                # only to people allowed to chat with them.
+                if p["role"] == "expert" and me is not None and me["role"] == "expert":
+                    continue
                 chatable = me is not None and _can_chat(me, p)
                 if p["role"] != "expert" and not chatable:
                     continue
                 out.append({
                     **{k: p[k] for k in ("user_id", "username", "full_name", "role")},
                     "locked": not chatable,
+                    "chat_available": p["chat_available"],
                 })
                 if len(out) >= limit:
                     break

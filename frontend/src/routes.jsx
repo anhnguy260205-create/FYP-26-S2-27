@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, cloneElement } from "react";
 import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { StocksProvider } from "./context/StocksContext.jsx";
@@ -54,12 +54,20 @@ const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 
 function S({ children }) {
-    const { pathname } = useLocation();
+    const { pathname, key } = useLocation();
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
 
-    return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
+    // Keying the page on location.key forces a remount (and therefore a
+    // fresh data fetch) even when navigating to the page you're already on
+    // — clicking a header nav link always re-runs the page's mount effects,
+    // rather than being a no-op when the pathname hasn't changed.
+    return (
+        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
+            {cloneElement(children, { key })}
+        </Suspense>
+    );
 }
 
 function wrap(Component) {
@@ -131,11 +139,11 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
-    { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
-    { path: "/finance-admin/revenue", element: protect(["hr"], RevenueAnalysisPage) },
-    { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
-    { path: "/finance-admin/payments", element: protect(["hr"], PaymentTransactionsPage) },
-    { path: "/finance-admin/reports", element: protect(["hr"], FinancialReportsPage) },
+    { path: "/finance-admin", element: protect(["finance admin"], FinanceAdminDashboardPage) },
+    { path: "/finance-admin/revenue", element: protect(["finance admin"], RevenueAnalysisPage) },
+    { path: "/finance-admin/subscriptions", element: protect(["finance admin"], SubscriptionManagementPage) },
+    { path: "/finance-admin/payments", element: protect(["finance admin"], PaymentTransactionsPage) },
+    { path: "/finance-admin/reports", element: protect(["finance admin"], FinancialReportsPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in

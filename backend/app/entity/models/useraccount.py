@@ -256,7 +256,7 @@ def seed_admin_account():
 def seed_hr_account():
     UserAccount.createAccount(
         email_address="fyphr123@gmail.com",
-        profile_name="hr",
+        profile_name="finance admin",
         username="finance_hr",
         full_name="Finance Admin User",
         phone_number="1234567890",

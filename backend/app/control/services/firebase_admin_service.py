@@ -105,3 +105,4 @@ def seed_all_firebase_accounts():
     seed_firebase_user("kim@gmail.com",    os.getenv("SEED_INVESTOR_PASSWORD", "password"),    "Kim")
     seed_firebase_user("kimhi@gmail.com",  os.getenv("SEED_EXPERT_PASSWORD",   "password"),    "Anh")
     seed_firebase_user("jordan@gmail.com", os.getenv("SEED_JORDAN_PASSWORD",   "password123"), "Jordan")
+    seed_firebase_user("fyphr123@gmail.com", os.getenv("SEED_HR_PASSWORD",    "password"),     "Finance Admin")

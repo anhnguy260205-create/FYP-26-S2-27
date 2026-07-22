@@ -594,7 +594,9 @@ function WatchlistSection() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+    state: { from: "/investor", fromLabel: "Home" },
+  });
 
   return (
     <section className="border-t-0!">
@@ -763,7 +765,9 @@ function PopularStocksSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+    state: { from: "/investor", fromLabel: "Home" },
+  });
 
   return (
     <section>
@@ -950,10 +954,14 @@ function ExpertPortfoliosSection() {
           return (
             <div
               key={p.portfolio_id}
-              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`)}
+              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
+                state: { from: "/investor", fromLabel: "Home" },
+              })}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`); }}
+              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
+                state: { from: "/investor", fromLabel: "Home" },
+              }); }}
               className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
             >
               <div className="flex items-center justify-between gap-3">
