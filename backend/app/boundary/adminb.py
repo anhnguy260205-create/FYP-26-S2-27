@@ -110,6 +110,12 @@ class AdminUserAccountPage:
     def getSubscriptions(self):
         return self.controller.getSubscriptions()
 
+    def getWalletTransactions(self, txn_type=None, status=None, limit=200):
+        return self.controller.getWalletTransactions(txn_type, status, limit)
+
+    def getPaymentSummary(self):
+        return self.controller.getPaymentSummary()
+
     def getInvestmentArticles(self):
         return AdminListArticlesController().list()
 
@@ -252,9 +258,29 @@ def get_user_types(current_user: dict = Depends(require_admin_or_hr)):
 
 
 @router.get("/revenue-stats")
-def get_revenue_stats(current_user: dict = Depends(require_admin)):
+def get_revenue_stats(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueStats()}
+
+
+@router.get("/wallet-transactions")
+def get_wallet_transactions(
+    txn_type: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 200,
+    current_user: dict = Depends(require_admin_or_hr),
+):
+    """Platform-wide wallet ledger for the finance admin's Payment
+    Transactions monitor: cash in/out, gifts, fees and payouts."""
+    boundary = AdminUserAccountPage()
+    txns = boundary.getWalletTransactions(txn_type, status, limit)
+    return {"success": True, "count": len(txns), "transactions": txns}
+
+
+@router.get("/payment-summary")
+def get_payment_summary(current_user: dict = Depends(require_admin_or_hr)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getPaymentSummary()}
 
 
 @router.get("/revenue-by-month")
