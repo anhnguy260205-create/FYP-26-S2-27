@@ -230,7 +230,7 @@ export default function GiftDialog({ expert, onClose, onSent }) {
           <p style={{
             color: "#64748b", fontSize: 11, textAlign: "center", marginTop: 12,
           }}>
-            Deducted from your paper balance. Appears in Transaction History.
+            Deducted from your assets. Appears in Transaction History.
           </p>
         </div>
       </div>

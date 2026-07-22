@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { sellStock, getPortfolio } from "../../api/tradingApi.js";
 import { calculatePlatformFee, PLATFORM_FEE_LABEL } from "../../utils/platformFee.js";
+import PinModal from "../../components/PinModal.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function companyName(symbol) {
@@ -35,9 +36,11 @@ function SellStockPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [holding, setHolding] = useState(null);
-  const [paperMoney, setPaperMoney] = useState(null);
+  const [assets, setAssets] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const price = stock?.price ?? null;
   const previousClose = stock?.previousClose ?? null;
@@ -61,7 +64,7 @@ function SellStockPage() {
     if (!currentUser?.user_id) return;
     getPortfolio(currentUser.user_id).then((res) => {
       if (res.success) {
-        setPaperMoney(res.portfolio.paper_money);
+        setAssets(res.portfolio.assets);
         const found = res.portfolio.holdings.find((h) => h.symbol === selectedStock);
         setHolding(found || { quantity: 0, average_cost: 0 });
       }
@@ -79,7 +82,7 @@ function SellStockPage() {
     setQuantity(num);
   };
 
-  const handleSell = async () => {
+  const handleSell = () => {
     if (!currentUser?.user_id) {
       alert("Please log in to trade.");
       navigate("/login");
@@ -97,15 +100,28 @@ function SellStockPage() {
       alert("You don't own enough shares for this order.");
       return;
     }
+    // Every sell is confirmed with the 6-digit transaction PIN.
+    setPinError("");
+    setPinOpen(true);
+  };
 
+  const executeSell = async (pin) => {
     setSubmitting(true);
+    setPinError("");
     try {
-      const result = await sellStock(currentUser.user_id, selectedStock, quantity, price);
+      const result = await sellStock(currentUser.user_id, selectedStock, quantity, pin);
       if (!result.success) {
-        alert(result.message || "Sell order failed");
+        const msg = result.message || result.detail || "";
+        if (/pin/i.test(msg)) {
+          setPinError(msg || "Incorrect transaction PIN");
+          return;
+        }
+        setPinOpen(false);
+        alert(msg || "Sell order failed");
         return;
       }
-      setPaperMoney(result.paper_money);
+      setPinOpen(false);
+      setAssets(result.assets);
       alert(
         `Sold ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each.\n` +
         `Gross proceeds: ${formatCurrency(result.total_amount)}\n` +
@@ -115,6 +131,7 @@ function SellStockPage() {
       navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
+      setPinOpen(false);
       alert("Failed to execute sell order");
     } finally {
       setSubmitting(false);
@@ -351,9 +368,9 @@ function SellStockPage() {
                     </span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                    <span style={{ color: "#5B6C88" }}>Paper Funds After Sale</span>
+                    <span style={{ color: "#5B6C88" }}>Assets After Sale</span>
                     <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
-                      {paperMoney != null ? formatCurrency(paperMoney + netProceeds) : "—"}
+                      {assets != null ? formatCurrency(assets + netProceeds) : "—"}
                     </span>
                   </div>
                 </div>
@@ -397,6 +414,17 @@ function SellStockPage() {
 
         <Footer />
       </motion.div>
+
+      <PinModal
+        open={pinOpen}
+        title="Confirm Sale"
+        subtitle={`Enter your 6-digit PIN to sell ${quantity} share${quantity > 1 ? "s" : ""} of ${selectedStock}.`}
+        confirmLabel="Confirm Sell"
+        loading={submitting}
+        error={pinError}
+        onSubmit={executeSell}
+        onClose={() => { if (!submitting) { setPinOpen(false); setPinError(""); } }}
+      />
     </>
   );
 }

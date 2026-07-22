@@ -29,13 +29,14 @@ export async function cashIn({ amount, bankName, accountNumber }) {
   }));
 }
 
-export async function cashOut({ amount, bankName, accountNumber }) {
+export async function cashOut({ amount, bankName, accountNumber, pin }) {
   return toJson(await authFetch(`${API}/wallet/cash-out`, {
     method: "POST",
     body: JSON.stringify({
       amount: Number(amount),
       bank_name: bankName,
       account_number: accountNumber,
+      pin: pin || null,
     }),
   }));
 }

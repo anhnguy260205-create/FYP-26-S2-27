@@ -3,7 +3,7 @@ Money movements that aren't stock trades, plus the platform's revenue book.
 
 Two tables live here because they're written together almost everywhere:
 
-  WalletTransaction  — every credit/debit against an investor's paper_money
+  WalletTransaction  — every credit/debit against an investor's assets
                        that isn't a buy/sell fill: cash in, cash out, the
                        platform fee on a trade, gifts sent/received, and the
                        monthly expert compensation payout. The stock
@@ -17,7 +17,7 @@ Two tables live here because they're written together almost everywhere:
                        backfill_subscription_revenue) so the dashboard never
                        has to union across differently-shaped tables.
 
-Amounts are float dollars, matching investor.paper_money. Note that
+Amounts are float dollars, matching investor.assets. Note that
 subscription.amount is stored in CENTS — convert on the way in.
 """
 from sqlalchemy import Column, ForeignKey, String, Float, DateTime, Text, func
@@ -35,7 +35,7 @@ def _now():
 
 
 # Wallet transaction types. Sign convention: `amount` is signed as the
-# investor experiences it — positive credits paper_money, negative debits it.
+# investor experiences it — positive credits assets, negative debits it.
 TXN_CASH_IN = "cash_in"
 TXN_CASH_OUT = "cash_out"
 TXN_PLATFORM_FEE = "platform_fee"
@@ -65,7 +65,7 @@ class WalletTransaction(Base):
     investor_id = Column(String(50), ForeignKey(
         "investor.investor_id"), nullable=False)
     txn_type = Column(String(30), nullable=False)
-    # Signed: positive = credited to paper_money, negative = debited.
+    # Signed: positive = credited to assets, negative = debited.
     amount = Column(Float, nullable=False)
     balance_after = Column(Float, nullable=True)
     status = Column(String(20), nullable=False, default="completed")

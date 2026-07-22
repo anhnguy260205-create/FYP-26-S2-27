@@ -2,7 +2,7 @@
 Cash in / cash out — SANDBOX ONLY.
 
 No money actually moves. The user supplies a bank name, an account number and
-an amount; we adjust paper_money immediately and write a WalletTransaction so
+an amount; we adjust assets immediately and write a WalletTransaction so
 it appears in the Transaction Portal. There is no payment rail, no clearing
 delay and no admin approval step.
 
@@ -77,15 +77,15 @@ class CashInController:
 
         with get_session() as session:
             session.execute(
-                text("UPDATE investor SET paper_money = paper_money + :a "
+                text("UPDATE investor SET assets = assets + :a "
                      "WHERE investor_id = :iid"),
                 {"a": amount, "iid": investor_id},
             )
             row = session.execute(
-                text("SELECT paper_money FROM investor WHERE investor_id = :iid"),
+                text("SELECT assets FROM investor WHERE investor_id = :iid"),
                 {"iid": investor_id},
             ).fetchone()
-            new_balance = round(float(row.paper_money), 2) if row else None
+            new_balance = round(float(row.assets), 2) if row else None
 
             txn_id = WalletTransaction.record(
                 session, investor_id, TXN_CASH_IN, amount,
@@ -108,7 +108,7 @@ class CashInController:
             "message": f"${amount:,.2f} deposited successfully",
             "wallet_txn_id": txn_id,
             "amount": amount,
-            "paper_money": new_balance,
+            "assets": new_balance,
         }
 
 
@@ -132,13 +132,13 @@ class CashOutController:
             # Re-read the balance inside the transaction — the value on the
             # `investor` dict above is already stale by the time we get here.
             row = session.execute(
-                text("SELECT paper_money FROM investor WHERE investor_id = :iid"),
+                text("SELECT assets FROM investor WHERE investor_id = :iid"),
                 {"iid": investor_id},
             ).fetchone()
             if not row:
                 return {"success": False, "message": "Investor not found"}
 
-            available = round(float(row.paper_money), 2)
+            available = round(float(row.assets), 2)
             if available < amount:
                 return {
                     "success": False,
@@ -149,7 +149,7 @@ class CashOutController:
                 }
 
             session.execute(
-                text("UPDATE investor SET paper_money = paper_money - :a "
+                text("UPDATE investor SET assets = assets - :a "
                      "WHERE investor_id = :iid"),
                 {"a": amount, "iid": investor_id},
             )
@@ -176,7 +176,7 @@ class CashOutController:
             "message": f"${amount:,.2f} withdrawn successfully",
             "wallet_txn_id": txn_id,
             "amount": amount,
-            "paper_money": new_balance,
+            "assets": new_balance,
         }
 
 
@@ -189,7 +189,7 @@ class GetWalletController:
         investor_id = investor["investor_id"]
         return {
             "success": True,
-            "paper_money": investor["paper_money"],
+            "assets": investor["assets"],
             "totals": WalletTransaction.get_totals(investor_id),
             "transactions": WalletTransaction.get_for_investor(investor_id, limit=100),
             "limits": {

@@ -7,6 +7,7 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
+import RiskAssessmentModal, { riskDismissedKey } from "../../components/RiskAssessmentModal.jsx";
 import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
@@ -214,7 +215,7 @@ function usePortfolioData(userId, stocks) {
   }, [userId]);
 
   const holdings = portfolio?.holdings ?? [];
-  const paperMoney = portfolio?.paper_money ?? 0;
+  const assets = portfolio?.assets ?? 0;
 
   const holdingsValue = holdings.reduce((sum, h) => {
     const price = stocks?.[h.symbol]?.price ?? h.average_cost;
@@ -229,10 +230,10 @@ function usePortfolioData(userId, stocks) {
     if (!live || live.previousClose == null) return sum;
     return sum + (live.price - live.previousClose) * h.quantity;
   }, 0);
-  const totalValue = paperMoney + holdingsValue;
+  const totalValue = assets + holdingsValue;
   const realisedPnL = summary?.realised_pnl ?? 0;
 
-  return { loading, holdings, paperMoney, unrealisedPnL, realisedPnL, todaysPnL, totalValue };
+  return { loading, holdings, assets, unrealisedPnL, realisedPnL, todaysPnL, totalValue };
 }
 
 // Ranks the same POPULAR_SYMBOLS pool already shown on this page by real Quant Rating buy-probability,
@@ -438,7 +439,7 @@ function AIInsightsSection({ portfolioData }) {
 
 function PortfolioSummarySection({ portfolioData, userId }) {
   const navigate = useNavigate();
-  const { loading, paperMoney, unrealisedPnL, realisedPnL, todaysPnL, totalValue } = portfolioData;
+  const { loading, assets, unrealisedPnL, realisedPnL, todaysPnL, totalValue } = portfolioData;
 
   if (!userId) return null;
 
@@ -498,7 +499,7 @@ function PortfolioSummarySection({ portfolioData, userId }) {
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className={`${CARD_LIGHT} p-6 flex-1 flex flex-col justify-center`}>
             <p className="text-sm text-slate-500 mb-2">Available Funds</p>
-            <p className="font-['DM_Mono'] font-semibold text-slate-900 text-2xl">{fmt$(paperMoney)}</p>
+            <p className="font-['DM_Mono'] font-semibold text-slate-900 text-2xl">{fmt$(assets)}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className={`${CARD_COMPACT_LIGHT} p-4`}>
@@ -1020,6 +1021,15 @@ function LoggedInHomePage() {
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
 
+  // Preferences / risk-assessment prompt: shown on login when the user has no
+  // risk tolerance set and hasn't ticked "Don't show me again".
+  const [showRisk, setShowRisk] = useState(() => {
+    if (!userId) return false;
+    const hasRisk = !!currentUser?.risk_tolerance;
+    const dismissed = localStorage.getItem(riskDismissedKey(userId)) === "1";
+    return !hasRisk && !dismissed;
+  });
+
   return (
     <motion.div
       className="relative min-h-screen flex flex-col"
@@ -1048,6 +1058,12 @@ function LoggedInHomePage() {
 
       </main>
       <Footer />
+
+      <RiskAssessmentModal
+        open={showRisk}
+        userId={userId}
+        onDone={() => setShowRisk(false)}
+      />
     </motion.div>
   );
 }

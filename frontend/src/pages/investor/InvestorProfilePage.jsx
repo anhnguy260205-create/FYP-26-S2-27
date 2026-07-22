@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
-import { addPaperMoney } from "../../api/tradingApi.js";
+import { addAssets } from "../../api/tradingApi.js";
 
 /* ─── Light theme tokens ──────────────────────────────────── */
 const ACCENT_TEXT = "#004450";
@@ -243,7 +243,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 <MenuButton active={activeTab === "personal"} onClick={() => setActiveTab("personal")}><User size={15} style={{ marginRight: "8px" }} /> Personal Information</MenuButton>
                 <MenuButton active={activeTab === "account"} onClick={() => setActiveTab("account")}><ChartNoAxesColumn size={15} style={{ marginRight: "8px" }} /> Account Settings</MenuButton>
                 <MenuButton active={activeTab === "security"} onClick={() => setActiveTab("security")}><Shield size={15} style={{ marginRight: "8px" }} /> Security</MenuButton>
-                <MenuButton active={activeTab === "paper-money"} onClick={() => setActiveTab("paper-money")}><HandCoins size={15} style={{ marginRight: "8px" }} /> Paper Money</MenuButton>
+                <MenuButton active={activeTab === "assets"} onClick={() => setActiveTab("assets")}><HandCoins size={15} style={{ marginRight: "8px" }} /> Assets</MenuButton>
                 <MenuButton active={activeTab === "subscription"} onClick={() => setActiveTab("subscription")}><CircleDollarSign size={15} style={{ marginRight: "8px" }} /> Subscription</MenuButton>
             </div>
         </div>
@@ -896,16 +896,16 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function PaperMoneyCard({ investorInfo, onUpdate }) {
+function AssetsCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
     const MAX_BALANCE = 10000;
-    const paperMoney = investorInfo?.paper_money ?? 0;
+    const assets = investorInfo?.assets ?? 0;
     const usedAmount = investorInfo?.used_amount ?? 0;
-    const progressPct = Math.min(100, (paperMoney / MAX_BALANCE) * 100);
-    const maxAddable = Math.max(0, MAX_BALANCE - paperMoney);
+    const progressPct = Math.min(100, (assets / MAX_BALANCE) * 100);
+    const maxAddable = Math.max(0, MAX_BALANCE - assets);
 
     const [showModal, setShowModal] = useState(false);
     const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -927,7 +927,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
     const handleConfirmAdd = async () => {
         setAdding(true);
         try {
-            const result = await addPaperMoney(currentUser.user_id, selectedAmount);
+            const result = await addAssets(currentUser.user_id, selectedAmount);
             if (result.success) {
                 setShowModal(false);
                 onUpdate();
@@ -951,7 +951,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
             <GlassCard>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Paper Money</h1>
+                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Assets</h1>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
                             Manage your virtual trading funds
                         </p>
@@ -968,10 +968,10 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                             </div>
                             <div>
                                 <div style={{ fontWeight: 700, fontSize: "16px", color: HEADING }}>
-                                    Available Balance: ${paperMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    Available Balance: ${assets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
-                                    Use paper money to practice stock trading without risking real capital.
+                                    Use your assets to practice stock trading without risking real capital.
                                 </div>
                             </div>
                         </div>
@@ -996,7 +996,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     {!isPremium && (
                         <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                             <p style={{ fontSize: "12px", color: AMBER, margin: 0 }}>
-                                Adding paper money is a <strong>Premium</strong> feature.
+                                Adding assets is a <strong>Premium</strong> feature.
                             </p>
                             <button
                                 onClick={() => navigate("/investor/subscription")}
@@ -1010,15 +1010,15 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     {/* Progress bar */}
                     <div style={{ marginTop: "24px" }}>
                         <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
-                            <span>Paper Trading Capital</span>
-                            <span>${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
+                            <span>Assets</span>
+                            <span>${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
                         </div>
                         <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
                             <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
                         </div>
                         <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
                             <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                            <span>Cash: ${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span>Cash: ${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>
@@ -1028,7 +1028,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
             {showModal === "add" && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Paper Money</h2>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Assets</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "24px" }}>
                             Max you can add: <strong style={{ color: SUCCESS }}>${maxAddable.toLocaleString()}</strong>
                         </p>
@@ -1054,7 +1054,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                         <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
                             <p style={{ fontSize: "12px", color: TEXT_MUTED2, margin: "0 0 4px" }}>New balance after top-up</p>
                             <p style={{ fontSize: "20px", fontWeight: 700, color: SUCCESS, margin: 0 }}>
-                                ${(paperMoney + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${(assets + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
 
@@ -1081,7 +1081,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                         </div>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Premium Feature</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Adding paper money is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
+                            Adding assets is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowModal(false)}
@@ -1103,7 +1103,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     <div style={{ background: CARD_BG, border: "1px solid rgba(29,78,216,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Balance at Maximum</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Your paper money balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
+                            Your assets balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
                         </p>
                         <button onClick={() => setShowModal(false)}
                             style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(29,78,216,0.1)", border: "1px solid rgba(29,78,216,0.3)", color: BLUE, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
@@ -1314,7 +1314,7 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             { label: "Unlimited AI Stock Predictions", included: false },
             { label: "Expert Consultation Access", included: false },
             { label: "Advanced Portfolio Analytics", included: false },
-            { label: "Top Up Paper Money", included: false },
+            { label: "Top Up Assets", included: false },
         ];
         const startDate = details?.latest?.sub_date
             ? new Date(details.latest.sub_date).toLocaleDateString()
@@ -1527,7 +1527,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
+                    {activeTab === "assets" && <AssetsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                 </div>
             </main>

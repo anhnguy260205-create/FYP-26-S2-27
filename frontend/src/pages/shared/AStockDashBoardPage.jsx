@@ -740,10 +740,10 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
           </div>
         </div>
         <div>
-          <p style={lbl}>Paper Balance</p>
+          <p style={lbl}>Assets</p>
           <div style={{ background: "rgba(15,157,88,0.06)", border: "1px solid rgba(15,157,88,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: "#0F9D58" }}>
-              {portfolio?.paper_money != null ? `$${Number(portfolio.paper_money).toFixed(2)}` : "—"}
+              {portfolio?.assets != null ? `$${Number(portfolio.assets).toFixed(2)}` : "—"}
             </span>
           </div>
         </div>

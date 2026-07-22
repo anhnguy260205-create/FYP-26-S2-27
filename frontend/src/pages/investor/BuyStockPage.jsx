@@ -7,6 +7,7 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import { buyStock } from "../../api/tradingApi.js";
 import { getInvestorInformation } from "../../api/userApi.js";
 import { calculatePlatformFee, PLATFORM_FEE_LABEL } from "../../utils/platformFee.js";
+import PinModal from "../../components/PinModal.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function companyName(symbol) {
@@ -35,8 +36,10 @@ function BuyStockPage() {
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
   const [quantity, setQuantity] = useState(1);
-  const [paperMoney, setPaperMoney] = useState(null);
+  const [assets, setAssets] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const price = stock?.price ?? null;
   const previousClose = stock?.previousClose ?? null;
@@ -50,13 +53,13 @@ function BuyStockPage() {
   // Commission is charged on top of a buy, so the funds check must cover both.
   const platformFee = calculatePlatformFee(estimatedTotal);
   const totalWithFee = estimatedTotal + platformFee;
-  const insufficientFunds = paperMoney != null && totalWithFee > paperMoney;
+  const insufficientFunds = assets != null && totalWithFee > assets;
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
     getInvestorInformation(currentUser.user_id).then((res) => {
       if (res.success) {
-        setPaperMoney(res.investor_information.paper_money);
+        setAssets(res.investor_information.assets);
       }
     });
   }, [currentUser?.user_id]);
@@ -66,7 +69,7 @@ function BuyStockPage() {
     setQuantity(num);
   };
 
-  const handleBuy = async () => {
+  const handleBuy = () => {
     if (!currentUser?.user_id) {
       alert("Please log in to trade.");
       navigate("/login");
@@ -81,18 +84,32 @@ function BuyStockPage() {
       return;
     }
     if (insufficientFunds) {
-      alert("Insufficient paper funds for this order.");
+      alert("Insufficient assets for this order.");
       return;
     }
+    // Every buy is confirmed with the 6-digit transaction PIN.
+    setPinError("");
+    setPinOpen(true);
+  };
 
+  const executeBuy = async (pin) => {
     setSubmitting(true);
+    setPinError("");
     try {
-      const result = await buyStock(currentUser.user_id, selectedStock, quantity, price);
+      const result = await buyStock(currentUser.user_id, selectedStock, quantity, pin);
       if (!result.success) {
-        alert(result.message || "Buy order failed");
+        // Wrong PIN comes back as a 403 → FastAPI { detail: "..." }.
+        const msg = result.message || result.detail || "";
+        if (/pin/i.test(msg)) {
+          setPinError(msg || "Incorrect transaction PIN");
+          return;
+        }
+        setPinOpen(false);
+        alert(msg || "Buy order failed");
         return;
       }
-      setPaperMoney(result.paper_money);
+      setPinOpen(false);
+      setAssets(result.assets);
       alert(
         `Bought ${quantity} share(s) of ${selectedStock} at ${formatCurrency(price)} each.\n` +
         `Subtotal: ${formatCurrency(result.total_amount)}\n` +
@@ -102,6 +119,7 @@ function BuyStockPage() {
       navigate(`/realtimedashboard/astockdashboard/${selectedStock}`);
     } catch (error) {
       console.error(error);
+      setPinOpen(false);
       alert("Failed to execute buy order");
     } finally {
       setSubmitting(false);
@@ -284,9 +302,9 @@ function BuyStockPage() {
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'DM Sans', sans-serif", fontSize: "14px" }}>
-                <span style={{ color: "#5B6C88" }}>Available Paper Funds</span>
+                <span style={{ color: "#5B6C88" }}>Available Assets</span>
                 <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 600, color: "#0F172A" }}>
-                  {paperMoney != null ? formatCurrency(paperMoney) : "—"}
+                  {assets != null ? formatCurrency(assets) : "—"}
                 </span>
               </div>
               {insufficientFunds && (
@@ -333,6 +351,17 @@ function BuyStockPage() {
 
         <Footer />
       </motion.div>
+
+      <PinModal
+        open={pinOpen}
+        title="Confirm Purchase"
+        subtitle={`Enter your 6-digit PIN to buy ${quantity} share${quantity > 1 ? "s" : ""} of ${selectedStock}.`}
+        confirmLabel="Confirm Buy"
+        loading={submitting}
+        error={pinError}
+        onSubmit={executeBuy}
+        onClose={() => { if (!submitting) { setPinOpen(false); setPinError(""); } }}
+      />
     </>
   );
 }

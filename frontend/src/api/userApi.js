@@ -208,6 +208,32 @@ export const updateRiskTolerance = async (userId, riskTolerance) => {
   return response.json();
 };
 
+// ── Transaction PIN ─────────────────────────────────────────────────────────
+
+/** Whether the current user has set a 6-digit transaction PIN. */
+export const getPinStatus = async () => {
+  const response = await authFetch(`${BASE_URL}/pin/status`);
+  return response.json();
+};
+
+/** Set (or reset) the 6-digit transaction PIN — requires it entered twice. */
+export const setTransactionPin = async (pin, confirmPin) => {
+  const response = await authFetch(`${BASE_URL}/pin/set`, {
+    method: "POST",
+    body: JSON.stringify({ pin, confirm_pin: confirmPin }),
+  });
+  return response.json();
+};
+
+/** Verify a 6-digit PIN. Returns { success, valid }. */
+export const verifyTransactionPin = async (pin) => {
+  const response = await authFetch(`${BASE_URL}/pin/verify`, {
+    method: "POST",
+    body: JSON.stringify({ pin }),
+  });
+  return response.json();
+};
+
 export const getSubscriptionStatus = async (userId) => {
   const response = await authFetch(`${BASE_URL}/subscription-status/${userId}`);
   return response.json();

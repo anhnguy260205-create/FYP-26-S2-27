@@ -389,3 +389,45 @@ def update_risk_tolerance(
     if not result:
         return {"success": False, "message": "Failed to update risk tolerance"}
     return {"success": True, "message": "Risk tolerance updated successfully"}
+
+
+#  Auth: 6-digit transaction PIN
+
+class SetPinRequest(BaseModel):
+    pin: str
+    confirm_pin: str
+
+
+class VerifyPinRequest(BaseModel):
+    pin: str
+
+
+@router.get("/pin/status")
+def pin_status(current_user: dict = Depends(get_current_user)):
+    """Whether the caller has set a transaction PIN — drives the first-login
+    setup flow and the trade/cash-out PIN prompt."""
+    from app.entity.models.investor import Investor
+    return {"success": True, "has_pin": Investor.hasTransactionPin(current_user["user_id"])}
+
+
+@router.post("/pin/set")
+@limiter.limit("10/minute")
+def set_pin(request: Request, data: SetPinRequest,
+            current_user: dict = Depends(get_current_user)):
+    from app.entity.models.investor import Investor
+    pin = (data.pin or "").strip()
+    confirm = (data.confirm_pin or "").strip()
+    if not (pin.isdigit() and len(pin) == 6):
+        return {"success": False, "message": "PIN must be exactly 6 digits"}
+    if pin != confirm:
+        return {"success": False, "message": "PINs do not match"}
+    return Investor.setTransactionPin(current_user["user_id"], pin)
+
+
+@router.post("/pin/verify")
+@limiter.limit("10/minute")
+def verify_pin(request: Request, data: VerifyPinRequest,
+               current_user: dict = Depends(get_current_user)):
+    from app.entity.models.investor import Investor
+    valid = Investor.verifyTransactionPin(current_user["user_id"], (data.pin or "").strip())
+    return {"success": True, "valid": valid}

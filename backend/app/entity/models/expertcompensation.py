@@ -20,7 +20,7 @@ run_monthly_payout(), which:
      the closed month,
   2. writes a ledger row (the permanent record — it does NOT change later if
      someone unfollows or the rating moves),
-  3. credits the expert's paper_money,
+  3. credits the expert's assets,
   4. writes a wallet_transaction so the payout appears in Transaction History
      the way a salary credit does on a bank statement.
 
@@ -198,12 +198,12 @@ class ExpertCompensationLedger(Base):
                     continue
 
                 session.execute(
-                    text("UPDATE investor SET paper_money = paper_money + :a "
+                    text("UPDATE investor SET assets = assets + :a "
                          "WHERE investor_id = :iid"),
                     {"a": amount, "iid": investor.investor_id},
                 )
                 new_balance = round(
-                    float(investor.paper_money or 0) + amount, 2)
+                    float(investor.assets or 0) + amount, 2)
 
                 session.flush()  # entry.ledger_id must exist for the reference
                 txn_id = WalletTransaction.record(

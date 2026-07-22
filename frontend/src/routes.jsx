@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { StocksProvider } from "./context/StocksContext.jsx";
 
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
+const ProfileSetupPage = lazy(() => import("./pages/investor/ProfileSetupPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
     { path: "/investor/cash", element: protect(["investor"], CashPortalPage) },
     { path: "/investor/portfolio-overview", element: protectWithStocks(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
+    { path: "/investor/setup", element: protect(["investor"], ProfileSetupPage) },
     { path: "/investor", element: protectWithStocks(["investor"], LoggedInHomePage) },
     { path: "/investor/quantrating", element: protectWithStocks(["investor"], QuantRatingPage) },
     { path: "/realtimedashboard", element: protectWithStocks(["investor"], RealTimeDashBoardPage) },

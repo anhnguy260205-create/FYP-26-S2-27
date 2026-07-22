@@ -93,7 +93,7 @@ class SendGiftController:
                         "message": "Expert has no wallet to receive gifts"}
 
             # ── funds check ──────────────────────────────────────────────
-            balance = round(float(sender_investor.paper_money or 0), 2)
+            balance = round(float(sender_investor.assets or 0), 2)
             if balance < amount:
                 return {
                     "success": False,
@@ -106,16 +106,16 @@ class SendGiftController:
             sender_id = sender_investor.investor_id
             recipient_id = recipient_investor.investor_id
             recipient_balance = round(
-                float(recipient_investor.paper_money or 0), 2)
+                float(recipient_investor.assets or 0), 2)
 
             # ── move the money ───────────────────────────────────────────
             session.execute(
-                text("UPDATE investor SET paper_money = paper_money - :a "
+                text("UPDATE investor SET assets = assets - :a "
                      "WHERE investor_id = :iid"),
                 {"a": amount, "iid": sender_id},
             )
             session.execute(
-                text("UPDATE investor SET paper_money = paper_money + :a "
+                text("UPDATE investor SET assets = assets + :a "
                      "WHERE investor_id = :iid"),
                 {"a": expert_share, "iid": recipient_id},
             )
@@ -173,7 +173,7 @@ class SendGiftController:
             "amount": amount,
             "expert_share": expert_share,
             "platform_share": platform_share,
-            "paper_money": sender_balance_after,
+            "assets": sender_balance_after,
         }
 
     @staticmethod

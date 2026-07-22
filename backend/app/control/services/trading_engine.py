@@ -49,7 +49,7 @@ def calculate_platform_fee(trade_value: float) -> float:
 def _charge_platform_fee(session, investor_id: str, user_id: str | None,
                          trade_value: float, symbol: str, order_type: str,
                          order_id: str) -> float:
-    """Debit the commission from paper_money and book it as revenue.
+    """Debit the commission from assets and book it as revenue.
 
     Returns the fee actually charged. If the investor can't cover the full
     fee (possible on a sell that barely moved, or after a partial fill), we
@@ -61,21 +61,21 @@ def _charge_platform_fee(session, investor_id: str, user_id: str | None,
         return 0.0
 
     row = session.execute(
-        text("SELECT paper_money FROM investor WHERE investor_id=:iid"),
+        text("SELECT assets FROM investor WHERE investor_id=:iid"),
         {"iid": investor_id},
     ).fetchone()
     if not row:
         return 0.0
 
-    fee = min(fee, round(float(row.paper_money), 2))
+    fee = min(fee, round(float(row.assets), 2))
     if fee <= 0:
         return 0.0
 
     session.execute(
-        text("UPDATE investor SET paper_money=paper_money-:f WHERE investor_id=:iid"),
+        text("UPDATE investor SET assets=assets-:f WHERE investor_id=:iid"),
         {"f": fee, "iid": investor_id},
     )
-    balance_after = round(float(row.paper_money) - fee, 2)
+    balance_after = round(float(row.assets) - fee, 2)
 
     WalletTransaction.record(
         session, investor_id, TXN_PLATFORM_FEE, -fee,
@@ -97,13 +97,13 @@ def _charge_platform_fee(session, investor_id: str, user_id: str | None,
 def _buy_shares(session, investor_id: str, symbol: str, qty: int, price: float) -> bool:
     total = round(price * qty, 2)
     row = session.execute(
-        text("SELECT paper_money FROM investor WHERE investor_id=:iid"),
+        text("SELECT assets FROM investor WHERE investor_id=:iid"),
         {"iid": investor_id},
     ).fetchone()
-    if not row or row.paper_money < total:
+    if not row or row.assets < total:
         return False
     session.execute(
-        text("UPDATE investor SET paper_money=paper_money-:t, used_amount=used_amount+:t WHERE investor_id=:iid"),
+        text("UPDATE investor SET assets=assets-:t, used_amount=used_amount+:t WHERE investor_id=:iid"),
         {"t": total, "iid": investor_id},
     )
     _upsert_holding_buy(session, investor_id, symbol, qty, price)
@@ -127,7 +127,7 @@ def _sell_shares(session, investor_id: str, symbol: str, qty: int, price: float)
         {"q": new_qty, "hid": row.holding_id},
     )
     session.execute(
-        text("UPDATE investor SET paper_money=paper_money+:t, used_amount=GREATEST(0, used_amount-:c) WHERE investor_id=:iid"),
+        text("UPDATE investor SET assets=assets+:t, used_amount=GREATEST(0, used_amount-:c) WHERE investor_id=:iid"),
         {"t": total, "c": cost_basis, "iid": investor_id},
     )
     return pnl
@@ -201,13 +201,13 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         # can't be collected.
         est_fee = calculate_platform_fee(gross)
         needed = round(gross + est_fee, 2)
-        if investor["paper_money"] < needed:
+        if investor["assets"] < needed:
             return {
                 "success": False,
                 "message": (
                     f"Insufficient funds — need ${needed:,.2f} "
                     f"(${gross:,.2f} + ${est_fee:,.2f} platform fee), "
-                    f"have ${investor['paper_money']:,.2f}"
+                    f"have ${investor['assets']:,.2f}"
                 ),
             }
     else:
@@ -339,6 +339,6 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         "net_amount": round(
             executed_value + platform_fee if order_type == "buy"
             else executed_value - platform_fee, 2),
-        "paper_money": updated["paper_money"] if updated else None,
+        "assets": updated["assets"] if updated else None,
         "message": message,
     }

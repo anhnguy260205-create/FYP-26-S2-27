@@ -149,7 +149,7 @@ export default function ExpertCompensationPage() {
           <Info size={14} color="#B45309" style={{ marginTop: 2, flexShrink: 0 }} />
           <p style={{ fontFamily: sans, fontSize: 12, color: "#8a5a08", margin: 0 }}>
             Paid monthly for the month that just closed — ${summary?.rate_per_premium_follower?.toFixed(2) ?? "0.10"} per premium follower.
-            Payouts are credited straight to your paper money and show up in Transaction History.
+            Payouts are credited straight to your assets and show up in Transaction History.
           </p>
         </div>
 

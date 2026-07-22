@@ -163,6 +163,7 @@ def ensure_all_schemas(engine):
 
     patches = [
         ("investor",     "risk_tolerance",        "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
+        ("investor",     "transaction_pin",       "ALTER TABLE investor ADD COLUMN transaction_pin VARCHAR(255) NULL"),
         ("subscription", "renewal_reminder_sent", "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0"),
         ("subscription", "amount",                "ALTER TABLE subscription ADD COLUMN amount INT NOT NULL DEFAULT 0"),
         ("transaction",  "realized_pnl",          "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL"),
@@ -181,6 +182,19 @@ def ensure_all_schemas(engine):
     ]
 
     with engine.connect() as conn:
+        # ── Rename investor.paper_money → investor.assets ────────────────────
+        # Must run before any statement below that references the `assets`
+        # column (e.g. the merged-roles insert). Idempotent: only fires when
+        # the old column is still present and the new one is not.
+        try:
+            if _col_exists(conn, "investor", "paper_money") and not _col_exists(conn, "investor", "assets"):
+                conn.execute(text(
+                    "ALTER TABLE investor CHANGE paper_money assets FLOAT NULL DEFAULT 0"))
+                conn.commit()
+                print("[SCHEMA] Renamed investor.paper_money → investor.assets")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped investor.paper_money→assets rename: {e}")
+
         for table, col, stmt in patches:
             try:
                 if not _col_exists(conn, table, col):
@@ -264,8 +278,8 @@ def ensure_all_schemas(engine):
         try:
             result = conn.execute(text(
                 "INSERT INTO investor "
-                "(investor_id, user_id, investor_subscription_status, paper_money, used_amount) "
-                "SELECT CONCAT('investor_', UUID()), e.user_id, 'inactive', 2000, 0 "
+                "(investor_id, user_id, investor_subscription_status, assets, used_amount) "
+                "SELECT CONCAT('investor_', UUID()), e.user_id, 'inactive', 0, 0 "
                 "FROM expert e "
                 "WHERE e.user_id IS NOT NULL "
                 "AND NOT EXISTS (SELECT 1 FROM investor i WHERE i.user_id = e.user_id)"
@@ -350,7 +364,7 @@ async def renewal_reminder_poller():
 
 async def expert_compensation_poller():
     """Once a day, settle the most recently completed calendar month: snapshot
-    each expert's premium follower count, credit their paper_money, and log the
+    each expert's premium follower count, credit their assets, and log the
     payout to the wallet ledger.
 
     Idempotent — a month already marked paid is skipped, so running daily (and

@@ -7,6 +7,7 @@ import {
   cashIn,
   cashOut,
 } from "../../api/walletApi.js";
+import PinModal from "../../components/PinModal.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 const formatCurrency = (value) =>
@@ -45,6 +46,8 @@ export default function CashPortalPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +63,7 @@ export default function CashPortalPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const balance = overview?.paper_money ?? null;
+  const balance = overview?.assets ?? null;
   const limits = overview?.limits ?? {};
   const minAmount = isDeposit ? limits.min_cash_in : limits.min_cash_out;
   const maxAmount = isDeposit ? limits.max_cash_in : limits.max_cash_out;
@@ -85,11 +88,28 @@ export default function CashPortalPage() {
       return;
     }
 
+    // Deposits go through directly; withdrawals require the transaction PIN.
+    if (isDeposit) {
+      await runTransfer();
+    } else {
+      setPinError("");
+      setPinOpen(true);
+    }
+  };
+
+  const runTransfer = async (pin = null) => {
     setSubmitting(true);
+    setPinError("");
     try {
-      const payload = { amount: numericAmount, bankName, accountNumber };
+      const payload = { amount: numericAmount, bankName, accountNumber, pin };
       const res = isDeposit ? await cashIn(payload) : await cashOut(payload);
 
+      if (!res.success && !isDeposit && /pin/i.test(res.message || "")) {
+        setPinError(res.message || "Incorrect transaction PIN");
+        return;
+      }
+
+      setPinOpen(false);
       setFeedback({ ok: !!res.success, message: res.message });
       if (res.success) {
         setAmount("");
@@ -98,6 +118,7 @@ export default function CashPortalPage() {
       }
     } catch (error) {
       console.error(error);
+      setPinOpen(false);
       setFeedback({ ok: false, message: "Request failed. Please try again." });
     } finally {
       setSubmitting(false);
@@ -163,7 +184,7 @@ export default function CashPortalPage() {
             fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#92400E",
           }}>
             <strong>Sandbox mode.</strong> No real money moves and no real bank
-            account is contacted. Transfers settle instantly against your paper
+            account is contacted. Transfers settle instantly against your assets
             balance. Account numbers are stored masked (last 4 digits only).
           </div>
 
@@ -446,6 +467,17 @@ export default function CashPortalPage() {
         </div>
       </main>
       <Footer />
+
+      <PinModal
+        open={pinOpen}
+        title="Confirm Withdrawal"
+        subtitle={`Enter your 6-digit PIN to withdraw ${formatCurrency(numericAmount)}.`}
+        confirmLabel="Confirm Withdrawal"
+        loading={submitting}
+        error={pinError}
+        onSubmit={(pin) => runTransfer(pin)}
+        onClose={() => { if (!submitting) { setPinOpen(false); setPinError(""); } }}
+      />
     </>
   );
 }

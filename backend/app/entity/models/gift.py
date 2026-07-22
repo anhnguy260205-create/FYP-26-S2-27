@@ -2,7 +2,7 @@
 Chat gifts ("red packets") sent from a premium user to an expert.
 
 The sender picks an amount; it splits 70 / 30 between the expert and the
-platform. Both legs land in paper_money and in the wallet ledger, so a gift
+platform. Both legs land in assets and in the wallet ledger, so a gift
 shows up in Transaction History like any other money movement.
 
 This table is the record of the gift itself (who, to whom, how much, the

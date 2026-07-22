@@ -187,7 +187,7 @@ function PortfolioOverviewPage() {
   }, [currentUser?.user_id]);
 
   const holdings = portfolio?.holdings ?? [];
-  const paperMoney = portfolio?.paper_money ?? 0;
+  const assets = portfolio?.assets ?? 0;
 
   const unrealisedPnL = useMemo(() =>
     holdings.reduce((sum, h) => {
@@ -203,7 +203,7 @@ function PortfolioOverviewPage() {
     }, 0),
     [holdings, liveStocks]);
 
-  const totalValue = paperMoney + holdingsValue;
+  const totalValue = assets + holdingsValue;
   const realisedPnL = summary?.realised_pnl ?? 0;
 
   if (loading) {
@@ -243,7 +243,7 @@ function PortfolioOverviewPage() {
         {/* Stat cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
           <StatCard label="Total portfolio value" value={fmt$(totalValue)} sub="Cash + holdings" highlighted />
-          <StatCard label="Available funds" value={fmt$(paperMoney)} />
+          <StatCard label="Available funds" value={fmt$(assets)} />
           <StatCard label="Unrealized P&L" value={fmtSigned$(unrealisedPnL)} valueColor={unrealisedPnL >= 0 ? C.success : C.danger} />
           <StatCard label="Realized P&L" value={fmtSigned$(realisedPnL)} valueColor={realisedPnL >= 0 ? C.success : C.danger} />
         </div>

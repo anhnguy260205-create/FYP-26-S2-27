@@ -2,18 +2,18 @@ import { authFetch } from "./apiClient";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/trading`;
 
-export const buyStock = async (userId, symbol, quantity) => {
+export const buyStock = async (userId, symbol, quantity, pin = null) => {
   const response = await authFetch(`${BASE_URL}/buy`, {
     method: "POST",
-    body: JSON.stringify({ symbol, quantity }),
+    body: JSON.stringify({ symbol, quantity, pin }),
   });
   return response.json();
 };
 
-export const sellStock = async (userId, symbol, quantity) => {
+export const sellStock = async (userId, symbol, quantity, pin = null) => {
   const response = await authFetch(`${BASE_URL}/sell`, {
     method: "POST",
-    body: JSON.stringify({ symbol, quantity }),
+    body: JSON.stringify({ symbol, quantity, pin }),
   });
   return response.json();
 };
@@ -44,8 +44,8 @@ export const getPortalSummary = async (userId) => {
   return response.json();
 };
 
-export const addPaperMoney = async (userId, amount) => {
-  const response = await authFetch(`${BASE_URL}/add-paper-money`, {
+export const addAssets = async (userId, amount) => {
+  const response = await authFetch(`${BASE_URL}/add-assets`, {
     method: "POST",
     body: JSON.stringify({ amount }),
   });

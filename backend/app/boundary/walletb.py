@@ -8,6 +8,8 @@ from app.control.controller.walletc import (
 )
 from app.control.controller.giftc import SendGiftController, GetGiftController
 from app.control.services.auth import get_current_user
+from app.entity.models.investor import Investor
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/wallet", tags=["Wallet"])
 
@@ -16,6 +18,7 @@ class CashRequest(BaseModel):
     amount: float
     bank_name: str
     account_number: str
+    pin: str | None = None
 
 
 class GiftRequest(BaseModel):
@@ -40,6 +43,11 @@ def cash_in(data: CashRequest, current_user: dict = Depends(get_current_user)):
 
 @router.post("/cash-out")
 def cash_out(data: CashRequest, current_user: dict = Depends(get_current_user)):
+    # Cash-out confirms the 6-digit transaction PIN (no-op for legacy accounts
+    # that never set one).
+    if Investor.hasTransactionPin(current_user["user_id"]):
+        if not data.pin or not Investor.verifyTransactionPin(current_user["user_id"], data.pin):
+            raise HTTPException(status_code=403, detail="Incorrect transaction PIN")
     return CashOutController().withdraw(
         current_user["user_id"], data.amount, data.bank_name, data.account_number
     )
