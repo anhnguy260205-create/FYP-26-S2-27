@@ -9,25 +9,21 @@ function FooterLink({ href, children }) {
   return <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>{children}</a>;
 }
 
-// Static, CMS-independent — always shown regardless of what /content/landing returns.
-const RESOURCES = [
-  { title: "GitHub Repository", href: "#" },
-  { title: "Documentation", href: "#" },
-  { title: "API Status", href: "#" },
-];
-const APP_VERSION = "v1.0.0";
-
 const DEFAULT = {
   brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
+  version: "v1.0.0",
   product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "/investor/subscription" }],
-  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }],
+  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }, { title: "Reviews", description: "/reviews" }],
+  resources: [{ title: "GitHub Repository", description: "#" }, { title: "Documentation", description: "#" }, { title: "API Status", description: "#" }],
   contact: [{ title: "support@deskstock.ai", description: "" }, { title: "Help Center", description: "#" }, { title: "Terms of Service", description: "#" }, { title: "Privacy Policy", description: "#" }],
 };
 
 function Footer() {
   const [brand, setBrand] = useState(DEFAULT.brand);
+  const [version, setVersion] = useState(DEFAULT.version);
   const [product, setProduct] = useState(DEFAULT.product);
   const [company, setCompany] = useState(DEFAULT.company);
+  const [resources, setResources] = useState(DEFAULT.resources);
   const [contact, setContact] = useState(DEFAULT.contact);
 
   useEffect(() => {
@@ -38,10 +34,14 @@ function Footer() {
         const c = data.content;
         const brandItem = c.find((x) => x.section === "footer_brand");
         if (brandItem) setBrand(brandItem);
+        const versionItem = c.find((x) => x.content_id === "footer_version");
+        if (versionItem?.title) setVersion(versionItem.title);
         const productItems = c.filter((x) => x.section === "footer_product");
         if (productItems.length) setProduct(productItems);
         const companyItems = c.filter((x) => x.section === "footer_company");
         if (companyItems.length) setCompany(companyItems);
+        const resourcesItems = c.filter((x) => x.section === "footer_resources");
+        if (resourcesItems.length) setResources(resourcesItems);
         const contactItems = c.filter((x) => x.section === "footer_contact");
         if (contactItems.length) setContact(contactItems);
       })
@@ -60,7 +60,7 @@ function Footer() {
                 {brand.title}
               </span>
               <span className="text-[10px] font-semibold text-slate-500 bg-white/5 rounded-full px-2 py-0.5">
-                {APP_VERSION}
+                {version}
               </span>
             </div>
             <p className="text-sm text-slate-400 mt-3 leading-relaxed max-w-xs">{brand.description}</p>
@@ -87,10 +87,6 @@ function Footer() {
                   <FooterLink href={item.description}>{item.title}</FooterLink>
                 </li>
               ))}
-              {/* Reviews — always shown regardless of CMS content */}
-              <li>
-                <FooterLink href="/reviews">Reviews</FooterLink>
-              </li>
             </ul>
           </div>
 
@@ -98,9 +94,9 @@ function Footer() {
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Resources</h4>
             <ul className="space-y-2.5">
-              {RESOURCES.map((item) => (
-                <li key={item.title}>
-                  <FooterLink href={item.href}>{item.title}</FooterLink>
+              {resources.map((item) => (
+                <li key={item.content_id ?? item.title}>
+                  <FooterLink href={item.description}>{item.title}</FooterLink>
                 </li>
               ))}
             </ul>

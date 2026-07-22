@@ -11,11 +11,10 @@ class ContentManagement(Base):
     content_id = Column(String(50), primary_key=True, default=lambda: f"content_{uuid4()}")
     section = Column(String(50), nullable=False)   # e.g. "hero", "why_investor", "platform_features"
     title = Column(String(255), nullable=False)
-    # MEDIUMTEXT (not String(500)) so this can hold either a short URL/blurb
-    # (most sections) or a base64-encoded image data URI (forum_room cover
-    # images, uploaded from the admin Content Management page — see
-    # ContentManagementPage.jsx). Widened via a schema patch in main.py for
-    # existing databases; new databases get it directly from this model.
+    # This used to be String(500), widened to MEDIUMTEXT so longer content
+    # (or, previously, base64 images) wouldn't get truncated. Kept as
+    # MEDIUMTEXT even after the image-upload feature was pulled since it
+    # doesn't cost anything to leave it roomy.
     description = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
@@ -51,12 +50,12 @@ class ContentManagement(Base):
 
     @staticmethod
     def reorder_section(section: str, ordered_ids: list) -> bool:
-        """Persist a full new ordering for one section in a single call —
-        order_index becomes each id's position in ordered_ids. Used by the
-        admin content manager's drag-and-drop reordering (feature bubbles,
-        footer links, plan feature lists, forum room cards): the frontend
-        reorders the list locally as the user drags, then sends the whole
-        resulting id order here once, instead of many one-step swaps."""
+        """Saves a full new ordering for one section in a single call —
+        order_index just becomes each id's position in ordered_ids. This is
+        what backs the drag-and-drop reordering in the admin panel (feature
+        cards, footer links, plan features, etc): the frontend reorders the
+        list locally while you drag, then sends the whole new order here at
+        once instead of a bunch of one-step swaps."""
         with get_session() as session:
             rows = session.query(ContentManagement).filter(
                 ContentManagement.section == section,
@@ -91,6 +90,8 @@ def seed_landing_content():
                            title="Discover the Future of Smart Investing",
                            description="Explore powerful tools floating around your financial universe.",
                            order_index=0),
+            ContentManagement(content_id="hero_cta_primary",   section="hero_cta", title="Get Started", order_index=0),
+            ContentManagement(content_id="hero_cta_secondary", section="hero_cta", title="Login",       order_index=1),
             # Free plan info
             ContentManagement(content_id="free_plan_name",  section="free_plan", title="Starter", description="",                        order_index=0),
             ContentManagement(content_id="free_plan_price", section="free_plan", title="$0.00",   description="forever, no card needed", order_index=1),
@@ -107,6 +108,8 @@ def seed_landing_content():
             ContentManagement(content_id="free_feat_6", section="free_investor", title="Paper Trading",                            order_index=6),
             # Footer — brand
             ContentManagement(content_id="footer_brand",         section="footer_brand",   title="Rocket Trading",              description="AI-powered stock market predictions for the modern investor.", order_index=0),
+            # Footer — version badge shown next to the brand name (e.g. "v1.0.0")
+            ContentManagement(content_id="footer_version",       section="footer_meta",    title="v1.0.0",                       order_index=0),
             # Footer — product links (title = label, description = URL)
             ContentManagement(content_id="footer_product_0",     section="footer_product", title="Features",            description="#", order_index=0),
             ContentManagement(content_id="footer_product_1",     section="footer_product", title="Pricing",             description="#", order_index=1),
@@ -115,6 +118,11 @@ def seed_landing_content():
             ContentManagement(content_id="footer_company_1",     section="footer_company", title="Careers",             description="#", order_index=1),
             ContentManagement(content_id="footer_company_2",     section="footer_company", title="Blog",                description="#", order_index=2),
             ContentManagement(content_id="footer_company_3",     section="footer_company", title="Press",               description="#", order_index=3),
+            ContentManagement(content_id="footer_company_4",     section="footer_company", title="Reviews",             description="/reviews", order_index=4),
+            # Footer — resources links (was hardcoded and unreachable from admin before)
+            ContentManagement(content_id="footer_resources_0",   section="footer_resources", title="GitHub Repository", description="#", order_index=0),
+            ContentManagement(content_id="footer_resources_1",   section="footer_resources", title="Documentation",     description="#", order_index=1),
+            ContentManagement(content_id="footer_resources_2",   section="footer_resources", title="API Status",        description="#", order_index=2),
             # Footer — contact
             ContentManagement(content_id="footer_contact_email", section="footer_contact", title="support@deskstock.ai", description="", order_index=0),
             ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="#", order_index=1),
@@ -127,8 +135,8 @@ def seed_landing_content():
             ContentManagement(content_id="prem_feat_3", section="premium_investor", title="Advanced Portfolio Analytics",      order_index=3),
             ContentManagement(content_id="prem_feat_4", section="premium_investor", title="Priority Customer Support",         order_index=4),
 
-            # ── Landing page — section headings/subtitles that were hardcoded
-            # in Homepage.jsx (title = heading, description = subtitle) ─────
+            # Section headings/subtitles for the landing page. These used to be
+            # hardcoded straight into Homepage.jsx (title = heading, description = subtitle).
             ContentManagement(content_id="header_video",             section="page_headers", title="See RocketTrade in Action",                description="Watch a quick walkthrough of the platform and its AI-powered tools.", order_index=0),
             ContentManagement(content_id="header_path",               section="page_headers", title="Choose Your Path",                          description="Tell us who you are, so we can show you what matters most.", order_index=1),
             ContentManagement(content_id="header_why_investor",       section="page_headers", title="Why RocketTrade",                           description="Built to help you invest smarter, without the real-money risk.", order_index=2),
@@ -182,13 +190,124 @@ def seed_landing_content():
             ContentManagement(content_id="get_started_1", section="get_started_steps", title="Verify your email",           description="Confirm the verification email we send you to activate your account.", order_index=1),
             ContentManagement(content_id="get_started_2", section="get_started_steps", title="Agree to the terms",         description="Review and accept RocketTrade's Terms and Conditions and Privacy Policy.", order_index=2),
             ContentManagement(content_id="get_started_3", section="get_started_steps", title="Start using RocketTrade",    description="Investors jump straight into paper trading; Experts get verified before publishing insights.", order_index=3),
+
+            # Investor home page (LoggedInHomePage.jsx) — same content for
+            # Basic and Premium, used to be hardcoded straight into the component.
+            ContentManagement(content_id="header_investor_features", section="page_headers", title="Explore RocketTrade", description="Everything the platform offers, all in one place", order_index=9),
+            ContentManagement(content_id="investor_home_feat_0", section="investor_home_features", title="Paper Trading Exchange",          description="Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.", order_index=0),
+            ContentManagement(content_id="investor_home_feat_1", section="investor_home_features", title="AI Stock Predictions",            description="Multi-day price forecasts and sector quant ratings powered by machine learning, updated with live data.", order_index=1),
+            ContentManagement(content_id="investor_home_feat_2", section="investor_home_features", title="Investor Community",              description="Join discussion rooms on technical analysis, portfolio strategy, and market news with fellow investors.", order_index=2),
+            ContentManagement(content_id="investor_home_feat_3", section="investor_home_features", title="AI Chatbot & Expert Consultants", description="Get instant answers from our AI assistant, or browse and connect with verified market experts.", order_index=3),
+            ContentManagement(content_id="investor_home_feat_4", section="investor_home_features", title="Educational Content",             description="Learn at your own pace with a growing library of articles — from beginner basics to advanced strategy.", order_index=4),
+            # Button text for each card above, matched up by position (same index,
+            # "_cta" suffix on the id). Went with sibling rows instead of adding a
+            # 3rd column to the table — didn't want a schema change just for this.
+            ContentManagement(content_id="investor_home_feat_0_cta", section="investor_home_features_cta", title="Start trading", order_index=0),
+            ContentManagement(content_id="investor_home_feat_1_cta", section="investor_home_features_cta", title="Explore",       order_index=1),
+            ContentManagement(content_id="investor_home_feat_2_cta", section="investor_home_features_cta", title="Explore",       order_index=2),
+            ContentManagement(content_id="investor_home_feat_3_cta", section="investor_home_features_cta", title="Explore",       order_index=3),
+            ContentManagement(content_id="investor_home_feat_4_cta", section="investor_home_features_cta", title="Explore",       order_index=4),
+
+            ContentManagement(content_id="header_investor_dashboard", section="page_headers", title="The Realtime Trading Dashboard", description="One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.", order_index=10),
+            ContentManagement(content_id="investor_home_dash_0", section="investor_home_dashboard", title="AI Predictions",             description="Multi-day price forecasts and confidence scores powered by machine learning.", order_index=0),
+            ContentManagement(content_id="investor_home_dash_1", section="investor_home_dashboard", title="Verified Expert Comments",   description="Get insights straight from verified market experts on every stock page.", order_index=1),
+            ContentManagement(content_id="investor_home_dash_2", section="investor_home_dashboard", title="Paper Trading",              description="Trade against live market prices using virtual funds, zero real-money risk.", order_index=2),
+
+            # The rest of the investor dashboard — was still hardcoded even
+            # after the sections above got wired up.
+            ContentManagement(content_id="header_ai_insights", section="page_headers", title="Today's AI Insights", order_index=12),
+            # These 4 swap in depending on the investor's state — first 3 by
+            # portfolio risk level, last one while data's still loading.
+            ContentManagement(content_id="ai_tagline_low",     section="investor_home_taglines", title="Your portfolio is looking healthy today.", order_index=0),
+            ContentManagement(content_id="ai_tagline_medium",  section="investor_home_taglines", title="Moderate risk today — worth a quick check-in.", order_index=1),
+            ContentManagement(content_id="ai_tagline_high",    section="investor_home_taglines", title="Higher risk today — you may want to review your positions.", order_index=2),
+            ContentManagement(content_id="ai_tagline_loading", section="investor_home_taglines", title="Personalized signals from RocketTrade's prediction models", order_index=3),
+
+            ContentManagement(content_id="header_portfolio_summary", section="page_headers", title="Portfolio Summary", order_index=13),
+            ContentManagement(content_id="portfolio_summary_cta",    section="investor_home_misc", title="View Full Portfolio \u2192", order_index=0),
+
+            ContentManagement(content_id="header_watchlist", section="page_headers", title="My Watchlist", order_index=14),
+            ContentManagement(content_id="watchlist_cta",    section="investor_home_misc", title="View Full Watchlist \u2192", order_index=1),
+
+            # Shown in the hero instead of today's P&L, only for investors
+            # with zero holdings so far.
+            ContentManagement(content_id="hero_empty_state", section="investor_home_misc", title="Start building your portfolio with your first trade.", order_index=2),
+
+            # Small badge/tag shown on each Platform Features card (top-right corner)
+            ContentManagement(content_id="investor_home_feat_0_badge", section="investor_home_features_badge", title="Live market prices",    order_index=0),
+            ContentManagement(content_id="investor_home_feat_1_badge", section="investor_home_features_badge", title="ML-powered forecasts",   order_index=1),
+            ContentManagement(content_id="investor_home_feat_2_badge", section="investor_home_features_badge", title="Live discussions",        order_index=2),
+            ContentManagement(content_id="investor_home_feat_3_badge", section="investor_home_features_badge", title="Ask anything",            order_index=3),
+            ContentManagement(content_id="investor_home_feat_4_badge", section="investor_home_features_badge", title="Beginner to advanced",     order_index=4),
+
+            # Watchlist card when it's empty (no stocks added yet)
+            ContentManagement(content_id="header_watchlist_empty", section="page_headers", title="Start building your watchlist",
+                description="Track stocks you're interested in and receive AI insights on how they're moving.", order_index=15),
+            ContentManagement(content_id="watchlist_empty_cta", section="investor_home_misc", title="+ Add Stocks", order_index=3),
+
+            # Basic-tier upgrade banner — only shows while subscription_status != "premium"
+            ContentManagement(content_id="investor_banner_basic", section="investor_banner_basic",
+                title="Stop guessing. Start trading with an edge.",
+                description="Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.",
+                order_index=0),
+            ContentManagement(content_id="investor_banner_basic_cta", section="investor_banner_basic", title="View Pricing", order_index=1),
+
+            # Premium-tier renewal banner — only shows while subscription_status == "premium".
+            # "{days}" gets swapped client-side for the actual number of days left
+            # until sub_renewal_date, see LoggedInHomePage.jsx for that part.
+            ContentManagement(content_id="investor_banner_premium", section="investor_banner_premium",
+                title="You're a Premium Member",
+                description="Enjoy unlimited AI predictions, expert access, and advanced analytics. {days} days left until your subscription renews.",
+                order_index=0),
+            ContentManagement(content_id="investor_banner_premium_cta", section="investor_banner_premium", title="Manage Subscription", order_index=1),
+
+            # Expert home page (ExpertLoggedInPage.jsx) — also used to be hardcoded
+            ContentManagement(content_id="expert_hero_subtitle", section="expert_hero",
+                title="Manage your portfolio, publish content, and connect with investors.", order_index=0),
+            ContentManagement(content_id="header_expert_tools", section="page_headers", title="Your Tools", description="Everything you need to publish, answer, and grow your reach", order_index=11),
+            ContentManagement(content_id="expert_tool_0", section="expert_tools", title="Real-time Dashboard", description="View live stock prices, AI-powered predictions, and market insights to support investment decision-making.", order_index=0),
+            ContentManagement(content_id="expert_tool_1", section="expert_tools", title="Knowledge Hub",       description="Write and publish educational articles for investors, from beginner basics to advanced strategy.", order_index=1),
+            ContentManagement(content_id="expert_tool_2", section="expert_tools", title="Community Forum",     description="Join discussions with investors and fellow experts on markets, strategy, and platform news.", order_index=2),
+            ContentManagement(content_id="expert_tool_3", section="expert_tools", title="Model Portfolio",     description="Publish and rebalance the model portfolio investors follow — holdings, allocation, and rationale.", order_index=3),
+            ContentManagement(content_id="expert_tool_4", section="expert_tools", title="Messages",            description="Your place to talk directly with investors and answer the questions they send you.", order_index=4),
+            # All 5 cards above share this one button label
+            ContentManagement(content_id="expert_tools_cta", section="expert_tools_cta", title="Open", order_index=0),
+
+            # Model Portfolio card
+            ContentManagement(content_id="header_model_portfolio", section="page_headers", title="Model Portfolio",
+                description="The portfolio investors follow", order_index=16),
+            ContentManagement(content_id="model_portfolio_empty_msg", section="expert_home_misc", title="You haven't set up a model portfolio yet.", order_index=0),
+            ContentManagement(content_id="model_portfolio_cta_create", section="expert_home_misc", title="Create Portfolio", order_index=1),
+            ContentManagement(content_id="model_portfolio_cta_manage", section="expert_home_misc", title="Manage Portfolio", order_index=2),
+
+            # Your Profile card
+            ContentManagement(content_id="header_expert_profile", section="page_headers", title="Your Profile", order_index=17),
+            ContentManagement(content_id="expert_profile_edit_cta", section="expert_home_misc", title="Edit Profile", order_index=3),
+            ContentManagement(content_id="expert_profile_not_rated", section="expert_home_misc", title="Not yet rated \u2014 keep building your reputation with investors.", order_index=4),
+
+            # Verification Documents banner
+            ContentManagement(content_id="header_documents", section="page_headers", title="Verification Documents", order_index=18),
+            ContentManagement(content_id="documents_desc_verified",   section="expert_home_misc", title="Manage the credential documents tied to your verified expert account.", order_index=5),
+            ContentManagement(content_id="documents_desc_unverified", section="expert_home_misc", title="Submit your credential documents to get verified and unlock the rest of the platform.", order_index=6),
+            ContentManagement(content_id="documents_cta_verified",    section="expert_home_misc", title="Manage Documents", order_index=7),
+            ContentManagement(content_id="documents_cta_unverified",  section="expert_home_misc", title="Submit Documents", order_index=8),
+
+            # Compensation card, inside the Your Profile section
+            ContentManagement(content_id="compensation_pending_label", section="expert_home_misc", title="Pending payout", order_index=9),
+            # "{followers}" gets replaced client-side with the real follower
+            # threshold number — see ProfileSummarySection in ExpertLoggedInPage.jsx
+            ContentManagement(content_id="compensation_need_followers", section="expert_home_misc", title="Need {followers} followers to earn", order_index=10),
+            ContentManagement(content_id="compensation_locked_label", section="expert_home_misc", title="Locked", order_index=11),
+            ContentManagement(content_id="compensation_locked_msg", section="expert_home_misc", title="Get verified to unlock compensation", order_index=12),
         ]
 
-        # Dropped sections — not read by any real page (confirmed by searching
-        # the whole frontend): "feature" (unused bubbles), "expert" (no expert
-        # homepage reads it), "forum_room" (ForumPage.jsx uses its own bundled
-        # images, never this table). Deletes any rows left over from before
-        # these were removed from admin editing — safe to run repeatedly.
+        # These three sections used to have admin tabs but got dropped — went
+        # through the whole frontend and none of them are actually read
+        # anywhere. "feature" was a set of bubbles nothing displayed, "expert"
+        # was a hero no expert page ever fetched, and "forum_room" was meant
+        # for cover images but ForumPage.jsx just uses its own bundled ones.
+        # This cleans out any leftover rows from when they still existed —
+        # fine to run over and over, it's just a delete.
         dead_sections = ("feature", "expert", "forum_room")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)

@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
-import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
@@ -15,9 +14,8 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase, Bell,
+  Users, ListChecks, BadgeCheck, Sparkles,
 } from "lucide-react";
-import { authFetch } from "../../api/apiClient.js";
 import {
   CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   SectionHeader, PrimaryButton,
@@ -63,12 +61,12 @@ const RISK_TONE = {
 
 const PLATFORM_FEATURES = [
   {
-    Icon: Eye,
-    title: "Customised Watchlist",
-    description: "Track the stocks that matter most to you in one place, with real-time prices and quick access to buy or sell.",
-    to: "/watchlist",
-    badge: "Real-time prices",
-    cta: "View watchlist",
+    Icon: Wallet,
+    title: "Paper Trading Exchange",
+    description: "Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.",
+    to: "/realtimedashboard",
+    badge: "Live market prices",
+    cta: "Start trading",
     accent: "cyan",
     primary: true,
   },
@@ -107,15 +105,6 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
-  },
-  {
-    Icon: Award,
-    title: "Become an Expert",
-    description: "Trade 30 different stocks and hit a 200% profit margin to apply for verified expert status — publish articles and share your portfolio.",
-    to: "/investor/become-expert",
-    badge: "Level up",
-    cta: "Check my progress",
-    accent: "rose",
   },
 ];
 
@@ -321,11 +310,12 @@ function ProfileAvatar({ name, size = 48 }) {
   );
 }
 
-function Hero({ name, portfolioData }) {
+function Hero({ name, portfolioData, header }) {
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
   const up = todaysPnL >= 0;
   const TrendIcon = up ? TrendingUp : TrendingDown;
+  const emptyStateMessage = header("hero_empty_state", "Start building your portfolio with your first trade.").title;
 
   return (
     <section className="flex flex-col gap-5 -mt-6 md:-mt-8">
@@ -352,7 +342,7 @@ function Hero({ name, portfolioData }) {
           ) : (
             <div className="mt-3 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/15 px-4 py-2">
               <Wallet size={14} className="text-[#00D3F2] shrink-0" />
-              <span className="text-sm font-medium text-gray-100">Start building your portfolio with your first trade.</span>
+              <span className="text-sm font-medium text-gray-100">{emptyStateMessage}</span>
             </div>
           )}
         </div>
@@ -384,18 +374,24 @@ function AIInsightStat({ icon: Icon, label, value, sub, tone }) {
   );
 }
 
-function AIInsightsSection({ portfolioData }) {
+function AIInsightsSection({ portfolioData, header }) {
   const { stocks } = useLiveStocks();
   const { loading, topPick, stockToWatch, portfolioRisk } = useAIInsights(stocks, portfolioData);
 
   const topPickName = topPick ? (COMPANY_NAMES[topPick.symbol] ?? topPick.name ?? topPick.symbol) : "Unavailable";
   const watchName = stockToWatch ? (COMPANY_NAMES[stockToWatch.symbol] ?? stockToWatch.name ?? stockToWatch.symbol) : "Unavailable";
 
+  const sectionTitle = header("header_ai_insights", "Today's AI Insights").title;
+  const taglineIds = { Low: "ai_tagline_low", Medium: "ai_tagline_medium", High: "ai_tagline_high" };
+  const subtitle = loading
+    ? header("ai_tagline_loading", "Personalized signals from RocketTrade's prediction models").title
+    : header(taglineIds[portfolioRisk], RISK_TAGLINE[portfolioRisk]).title;
+
   return (
     <section>
       <SectionHeader
-        title="Today's AI Insights"
-        subtitle={loading ? "Personalized signals from RocketTrade's prediction models" : RISK_TAGLINE[portfolioRisk]}
+        title={sectionTitle}
+        subtitle={subtitle}
         dark={false}
 
       />
@@ -436,16 +432,18 @@ function AIInsightsSection({ portfolioData }) {
   );
 }
 
-function PortfolioSummarySection({ portfolioData, userId }) {
+function PortfolioSummarySection({ portfolioData, userId, header }) {
   const navigate = useNavigate();
   const { loading, paperMoney, unrealisedPnL, realisedPnL, todaysPnL, totalValue } = portfolioData;
+  const sectionTitle = header("header_portfolio_summary", "Portfolio Summary").title;
+  const ctaLabel = header("portfolio_summary_cta", "View Full Portfolio \u2192").title;
 
   if (!userId) return null;
 
   if (loading) {
     return (
       <section>
-        <SectionHeader title="Portfolio Summary" dark={false} />
+        <SectionHeader title={sectionTitle} dark={false} />
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <SkeletonLight className="lg:col-span-3" style={{ height: 224 }} />
           <div className="lg:col-span-2 flex flex-col gap-6">
@@ -466,9 +464,9 @@ function PortfolioSummarySection({ portfolioData, userId }) {
   return (
     <section>
       <SectionHeader
-        title="Portfolio Summary"
+        title={sectionTitle}
         dark={false}
-        action={<ViewAllLinkLight onClick={() => navigate("/investor/portfolio-overview")}>View Full Portfolio →</ViewAllLinkLight>}
+        action={<ViewAllLinkLight onClick={() => navigate("/investor/portfolio-overview")}>{ctaLabel}</ViewAllLinkLight>}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -578,7 +576,7 @@ function WatchlistRow({ symbol, live, candles, onSelect }) {
   );
 }
 
-function WatchlistSection() {
+function WatchlistSection({ header }) {
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
@@ -595,17 +593,21 @@ function WatchlistSection() {
   }, [userId]);
 
   const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+  const sectionTitle = header("header_watchlist", "My Watchlist").title;
+  const ctaLabel = header("watchlist_cta", "View Full Watchlist \u2192").title;
+  const emptyState = header("header_watchlist_empty", "Start building your watchlist", "Track stocks you're interested in and receive AI insights on how they're moving.");
+  const emptyStateCta = header("watchlist_empty_cta", "+ Add Stocks").title;
 
   return (
     <section className="border-t-0!">
       <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-[26px] font-bold text-slate-900 tracking-tight leading-snug">My Watchlist</h2>
+          <h2 className="text-[26px] font-bold text-slate-900 tracking-tight leading-snug">{sectionTitle}</h2>
           <div className="mt-2">
             <MarketStatusPill marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
         </div>
-        <ViewAllLinkLight onClick={() => navigate("/watchlist")}>View Full Watchlist →</ViewAllLinkLight>
+        <ViewAllLinkLight onClick={() => navigate("/watchlist")}>{ctaLabel}</ViewAllLinkLight>
       </div>
 
       <div className={`${CARD_DOMINANT_LIGHT} overflow-hidden`}>
@@ -634,11 +636,11 @@ function WatchlistSection() {
                 <Eye size={22} className="text-slate-500" />
               </div>
             </div>
-            <p className="text-slate-900 font-semibold text-base mb-1.5">Start building your watchlist</p>
+            <p className="text-slate-900 font-semibold text-base mb-1.5">{emptyState.title}</p>
             <p className="text-sm text-slate-500 mb-6 max-w-sm">
-              Track stocks you're interested in and receive AI insights on how they're moving.
+              {emptyState.description}
             </p>
-            <PrimaryButton onClick={() => navigate("/watchlist")}>+ Add Stocks</PrimaryButton>
+            <PrimaryButton onClick={() => navigate("/watchlist")}>{emptyStateCta}</PrimaryButton>
             <div className="mt-8 w-full">
               <p className="text-xs uppercase tracking-wide text-slate-500 mb-3">Suggested for you</p>
               <div className="flex flex-wrap justify-center gap-2">
@@ -799,6 +801,61 @@ function PopularStocksSection() {
   );
 }
 
+function useLandingContentExtras() {
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => { if (data.success) setContent(data.content); })
+      .catch(() => { });
+  }, []);
+
+  const header = (id, fallbackTitle, fallbackDescription) => {
+    const item = content?.find((c) => c.content_id === id);
+    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription };
+  };
+
+  // Matches fetched title/description onto the fallback list by position,
+  // so icon/to/badge/cta/accent (none of which live in the CMS) still come
+  // from the hardcoded defaults.
+  const items = (section, fallbackList) => {
+    if (!content) return fallbackList;
+    const fetched = content.filter((c) => c.section === section).sort((a, b) => a.order_index - b.order_index);
+    if (fetched.length === 0) return fallbackList;
+    return fetched.map((c, i) => ({
+      ...(fallbackList[i] || fallbackList[fallbackList.length - 1] || {}),
+      title: c.title,
+      description: c.description,
+    }));
+  };
+
+  return { header, items };
+}
+
+function useSubscriptionInfo(userId) {
+  const [info, setInfo] = useState({ status: "inactive", renewalDate: null, loading: true });
+
+  useEffect(() => {
+    if (!userId) { setInfo((prev) => ({ ...prev, loading: false })); return; }
+    fetch(`${import.meta.env.VITE_API_URL}/user/subscription-status/${userId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) { setInfo((prev) => ({ ...prev, loading: false })); return; }
+        setInfo({ status: data.subscription_status, renewalDate: data.renewal_date, loading: false });
+      })
+      .catch(() => setInfo((prev) => ({ ...prev, loading: false })));
+  }, [userId]);
+
+  return info;
+}
+
+function daysUntil(dateString) {
+  if (!dateString) return null;
+  const diffMs = new Date(dateString).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary, accent }) {
   const navigate = useNavigate();
   const a = ACCENTS[accent];
@@ -831,12 +888,21 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
   );
 }
 
-function PlatformFeaturesSection() {
+function PlatformFeaturesSection({ header, items }) {
+  const h = header("header_investor_features", "Explore RocketTrade", "Everything the platform offers, all in one place");
+  const features = items("investor_home_features", PLATFORM_FEATURES);
+  const ctaOverrides = items("investor_home_features_cta", []);
+  const badgeOverrides = items("investor_home_features_badge", []);
+  const withOverrides = features.map((f, i) => ({
+    ...f,
+    cta: ctaOverrides[i]?.title ?? f.cta,
+    badge: badgeOverrides[i]?.title ?? f.badge,
+  }));
   return (
     <section className="rounded-3xl bg-slate-50 ring-1 ring-slate-200/70 shadow-sm shadow-slate-900/5 p-6 md:p-10">
-      <SectionHeader title="Explore RocketTrade" subtitle="Everything the platform offers, all in one place" dark={false} />
+      <SectionHeader title={h.title} subtitle={h.description} dark={false} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {PLATFORM_FEATURES.map((feature) => (
+        {withOverrides.map((feature) => (
           <PlatformFeatureCard key={feature.title} {...feature} />
         ))}
       </div>
@@ -844,30 +910,15 @@ function PlatformFeaturesSection() {
   );
 }
 
-function RealtimeDashboardSection() {
+function RealtimeDashboardSection({ header, items }) {
   const navigate = useNavigate();
-  const highlights = [
-    {
-      Icon: BrainCircuit,
-      title: "AI Predictions",
-      description: "Multi-day price forecasts and confidence scores powered by machine learning.",
-    },
-    {
-      Icon: BadgeCheck,
-      title: "Verified Expert Comments",
-      description: "Get insights straight from verified market experts on every stock page.",
-    },
-    {
-      Icon: Wallet,
-      title: "Paper Trading",
-      description: "Trade against live market prices using virtual funds, zero real-money risk.",
-    },
-    {
-      Icon: Bell,
-      title: "Customised Alerts",
-      description: "Set your own price targets on any stock and get notified the moment they're hit.",
-    },
+  const h = header("header_investor_dashboard", "The Realtime Trading Dashboard", "One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.");
+  const DEFAULT_HIGHLIGHTS = [
+    { Icon: BrainCircuit, title: "AI Predictions", description: "Multi-day price forecasts and confidence scores powered by machine learning." },
+    { Icon: BadgeCheck, title: "Verified Expert Comments", description: "Get insights straight from verified market experts on every stock page." },
+    { Icon: Wallet, title: "Paper Trading", description: "Trade against live market prices using virtual funds, zero real-money risk." },
   ];
+  const highlights = items("investor_home_dashboard", DEFAULT_HIGHLIGHTS);
 
   return (
     <section
@@ -875,7 +926,7 @@ function RealtimeDashboardSection() {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") navigate("/realtimedashboard"); }}
-      className={`group relative overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-200 p-8 md:p-12 cursor-pointer transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30`}
+      className="group relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 ring-1 ring-white/10 shadow-xl shadow-black/30 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00D3F2]/10"
     >
       <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
 
@@ -884,22 +935,22 @@ function RealtimeDashboardSection() {
           <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
             Live Market Data
           </span>
-          <h2 className="text-slate-900 font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
-            The Realtime Trading Dashboard
+          <h2 className="text-white font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
+            {h.title}
           </h2>
-          <p className="text-slate-600 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
-            One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.
+          <p className="text-slate-300 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
+            {h.description}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8]">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
                 <Icon size={19} />
               </div>
-              <p className="text-slate-900 font-semibold text-[15px]">{title}</p>
-              <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
+              <p className="text-white font-semibold text-[15px]">{title}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
@@ -912,94 +963,22 @@ function RealtimeDashboardSection() {
   );
 }
 
-// ── Published expert portfolios (premium perk) ──────────────────────────────
-// Verified experts can publish their portfolio; premium users see them here
-// as reference portfolios. Hidden for basic users and when nothing is published.
-function ExpertPortfoliosSection() {
+function BasicUpgradeBanner({ header }) {
   const navigate = useNavigate();
-  const [portfolios, setPortfolios] = useState([]);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    authFetch(`${import.meta.env.VITE_API_URL}/expert/published-portfolios`)
-      .then(r => r.json())
-      .then(res => {
-        if (cancelled) return;
-        if (res.success && (res.portfolios || []).length > 0) {
-          setPortfolios(res.portfolios);
-          setVisible(true);
-        }
-      })
-      .catch(() => { });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (!visible) return null;
-
+  const h = header("investor_banner_basic", "Stop guessing. Start trading with an edge.", "Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.");
   return (
-    <section>
-      <SectionHeader
-        title="Expert Portfolios"
-        subtitle="Reference portfolios published by our verified experts — a Premium perk"
-        dark={false}
-      />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {portfolios.map((p) => {
-          const up = (p.return_pct ?? 0) >= 0;
-          return (
-            <div
-              key={p.portfolio_id}
-              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`); }}
-              className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8] shrink-0">
-                    <Briefcase size={19} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
-                    <p className="text-xs text-slate-500 truncate">by {p.expert_name}</p>
-                  </div>
-                </div>
-                <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
-                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {up ? "+" : ""}{Number(p.return_pct ?? 0).toFixed(1)}%
-                </span>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{p.description || p.investment_objective}</p>
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
-                <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
-                <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
-                <span className="inline-flex items-center gap-1 text-[#00A9C4] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function PricingTeaserSection() {
-  const navigate = useNavigate();
-  return (
-    <section className={`relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#FFD700]/40 shadow-lg shadow-amber-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-all duration-200 ${CARD_HOVER} hover:shadow-xl hover:shadow-amber-900/10 hover:ring-[#FFD700]/60`}>
+    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-900 via-slate-950 to-amber-950 ring-1 ring-[#FFD700]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#FFD700]/10 blur-3xl" />
 
       <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-amber-700">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-[#FFD700]">
           <Sparkles size={11} /> RocketTrade Premium
         </span>
-        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
-          Stop guessing. Start trading with an edge.
+        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+          {h.title}
         </h2>
-        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
-          Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.
+        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+          {h.description}
         </p>
       </div>
 
@@ -1007,7 +986,38 @@ function PricingTeaserSection() {
         onClick={() => navigate("/investor/subscription")}
         className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFD700] px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-[#FFD700]/20 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
       >
-        View Pricing <ArrowRight size={16} />
+        {header("investor_banner_basic_cta", "View Pricing").title} <ArrowRight size={16} />
+      </button>
+    </section>
+  );
+}
+
+function PremiumRenewalBanner({ header, renewalDate }) {
+  const navigate = useNavigate();
+  const h = header("investor_banner_premium", "You're a Premium Member", "Enjoy unlimited AI predictions, expert access, and advanced analytics. {days} days left until your subscription renews.");
+  const days = daysUntil(renewalDate);
+  const description = days !== null ? h.description.replace("{days}", days) : h.description.replace(/\s*\{days\}.*$/, "");
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-indigo-950 via-slate-950 to-blue-950 ring-1 ring-[#00D3F2]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
+
+      <div className="relative max-w-xl">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
+          <Sparkles size={11} /> RocketTrade Premium
+        </span>
+        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+          {h.title}
+        </h2>
+        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+          {description}
+        </p>
+      </div>
+
+      <button
+        onClick={() => navigate("/investor/subscription")}
+        className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 ring-1 ring-white/20 px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+      >
+        {header("investor_banner_premium_cta", "Manage Subscription").title} <ArrowRight size={16} />
       </button>
     </section>
   );
@@ -1019,13 +1029,15 @@ function LoggedInHomePage() {
   const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
+  const { header, items } = useLandingContentExtras();
+  const subscription = useSubscriptionInfo(userId);
 
   return (
     <motion.div
       className="relative min-h-screen flex flex-col"
       style={{
         fontFamily: "'DM Sans', sans-serif",
-        background: getPageBackground(500),
+        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 500px, #FFFFFF 100%)",
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1034,17 +1046,20 @@ function LoggedInHomePage() {
 
       <GeneralHeader />
       <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8">
-        <Hero name={name} portfolioData={portfolioData} />
+        <Hero name={name} portfolioData={portfolioData} header={header} />
 
 
-        <AIInsightsSection portfolioData={portfolioData} />
-        <PortfolioSummarySection portfolioData={portfolioData} userId={userId} />
-        <WatchlistSection />
-        <ExpertPortfoliosSection />
+        <AIInsightsSection portfolioData={portfolioData} header={header} />
+        <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
+        <WatchlistSection header={header} />
 
-        <PricingTeaserSection />
-        <PlatformFeaturesSection />
-        <RealtimeDashboardSection />
+        {!subscription.loading && (
+          subscription.status === "premium"
+            ? <PremiumRenewalBanner header={header} renewalDate={subscription.renewalDate} />
+            : <BasicUpgradeBanner header={header} />
+        )}
+        <PlatformFeaturesSection header={header} items={items} />
+        <RealtimeDashboardSection header={header} items={items} />
 
       </main>
       <Footer />

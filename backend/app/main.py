@@ -24,10 +24,7 @@ from app.boundary.adminb import router as admin_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
-from app.entity.models.useraccount import (
-    seed_admin_account,
-    seed_hr_account,
-)
+from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account, seed_jordan_account
 from app.entity.models.expertverification import ExpertVerification
@@ -172,7 +169,6 @@ def ensure_all_schemas(engine):
         ("watchlist",    "user_id",               "ALTER TABLE watchlist ADD COLUMN user_id VARCHAR(50) NULL"),
         ("notification", "broadcast_id",           "ALTER TABLE notification ADD COLUMN broadcast_id INT NULL"),
         ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
-        ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
     ]
 
     with engine.connect() as conn:
@@ -205,7 +201,7 @@ def ensure_all_schemas(engine):
                 conn.execute(text(
                     "ALTER TABLE content_management MODIFY COLUMN description MEDIUMTEXT NULL"))
                 conn.commit()
-                print("[SCHEMA] Widened content_management.description to MEDIUMTEXT (for uploaded forum room images)")
+                print("[SCHEMA] Widened content_management.description to MEDIUMTEXT")
         except Exception as e:
             print(f"[SCHEMA] Skipped content_management.description widen: {e}")
 
@@ -264,41 +260,6 @@ def ensure_all_schemas(engine):
             conn.commit()
         except Exception as e:
             print(f"[SCHEMA] Skipped expert_follow investor_id/follower_user_id backfill: {e}")
-
-
-        # ── Merged roles migration ──────────────────────────────────────────
-        # Every expert account also gets an investor row (experts now use the
-        # investor UI and trade like investors); verified experts get the
-        # complimentary premium tier.
-        try:
-            result = conn.execute(text(
-                "INSERT INTO investor "
-                "(investor_id, user_id, investor_subscription_status, paper_money, used_amount) "
-                "SELECT CONCAT('investor_', UUID()), e.user_id, 'inactive', 2000, 0 "
-                "FROM expert e "
-                "WHERE e.user_id IS NOT NULL "
-                "AND NOT EXISTS (SELECT 1 FROM investor i WHERE i.user_id = e.user_id)"
-            ))
-            conn.commit()
-            if result.rowcount:
-                print(f"[SCHEMA] Created investor rows for {result.rowcount} existing expert(s)")
-        except Exception as e:
-            print(f"[SCHEMA] Skipped expert->investor backfill: {e}")
-
-        try:
-            result = conn.execute(text(
-                "UPDATE investor i "
-                "JOIN expert e ON e.user_id = i.user_id "
-                "JOIN expert_verification ev ON ev.expert_id = e.expert_id "
-                "SET i.investor_subscription_status = 'premium' "
-                "WHERE ev.verification_status IN ('approved', 'active') "
-                "AND i.investor_subscription_status <> 'premium'"
-            ))
-            conn.commit()
-            if result.rowcount:
-                print(f"[SCHEMA] Granted premium to {result.rowcount} verified expert(s)")
-        except Exception as e:
-            print(f"[SCHEMA] Skipped verified-expert premium backfill: {e}")
     print("[SCHEMA] All schema patches complete.")
 
 
@@ -415,7 +376,6 @@ else:
 if RUN_SEEDS:
     seed_profiles()
     seed_admin_account()
-    seed_hr_account()
     seed_investor_account()
     seed_expert_account()
     seed_jordan_account()

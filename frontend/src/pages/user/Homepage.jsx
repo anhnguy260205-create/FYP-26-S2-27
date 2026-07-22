@@ -14,28 +14,28 @@ import {
 
 const FAQS = [
   {
-    q: "Is this real money trading?",
-    a: "No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.",
+    title: "Is this real money trading?",
+    description: "No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.",
   },
   {
-    q: "How much does it cost to use RocketTrade?",
-    a: "You can start for free with our Starter plan. Upgrade to Pro anytime for unlimited AI predictions, deeper quant ratings, and priority expert access.",
+    title: "How much does it cost to use RocketTrade?",
+    description: "You can start for free with our Starter plan. Upgrade to Pro anytime for unlimited AI predictions, deeper quant ratings, and priority expert access.",
   },
   {
-    q: "How accurate are the AI predictions?",
-    a: "Our models combine technical indicators and news sentiment to forecast short-term price direction. They're a decision-support tool, not a guarantee, so always do your own research too.",
+    title: "How accurate are the AI predictions?",
+    description: "Our models combine technical indicators and news sentiment to forecast short-term price direction. They're a decision-support tool, not a guarantee, so always do your own research too.",
   },
   {
-    q: "Do I need any trading experience to get started?",
-    a: "Not at all. Our Educational Content library covers everything from beginner basics to advanced strategy, so you can learn as you go.",
+    title: "Do I need any trading experience to get started?",
+    description: "Not at all. Our Educational Content library covers everything from beginner basics to advanced strategy, so you can learn as you go.",
   },
   {
-    q: "Can I get help from a real person?",
-    a: "Yes — chat instantly with our AI assistant, or connect with a verified market expert through consultations and Q&A.",
+    title: "Can I get help from a real person?",
+    description: "Yes — chat instantly with our AI assistant, or connect with a verified market expert through consultations and Q&A.",
   },
   {
-    q: "Can I cancel or change my plan anytime?",
-    a: "Yes, you can upgrade, downgrade, or cancel your subscription at any time from your account settings.",
+    title: "Can I cancel or change my plan anytime?",
+    description: "Yes, you can upgrade, downgrade, or cancel your subscription at any time from your account settings.",
   },
 ];
 
@@ -86,9 +86,50 @@ function getFeatureIcon(title = "") {
   return found ? found.Icon : Star;
 }
 
+// One shared fetch for every landing-page section that's editable from
+// Content Management but isn't the Hero or the membership plan (those
+// already have their own hooks). Reused by every section below via props.
+// Note: icons, accent colors, and the "stat" callouts on the Why cards
+// aren't editable here — they stay matched to the hardcoded defaults by
+// position. Only actual text (headings, subtitles, card copy, FAQ
+// answers, step text) comes from the CMS.
+function useLandingContentExtras() {
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
+      .then((r) => r.json())
+      .then((data) => { if (data.success) setContent(data.content); })
+      .catch(() => { });
+  }, []);
+
+  const header = (id, fallbackTitle, fallbackDescription) => {
+    const item = content?.find((c) => c.content_id === id);
+    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription };
+  };
+
+  // Matches fetched title/description onto the fallback list by position,
+  // so icon/accent/stat (none of which live in the CMS) still come from
+  // the hardcoded defaults.
+  const items = (section, fallbackList) => {
+    if (!content) return fallbackList;
+    const fetched = content.filter((c) => c.section === section).sort((a, b) => a.order_index - b.order_index);
+    if (fetched.length === 0) return fallbackList;
+    return fetched.map((c, i) => ({
+      ...(fallbackList[i] || fallbackList[fallbackList.length - 1] || {}),
+      title: c.title,
+      description: c.description,
+    }));
+  };
+
+  return { header, items };
+}
+
 function Hero() {
   const navigate = useNavigate();
   const [hero, setHero] = useState({ title: "Discover the Future of Smart Investing", description: "Explore powerful tools floating around your financial universe." });
+  const [ctaPrimary, setCtaPrimary] = useState("Get Started");
+  const [ctaSecondary, setCtaSecondary] = useState("Login");
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
@@ -97,6 +138,10 @@ function Hero() {
         if (!data.success) return;
         const heroItem = data.content.find((c) => c.section === "hero");
         if (heroItem) setHero(heroItem);
+        const primary = data.content.find((c) => c.content_id === "hero_cta_primary");
+        if (primary?.title) setCtaPrimary(primary.title);
+        const secondary = data.content.find((c) => c.content_id === "hero_cta_secondary");
+        if (secondary?.title) setCtaSecondary(secondary.title);
       })
       .catch(() => { });
   }, []);
@@ -139,14 +184,14 @@ function Hero() {
             className="group relative w-40 px-8 py-3 rounded-xl bg-cyan-500 text-white font-semibold text-base shadow-[0_0_20px_rgba(34,211,238,0.4)] overflow-hidden flex items-center justify-center"
           >
             <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
-            <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">Get Started</span>
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-cyan-600">{ctaPrimary}</span>
           </button>
           <button
             onClick={() => navigate("/login")}
             className="group relative w-40 px-8 py-3 rounded-xl bg-transparent border border-slate-500 hover:border-white text-white font-semibold text-base overflow-hidden transition-colors flex items-center justify-center"
           >
             <span className="absolute inset-0 bg-white scale-x-0 origin-left transition-transform duration-300 ease-out group-hover:scale-x-100" />
-            <span className="relative z-10 transition-colors duration-300 group-hover:text-slate-900">Login</span>
+            <span className="relative z-10 transition-colors duration-300 group-hover:text-slate-900">{ctaSecondary}</span>
           </button>
         </div>
       </div>
@@ -276,13 +321,13 @@ function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
   );
 }
 
-function PricingSection() {
+function PricingSection({ heading, subtitle }) {
   const { freeFeatures, premiumFeatures, freePlan, premiumPlan } = usePlanContent();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Simple, Transparent Pricing</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">Compare our Free and Pro plans — create an investor account to get started.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
       </div>
       <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
         <PlanCard badge="Free" badgeClass="bg-blue-100 text-blue-700" plan={freePlan} features={freeFeatures} />
@@ -323,21 +368,21 @@ function FAQItem({ q, a, open, onToggle }) {
   );
 }
 
-function FAQSection() {
+function FAQSection({ heading, subtitle, faqs = FAQS }) {
   const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState(0);
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">Everything you need to know before you get started.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
       </div>
       <div className="space-y-3">
-        {FAQS.map((faq, index) => (
+        {faqs.map((faq, index) => (
           <FAQItem
-            key={faq.q}
-            q={faq.q}
-            a={faq.a}
+            key={faq.title}
+            q={faq.title}
+            a={faq.description}
             open={openIndex === index}
             onToggle={() => setOpenIndex(openIndex === index ? -1 : index)}
           />
@@ -357,12 +402,12 @@ function FAQSection() {
   );
 }
 
-function MarketingVideoSection() {
+function MarketingVideoSection({ heading, subtitle }) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-black">See RocketTrade in Action</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">Watch a quick walkthrough of the platform and its AI-powered tools.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-black">{heading}</h2>
+        <p className="text-slate-400 mt-2 text-sm sm:text-base">{subtitle}</p>
       </div>
       <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
         <button
@@ -489,30 +534,30 @@ const ROLE_OPTIONS = [
   {
     value: "investor",
     Icon: Wallet,
-    label: "Investor",
-    desc: "Trade, learn, and get AI-backed predictions",
+    title: "Investor",
+    description: "Trade, learn, and get AI-backed predictions",
     active: "border-cyan-500 bg-cyan-50 text-cyan-700",
     activeIcon: "bg-cyan-100 text-cyan-600",
   },
   {
     value: "expert",
     Icon: Award,
-    label: "Expert",
-    desc: "Publish insights and mentor investors",
+    title: "Expert",
+    description: "Publish insights and mentor investors",
     active: "border-purple-500 bg-purple-50 text-purple-700",
     activeIcon: "bg-purple-100 text-purple-600",
   },
 ];
 
-function RoleToggle({ activeRole, onSelect }) {
+function RoleToggle({ activeRole, onSelect, heading, subtitle, options = ROLE_OPTIONS }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-2 pb-10 text-center">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Choose Your Path</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
       <p className="text-slate-500 mt-2 mb-8 text-sm sm:text-base">
-        Tell us who you are, so we can show you what matters most.
+        {subtitle}
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        {ROLE_OPTIONS.map(({ value, Icon, label, desc, active, activeIcon }) => {
+        {options.map(({ value, Icon, title, description, active, activeIcon }) => {
           const selected = activeRole === value;
           return (
             <button
@@ -530,8 +575,8 @@ function RoleToggle({ activeRole, onSelect }) {
                 <Icon size={22} />
               </span>
               <span>
-                <span className="block font-bold text-base">{label}</span>
-                <span className={`block text-xs mt-0.5 ${selected ? "" : "text-slate-400"}`}>{desc}</span>
+                <span className="block font-bold text-base">{title}</span>
+                <span className={`block text-xs mt-0.5 ${selected ? "" : "text-slate-400"}`}>{description}</span>
               </span>
             </button>
           );
@@ -601,16 +646,16 @@ const REGISTRATION_STEPS = [
   },
 ];
 
-function RegistrationGuide() {
+function RegistrationGuide({ heading, subtitle, steps = REGISTRATION_STEPS }) {
   const navigate = useNavigate();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-10">
       <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">How to Get Started</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">Signing up only takes a few minutes, for investors and experts alike.</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {REGISTRATION_STEPS.map(({ Icon, step, title, description }) => (
+        {steps.map(({ Icon, step, title, description }) => (
           <div
             key={step}
             className="relative rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm hover:shadow-lg hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
@@ -843,6 +888,17 @@ function TestimonialsSection() {
 
 function HomePage() {
   const [activeRole, setActiveRole] = useState("investor");
+  const { header, items } = useLandingContentExtras();
+
+  const videoHeader = header("header_video", "See RocketTrade in Action", "Watch a quick walkthrough of the platform and its AI-powered tools.");
+  const pathHeader = header("header_path", "Choose Your Path", "Tell us who you are, so we can show you what matters most.");
+  const whyInvestorHeader = header("header_why_investor", "Why RocketTrade", "Built to help you invest smarter, without the real-money risk.");
+  const whyExpertHeader = header("header_why_expert", "Why Become a RocketTrade Expert", "Turn your market knowledge into income and influence.");
+  const featuresInvestorHeader = header("header_features_investor", "Everything You Need to Invest Smarter", "One platform, six ways to sharpen your edge.");
+  const featuresExpertHeader = header("header_features_expert", "Everything You Get as an Expert", "One platform, six ways to get paid and get seen.");
+  const startedHeader = header("header_started", "How to Get Started", "Signing up only takes a few minutes, for investors and experts alike.");
+  const faqHeader = header("header_faq", "Frequently Asked Questions", "Everything you need to know before you get started.");
+  const pricingHeader = header("header_pricing", "Simple, Transparent Pricing", "Compare our Free and Pro plans — create an investor account to get started.");
 
   return (
     <motion.div
@@ -856,50 +912,64 @@ function HomePage() {
       <main className="flex-1 flex flex-col">
         <Hero />
         <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>
-          <MarketingVideoSection />
+          <MarketingVideoSection heading={videoHeader.title} subtitle={videoHeader.description} />
         </div>
         <div className="bg-white">
-          <RoleToggle activeRole={activeRole} onSelect={setActiveRole} />
+          <RoleToggle
+            activeRole={activeRole}
+            onSelect={setActiveRole}
+            heading={pathHeader.title}
+            subtitle={pathHeader.description}
+            options={items("role_options", ROLE_OPTIONS)}
+          />
         </div>
         {activeRole === "investor" ? (
           <>
             <div className="bg-white">
               <WhyCards
-                heading="Why RocketTrade"
-                subtitle="Built to help you invest smarter, without the real-money risk."
-                items={WHY_ROCKETTRADE}
+                heading={whyInvestorHeader.title}
+                subtitle={whyInvestorHeader.description}
+                items={items("why_investor", WHY_ROCKETTRADE)}
               />
               <FeatureCards
-                heading="Everything You Need to Invest Smarter"
-                subtitle="One platform, six ways to sharpen your edge."
-                items={PLATFORM_FEATURES}
+                heading={featuresInvestorHeader.title}
+                subtitle={featuresInvestorHeader.description}
+                items={items("platform_features", PLATFORM_FEATURES)}
                 theme="cyan"
               />
-              <PricingSection />
+              <PricingSection heading={pricingHeader.title} subtitle={pricingHeader.description} />
             </div>
 
           </>
         ) : (
           <div className="bg-white">
             <WhyCards
-              heading="Why Become a RocketTrade Expert"
-              subtitle="Turn your market knowledge into income and influence."
-              items={EXPERT_WHY}
+              heading={whyExpertHeader.title}
+              subtitle={whyExpertHeader.description}
+              items={items("why_expert", EXPERT_WHY)}
             />
             <FeatureCards
-              heading="Everything You Get as an Expert"
-              subtitle="One platform, six ways to get paid and get seen."
-              items={EXPERT_FEATURES}
+              heading={featuresExpertHeader.title}
+              subtitle={featuresExpertHeader.description}
+              items={items("expert_features", EXPERT_FEATURES)}
               theme="purple"
             />
           </div>
         )}
         <TestimonialsSection />
         <div className="bg-white">
-          <RegistrationGuide />
+          <RegistrationGuide
+            heading={startedHeader.title}
+            subtitle={startedHeader.description}
+            steps={items("get_started_steps", REGISTRATION_STEPS)}
+          />
         </div>
         <div className="bg-white flex-1">
-          <FAQSection />
+          <FAQSection
+            heading={faqHeader.title}
+            subtitle={faqHeader.description}
+            faqs={items("faq", FAQS)}
+          />
         </div>
 
       </main>
