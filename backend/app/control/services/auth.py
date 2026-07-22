@@ -143,7 +143,7 @@ def require_admin_or_hr(
 ) -> dict:
     role = current_user.get("role")
 
-    if role not in ["admin", "hr"]:
+    if role not in ["admin", "finance admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin or HR access required",

@@ -295,10 +295,14 @@ function ReportModal({ post, onConfirm, onCancel, reporting }) {
     const [custom, setCustom] = useState("");
     const finalReason = reason === "Other" ? custom.trim() : reason;
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(15,23,42,0.55)", padding: 20 }}>
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20,
-                padding: 24, width: "100%", maxWidth: 420, boxShadow: "0 20px 50px rgba(15,23,42,0.2)" }}>
+        <div style={{
+            position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(15,23,42,0.55)", padding: 20
+        }}>
+            <div style={{
+                background: C.card, border: `1px solid ${C.border}`, borderRadius: 20,
+                padding: 24, width: "100%", maxWidth: 420, boxShadow: "0 20px 50px rgba(15,23,42,0.2)"
+            }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: PAGE.heading }}>Report Post</h3>
                     <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted }}>
@@ -323,24 +327,32 @@ function ReportModal({ post, onConfirm, onCancel, reporting }) {
                 {reason === "Other" && (
                     <textarea value={custom} onChange={e => setCustom(e.target.value)}
                         placeholder="Describe the issue…" rows={3}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: 10, marginBottom: 14,
+                        style={{
+                            width: "100%", padding: "10px 12px", borderRadius: 10, marginBottom: 14,
                             background: C.card2, border: `1px solid ${C.border}`,
-                            color: C.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box" }} />
+                            color: C.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box"
+                        }} />
                 )}
-                <div style={{ background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)",
-                    borderRadius: 10, padding: "10px 14px", fontSize: 12, color: C.accentText, marginBottom: 16 }}>
+                <div style={{
+                    background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)",
+                    borderRadius: 10, padding: "10px 14px", fontSize: 12, color: C.accentText, marginBottom: 16
+                }}>
                     Our moderation team will review your report and take action if needed.
                 </div>
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                     <button onClick={onCancel} disabled={reporting}
-                        style={{ padding: "9px 18px", borderRadius: 10, background: C.card2,
-                            border: `1px solid ${C.border}`, color: C.text, cursor: "pointer", fontSize: 13 }}>
+                        style={{
+                            padding: "9px 18px", borderRadius: 10, background: C.card2,
+                            border: `1px solid ${C.border}`, color: C.text, cursor: "pointer", fontSize: 13
+                        }}>
                         Cancel
                     </button>
                     <button onClick={() => onConfirm(finalReason)} disabled={reporting || (reason === "Other" && !custom.trim())}
-                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10,
+                        style={{
+                            display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10,
                             background: "#dc2626", border: "none", color: "white", cursor: "pointer",
-                            fontSize: 13, fontWeight: 700, opacity: reporting ? 0.6 : 1 }}>
+                            fontSize: 13, fontWeight: 700, opacity: reporting ? 0.6 : 1
+                        }}>
                         <Flag size={13} /> {reporting ? "Reporting…" : "Submit Report"}
                     </button>
                 </div>
@@ -457,21 +469,25 @@ export default function ForumPage() {
     }
 
     function openPost(post) {
+        // Switching to the post detail view doesn't change the URL, so the
+        // route-level scroll-to-top (routes.jsx) never fires — do it here,
+        // otherwise the detail view renders wherever the list happened to be
+        // scrolled to.
+        window.scrollTo(0, 0);
         // Show post content immediately (no replies yet)
         setSelectedPost(normalisePost({ ...post, replies: [] }));
         setLoadingReplies(true);
-        // Always fetch fresh from backend — ensures replies are current
+        // Always fetch fresh from backend — ensures replies are current.
+        // Guard against the user hitting Back before this resolves: only
+        // apply the fetched post if it's still the one being viewed, so a
+        // late response can't re-open the detail view after it was closed.
         getForumPost(post.id, userId)
             .then(data => {
-                if (data?.success && data.post) {
-                    const fresh = normalisePost(data.post);
-                    mutatePost(fresh);
-                    setSelectedPost(fresh);
-                } else if (data?.post) {
-                    const fresh = normalisePost(data.post);
-                    mutatePost(fresh);
-                    setSelectedPost(fresh);
-                }
+                const fetched = data?.success && data.post ? data.post : data?.post;
+                if (!fetched) return;
+                const fresh = normalisePost(fetched);
+                mutatePost(fresh);
+                setSelectedPost(prev => prev && prev.id === post.id ? fresh : prev);
             })
             .catch(() => { })
             .finally(() => setLoadingReplies(false));
@@ -605,7 +621,7 @@ export default function ForumPage() {
                     <PostDetail
                         post={selectedPost}
                         currentUser={currentUser}
-                        onBack={() => setSelectedPost(null)}
+                        onBack={() => { window.scrollTo(0, 0); setSelectedPost(null); }}
                         onLike={e => handleLike(selectedPost, e)}
                         onSave={e => handleSave(selectedPost, e)}
                         onDelete={e => handleDelete(selectedPost, e)}
@@ -690,17 +706,29 @@ function ForumHome({
             {/* ── Top bar ── */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <div>
-                    {/* Back to community forum home — only shows when viewing a filtered/sorted view */}
-                    {(sort !== "" || activeRoom || query) && (
+                    {/* Back to community forum home — only for the sort-filter views (My Saved,
+                        Popular, etc). Hidden once a specific topic room is selected — the category
+                        pill strip already covers navigating out of a topic, so both fallbacks
+                        would be redundant there. */}
+                    {(sort !== "" && !activeRoom) && (
                         <button onClick={() => { setSort(""); setActiveRoom(null); setQuery(""); }}
                             style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: PAGE.sub, background: "none", border: "none", cursor: "pointer", marginBottom: 10, padding: 0 }}>
                             <ArrowLeft size={13} /> Back to Community Forum
                         </button>
                     )}
+                    {/* Topic breadcrumb — replaces the old Back/All Topics duo. Clicking it
+                        resets to the Community Forum home, same as the category pills' "All". */}
                     {activeRoom && (
                         <button onClick={() => { setActiveRoom(null); setQuery(""); setSort(""); }}
-                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: PAGE.heading, background: "none", border: "none", cursor: "pointer", marginBottom: 6, padding: 0 }}>
-                            <ArrowLeft size={15} /> All Topics
+                            style={{
+                                display: "flex", alignItems: "center", gap: 6, marginBottom: 6,
+                                background: "none", border: "none", cursor: "pointer", padding: 0,
+                                fontSize: 13, fontWeight: 600, color: PAGE.sub,
+                            }}>
+                            <ArrowLeft size={14} />
+                            Community Forum
+                            <span style={{ fontWeight: 400 }}>/</span>
+                            <span style={{ color: PAGE.heading }}>{activeRoom}</span>
                         </button>
                     )}
                     <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: 0, lineHeight: 1 }}>
@@ -727,19 +755,22 @@ function ForumHome({
                 </button>
             </div>
 
-            {/* ── Category pill strip ── */}
-            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 20, scrollbarWidth: "none" }}>
-                {CATEGORIES.map(cat => (
-                    <button key={cat} onClick={() => { setActiveRoom(cat === "All" ? null : cat); }} style={{
-                        padding: "7px 15px", borderRadius: 50, fontSize: 12, fontWeight: 600,
-                        whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
-                        border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${PAGE.pillBorder}`,
-                        background: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accent : "transparent",
-                        color: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accentText : PAGE.pillText,
-                        transition: "all 0.15s",
-                    }}>{cat}</button>
-                ))}
-            </div>
+            {/* ── Category pill strip — hidden once a specific topic is already
+                 selected; the breadcrumb above covers navigating back out. ── */}
+            {!activeRoom && (
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 20, scrollbarWidth: "none" }}>
+                    {CATEGORIES.map(cat => (
+                        <button key={cat} onClick={() => { setActiveRoom(cat === "All" ? null : cat); }} style={{
+                            padding: "7px 15px", borderRadius: 50, fontSize: 12, fontWeight: 600,
+                            whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
+                            border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${PAGE.pillBorder}`,
+                            background: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accent : "transparent",
+                            color: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accentText : PAGE.pillText,
+                            transition: "all 0.15s",
+                        }}>{cat}</button>
+                    ))}
+                </div>
+            )}
 
             {/* ── Search + sort ── */}
             <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
@@ -1239,10 +1270,7 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onRep
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px" }}>
                     <Avatar name={post.author} size={44} role={post.author_role} />
                     <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{post.author}</span>
-                            <RoleBadge role={post.author_role} />
-                        </div>
+
                         <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{formatDate(post.created_at)} · {post.category}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>

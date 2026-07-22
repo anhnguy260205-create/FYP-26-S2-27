@@ -20,6 +20,10 @@ class Transaction(Base):
     total_amount = Column(Float, nullable=False)
     transaction_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
+    # Realized profit/loss on this fill — only set on "sell" rows, computed as
+    # (sale price - average cost basis) * quantity at the moment of the sale
+    # (see trading_engine._sell_shares). Null on "buy" rows.
+    realized_pnl = Column(Float, nullable=True)
 
     @staticmethod
     def createTransaction(investor_id, symbol, transaction_type, quantity, price, total_amount):
@@ -54,6 +58,19 @@ class Transaction(Base):
                 }
                 for t in transactions
             ]
+
+    @staticmethod
+    def getRealizedPnl(investor_id):
+        """Sum of realized profit/loss across every completed sell — the
+        actual gain/loss earned from buy/sell trading activity. Unlike
+        paper_money/used_amount, this is unaffected by deposits, withdrawals,
+        gifts, platform fees or compensation payouts credited to the wallet."""
+        with get_session() as session:
+            rows = session.query(Transaction.realized_pnl).filter(
+                Transaction.investor_id == investor_id,
+                Transaction.transaction_type == "sell",
+            ).all()
+            return round(sum((r.realized_pnl or 0) for r in rows), 2)
 
     @staticmethod
     def getDistinctSymbolCount(investor_id):

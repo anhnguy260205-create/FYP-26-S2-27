@@ -292,12 +292,12 @@ function DeleteAccountButton() {
 
             {showConfirm && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW, textAlign: "center" }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Delete Account</h2>
                         <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>
                             This will permanently delete your account and all associated data. This action cannot be undone.
                         </p>
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 justify-center">
                             <button
                                 onClick={() => setShowConfirm(false)}
                                 disabled={loading}

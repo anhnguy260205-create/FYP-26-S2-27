@@ -156,7 +156,9 @@ function EducationContent() {
               <p style={{ fontFamily: sans, fontSize: 13, color: PAGE.sub, margin: "4px 0 0" }}>Educational articles written by verified experts</p>
             </div>
             {canWrite && (
-              <button onClick={() => navigate("/expert/knowledge-hub")} style={{
+              <button onClick={() => navigate("/expert/knowledge-hub", {
+                state: { from: "/investor/educationcontent", fromLabel: "Educational Content" },
+              })} style={{
                 padding: "10px 22px", borderRadius: 50, cursor: "pointer", border: "none",
                 background: C.success, color: "#fff",
                 fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",

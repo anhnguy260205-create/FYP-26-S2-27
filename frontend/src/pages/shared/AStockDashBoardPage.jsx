@@ -2,7 +2,8 @@ import RoleHeader from "../../layout/RoleHeader.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import useLiveStocks from "../../api/useLiveStocks.js";
 import InteractiveChart from "../../components/InteractiveChart.jsx";
 import StockComments from "../../components/StockComments.jsx";
@@ -847,10 +848,18 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
 /* ─── Page ─────────────────────────────────────────────────── */
 function AStockDashBoardPage() {
   const { symbol } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const selectedStock = symbol?.toUpperCase();
   const { marketStatus, stocks, candles, candleRanges, requestRangeData, lastUpdated } = useLiveStocks();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
+
+  // Which page linked here — passed as router state by the caller (Watchlist,
+  // Real-time Dashboard, Portfolio Overview, Home, …). Falls back to the
+  // Real-time Dashboard when unset (e.g. a direct link/refresh has no state).
+  const fromPath = location.state?.from || "/realtimedashboard";
+  const fromLabel = location.state?.fromLabel || "Real-time Dashboard";
 
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
@@ -908,6 +917,20 @@ function AStockDashBoardPage() {
         <RoleHeader />
 
         <main style={{ flex: 1, maxWidth: 1100, margin: "0 auto", width: "100%", padding: "88px 24px 48px", position: "relative", zIndex: 1 }}>
+
+          <button
+            onClick={() => navigate(fromPath)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, marginBottom: 16,
+              background: "none", border: "none", cursor: "pointer", padding: 0,
+              fontSize: 13, fontWeight: 600, color: "#5B6C88",
+            }}
+          >
+            <ArrowLeft size={14} />
+            {fromLabel}
+            <span style={{ color: "#94A3B8", fontWeight: 400 }}>/</span>
+            <span style={{ color: "#0B1D4F" }}>{selectedStock}</span>
+          </button>
 
           <FirstLevel
             symbol={symbol}

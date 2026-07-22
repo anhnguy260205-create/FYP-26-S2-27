@@ -5,7 +5,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 from app.entity.models.expert import Expert
-from app.entity.models.useraccount import UserAccount
 
 
 def _now():
@@ -34,8 +33,9 @@ class ExpertPortfolioReview(Base):
 
     @staticmethod
     def _reviewer_name(session, user_id):
-        user = session.query(UserAccount).filter(UserAccount.user_id == user_id).first()
-        return (user.full_name or user.username) if user else "RocketTrade User"
+        # Portfolio reviews are anonymous — the expert (and other viewers)
+        # never see who left a review, only the rating/comment.
+        return "Anonymous Investor"
 
     @staticmethod
     def _serialise(review, reviewer_name=None):

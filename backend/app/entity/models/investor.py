@@ -446,13 +446,17 @@ class Investor(Base):
         """Expert-upgrade requirements: traded >= 30 distinct stocks and hit a
         realized profit margin of >= 200%.
 
-        Accounts now start with 0 assets and fund themselves via the Cash
-        Portal, so there is no fixed starting capital to measure against.
-        The baseline is instead the net capital the user has put in
-        (deposits - withdrawals). Profit is current net worth above that:
-            net_worth = assets + used_amount (cost basis of holdings)
+        Profit is realized trading P&L — the sum of realized_pnl across every
+        sell (Transaction.getRealizedPnl) — earned purely from buy/sell
+        activity. Deliberately NOT the account balance, which also moves on
+        deposits, withdrawals, gifts, platform fees and compensation payouts,
+        none of which reflect trading skill.
+
+        Accounts start with 0 assets and fund themselves via the Cash Portal,
+        so there is no fixed starting capital. The margin is measured against
+        the net capital the user has put in (deposits - withdrawals):
+            profit = realized P&L
             capital_in = total cash_in - total cash_out
-            profit = net_worth - capital_in
             profit_margin = profit / capital_in * 100   (0 when no capital in)
         """
         from app.entity.models.transaction import Transaction
@@ -465,17 +469,13 @@ class Investor(Base):
             if not investor:
                 return None
             investor_id = investor.investor_id
-            assets = investor.assets or 0
-            used_amount = investor.used_amount or 0
 
         distinct_stocks = Transaction.getDistinctSymbolCount(investor_id)
+        profit = Transaction.getRealizedPnl(investor_id)
 
         totals = WalletTransaction.get_totals(investor_id)
         capital_in = round((totals.get("cash_in", 0.0) or 0.0)
                            - (totals.get("cash_out", 0.0) or 0.0), 2)
-
-        net_worth = round(assets + used_amount, 2)
-        profit = round(net_worth - capital_in, 2)
         # No capital deployed → margin is undefined; treat as 0% (not eligible).
         profit_margin = round(profit / capital_in * 100, 2) if capital_in > 0 else 0.0
 

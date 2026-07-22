@@ -275,6 +275,7 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
     const [unread, setUnread] = useState(0);
     const [sending, setSending] = useState(false);
     const [lockedThread, setLockedThread] = useState(false);
+    const [chatUnavailableMsg, setChatUnavailableMsg] = useState("");
 
     const bottomRef = useRef(null);
     const threadRef = useRef(null);
@@ -302,6 +303,13 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
         setMinimized(false);
         setMessages([]);
         setLockedThread(Boolean(conv.locked) || !isPremium);
+        // Applies to new AND existing conversations — an expert who's turned
+        // chat off can't be messaged at all until they turn it back on.
+        setChatUnavailableMsg(
+            conv.other?.chat_available === false
+                ? `${conv.other.full_name || conv.other.username} isn't accepting chat messages right now.`
+                : ""
+        );
         if (conv.conv_id) {
             try {
                 const res = await getChatMessages(conv.conv_id);
@@ -408,6 +416,8 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
             const res = await sendChatMessage(thread.other.user_id, content);
             if (res.premium_required) {
                 setLockedThread(true);
+            } else if (res.chat_unavailable) {
+                setChatUnavailableMsg(res.message || "This expert isn't accepting new chat requests right now.");
             } else if (res.success) {
                 setText("");
                 setMessages(prev => prev.some(x => x.message_id === res.data.message_id) ? prev : [...prev, res.data]);
@@ -528,6 +538,14 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
                                         }}>
                                         Upgrade to Premium →
                                     </button>
+                                </div>
+                            ) : chatUnavailableMsg ? (
+                                <div style={{
+                                    padding: 14, textAlign: "center", borderTop: BORDER,
+                                    display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+                                }}>
+                                    <span style={{ fontSize: 18 }}>⏸️</span>
+                                    <span style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{chatUnavailableMsg}</span>
                                 </div>
                             ) : (
                                 <div style={{ padding: 10, borderTop: BORDER, display: "flex", gap: 8 }}>
