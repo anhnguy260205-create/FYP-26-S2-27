@@ -103,7 +103,11 @@ function LoginPage() {
       } else if (err.code === "auth/network-request-failed") {
         setError("Network error — check your internet connection and try again.");
       } else if (err.message === "Failed to fetch") {
-        setError("Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev.");
+        setError(
+          import.meta.env.DEV
+            ? "Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev."
+            : "Cannot reach the server right now. Please check your connection and try again in a moment."
+        );
       } else {
         setError(`Login failed (${err.code || err.message || "unknown"}). See browser console for details.`);
       }
