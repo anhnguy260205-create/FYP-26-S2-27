@@ -129,9 +129,9 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
-    { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
-    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
-    { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
+    { path: "/finance-admin", element: protect(["finance admin"], FinanceAdminDashboardPage) },
+    { path: "/finance-admin/document-verification", element: protect(["finance admin"], DocumentVerificationPage) },
+    { path: "/finance-admin/subscriptions", element: protect(["finance admin"], SubscriptionManagementPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in
