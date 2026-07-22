@@ -278,6 +278,23 @@ class AdminUserAccountController:
             "source_labels": REVENUE_SOURCE_LABELS,
         }
 
+    # ── Payment transactions (read-only monitoring) ─────────────────────
+    #
+    # These read the wallet_transaction ledger — every cash-in, cash-out,
+    # gift and payout across all investors. The finance admin only WATCHES
+    # here; there is no approve/reject action wired to these endpoints.
+
+    def getWalletTransactions(self, txn_type=None, status=None, limit=200):
+        from app.entity.models.wallet import WalletTransaction
+        limit = max(1, min(limit, 500))
+        with get_session() as session:
+            return WalletTransaction.get_all_for_admin(
+                session, limit=limit, txn_type=txn_type, status=status)
+
+    def getPaymentSummary(self):
+        from app.entity.models.wallet import WalletTransaction
+        return WalletTransaction.get_platform_totals()
+
     def getUserTypeBreakdown(self):
         with get_session() as session:
             total_premium = session.query(Investor).filter(

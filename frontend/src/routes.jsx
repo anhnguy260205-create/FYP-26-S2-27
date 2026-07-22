@@ -24,8 +24,10 @@ const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPos
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
 const ExpertApplicationReviewPage = lazy(() => import("./pages/administrator/ExpertApplicationReviewPage.jsx"));
-const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
 const FinanceAdminDashboardPage = lazy(() => import("./pages/financeadmin/FinanceAdminDashboardPage.jsx"));
+const RevenueAnalysisPage = lazy(() => import("./pages/financeadmin/RevenueAnalysisPage.jsx"));
+const PaymentTransactionsPage = lazy(() => import("./pages/financeadmin/PaymentTransactionsPage.jsx"));
+const FinancialReportsPage = lazy(() => import("./pages/financeadmin/FinancialReportsPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
@@ -130,8 +132,10 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
     { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
-    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
+    { path: "/finance-admin/revenue", element: protect(["hr"], RevenueAnalysisPage) },
     { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
+    { path: "/finance-admin/payments", element: protect(["hr"], PaymentTransactionsPage) },
+    { path: "/finance-admin/reports", element: protect(["hr"], FinancialReportsPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in

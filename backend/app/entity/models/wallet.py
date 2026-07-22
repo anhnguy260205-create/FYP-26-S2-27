@@ -135,6 +135,96 @@ class WalletTransaction(Base):
             ]
 
     @staticmethod
+    def get_all_for_admin(session, limit=200, txn_type=None, status=None):
+        """Every wallet row across ALL investors, newest first, joined to the
+        owning user account so the finance admin can see who moved the money.
+        Read-only monitoring — no approval workflow is attached here.
+
+        Runs on a caller-supplied session so the name join happens in the same
+        query rather than a second round-trip.
+        """
+        from app.entity.models.investor import Investor
+        from app.entity.models.useraccount import UserAccount
+
+        q = (
+            session.query(WalletTransaction, UserAccount)
+            .join(Investor, WalletTransaction.investor_id == Investor.investor_id)
+            .join(UserAccount, Investor.user_id == UserAccount.user_id)
+        )
+        if txn_type:
+            q = q.filter(WalletTransaction.txn_type == txn_type)
+        if status:
+            q = q.filter(WalletTransaction.status == status)
+        rows = q.order_by(
+            WalletTransaction.created_at.desc()).limit(limit).all()
+
+        return [
+            {
+                "wallet_txn_id": txn.wallet_txn_id,
+                "txn_type": txn.txn_type,
+                "amount": txn.amount,
+                "balance_after": txn.balance_after,
+                "status": txn.status,
+                "description": txn.description,
+                "reference_id": txn.reference_id,
+                "bank_name": txn.bank_name,
+                "account_number_masked": txn.account_number_masked,
+                "user_name": user.full_name or user.username or "—",
+                "email_address": user.email_address,
+                "created_at": txn.created_at.isoformat() if txn.created_at else None,
+            }
+            for txn, user in rows
+        ]
+
+    @staticmethod
+    def get_platform_totals(large_threshold=1000.0):
+        """Platform-wide magnitudes per txn_type plus the counts behind them,
+        for the Payment Transactions summary cards. `large_cash_out` flags how
+        many withdrawals cleared the anti-money-laundering review threshold."""
+        with get_session() as session:
+            rows = session.query(
+                WalletTransaction.txn_type,
+                func.coalesce(func.sum(func.abs(WalletTransaction.amount)), 0.0),
+                func.count(WalletTransaction.wallet_txn_id),
+            ).filter(
+                WalletTransaction.status == "completed",
+            ).group_by(WalletTransaction.txn_type).all()
+
+            by_type = {t: {"total": round(float(v or 0), 2), "count": int(c)}
+                       for t, v, c in rows}
+
+            def _pick(kind):
+                return by_type.get(kind, {"total": 0.0, "count": 0})
+
+            large_cash_out = session.query(
+                func.count(WalletTransaction.wallet_txn_id)
+            ).filter(
+                WalletTransaction.txn_type == TXN_CASH_OUT,
+                WalletTransaction.status == "completed",
+                func.abs(WalletTransaction.amount) >= large_threshold,
+            ).scalar() or 0
+
+            pending = session.query(
+                func.count(WalletTransaction.wallet_txn_id)
+            ).filter(WalletTransaction.status != "completed").scalar() or 0
+
+            cash_in = _pick(TXN_CASH_IN)
+            cash_out = _pick(TXN_CASH_OUT)
+
+            return {
+                "cash_in": cash_in,
+                "cash_out": cash_out,
+                "gift_sent": _pick(TXN_GIFT_SENT),
+                "gift_received": _pick(TXN_GIFT_RECEIVED),
+                "platform_fee": _pick(TXN_PLATFORM_FEE),
+                "compensation": _pick(TXN_COMPENSATION),
+                "net_flow": round(cash_in["total"] - cash_out["total"], 2),
+                "large_cash_out": int(large_cash_out),
+                "large_threshold": large_threshold,
+                "pending": int(pending),
+            }
+
+    @staticmethod
     def get_totals(investor_id):
         """{cash_in, cash_out, fees_paid, gifts_sent, gifts_received,
         compensation} as positive magnitudes, for summary cards."""
