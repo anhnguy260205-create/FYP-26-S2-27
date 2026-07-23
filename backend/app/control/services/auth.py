@@ -102,6 +102,12 @@ def get_current_user_pre_mfa(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
+    if profile.get("suspended"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "account_suspended",
+                    "message": "Your account has been suspended. Please contact support."},
+        )
     return profile
 
 
@@ -127,7 +133,10 @@ def get_current_user_optional(
     for endpoints that work for both guests and logged-in users, but need
     to know who's asking (e.g. to mark 'is_mine' on a public review list)."""
     token = credentials.credentials if credentials else None
-    return _resolve_profile_from_token(token, request.headers)
+    profile = _resolve_profile_from_token(token, request.headers)
+    if profile and profile.get("suspended"):
+        return None
+    return profile
 
 
 def require_admin(current_user: dict = Depends(get_current_user)) -> dict:

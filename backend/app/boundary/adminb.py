@@ -196,13 +196,18 @@ def view_user_account(user_id: str, current_user: dict = Depends(require_admin))
 @router.put("/useraccounts/{user_id}/suspend")
 def suspend_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
-    success = boundary.suspendUserAccount(user_id)
+    email = boundary.suspendUserAccount(user_id)
 
-    if not success:
+    if not email:
         return {
             "success": False,
             "message": "User not found",
         }
+
+    # Bust the cached auth profile so the suspension takes effect on this
+    # user's very next request instead of waiting up to _PROFILE_TTL seconds —
+    # this is what actually "kicks out" an already-logged-in user.
+    invalidate_profile_cache(email)
 
     return {
         "success": True,
@@ -225,13 +230,15 @@ def delete_firebase_orphan(data: DeleteFirebaseOrphanRequest, current_user: dict
 @router.put("/useraccounts/{user_id}/activate")
 def activate_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
-    success = boundary.activateUserAccount(user_id)
+    email = boundary.activateUserAccount(user_id)
 
-    if not success:
+    if not email:
         return {
             "success": False,
             "message": "User not found",
         }
+
+    invalidate_profile_cache(email)
 
     return {
         "success": True,

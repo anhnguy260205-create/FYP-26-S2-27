@@ -225,6 +225,10 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
     fills = []
     remaining = quantity
     counterpart_type = "sell" if order_type == "buy" else "buy"
+    # Every investor whose holdings/realized P&L changed in this call — each
+    # gets an expert-eligibility check after the order settles (buys can push
+    # distinct-stock count over the line, sells can push profit margin over it).
+    affected_investor_ids = {investor_id}
 
     # ── 4. Price-Time Priority matching ──────────────────────────────────────
     counterparts = OrderBook.get_counterpart_orders(symbol, counterpart_type, limit_price)
@@ -267,6 +271,7 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
             "price": fill_price,
             "matched_order": cp["order_id"],
         })
+        affected_investor_ids.add(cp["investor_id"])
         remaining -= fill_qty
 
     # ── 5. Market Maker fills remainder ──────────────────────────────────────
@@ -321,6 +326,20 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         )
     else:
         message = "Order pending"
+
+    # ── 8. Expert-eligibility notification ───────────────────────────────────
+    # Best-effort — must never fail the trade itself.
+    if total_filled > 0:
+        try:
+            for affected_id in affected_investor_ids:
+                affected_user_id = (
+                    user_id if affected_id == investor_id
+                    else Investor.getUserIdByInvestorId(affected_id)
+                )
+                if affected_user_id:
+                    Investor.check_and_notify_expert_eligibility(affected_user_id)
+        except Exception as e:
+            print(f"[EXPERT-ELIGIBILITY] Notification check failed: {e}")
 
     return {
         "success": True,

@@ -5,13 +5,12 @@ import {
   PlayCircle, ListChecks, HelpCircle, CreditCard, Link2,
   LayoutDashboard, Wallet, Crown, GraduationCap,
   BrainCircuit, MessagesSquare, Bot, MessageCircleQuestion,
-  DollarSign, Zap, Users, UserPlus, Mail, Activity, Briefcase, MessageSquare,
+  DollarSign, Zap, Users, UserPlus, Mail,
   TrendingUp, AlertTriangle, Gauge, BadgeCheck,
 } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
-import professorPageImg from "../../images/professorpage.jpg";
 
 // Real per-card icons, copied straight from the source arrays in
 // Homepage.jsx / LoggedInHomePage.jsx / ExpertLoggedInPage.jsx — icons
@@ -26,7 +25,6 @@ const CARD_ICONS = {
   platform_features: [Wallet, BrainCircuit, MessagesSquare, Bot, GraduationCap, MessageCircleQuestion],
   expert_features: [DollarSign, Award, GraduationCap, MessageCircleQuestion, BrainCircuit, Bot],
   investor_home_features: [Wallet, BrainCircuit, MessagesSquare, Bot, GraduationCap],
-  expert_tools: [Activity, GraduationCap, MessagesSquare, Briefcase, MessageSquare],
 };
 
 const API = `${import.meta.env.VITE_API_URL}/admin/content`;
@@ -119,46 +117,6 @@ const PREMIUM_INVESTOR_SUBTABS = [
   ...INVESTOR_SHARED_BOTTOM,
 ];
 
-// Expert Home subtabs (ExpertLoggedInPage.jsx), in the order they actually
-// appear scrolling down the page: hero, model portfolio, profile, tools,
-// then the verification documents banner at the very bottom.
-const EXPERT_SUBTABS = [
-  { key: "expert_hero",  label: "Header", icon: GraduationCap, kind: "generic", preview: "expert_hero",
-    headerId: "expert_hero_subtitle", itemsSection: null,
-    hint: "The subtitle right under \u201cWelcome back\u201d on an expert's home page." },
-  { key: "model_portfolio", label: "Model Portfolio", icon: LayoutDashboard, kind: "generic", preview: "model_portfolio",
-    headerId: "header_model_portfolio", itemsSection: null,
-    extraIds: [
-      { id: "model_portfolio_empty_msg", label: "Message shown before they've set one up" },
-      { id: "model_portfolio_cta_create", label: "Button text (no portfolio yet)" },
-      { id: "model_portfolio_cta_manage", label: "Button text (already has one)" },
-    ],
-    hint: "The \u201cModel Portfolio\u201d card. The Holdings/Invested/Cash Balance/Risk numbers stay live data, only the heading, empty message, and button text are editable." },
-  { key: "expert_profile", label: "Your Profile", icon: Award, kind: "generic", preview: "expert_profile",
-    headerId: "header_expert_profile", itemsSection: null,
-    extraIds: [
-      { id: "expert_profile_edit_cta", label: "\u201cEdit Profile\u201d link text" },
-      { id: "expert_profile_not_rated", label: "Message shown before they've been rated" },
-      { id: "compensation_pending_label", label: "Compensation: label when a payout is pending" },
-      { id: "compensation_need_followers", label: "Compensation: message before they qualify (keep the word {followers} in there \u2014 it's swapped for the real number)" },
-      { id: "compensation_locked_label", label: "Compensation: label before they're verified" },
-      { id: "compensation_locked_msg", label: "Compensation: message before they're verified" },
-    ],
-    hint: "The rating card at the top of an expert's profile summary, plus the compensation card next to it." },
-  { key: "expert_tools", label: "Your Tools",         icon: Layers, kind: "generic", preview: "cards",
-    headerId: "header_expert_tools", ctaId: "expert_tools_cta", itemsSection: "expert_tools",
-    hint: "The tool cards further down the page. All five share the same button text, which you can edit below." },
-  { key: "expert_documents", label: "Verification Documents", icon: HelpCircle, kind: "generic", preview: "documents",
-    headerId: "header_documents", itemsSection: null,
-    extraIds: [
-      { id: "documents_desc_verified", label: "Description (already verified)" },
-      { id: "documents_desc_unverified", label: "Description (not verified yet)" },
-      { id: "documents_cta_verified", label: "Button text (already verified)" },
-      { id: "documents_cta_unverified", label: "Button text (not verified yet)" },
-    ],
-    hint: "The amber banner at the very bottom of the expert home page." },
-];
-
 // "Landing Page" bundles every section that only lives on Homepage.jsx into
 // its subtabs above. Membership Plans and Footer get their own top-level
 // tabs instead, since both show up on more than just the landing page —
@@ -172,7 +130,6 @@ const MAIN_TABS = [
     hint: "Brand name, tagline, and all the footer links. This one's on every page." },
   { key: "basic_investor", label: "Basic Investor", icon: Wallet, subtabs: BASIC_INVESTOR_SUBTABS },
   { key: "premium_investor", label: "Premium Investor", icon: Crown, subtabs: PREMIUM_INVESTOR_SUBTABS },
-  { key: "expert_home", label: "Expert", icon: GraduationCap, subtabs: EXPERT_SUBTABS },
 ];
 
 // Sections where item order is meaningful and can be dragged to reorder.
@@ -181,7 +138,7 @@ const ORDERABLE_SECTIONS = new Set([
   "get_started_steps", "faq",
   "free_investor", "premium_investor",
   "footer_product", "footer_company", "footer_resources", "footer_contact",
-  "investor_home_features", "investor_home_dashboard", "expert_tools",
+  "investor_home_features", "investor_home_dashboard",
 ]);
 
 // sections/tabs that show the description/subtitle field when editing a card
@@ -190,7 +147,7 @@ const DESCRIPTION_SECTIONS = new Set([
   "role_options", "why_investor", "platform_features", "why_expert", "expert_features",
   "get_started_steps", "faq",
   "footer_brand", "footer_product", "footer_company", "footer_resources", "footer_contact",
-  "investor_home_features", "investor_home_dashboard", "expert_tools",
+  "investor_home_features", "investor_home_dashboard",
   "investor_banner_basic", "investor_banner_premium",
 ]);
 
@@ -227,87 +184,6 @@ function HeroPreview({ title, description, ctaPrimary, ctaSecondary }) {
           <span className="px-4 py-1.5 rounded-lg bg-cyan-500 text-white text-[10px] font-semibold">{ctaPrimary || "Get Started"}</span>
           <span className="px-4 py-1.5 rounded-lg border border-slate-500 text-white text-[10px] font-semibold">{ctaSecondary || "Login"}</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ModelPortfolioPreview({ heading, description, extras }) {
-  const emptyMsg = extras?.model_portfolio_empty_msg?.title || "Empty-state message";
-  return (
-    <div className="p-6 bg-white">
-      <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading || "Model Portfolio"}</p>
-      <p className="text-slate-500 text-[10px] mt-0.5 mb-3">{description}</p>
-      <div className="rounded-xl bg-cyan-50 ring-1 ring-cyan-200 p-4">
-        <p className="text-slate-400 text-[9px] italic">{emptyMsg}</p>
-        <div className="mt-3 pt-3 border-t border-cyan-200 flex justify-end">
-          <span className="px-3 py-1 rounded-lg bg-cyan-500 text-white text-[9px] font-semibold">
-            {extras?.model_portfolio_cta_create?.title || "Create Portfolio"}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ExpertProfilePreview({ heading, extras }) {
-  const editCta = extras?.expert_profile_edit_cta?.title || "Edit Profile";
-  const notRated = extras?.expert_profile_not_rated?.title || "Not-yet-rated message";
-  const lockedLabel = extras?.compensation_locked_label?.title || "Locked";
-  const lockedMsg = extras?.compensation_locked_msg?.title || "Compensation locked message";
-  return (
-    <div className="p-6 bg-white">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading || "Your Profile"}</p>
-        <span className="text-cyan-600 text-[9px] font-semibold">{editCta}</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #0f172a, #1e293b)" }}>
-          <p className="text-slate-400 text-[9px] mb-1">Your Rating</p>
-          <p className="text-white text-2xl font-bold font-mono leading-none">—</p>
-          <p className="text-slate-500 text-[8px] mt-2">{notRated}</p>
-        </div>
-        <div className="rounded-xl p-4 bg-slate-100">
-          <p className="text-slate-400 text-[9px] mb-1">Compensation</p>
-          <p className="text-slate-500 text-base font-bold leading-none">{lockedLabel}</p>
-          <p className="text-slate-400 text-[8px] mt-2">{lockedMsg}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DocumentsPreview({ heading, extras }) {
-  const desc = extras?.documents_desc_unverified?.title || "Description goes here";
-  const cta = extras?.documents_cta_unverified?.title || "Submit Documents";
-  return (
-    <div className="p-6" style={{ background: "linear-gradient(135deg, #451a03, #0f172a, #020617)" }}>
-      <div className="flex items-start gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-amber-400/10 ring-1 ring-amber-400/20 flex items-center justify-center shrink-0">
-          <HelpCircle size={14} className="text-amber-300" />
-        </div>
-        <div>
-          <p className="text-white text-xs font-bold leading-tight">{heading || "Verification Documents"}</p>
-          <p className="text-slate-300 text-[9px] mt-1 leading-relaxed">{desc}</p>
-        </div>
-      </div>
-      <div className="mt-3 flex justify-end">
-        <span className="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 text-[9px] font-bold">{cta}</span>
-      </div>
-    </div>
-  );
-}
-
-function ExpertHeroPreview({ title }) {
-  return (
-    <div className="relative overflow-hidden" style={{ height: 140 }}>
-      <img src={professorPageImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.15))" }} />
-      <div className="relative p-4 flex flex-col justify-end h-full">
-        <p className="text-white font-extrabold text-sm leading-tight">
-          Welcome back, <span className="text-purple-400">qa_expert</span>
-        </p>
-        <p className="text-slate-200 text-[9px] mt-1">{title || "Subtitle text goes here"}</p>
       </div>
     </div>
   );
@@ -965,23 +841,8 @@ function ContentManagementPage() {
       if (tab.preview === "ai_insights") {
         return <PreviewFrame label={tab.label}><AIInsightsPreview heading={heading} items={items} /></PreviewFrame>;
       }
-      if (tab.preview === "expert_hero") {
-        return <PreviewFrame label={tab.label}><ExpertHeroPreview title={heading} /></PreviewFrame>;
-      }
       if (tab.preview === "empty_portfolio") {
         return <PreviewFrame label={tab.label}><EmptyPortfolioMessagePreview title={heading} /></PreviewFrame>;
-      }
-      if (tab.extraIds) {
-        const extras = Object.fromEntries(tab.extraIds.map(({ id }) => [id, liveItem(byId(id))]));
-        if (tab.preview === "model_portfolio") {
-          return <PreviewFrame label={tab.label}><ModelPortfolioPreview heading={heading} description={description} extras={extras} /></PreviewFrame>;
-        }
-        if (tab.preview === "expert_profile") {
-          return <PreviewFrame label={tab.label}><ExpertProfilePreview heading={heading} extras={extras} /></PreviewFrame>;
-        }
-        if (tab.preview === "documents") {
-          return <PreviewFrame label={tab.label}><DocumentsPreview heading={heading} extras={extras} /></PreviewFrame>;
-        }
       }
       const itemsWithCta = (tab.perCardCtaSection || tab.perCardBadgeSection)
         ? items.map((it, i) => ({

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -17,7 +17,6 @@ class ContentManagement(Base):
     # doesn't cost anything to leave it roomy.
     description = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
-    is_active = Column(Boolean, default=True)
 
     @staticmethod
     def get_all():
@@ -25,15 +24,6 @@ class ContentManagement(Base):
             rows = session.query(ContentManagement).order_by(
                 ContentManagement.section, ContentManagement.order_index
             ).all()
-            return [_serialize(r) for r in rows]
-
-    @staticmethod
-    def get_by_section(section: str):
-        with get_session() as session:
-            rows = session.query(ContentManagement).filter(
-                ContentManagement.section == section,
-                ContentManagement.is_active == True
-            ).order_by(ContentManagement.order_index).all()
             return [_serialize(r) for r in rows]
 
     @staticmethod
@@ -76,7 +66,6 @@ def _serialize(row: ContentManagement) -> dict:
         "title": row.title,
         "description": row.description,
         "order_index": row.order_index,
-        "is_active": row.is_active,
     }
 
 
@@ -260,57 +249,33 @@ def seed_landing_content():
                 description="Enjoy unlimited AI predictions, expert access, and advanced analytics. {days} days left until your subscription renews.",
                 order_index=0),
             ContentManagement(content_id="investor_banner_premium_cta", section="investor_banner_premium", title="Manage Subscription", order_index=1),
-
-            # Expert home page (ExpertLoggedInPage.jsx) — also used to be hardcoded
-            ContentManagement(content_id="expert_hero_subtitle", section="expert_hero",
-                title="Manage your portfolio, publish content, and connect with investors.", order_index=0),
-            ContentManagement(content_id="header_expert_tools", section="page_headers", title="Your Tools", description="Everything you need to publish, answer, and grow your reach", order_index=11),
-            ContentManagement(content_id="expert_tool_0", section="expert_tools", title="Real-time Dashboard", description="View live stock prices, AI-powered predictions, and market insights to support investment decision-making.", order_index=0),
-            ContentManagement(content_id="expert_tool_1", section="expert_tools", title="Knowledge Hub",       description="Write and publish educational articles for investors, from beginner basics to advanced strategy.", order_index=1),
-            ContentManagement(content_id="expert_tool_2", section="expert_tools", title="Community Forum",     description="Join discussions with investors and fellow experts on markets, strategy, and platform news.", order_index=2),
-            ContentManagement(content_id="expert_tool_3", section="expert_tools", title="Model Portfolio",     description="Publish and rebalance the model portfolio investors follow — holdings, allocation, and rationale.", order_index=3),
-            ContentManagement(content_id="expert_tool_4", section="expert_tools", title="Messages",            description="Your place to talk directly with investors and answer the questions they send you.", order_index=4),
-            # All 5 cards above share this one button label
-            ContentManagement(content_id="expert_tools_cta", section="expert_tools_cta", title="Open", order_index=0),
-
-            # Model Portfolio card
-            ContentManagement(content_id="header_model_portfolio", section="page_headers", title="Model Portfolio",
-                description="The portfolio investors follow", order_index=16),
-            ContentManagement(content_id="model_portfolio_empty_msg", section="expert_home_misc", title="You haven't set up a model portfolio yet.", order_index=0),
-            ContentManagement(content_id="model_portfolio_cta_create", section="expert_home_misc", title="Create Portfolio", order_index=1),
-            ContentManagement(content_id="model_portfolio_cta_manage", section="expert_home_misc", title="Manage Portfolio", order_index=2),
-
-            # Your Profile card
-            ContentManagement(content_id="header_expert_profile", section="page_headers", title="Your Profile", order_index=17),
-            ContentManagement(content_id="expert_profile_edit_cta", section="expert_home_misc", title="Edit Profile", order_index=3),
-            ContentManagement(content_id="expert_profile_not_rated", section="expert_home_misc", title="Not yet rated \u2014 keep building your reputation with investors.", order_index=4),
-
-            # Verification Documents banner
-            ContentManagement(content_id="header_documents", section="page_headers", title="Verification Documents", order_index=18),
-            ContentManagement(content_id="documents_desc_verified",   section="expert_home_misc", title="Manage the credential documents tied to your verified expert account.", order_index=5),
-            ContentManagement(content_id="documents_desc_unverified", section="expert_home_misc", title="Submit your credential documents to get verified and unlock the rest of the platform.", order_index=6),
-            ContentManagement(content_id="documents_cta_verified",    section="expert_home_misc", title="Manage Documents", order_index=7),
-            ContentManagement(content_id="documents_cta_unverified",  section="expert_home_misc", title="Submit Documents", order_index=8),
-
-            # Compensation card, inside the Your Profile section
-            ContentManagement(content_id="compensation_pending_label", section="expert_home_misc", title="Pending payout", order_index=9),
-            # "{followers}" gets replaced client-side with the real follower
-            # threshold number — see ProfileSummarySection in ExpertLoggedInPage.jsx
-            ContentManagement(content_id="compensation_need_followers", section="expert_home_misc", title="Need {followers} followers to earn", order_index=10),
-            ContentManagement(content_id="compensation_locked_label", section="expert_home_misc", title="Locked", order_index=11),
-            ContentManagement(content_id="compensation_locked_msg", section="expert_home_misc", title="Get verified to unlock compensation", order_index=12),
         ]
 
-        # These three sections used to have admin tabs but got dropped — went
-        # through the whole frontend and none of them are actually read
-        # anywhere. "feature" was a set of bubbles nothing displayed, "expert"
-        # was a hero no expert page ever fetched, and "forum_room" was meant
-        # for cover images but ForumPage.jsx just uses its own bundled ones.
-        # This cleans out any leftover rows from when they still existed —
-        # fine to run over and over, it's just a delete.
-        dead_sections = ("feature", "expert", "forum_room")
+        # These sections used to have admin tabs but got dropped. "feature"
+        # was a set of bubbles nothing displayed, "expert" was a hero no
+        # expert page ever fetched, and "forum_room" was meant for cover
+        # images but ForumPage.jsx just uses its own bundled ones.
+        # "expert_hero"/"expert_tools"/"expert_tools_cta"/"expert_home_misc"
+        # backed ExpertLoggedInPage.jsx, which isn't wired into any route
+        # anymore (merged roles means no account is ever role=="expert") —
+        # nothing renders that content either. This cleans out any leftover
+        # rows from when they still existed — fine to run over and over,
+        # it's just a delete.
+        dead_sections = ("feature", "expert", "forum_room",
+                          "expert_hero", "expert_tools", "expert_tools_cta", "expert_home_misc")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)
+        ).delete(synchronize_session=False)
+
+        # These four expert-home page headers lived in the shared
+        # "page_headers" section (so they aren't caught by dead_sections),
+        # but nothing reads these specific ids anymore either.
+        dead_header_ids = (
+            "header_expert_tools", "header_model_portfolio",
+            "header_expert_profile", "header_documents",
+        )
+        session.query(ContentManagement).filter(
+            ContentManagement.content_id.in_(dead_header_ids)
         ).delete(synchronize_session=False)
 
         to_add = [e for e in entries if e.content_id not in existing_ids]

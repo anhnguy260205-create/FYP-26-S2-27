@@ -215,7 +215,7 @@ def seed_articles():
     """Populate the Knowledge Hub with placeholder market-trend articles.
 
     Idempotent: skips entirely if any articles already exist, and attaches
-    everything to the already-seeded expert account (kimhi@gmail.com).
+    everything to the already-seeded expert account (jordan@gmail.com).
     """
     from app.entity.models.expert import Expert
     from app.entity.models.useraccount import UserAccount
@@ -226,7 +226,7 @@ def seed_articles():
             return
 
         user = session.query(UserAccount).filter(
-            UserAccount.email_address == "kimhi@gmail.com"
+            UserAccount.email_address == "jordan@gmail.com"
         ).first()
         if not user:
             print("[SEED] Skipping article seed — expert user not found yet")

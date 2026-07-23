@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import {
     BellRing, X, CheckCheck, CheckCircle2, Trash2,
-    TrendingUp, MessageSquare, CreditCard, AlertTriangle, BookOpen, Star, UserPlus, BadgeCheck, Bell,
+    TrendingUp, MessageSquare, CreditCard, AlertTriangle, BookOpen, Star, UserPlus, BadgeCheck, Bell, Award,
 } from "lucide-react";
 import {
     getNotifications, markNotificationRead, markAllNotificationsRead,
@@ -35,6 +35,7 @@ const ICON_BY_TYPE = {
     review: Star,
     verification: BadgeCheck,
     announcement: Bell,
+    expert: Award,
 };
 
 function timeAgo(iso) {

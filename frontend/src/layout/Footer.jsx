@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLandingContent } from "../api/contentApi.js";
 
 const linkClass = "text-sm text-slate-400 hover:text-[#00D3F2] transition-colors duration-150";
 
@@ -19,34 +19,21 @@ const DEFAULT = {
 };
 
 function Footer() {
-  const [brand, setBrand] = useState(DEFAULT.brand);
-  const [version, setVersion] = useState(DEFAULT.version);
-  const [product, setProduct] = useState(DEFAULT.product);
-  const [company, setCompany] = useState(DEFAULT.company);
-  const [resources, setResources] = useState(DEFAULT.resources);
-  const [contact, setContact] = useState(DEFAULT.contact);
+  const content = useLandingContent();
+  const c = content ?? [];
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) return;
-        const c = data.content;
-        const brandItem = c.find((x) => x.section === "footer_brand");
-        if (brandItem) setBrand(brandItem);
-        const versionItem = c.find((x) => x.content_id === "footer_version");
-        if (versionItem?.title) setVersion(versionItem.title);
-        const productItems = c.filter((x) => x.section === "footer_product");
-        if (productItems.length) setProduct(productItems);
-        const companyItems = c.filter((x) => x.section === "footer_company");
-        if (companyItems.length) setCompany(companyItems);
-        const resourcesItems = c.filter((x) => x.section === "footer_resources");
-        if (resourcesItems.length) setResources(resourcesItems);
-        const contactItems = c.filter((x) => x.section === "footer_contact");
-        if (contactItems.length) setContact(contactItems);
-      })
-      .catch(() => { });
-  }, []);
+  const brandItem = c.find((x) => x.section === "footer_brand");
+  const brand = brandItem ?? DEFAULT.brand;
+  const versionItem = c.find((x) => x.content_id === "footer_version");
+  const version = versionItem?.title ?? DEFAULT.version;
+  const productItems = c.filter((x) => x.section === "footer_product");
+  const product = productItems.length ? productItems : DEFAULT.product;
+  const companyItems = c.filter((x) => x.section === "footer_company");
+  const company = companyItems.length ? companyItems : DEFAULT.company;
+  const resourcesItems = c.filter((x) => x.section === "footer_resources");
+  const resources = resourcesItems.length ? resourcesItems : DEFAULT.resources;
+  const contactItems = c.filter((x) => x.section === "footer_contact");
+  const contact = contactItems.length ? contactItems : DEFAULT.contact;
 
   return (
     <footer className="border-t border-white/10 bg-slate-950">

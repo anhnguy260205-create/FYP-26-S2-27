@@ -7,27 +7,27 @@ const menuItems = [
   {
     name: "Dashboard",
     path: "/finance-admin",
-    icon: LayoutDashboard,
+
   },
   {
     name: "Revenue Analysis",
     path: "/finance-admin/revenue",
-    icon: TrendingUp,
+
   },
   {
     name: "Subscription Management",
     path: "/finance-admin/subscriptions",
-    icon: DollarSign,
+
   },
   {
     name: "Payment Transactions",
     path: "/finance-admin/payments",
-    icon: CreditCard,
+
   },
   {
     name: "Financial Reports",
     path: "/finance-admin/reports",
-    icon: FileBarChart2,
+
   },
 ];
 
@@ -109,10 +109,6 @@ function FinanceAdminLayout({ title, subtitle, children }) {
             <h1 className="text-[15px] font-bold text-slate-900">
               Finance Admin
             </h1>
-
-            <p className="text-[9px] text-slate-500">
-              Administration Panel
-            </p>
           </div>
 
           <button
@@ -126,7 +122,7 @@ function FinanceAdminLayout({ title, subtitle, children }) {
 
         <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
           {menuItems.map((item) => {
-            const Icon = item.icon;
+
 
             const active = location.pathname === item.path;
 
@@ -144,7 +140,6 @@ function FinanceAdminLayout({ title, subtitle, children }) {
                   }
                 `}
               >
-                <Icon size={15} />
 
                 {item.name}
               </Link>
@@ -189,8 +184,8 @@ function FinanceAdminLayout({ title, subtitle, children }) {
               aria-haspopup="true"
               aria-expanded={profileMenuOpen}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                HR
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white">
+                FA
               </div>
 
               <div className="hidden text-left sm:block">

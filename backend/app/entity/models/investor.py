@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, Float
+from sqlalchemy import Column, ForeignKey, String, Float, Boolean
 from app.entity.models.useraccount import UserAccount
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -22,11 +22,22 @@ class Investor(Base):
     # confirm every buy, sell and cash-out. NULL until the user sets one during
     # first-login setup.
     transaction_pin = Column(String(255), nullable=True)
+    # One-shot flag so the "you're eligible to apply as an expert" notification
+    # fires exactly once, the moment the requirements are first met.
+    expert_eligibility_notified = Column(Boolean, nullable=False, default=False)
 
     @staticmethod
     def get_all_user_ids():
         with get_session() as session:
             return [uid for (uid,) in session.query(Investor.user_id).all() if uid]
+
+    @staticmethod
+    def getUserIdByInvestorId(investor_id):
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.investor_id == investor_id
+            ).first()
+            return investor.user_id if investor else None
 
     @staticmethod
     def createAccount(username, email_address) -> bool:
@@ -489,6 +500,55 @@ class Investor(Base):
         }
 
     @staticmethod
+    def check_and_notify_expert_eligibility(
+        user_id, min_distinct_stocks=30, min_profit_margin=200.0
+    ):
+        """Fire the "you're eligible to apply as an expert" notification the
+        moment the requirements are first met — a one-shot check driven by
+        expert_eligibility_notified, so it never repeats on later trades.
+        Call this after any trade that could change distinct-stock count or
+        realized P&L. Safe to call on every fill; it's a no-op once notified
+        or once the user has already applied."""
+        from app.entity.models.expert import Expert
+
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor or investor.expert_eligibility_notified:
+                return
+            already_applied = session.query(Expert).filter(
+                Expert.user_id == user_id
+            ).first() is not None
+            if already_applied:
+                investor.expert_eligibility_notified = True
+                return
+
+        eligibility = Investor.getExpertEligibility(
+            user_id, min_distinct_stocks, min_profit_margin
+        )
+        if not eligibility or not eligibility["eligible"]:
+            return
+
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor or investor.expert_eligibility_notified:
+                return
+            investor.expert_eligibility_notified = True
+
+        from app.control.controller.notificationc import create_notification
+        create_notification(
+            user_id,
+            "expert",
+            "You're eligible to become an expert!",
+            f"You've traded {min_distinct_stocks}+ different stocks and hit a "
+            f"{min_profit_margin:.0f}% profit margin — apply now to share your "
+            "portfolio and earn as a verified expert.",
+        )
+
+    @staticmethod
     def update_investor_stock_level(user_id, stock_level):
         with get_session() as session:
             investor = session.query(Investor).filter(
@@ -583,10 +643,3 @@ class Investor(Base):
             if not investor or not investor.transaction_pin:
                 return False
             return Investor._verify_pin_hash(pin, investor.transaction_pin)
-
-
-def seed_investor_account():
-    Investor.createAccount(
-        username="Kim",
-        email_address="kim@gmail.com",
-    )

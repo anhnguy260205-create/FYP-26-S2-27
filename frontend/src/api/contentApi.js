@@ -1,0 +1,71 @@
+import { useEffect, useState } from "react";
+
+const BASE_URL = `${import.meta.env.VITE_API_URL}/content/landing`;
+
+// Shared across every component that reads CMS content — Footer, Homepage,
+// LoggedInHomePage, and SubscriptionPage all used to fire their own
+// independent fetch of the same full table on every mount (up to 4 identical
+// requests per landing-page visit). This caches the first request's promise
+// so everyone else just waits on it instead of re-fetching.
+let cache = null;
+
+function fetchLandingContent() {
+  if (!cache) {
+    cache = fetch(BASE_URL)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) throw new Error("content fetch failed");
+        return data.content;
+      })
+      .catch((err) => {
+        cache = null; // don't cache a failure — let the next caller retry
+        throw err;
+      });
+  }
+  return cache;
+}
+
+/** The full CMS content list (all sections), or null while the first
+ * consumer's fetch is still in flight. */
+export function useLandingContent() {
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLandingContent()
+      .then((c) => { if (!cancelled) setContent(c); })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, []);
+
+  return content;
+}
+
+/** Free/Premium plan copy (name, price, features) — shared by Homepage.jsx
+ * (landing page pricing section) and SubscriptionPage.jsx (upgrade page),
+ * which both need the exact same free_investor/premium_investor CMS rows. */
+export function usePlanContent() {
+  const content = useLandingContent();
+  const c = content ?? [];
+
+  const freeFeatures = c.filter((x) => x.section === "free_investor").map((x) => x.title);
+  const premiumFeatures = c.filter((x) => x.section === "premium_investor").map((x) => x.title);
+
+  const freeName = c.find((x) => x.content_id === "free_plan_name");
+  const freePrice = c.find((x) => x.content_id === "free_plan_price");
+  const freePlan = {
+    name: freeName?.title ?? "Starter",
+    price: freePrice?.title ?? "$0.00",
+    priceSubtitle: freePrice?.description ?? "forever, no card needed",
+  };
+
+  const premName = c.find((x) => x.content_id === "premium_plan_name");
+  const premPrice = c.find((x) => x.content_id === "premium_plan_price");
+  const premiumPlan = {
+    name: premName?.title ?? "Pro",
+    price: premPrice?.title ?? "$20.99",
+    priceSubtitle: premPrice?.description ?? "per month, billed annually",
+  };
+
+  return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
+}

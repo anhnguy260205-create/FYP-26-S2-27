@@ -1125,7 +1125,7 @@ function AStockDashBoardPage() {
           )}
 
           {tab === "trading" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
               <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
             </div>
           )}

@@ -24,9 +24,8 @@ from app.boundary.adminb import router as admin_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
-from app.entity.models.useraccount import seed_admin_account
-from app.entity.models.investor import seed_investor_account
-from app.entity.models.expert import seed_expert_account, seed_jordan_account
+from app.entity.models.useraccount import seed_admin_account, seed_hr_account
+from app.entity.models.expert import seed_jordan_account
 from app.entity.models.expertverification import ExpertVerification
 from app.entity.models.subscription import Subscription
 from app.entity.models.watchlist import Watchlist
@@ -177,22 +176,10 @@ def ensure_all_schemas(engine):
         ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
         ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
         ("expert",       "chat_available",         "ALTER TABLE expert ADD COLUMN chat_available TINYINT(1) NOT NULL DEFAULT 1"),
+        ("investor",     "expert_eligibility_notified", "ALTER TABLE investor ADD COLUMN expert_eligibility_notified TINYINT(1) NOT NULL DEFAULT 0"),
     ]
 
     with engine.connect() as conn:
-        # ── Rename investor.paper_money → investor.assets ────────────────────
-        # Must run before any statement below that references the `assets`
-        # column (e.g. the merged-roles insert). Idempotent: only fires when
-        # the old column is still present and the new one is not.
-        try:
-            if _col_exists(conn, "investor", "paper_money") and not _col_exists(conn, "investor", "assets"):
-                conn.execute(text(
-                    "ALTER TABLE investor CHANGE paper_money assets FLOAT NULL DEFAULT 0"))
-                conn.commit()
-                print("[SCHEMA] Renamed investor.paper_money → investor.assets")
-        except Exception as e:
-            print(f"[SCHEMA] Skipped investor.paper_money→assets rename: {e}")
-
         for table, col, stmt in patches:
             try:
                 if not _col_exists(conn, table, col):
@@ -441,8 +428,7 @@ else:
 if RUN_SEEDS:
     seed_profiles()
     seed_admin_account()
-    seed_investor_account()
-    seed_expert_account()
+    seed_hr_account()
     seed_jordan_account()
     seed_articles()
     seed_landing_content()

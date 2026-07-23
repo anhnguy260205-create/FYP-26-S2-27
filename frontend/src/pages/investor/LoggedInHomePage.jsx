@@ -12,6 +12,7 @@ import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
 import { fetchRating } from "../../api/ratingApi.js";
+import { useLandingContent } from "../../api/contentApi.js";
 import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
@@ -338,7 +339,7 @@ function Hero({ name, portfolioData, header }) {
         <div className="relative z-10 flex flex-col justify-center h-full p-16 md:p-20">
           <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
             Welcome back,{" "}
-            <span className="bg-clip-text text-transparent bg-linear-to-r from-[#00D3F2] to-[#0092b8]">{name}</span>
+            <span className="text-[#00D3F2]">{name}</span>
           </h1>
 
           {loading ? (
@@ -818,14 +819,7 @@ function PopularStocksSection() {
 }
 
 function useLandingContentExtras() {
-  const [content, setContent] = useState(null);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setContent(data.content); })
-      .catch(() => { });
-  }, []);
+  const content = useLandingContent();
 
   const header = (id, fallbackTitle, fallbackDescription) => {
     const item = content?.find((c) => c.content_id === id);
@@ -943,19 +937,19 @@ function RealtimeDashboardSection({ header, items }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") navigate("/realtimedashboard"); }}
-      className="group relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 ring-1 ring-white/10 shadow-xl shadow-black/30 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00D3F2]/10"
+      className="group relative overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200 shadow-lg shadow-slate-900/8 p-8 md:p-12 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30"
     >
       <div className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
 
       <div className="relative flex flex-col gap-8">
         <div>
-          <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
+          <span className="text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-[#00D3F2]/10 text-[#0092b8]">
             Live Market Data
           </span>
-          <h2 className="text-white font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
+          <h2 className="text-slate-900 font-bold text-[28px] md:text-[34px] tracking-tight leading-snug mt-3">
             {h.title}
           </h2>
-          <p className="text-slate-300 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
+          <p className="text-slate-600 text-base md:text-lg leading-relaxed mt-2 max-w-2xl">
             {h.description}
           </p>
         </div>
@@ -963,11 +957,11 @@ function RealtimeDashboardSection({ header, items }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8]">
                 <Icon size={19} />
               </div>
-              <p className="text-white font-semibold text-[15px]">{title}</p>
-              <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
+              <p className="text-slate-900 font-semibold text-[15px]">{title}</p>
+              <p className="text-slate-600 text-sm leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
@@ -984,17 +978,17 @@ function BasicUpgradeBanner({ header }) {
   const navigate = useNavigate();
   const h = header("investor_banner_basic", "Stop guessing. Start trading with an edge.", "Unlock custom price alerts, deeper AI forecasts, and priority access to verified experts — for less than a coffee a day.");
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-amber-900 via-slate-950 to-amber-950 ring-1 ring-[#FFD700]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+    <section className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#FFD700]/30 shadow-lg shadow-amber-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#FFD700]/10 blur-3xl" />
 
       <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-[#FFD700]">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#FFD700]/10 text-amber-700">
           <Sparkles size={11} /> RocketTrade Premium
         </span>
-        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
           {h.title}
         </h2>
-        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
           {h.description}
         </p>
       </div>
@@ -1052,9 +1046,11 @@ function ExpertPortfoliosSection() {
               })}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
-                state: { from: "/investor", fromLabel: "Home" },
-              }); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
+                  state: { from: "/investor", fromLabel: "Home" },
+                });
+              }}
               className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
             >
               <div className="flex items-center justify-between gap-3">
@@ -1092,24 +1088,24 @@ function PremiumRenewalBanner({ header, renewalDate }) {
   const days = daysUntil(renewalDate);
   const description = days !== null ? h.description.replace("{days}", days) : h.description.replace(/\s*\{days\}.*$/, "");
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-indigo-950 via-slate-950 to-blue-950 ring-1 ring-[#00D3F2]/25 shadow-xl shadow-black/30 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+    <section className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#00D3F2]/25 shadow-lg shadow-slate-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
 
       <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#00D3F2]/10 text-[#00D3F2]">
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#00D3F2]/10 text-[#0092b8]">
           <Sparkles size={11} /> RocketTrade Premium
         </span>
-        <h2 className="text-white font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
+        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
           {h.title}
         </h2>
-        <p className="text-slate-300 text-sm leading-relaxed mt-1.5">
+        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
           {description}
         </p>
       </div>
 
       <button
         onClick={() => navigate("/investor/subscription")}
-        className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 ring-1 ring-white/20 px-5 py-2.5 text-sm font-bold text-white transition-all duration-200 hover:bg-white/15 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+        className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D3F2] px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-[#00D3F2]/20 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
       >
         {header("investor_banner_premium_cta", "Manage Subscription").title} <ArrowRight size={16} />
       </button>
@@ -1151,19 +1147,20 @@ function LoggedInHomePage() {
       <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8">
         <Hero name={name} portfolioData={portfolioData} header={header} />
 
+        <div className="flex flex-col gap-8 mt-16">
+          <AIInsightsSection portfolioData={portfolioData} header={header} />
+          <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
+          <WatchlistSection header={header} />
+          <ExpertPortfoliosSection />
 
-        <AIInsightsSection portfolioData={portfolioData} header={header} />
-        <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
-        <WatchlistSection header={header} />
-        <ExpertPortfoliosSection />
-
-        {!subscription.loading && (
-          subscription.status === "premium"
-            ? <PremiumRenewalBanner header={header} renewalDate={subscription.renewalDate} />
-            : <BasicUpgradeBanner header={header} />
-        )}
-        <PlatformFeaturesSection header={header} items={items} />
-        <RealtimeDashboardSection header={header} items={items} />
+          {!subscription.loading && (
+            subscription.status === "premium"
+              ? <PremiumRenewalBanner header={header} renewalDate={subscription.renewalDate} />
+              : <BasicUpgradeBanner header={header} />
+          )}
+          <PlatformFeaturesSection header={header} items={items} />
+          <RealtimeDashboardSection header={header} items={items} />
+        </div>
 
       </main>
       <Footer />
