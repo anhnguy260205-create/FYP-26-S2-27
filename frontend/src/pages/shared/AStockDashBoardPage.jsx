@@ -16,6 +16,7 @@ import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
+import PinModal from "../../components/PinModal.jsx";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
@@ -601,6 +602,7 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const isMarketOpen = marketStatus === "OPEN";
   const userId = JSON.parse(sessionStorage.getItem("currentUser") || "{}").user_id;
 
+  const [side, setSide] = useState("buy"); // "buy" | "sell"
   const [quantity, setQuantity] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
   const [portfolio, setPortfolio] = useState(null);
@@ -608,12 +610,43 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const [tradeLoading, setTradeLoading] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [message, setMessage] = useState(null);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const qty = parseInt(quantity, 10);
   const limitPriceNum = parseFloat(limitPrice);
   const effectivePrice = limitPriceNum > 0 ? limitPriceNum : livePrice;
   const estimatedTotal = effectivePrice && qty > 0 ? (effectivePrice * qty).toFixed(2) : null;
   const currentHolding = (portfolio?.holdings || []).find(h => h.symbol === symbol);
+  const sharesOwned = currentHolding?.quantity || 0;
+  const buyingPower = portfolio?.assets != null ? Number(portfolio.assets) : null;
+  const isBuy = side === "buy";
+  const accent = isBuy ? "#0F9D58" : "#DC2626";
+  const accentSoft = isBuy ? "rgba(15,157,88,0.10)" : "rgba(220,38,38,0.10)";
+  const accentBorder = isBuy ? "rgba(15,157,88,0.35)" : "rgba(220,38,38,0.35)";
+
+  // Max quantity affordable / sellable, used by the quick-percentage chips.
+  const maxQty = isBuy
+    ? (buyingPower && effectivePrice ? Math.floor(buyingPower / effectivePrice) : 0)
+    : sharesOwned;
+
+  function setQtyPct(pct) {
+    if (!maxQty) return;
+    const n = pct >= 1 ? maxQty : Math.floor(maxQty * pct);
+    setQuantity(String(Math.max(0, n)));
+  }
+  function bumpQty(delta) {
+    setQuantity(prev => {
+      const n = Math.max(0, (parseInt(prev, 10) || 0) + delta);
+      return n ? String(n) : "";
+    });
+  }
+  function bumpPrice(delta) {
+    setLimitPrice(prev => {
+      const base = parseFloat(prev) || livePrice || 0;
+      return Math.max(0.01, base + delta).toFixed(2);
+    });
+  }
 
   async function refreshPortfolio() {
     if (!userId) return;
@@ -644,23 +677,39 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
     if (!limitPrice && livePrice) setLimitPrice(livePrice.toFixed(2));
   }, [livePrice]);
 
-  async function handleTrade(action) {
+  function handleTrade() {
     if (!isMarketOpen) { setMessage({ type: "error", text: "Market is closed. Trading resumes Mon–Fri, 9:30am–4:00pm ET." }); return; }
     if (!userId || !qty || qty <= 0) return;
     const price = limitPriceNum > 0 ? limitPriceNum : livePrice;
     if (!price) { setMessage({ type: "error", text: "No price available. Enter a limit price." }); return; }
-    setTradeLoading(action);
+    if (!isBuy && qty > sharesOwned) { setMessage({ type: "error", text: `You only own ${sharesOwned} share(s).` }); return; }
+    // Every buy and sell is confirmed with the 6-digit transaction PIN.
+    setPinError("");
     setMessage(null);
+    setPinOpen(true);
+  }
+
+  async function executeTrade(pin) {
+    const price = limitPriceNum > 0 ? limitPriceNum : livePrice;
+    setTradeLoading(side);
+    setPinError("");
     try {
-      const result = await submitOrder(userId, symbol, action, qty, price);
+      const result = await submitOrder(userId, symbol, side, qty, price, pin);
       if (result.success) {
+        setPinOpen(false);
         setMessage({ type: "success", text: result.message || `Order submitted.` });
         setQuantity("");
         await Promise.all([refreshPortfolio(), refreshOrders()]);
       } else {
-        setMessage({ type: "error", text: result.message || result.detail || "Order failed." });
+        const msg = result.message || result.detail || "Order failed.";
+        // A wrong / missing PIN comes back as a 403|428 with a PIN message —
+        // keep the modal open so the user can retry.
+        if (/pin/i.test(msg)) { setPinError(msg); return; }
+        setPinOpen(false);
+        setMessage({ type: "error", text: msg });
       }
     } catch {
+      setPinOpen(false);
       setMessage({ type: "error", text: "Network error. Please try again." });
     } finally {
       setTradeLoading(null);
@@ -687,36 +736,57 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
     fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#5B6C88",
     letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 6px",
   };
-  const inputStyle = {
-    height: "42px", padding: "0 14px", borderRadius: "8px",
-    background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.25)",
-    color: "#0F172A", fontFamily: "'DM Mono', monospace", fontSize: "15px", fontWeight: 600, outline: "none",
-  };
-
   const statusColor = { pending: "#B45309", partial: "#1D4ED8", filled: "#0F9D58", cancelled: "#5B6C88" };
+  const openOrders = (orders || []).filter(o => o.status === "pending" || o.status === "partial");
+
+  // A moomoo-style ±stepper: [ − ][ value ][ + ]
+  const stepperWrap = {
+    display: "flex", alignItems: "stretch", height: "46px",
+    border: "1px solid rgba(11,29,79,0.18)", borderRadius: "10px",
+    overflow: "hidden", background: "#F8FAFC",
+    opacity: isMarketOpen ? 1 : 0.5,
+  };
+  const stepBtn = {
+    width: "46px", border: "none", background: "#EEF2F7", color: "#0B1D4F",
+    fontSize: "20px", fontWeight: 600, cursor: isMarketOpen ? "pointer" : "not-allowed",
+    display: "flex", alignItems: "center", justifyContent: "center", userSelect: "none",
+  };
+  const stepInput = {
+    flex: 1, minWidth: 0, textAlign: "center", border: "none", background: "transparent",
+    fontFamily: "'DM Mono', monospace", fontSize: "17px", fontWeight: 700, color: "#0F172A", outline: "none",
+  };
+  const chipBtn = (active) => ({
+    flex: 1, height: "32px", borderRadius: "8px", cursor: isMarketOpen ? "pointer" : "not-allowed",
+    border: `1px solid ${active ? accentBorder : "rgba(11,29,79,0.15)"}`,
+    background: active ? accentSoft : "#F8FAFC",
+    color: active ? accent : "#5B6C88",
+    fontFamily: "'DM Mono', monospace", fontSize: "12px", fontWeight: 600,
+  });
 
   return (
     <div
-
       style={{
         marginTop: "16px",
         background: "#FFFFFF",
-        border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px", padding: "20px 24px",
+        border: "1px solid rgba(11,29,79,0.25)", borderRadius: "14px", padding: "20px 22px",
+        maxWidth: "460px",
       }}
     >
       {/* Header */}
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8", letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 4px" }}>
-        Hybrid Trading Engine
-      </p>
-      <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88", margin: "0 0 16px", lineHeight: 1.5 }}>
-        Submit limit orders for <span style={{ color: "#0092b8" }}>{symbol}</span>. Orders match between investors first; remainder fills at live market price.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "16px" }}>
+        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8", letterSpacing: "0.14em", textTransform: "uppercase", margin: 0 }}>
+          Hybrid Trading Engine
+        </p>
+        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", fontWeight: 700, color: "#0092b8" }}>
+          {symbol} · {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
+        </span>
+      </div>
 
       {!isMarketOpen && (
         <div style={{
           display: "flex", alignItems: "center", gap: "10px",
           background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.3)",
-          borderRadius: "10px", padding: "12px 14px", marginBottom: "20px",
+          borderRadius: "10px", padding: "12px 14px", marginBottom: "18px",
         }}>
           <span style={{ fontSize: "16px" }}>🔒</span>
           <div>
@@ -730,108 +800,122 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
         </div>
       )}
 
-      {/* Info tiles */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-        <div>
-          <p style={lbl}>Live Price</p>
-          <div style={{ background: "rgba(0,146,184,0.06)", border: "1px solid rgba(0,146,184,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: livePrice ? "#0092b8" : "#5B6C88" }}>
-              {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
-            </span>
-          </div>
+      {/* Buy / Sell segmented toggle */}
+      <div style={{ display: "flex", background: "#EEF2F7", borderRadius: "12px", padding: "4px", marginBottom: "18px" }}>
+        {["buy", "sell"].map((s) => {
+          const on = side === s;
+          const c = s === "buy" ? "#0F9D58" : "#DC2626";
+          return (
+            <button
+              key={s}
+              onClick={() => { setSide(s); setMessage(null); }}
+              style={{
+                flex: 1, height: "40px", borderRadius: "9px", border: "none", cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif", fontSize: "15px", fontWeight: 700,
+                textTransform: "capitalize", transition: "all 0.15s",
+                background: on ? c : "transparent",
+                color: on ? "#fff" : "#5B6C88",
+                boxShadow: on ? "0 2px 8px rgba(15,23,42,0.15)" : "none",
+              }}
+            >
+              {s}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Buying power / position */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "18px" }}>
+        <div style={{ flex: 1, background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)", borderRadius: "10px", padding: "10px 12px" }}>
+          <p style={lbl}>{isBuy ? "Buying Power" : "Cash Available"}</p>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "16px", fontWeight: 700, color: "#0F9D58" }}>
+            {buyingPower != null ? `$${buyingPower.toFixed(2)}` : "—"}
+          </span>
         </div>
-        <div>
-          <p style={lbl}>Assets</p>
-          <div style={{ background: "rgba(15,157,88,0.06)", border: "1px solid rgba(15,157,88,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: "#0F9D58" }}>
-              {portfolio?.assets != null ? `$${Number(portfolio.assets).toFixed(2)}` : "—"}
-            </span>
-          </div>
-        </div>
-        <div>
-          <p style={lbl}>You Own</p>
-          <div style={{ background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.2)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: currentHolding ? "#B45309" : "#5B6C88" }}>
-              {currentHolding ? `${currentHolding.quantity} shares` : "0 shares"}
-            </span>
-          </div>
-        </div>
-        <div>
-          <p style={lbl}>Order Value</p>
-          <div style={{ background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.15)", borderRadius: "8px", padding: "10px 14px" }}>
-            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: estimatedTotal ? "#0F172A" : "#5B6C88" }}>
-              {estimatedTotal ? `$${estimatedTotal}` : "—"}
-            </span>
-          </div>
+        <div style={{ flex: 1, background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)", borderRadius: "10px", padding: "10px 12px" }}>
+          <p style={lbl}>Position</p>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "16px", fontWeight: 700, color: sharesOwned ? "#0B1D4F" : "#5B6C88" }}>
+            {sharesOwned} shares
+          </span>
         </div>
       </div>
 
-      {/* Order form */}
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "12px" }}>
-        <div>
-          <p style={lbl}>Quantity</p>
-          <input
-            type="number" min={1} value={quantity}
-            onChange={e => setQuantity(e.target.value)}
-            placeholder="0"
-            disabled={!isMarketOpen}
-            style={{ ...inputStyle, width: "100px", opacity: isMarketOpen ? 1 : 0.45, cursor: isMarketOpen ? "text" : "not-allowed" }}
-            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(0,146,184,0.6)"; }}
-            onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"}
-          />
-        </div>
-        <div>
-          <p style={lbl}>Limit Price ($)</p>
-          <input
-            type="number" min={0.01} step="0.01" value={limitPrice}
-            onChange={e => setLimitPrice(e.target.value)}
-            placeholder={livePrice ? livePrice.toFixed(2) : "0.00"}
-            disabled={!isMarketOpen}
-            style={{ ...inputStyle, width: "120px", opacity: isMarketOpen ? 1 : 0.45, cursor: isMarketOpen ? "text" : "not-allowed" }}
-            onFocus={e => { if (isMarketOpen) e.target.style.borderColor = "rgba(0,146,184,0.6)"; }}
-            onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"}
-          />
-        </div>
-
-        <button
-          onClick={() => handleTrade("buy")}
-          disabled={!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null}
-          style={{
-            height: "42px", padding: "0 28px", borderRadius: "8px",
-            border: "1px solid rgba(15,157,88,0.4)",
-            background: "rgba(15,157,88,0.1)",
-            color: "#0F9D58", fontFamily: "'DM Mono', monospace", fontWeight: 600,
-            fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
-            cursor: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
-            opacity: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
-            transition: "all 0.2s",
-          }}
-        >
-          {tradeLoading === "buy" ? "Submitting…" : "▲ Buy"}
-        </button>
-
-        <button
-          onClick={() => handleTrade("sell")}
-          disabled={!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null}
-          style={{
-            height: "42px", padding: "0 28px", borderRadius: "8px",
-            border: "1px solid rgba(220,38,38,0.4)",
-            background: "rgba(220,38,38,0.1)",
-            color: "#DC2626", fontFamily: "'DM Mono', monospace", fontWeight: 600,
-            fontSize: "13px", letterSpacing: "0.08em", textTransform: "uppercase",
-            cursor: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
-            opacity: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? 0.45 : 1,
-            transition: "all 0.2s",
-          }}
-        >
-          {tradeLoading === "sell" ? "Submitting…" : "▼ Sell"}
-        </button>
+      {/* Limit price stepper */}
+      <p style={lbl}>Limit Price ($)</p>
+      <div style={{ ...stepperWrap, marginBottom: "14px" }}>
+        <button type="button" style={stepBtn} disabled={!isMarketOpen} onClick={() => bumpPrice(-0.01)}>−</button>
+        <input
+          type="number" min={0.01} step="0.01" value={limitPrice}
+          onChange={e => setLimitPrice(e.target.value)}
+          placeholder={livePrice ? livePrice.toFixed(2) : "0.00"}
+          disabled={!isMarketOpen}
+          style={stepInput}
+        />
+        <button type="button" style={stepBtn} disabled={!isMarketOpen} onClick={() => bumpPrice(0.01)}>+</button>
       </div>
+
+      {/* Quantity stepper */}
+      <p style={lbl}>Quantity (shares)</p>
+      <div style={{ ...stepperWrap, marginBottom: "10px" }}>
+        <button type="button" style={stepBtn} disabled={!isMarketOpen} onClick={() => bumpQty(-1)}>−</button>
+        <input
+          type="number" min={0} value={quantity}
+          onChange={e => setQuantity(e.target.value.replace(/\D/g, ""))}
+          placeholder="0"
+          disabled={!isMarketOpen}
+          style={stepInput}
+        />
+        <button type="button" style={stepBtn} disabled={!isMarketOpen} onClick={() => bumpQty(1)}>+</button>
+      </div>
+
+      {/* Quick percentage chips */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+        {[["25%", 0.25], ["50%", 0.5], ["75%", 0.75], ["Max", 1]].map(([label, pct]) => (
+          <button
+            key={label} type="button" disabled={!isMarketOpen || !maxQty}
+            onClick={() => setQtyPct(pct)}
+            style={chipBtn(maxQty > 0 && qty === (pct >= 1 ? maxQty : Math.floor(maxQty * pct)))}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Order value */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "12px 14px", borderRadius: "10px", background: accentSoft,
+        border: `1px solid ${accentBorder}`, marginBottom: "16px",
+      }}>
+        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#5B6C88", fontWeight: 600 }}>
+          Estimated {isBuy ? "Cost" : "Proceeds"}
+        </span>
+        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "18px", fontWeight: 700, color: estimatedTotal ? accent : "#5B6C88" }}>
+          {estimatedTotal ? `$${estimatedTotal}` : "—"}
+        </span>
+      </div>
+
+      {/* Action button */}
+      <button
+        onClick={handleTrade}
+        disabled={!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null}
+        style={{
+          width: "100%", height: "50px", borderRadius: "12px", border: "none",
+          background: accent, color: "#fff",
+          fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: "16px",
+          letterSpacing: "0.02em", transition: "all 0.15s",
+          cursor: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? "not-allowed" : "pointer",
+          opacity: (!isMarketOpen || !qty || qty <= 0 || tradeLoading !== null) ? 0.5 : 1,
+          boxShadow: `0 6px 16px ${accentSoft}`,
+        }}
+      >
+        {tradeLoading ? "Submitting…" : `${isBuy ? "Buy" : "Sell"} ${symbol}`}
+      </button>
 
       {/* Feedback */}
       {message && (
         <div style={{
-          marginTop: "14px", padding: "11px 16px", borderRadius: "8px",
+          marginTop: "14px", padding: "11px 16px", borderRadius: "10px",
           background: message.type === "success" ? "rgba(15,157,88,0.08)" : "rgba(220,38,38,0.08)",
           border: `1px solid ${message.type === "success" ? "rgba(15,157,88,0.3)" : "rgba(220,38,38,0.3)"}`,
           color: message.type === "success" ? "#0F9D58" : "#DC2626",
@@ -841,6 +925,59 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
         </div>
       )}
 
+      {/* Open orders */}
+      {openOrders.length > 0 && (
+        <div style={{ marginTop: "18px", borderTop: "1px solid rgba(11,29,79,0.1)", paddingTop: "14px" }}>
+          <p style={lbl}>Open Orders</p>
+          {openOrders.map((o) => (
+            <div key={o.order_id} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "9px 0", borderBottom: "1px solid rgba(11,29,79,0.06)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{
+                  fontFamily: "'DM Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  color: o.order_type === "buy" ? "#0F9D58" : "#DC2626",
+                  textTransform: "uppercase",
+                }}>{o.order_type}</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: "#0F172A" }}>
+                  {o.quantity} @ ${Number(o.limit_price).toFixed(2)}
+                </span>
+                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "11px", color: statusColor[o.status] || "#5B6C88" }}>
+                  {o.status}
+                </span>
+              </div>
+              <button
+                onClick={() => handleCancel(o.order_id)}
+                disabled={cancellingId === o.order_id}
+                style={{
+                  border: "1px solid rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.06)",
+                  color: "#DC2626", borderRadius: "7px", padding: "4px 10px",
+                  fontFamily: "'DM Sans', sans-serif", fontSize: "12px", fontWeight: 600,
+                  cursor: cancellingId === o.order_id ? "not-allowed" : "pointer",
+                }}
+              >
+                {cancellingId === o.order_id ? "…" : "Cancel"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <PinModal
+        open={pinOpen}
+        title={isBuy ? "Confirm Purchase" : "Confirm Sale"}
+        subtitle={
+          qty > 0 && effectivePrice
+            ? `${isBuy ? "Buy" : "Sell"} ${qty} ${symbol} · est. $${estimatedTotal}`
+            : "Confirm this action with your 6-digit PIN."
+        }
+        confirmLabel={isBuy ? "Confirm Buy" : "Confirm Sell"}
+        loading={tradeLoading !== null}
+        error={pinError}
+        onSubmit={executeTrade}
+        onClose={() => { if (tradeLoading === null) { setPinOpen(false); setPinError(""); } }}
+      />
     </div>
   );
 }

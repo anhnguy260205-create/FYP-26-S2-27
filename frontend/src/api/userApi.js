@@ -157,9 +157,19 @@ export const updateUserInformation = async (
   return response.json();
 };
 
-export const deleteInvestor = async (userId) => {
+/** Step 1 of secured deletion — email a 6-digit OTP to the account holder. */
+export const requestDeleteOtp = async () => {
+  const response = await authFetch(`${BASE_URL}/delete-investor/request-otp`, {
+    method: "POST",
+  });
+  return response.json();
+};
+
+/** Step 2 — delete, confirmed with the transaction PIN and the email OTP. */
+export const deleteInvestor = async (userId, pin = null, otp = null) => {
   const response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
     method: "DELETE",
+    body: JSON.stringify({ pin, otp }),
   });
   return response.json();
 };
