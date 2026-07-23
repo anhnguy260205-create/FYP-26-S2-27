@@ -6,6 +6,7 @@ import Footer from "../../layout/Footer.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
 import { getPortalTransactions, getPortalSummary, getPortfolio } from "../../api/tradingApi.js";
 import useLiveStocks from "../../api/useLiveStocks.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -163,6 +164,8 @@ function StatCard({ label, value, sub, highlighted = false, valueColor }) {
 
 /* ─── Page ─────────────────────────────────────────────────────────────── */
 function PortfolioOverviewPage() {
+  const { text } = useContentManagement();
+  const header = text("header_portfolio_overview_page", "Portfolio Overview", "Full trading analytics, holdings, and order history");
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const { stocks: liveStocks } = useLiveStocks();
@@ -229,15 +232,12 @@ function PortfolioOverviewPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <div>
-            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
-              Portfolio Overview
-            </h1>
-            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-              Full trading analytics, holdings, and order history
-            </p>
-          </div>
-          <hr style={{ marginTop: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
+            {header.title}
+          </h1>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
+            {header.description}
+          </p>          <hr style={{ marginTop: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
         </div>
 
         {/* Stat cards */}

@@ -161,6 +161,9 @@ def ensure_all_schemas(engine):
     patches = [
         ("investor",     "risk_tolerance",        "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
         ("investor",     "transaction_pin",       "ALTER TABLE investor ADD COLUMN transaction_pin VARCHAR(255) NULL"),
+        ("investor",     "assets",                "ALTER TABLE investor ADD COLUMN assets FLOAT NULL DEFAULT 0"),
+        ("investor",     "used_amount",           "ALTER TABLE investor ADD COLUMN used_amount FLOAT NULL DEFAULT 0"),
+        ("investor",     "investor_subscription_status", "ALTER TABLE investor ADD COLUMN investor_subscription_status VARCHAR(20) NOT NULL DEFAULT 'inactive'"),
         ("subscription", "renewal_reminder_sent", "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0"),
         ("subscription", "amount",                "ALTER TABLE subscription ADD COLUMN amount INT NOT NULL DEFAULT 0"),
         ("transaction",  "realized_pnl",          "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL"),
@@ -177,6 +180,8 @@ def ensure_all_schemas(engine):
         ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
         ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
         ("expert",       "chat_available",         "ALTER TABLE expert ADD COLUMN chat_available TINYINT(1) NOT NULL DEFAULT 1"),
+        ("content_management", "image_url",        "ALTER TABLE content_management ADD COLUMN image_url MEDIUMTEXT NULL"),
+        ("content_management", "is_active",        "ALTER TABLE content_management ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"),
     ]
 
     with engine.connect() as conn:

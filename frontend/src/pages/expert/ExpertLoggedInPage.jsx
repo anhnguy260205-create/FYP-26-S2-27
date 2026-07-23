@@ -129,7 +129,7 @@ function useLandingContentExtras() {
 
   const header = (id, fallbackTitle, fallbackDescription) => {
     const item = content?.find((c) => c.content_id === id);
-    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription };
+    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription, image_url: item?.image_url || "" };
   };
 
   const items = (section, fallbackList) => {
@@ -146,13 +146,13 @@ function useLandingContentExtras() {
   return { header, items };
 }
 
-function Hero({ name, loading, subtitle }) {
+function Hero({ name, loading, subtitle, imageUrl }) {
   const navigate = useNavigate();
 
   return (
     <section className="flex flex-col gap-5 -mt-6 md:-mt-8 -mb-8">
       <div className="relative overflow-hidden w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] min-h-[220px] md:min-h-[280px] flex flex-col justify-center p-6 sm:p-16 md:p-20">
-        <img alt="" src={professorPageImg} className="absolute inset-0 w-full h-full object-cover -z-20" />
+        <img alt="" src={imageUrl || professorPageImg} className="absolute inset-0 w-full h-full object-cover -z-20" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/15 -z-10" />
 
         <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
@@ -461,7 +461,8 @@ function ExpertLoggedInPage() {
 
   const { loading, expertInfo, portfolio, articleCount, compensation } = useExpertData(userId);
   const { header, items } = useLandingContentExtras();
-  const heroSubtitle = header("expert_hero_subtitle", "Manage your portfolio, publish content, and connect with investors.").title;
+  const heroContent = header("expert_hero_subtitle", "Manage your portfolio, publish content, and connect with investors.");
+  const heroSubtitle = heroContent.title;
 
   return (
     <motion.div
@@ -472,7 +473,7 @@ function ExpertLoggedInPage() {
     >
       <ExpertHeader />
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8 divide-y divide-white/[0.06]">
-        <Hero name={name} loading={loading} subtitle={heroSubtitle} />
+        <Hero name={name} loading={loading} subtitle={heroSubtitle} imageUrl={heroContent.image_url} />
         <div
           className="w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] rounded-4xl bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 px-6 sm:px-12 md:px-40 py-10 md:py-40 flex flex-col gap-8"
           style={{ marginTop: -15, marginBottom: 30 }}

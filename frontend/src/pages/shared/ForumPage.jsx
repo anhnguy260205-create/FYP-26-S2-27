@@ -11,6 +11,7 @@ import {
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 import {
     createForumPost, updateForumPost, deleteForumPost, deleteForumReply,
     updateForumReply, getForumPost, getForumPosts,
@@ -53,6 +54,22 @@ const CATEGORIES = [
     "Information Technology", "Financials", "Consumer Discretionary",
     "Communication Services", "Energy", "Real Estate",
 ];
+
+const TOPIC_CONTENT_IDS = [
+    { category: "Technical Analysis", contentId: "forum_topic_technical" },
+    { category: "AI Predictions", contentId: "forum_topic_ai" },
+    { category: "Portfolio Strategy", contentId: "forum_topic_strategy" },
+    { category: "Market News", contentId: "forum_topic_news" },
+    { category: "Beginners Corner", contentId: "forum_topic_beginner" },
+    { category: "Trading Tips", contentId: "forum_topic_trading" },
+    { category: "Information Technology", contentId: "forum_topic_it" },
+    { category: "Financials", contentId: "forum_topic_financials" },
+    { category: "Consumer Discretionary", contentId: "forum_topic_consumer" },
+    { category: "Communication Services", contentId: "forum_topic_communication" },
+    { category: "Energy", contentId: "forum_topic_energy" },
+    { category: "Real Estate", contentId: "forum_topic_real_estate" },
+];
+
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 // accent matches the site brand cyan used in GeneralHeader nav highlights —
@@ -371,6 +388,31 @@ export default function ForumPage() {
     const userId = currentUser?.user_id || currentUser?.id || "";
     const userName = currentUser?.full_name || currentUser?.name || currentUser?.username || "RocketTrade User";
 
+    const { text, section } = useContentManagement();
+    const forumHeader = text("forum_header", "Community Forum", "Share ideas, discuss markets, and learn from the RocketTrade community.");
+    const forumCopy = {
+        title: forumHeader.title,
+        description: forumHeader.description,
+        newPostCta: text("forum_new_post_cta", "New Post").title,
+        searchPlaceholder: text("forum_search_placeholder", "Search posts, topics, or authors…").title,
+        trendingLabel: text("forum_trending_label", "Trending Right Now").title,
+        activityLabel: text("forum_activity_label", "My Activity").title,
+        topicsLabel: text("forum_topics_label", "Browse by Topic").title,
+        latestLabel: text("forum_latest_label", "Latest Posts").title,
+        latestCta: text("forum_latest_cta", "See all →").title,
+    };
+    const topicRows = section("forum_topics");
+    const topicById = Object.fromEntries(topicRows.map((topic) => [topic.content_id, topic]));
+    const forumTopics = TOPIC_CONTENT_IDS.map(({ category, contentId }) => {
+        const item = topicById[contentId];
+        return {
+            category,
+            title: item?.title || category,
+            description: item?.description || "",
+            imageUrl: item?.image_url || ROOM_IMAGES[category] || "",
+        };
+    });
+
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPost, setSelectedPost] = useState(null);
@@ -658,6 +700,8 @@ export default function ForumPage() {
                         onDelete={handleDelete}
                         onReport={(post) => setToReport(post)}
                         canDelete={canDeletePost}
+                        forumCopy={forumCopy}
+                        forumTopics={forumTopics}
                     />
                 )}
             </main>
@@ -692,6 +736,7 @@ function ForumHome({
     posts, loading, activeRoom, setActiveRoom, query, setQuery,
     sort, setSort, filteredPosts, currentUser, userId, isExpert, navigate, onShowCreate,
     onOpenPost, onLike, onSave, onDelete, onReport, canDelete,
+    forumCopy, forumTopics,
 }) {
     const recentPosts = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     const savedPosts = posts.filter(p => p.saved_by_me);
@@ -700,6 +745,8 @@ function ForumHome({
     const likedPosts = posts.filter(p => p.liked_by_me);
     const trendingPosts = [...posts].sort((a, b) => (b.likes + b.views) - (a.likes + a.views)).slice(0, 3);
     const showHome = !activeRoom && !query && sort === "";
+    const activeTopic = forumTopics.find((topic) => topic.category === activeRoom);
+    const categoryPills = [{ category: "All", title: "All" }, ...forumTopics];
 
     return (
         <>
@@ -732,7 +779,7 @@ function ForumHome({
                         </button>
                     )}
                     <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading, margin: 0, lineHeight: 1 }}>
-                        {activeRoom || "Community Forum"}
+                        {activeRoom ? (activeTopic?.title || activeRoom) : (forumCopy?.title || "Community Forum")}
                     </h1>
                     {activeRoom && (
                         <p style={{ fontSize: 12, color: PAGE.sub, marginTop: 3 }}>
@@ -741,7 +788,7 @@ function ForumHome({
                     )}
                     {!activeRoom && !query && (
                         <p style={{ fontSize: 13, color: PAGE.sub, marginTop: 4 }}>
-                            Share ideas, discuss markets, and learn from the community
+                            {forumCopy?.description || "Share ideas, discuss markets, and learn from the community"}
                         </p>
                     )}
                 </div>
@@ -751,24 +798,27 @@ function ForumHome({
                     border: "none", color: C.accentText, fontWeight: 700, fontSize: 13, cursor: "pointer",
                     boxShadow: `0 4px 14px rgba(${C.accentRgb},0.35)`, whiteSpace: "nowrap",
                 }}>
-                    <Plus size={15} /> New Post
+                    <Plus size={15} /> {forumCopy?.newPostCta || "New Post"}
                 </button>
             </div>
 
-            {/* ── Category pill strip — hidden once a specific topic is already
-                 selected; the breadcrumb above covers navigating back out. ── */}
+            {/* ── Category pill strip — hidden once a specific topic is already selected. ── */}
             {!activeRoom && (
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginBottom: 20, scrollbarWidth: "none" }}>
-                    {CATEGORIES.map(cat => (
-                        <button key={cat} onClick={() => { setActiveRoom(cat === "All" ? null : cat); }} style={{
-                            padding: "7px 15px", borderRadius: 50, fontSize: 12, fontWeight: 600,
-                            whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
-                            border: (cat === "All" ? !activeRoom : activeRoom === cat) ? "none" : `1px solid ${PAGE.pillBorder}`,
-                            background: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accent : "transparent",
-                            color: (cat === "All" ? !activeRoom : activeRoom === cat) ? C.accentText : PAGE.pillText,
-                            transition: "all 0.15s",
-                        }}>{cat}</button>
-                    ))}
+                    {categoryPills.map(topic => {
+                        const isAll = topic.category === "All";
+                        const active = isAll ? !activeRoom : activeRoom === topic.category;
+                        return (
+                            <button key={topic.category} onClick={() => { setActiveRoom(isAll ? null : topic.category); }} style={{
+                                padding: "7px 15px", borderRadius: 50, fontSize: 12, fontWeight: 600,
+                                whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0,
+                                border: active ? "none" : `1px solid ${PAGE.pillBorder}`,
+                                background: active ? C.accent : "transparent",
+                                color: active ? C.accentText : PAGE.pillText,
+                                transition: "all 0.15s",
+                            }}>{topic.title}</button>
+                        );
+                    })}
                 </div>
             )}
 
@@ -777,7 +827,7 @@ function ForumHome({
                 <div style={{ flex: 1, position: "relative" }}>
                     <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.muted, pointerEvents: "none" }} />
                     <input value={query} onChange={e => setQuery(e.target.value)}
-                        placeholder="Search posts, topics, authors…"
+                        placeholder={forumCopy?.searchPlaceholder || "Search posts, topics, authors…"}
                         style={{ width: "100%", padding: "10px 12px 10px 36px", borderRadius: 12, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <select value={sort} onChange={e => { setSort(e.target.value); }} style={{
@@ -803,7 +853,7 @@ function ForumHome({
                     {/* ── Trending right now ── */}
                     {trendingPosts.length > 0 && (
                         <section style={{ marginBottom: 32 }}>
-                            <SectionHeader icon={Flame} label="Trending Right Now" />
+                            <SectionHeader icon={Flame} label={forumCopy?.trendingLabel || "Trending Right Now"} />
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
                                 {trendingPosts.map(post => (
                                     <TrendingCard
@@ -820,7 +870,7 @@ function ForumHome({
 
                     {/* ── My Activity — always shown, even with 0 counts ── */}
                     <section style={{ marginBottom: 32 }}>
-                        <SectionHeader icon={Users} label="My Activity" />
+                        <SectionHeader icon={Users} label={forumCopy?.activityLabel || "My Activity"} />
                         <div style={{ display: "flex", gap: 12 }}>
                             <button onClick={() => setSort("saved")} style={{
                                 flex: 1, padding: "14px 18px", borderRadius: 14,
@@ -879,14 +929,14 @@ function ForumHome({
 
                     {/* ── Topic rooms grid ── */}
                     <section style={{ marginBottom: 32 }}>
-                        <SectionHeader icon={BookOpen} label="Browse by Topic" />
+                        <SectionHeader icon={BookOpen} label={forumCopy?.topicsLabel || "Browse by Topic"} />
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 10 }}>
-                            {CATEGORIES.filter(c => c !== "All").map(cat => {
-                                const count = posts.filter(p => p.category === cat).length;
-                                const img = ROOM_IMAGES[cat];
-                                const latest = posts.filter(p => p.category === cat).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                            {forumTopics.map(topic => {
+                                const count = posts.filter(p => p.category === topic.category).length;
+                                const img = topic.imageUrl;
+                                const latest = posts.filter(p => p.category === topic.category).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
                                 return (
-                                    <button key={cat} onClick={() => setActiveRoom(cat)} style={{
+                                    <button key={topic.category} onClick={() => setActiveRoom(topic.category)} style={{
                                         borderRadius: 14, overflow: "hidden", border: `1px solid ${C.border}`,
                                         cursor: "pointer", textAlign: "left", background: C.card,
                                         transition: "all 0.15s", display: "flex", flexDirection: "column",
@@ -895,13 +945,14 @@ function ForumHome({
                                         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "translateY(0)"; }}>
                                         <div style={{ height: 80, overflow: "hidden", background: C.card2, position: "relative" }}>
                                             {img
-                                                ? <img src={img} alt={cat} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><Hash size={20} color={C.muted} /></div>
+                                                ? <img src={img} alt={topic.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#E0F2FE,#EEF2FF)" }}><Hash size={20} color={C.muted} /></div>
                                             }
                                             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(13,21,38,0.7) 0%,transparent 60%)" }} />
                                         </div>
                                         <div style={{ padding: "10px 12px", flex: 1 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 3, lineHeight: 1.3 }}>{cat}</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 3, lineHeight: 1.3 }}>{topic.title}</div>
+                                            {topic.description && <div style={{ fontSize: 10, color: C.muted, lineHeight: 1.35, marginBottom: 7 }}>{topic.description}</div>}
                                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                                 <span style={{ fontSize: 11, color: C.muted }}>{count} post{count !== 1 ? "s" : ""}</span>
                                                 {latest && <span style={{ fontSize: 10, color: C.accent }}>Active</span>}
@@ -923,9 +974,9 @@ function ForumHome({
                                 }}>
                                     <Clock size={15} strokeWidth={2} />
                                 </span>
-                                <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Latest Posts</span>
+                                <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{forumCopy?.latestLabel || "Latest Posts"}</span>
                             </div>
-                            <button onClick={() => setSort("latest")} style={{ fontSize: 12, color: C.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>See all →</button>
+                            <button onClick={() => setSort("latest")} style={{ fontSize: 12, color: C.accent, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>{forumCopy?.latestCta || "See all →"}</button>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             {recentPosts.map(post => (
@@ -1496,3 +1547,4 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
         </div>
     );
 }
+s

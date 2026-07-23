@@ -6,7 +6,7 @@ import Footer from "../../layout/Footer.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
 import { getPortalTransactions } from "../../api/tradingApi.js";
 import { getWalletOverview } from "../../api/walletApi.js";
-
+import { useContentManagement } from "../../utils/contentManagement.js";
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
 
@@ -109,15 +109,15 @@ function TxRow({ tx, index }) {
 }
 
 /* ─── Empty state ──────────────────────────────────────────────────────── */
-function Empty({ navigate }) {
+function Empty({ navigate, text }) {
   return (
     <div style={{ textAlign: "center", padding: "60px 0" }}>
       <svg width="44" height="44" viewBox="0 0 48 48" fill="none" style={{ margin: "0 auto 14px", opacity: 0.2 }}>
         <rect x="8" y="12" width="32" height="28" rx="3" stroke={C.accent} strokeWidth="1.5" />
         <path d="M16 20h16M16 27h10" stroke={C.accent} strokeWidth="1.5" strokeLinecap="round" />
       </svg>
-      <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, margin: "0 0 4px" }}>No transactions yet</p>
-      <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 20px" }}>Start trading to see your history here</p>
+      <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, margin: "0 0 4px" }}>{text.heading}</p>
+      <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 20px" }}>{text.desc}</p>
       <button onClick={() => navigate("/realtimedashboard")}
         style={{
           padding: "9px 22px", borderRadius: 8, cursor: "pointer",
@@ -125,7 +125,7 @@ function Empty({ navigate }) {
           color: C.accentText, fontFamily: mono, fontSize: 12, fontWeight: 700,
           letterSpacing: "0.06em", textTransform: "uppercase",
         }}>
-        Go to Markets
+        {text.cta}
       </button>
     </div>
   );
@@ -135,6 +135,11 @@ function Empty({ navigate }) {
 function TransactionHistoryPage() {
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+  const { text } = useContentManagement();
+  const header = text("header_transaction_history_page", "Transaction History", "Executed trades, plus deposits, fees, gifts and expert payouts");
+  const emptyHeading = text("transaction_history_empty_heading", "No transactions yet").title;
+  const emptyDesc = text("transaction_history_empty_desc", "Start trading to see your history here").title;
+  const emptyCta = text("transaction_history_empty_cta", "Go to Markets").title;
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -223,11 +228,10 @@ function TransactionHistoryPage() {
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
-            Transaction History
+            {header.title}
           </h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-            Executed trades, plus deposits, fees, gifts and expert payouts
-          </p>
+            {header.description}          </p>
           <hr style={{ marginTop: 16, border: "none", borderTop: "1px solid rgba(15,23,42,0.1)" }} />
         </div>
 
@@ -301,7 +305,7 @@ function TransactionHistoryPage() {
               <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
             </div>
           ) : filtered.length === 0 ? (
-            <Empty navigate={navigate} />
+            <Empty navigate={navigate} text={{ heading: emptyHeading, desc: emptyDesc, cta: emptyCta }} />
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>

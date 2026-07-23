@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAIChatSession, QUICK_PROMPTS } from "../../hooks/useAIChatSession.js";
 import { MessageBubble, TypingDots } from "../../components/chat/ChatMessageBubble.jsx";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const QUICK_PROMPT_ICONS = [
     <TrendingUp size={14} key="tu1" />, <Brain size={14} key="br1" />, <BarChart3 size={14} key="bc1" />,
@@ -117,6 +118,8 @@ function getFollowUps(messages) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 function AIChatbot() {
+    const { text } = useContentManagement();
+    const header = text("header_ai_chatbot_page", "RocketTrade AI Assistant", "Ask about stocks, market trends, technical analysis, and more");
     const {
         messages, input, setInput, loading, error,
         sendMessage: rawSendMessage, endChat, handleScroll, showScroll,
@@ -321,9 +324,9 @@ function AIChatbot() {
                                 <Bot size={22} />
                             </div>
                             <div style={{ flex: 1 }}>
-                                <h1 style={{ fontSize: "18px", fontWeight: 700 }}>RocketTrade AI Assistant</h1>
+                                <h1 style={{ fontSize: "18px", fontWeight: 700 }}>{header.title}</h1>
                                 <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>
-                                    Ask about stocks, market trends, technical analysis, and more
+                                    {header.description}
                                 </p>
                             </div>
                             <button onClick={endChat} title="End chat"

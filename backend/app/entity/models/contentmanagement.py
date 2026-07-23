@@ -16,6 +16,9 @@ class ContentManagement(Base):
     # MEDIUMTEXT even after the image-upload feature was pulled since it
     # doesn't cost anything to leave it roomy.
     description = Column(MEDIUMTEXT, nullable=True)
+    # Optional editable image for hero/header sections. Can store a normal URL
+    # or a compressed data:image/... base64 string for Railway/no-storage setup.
+    image_url = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
 
@@ -37,7 +40,7 @@ class ContentManagement(Base):
             return [_serialize(r) for r in rows]
 
     @staticmethod
-    def update(content_id: str, title: str, description: str) -> bool:
+    def update(content_id: str, title: str, description: str, image_url: str | None = None) -> bool:
         with get_session() as session:
             row = session.query(ContentManagement).filter(
                 ContentManagement.content_id == content_id
@@ -46,6 +49,8 @@ class ContentManagement(Base):
                 return False
             row.title = title
             row.description = description
+            if image_url is not None:
+                row.image_url = image_url
             return True
 
     @staticmethod
@@ -75,6 +80,7 @@ def _serialize(row: ContentManagement) -> dict:
         "section": row.section,
         "title": row.title,
         "description": row.description,
+        "image_url": row.image_url,
         "order_index": row.order_index,
         "is_active": row.is_active,
     }
@@ -95,9 +101,11 @@ def seed_landing_content():
             # Free plan info
             ContentManagement(content_id="free_plan_name",  section="free_plan", title="Starter", description="",                        order_index=0),
             ContentManagement(content_id="free_plan_price", section="free_plan", title="$0.00",   description="forever, no card needed", order_index=1),
+            ContentManagement(content_id="free_plan_cta",   section="free_plan", title="Get Started Free", order_index=2),
             # Premium plan info
             ContentManagement(content_id="premium_plan_name",  section="premium_plan", title="Pro",     description="",                             order_index=0),
             ContentManagement(content_id="premium_plan_price", section="premium_plan", title="$20.99",  description="per month, billed annually",   order_index=1),
+            ContentManagement(content_id="premium_plan_cta",   section="premium_plan", title="Upgrade to Premium", order_index=2),
             # Free investor subscription features
             ContentManagement(content_id="free_feat_0", section="free_investor", title="Limited AI-Powered Stock Recommendations", order_index=0),
             ContentManagement(content_id="free_feat_1", section="free_investor", title="Limited Personal Watchlist Management",    order_index=1),
@@ -138,18 +146,12 @@ def seed_landing_content():
             # Section headings/subtitles for the landing page. These used to be
             # hardcoded straight into Homepage.jsx (title = heading, description = subtitle).
             ContentManagement(content_id="header_video",             section="page_headers", title="See RocketTrade in Action",                description="Watch a quick walkthrough of the platform and its AI-powered tools.", order_index=0),
-            ContentManagement(content_id="header_path",               section="page_headers", title="Choose Your Path",                          description="Tell us who you are, so we can show you what matters most.", order_index=1),
-            ContentManagement(content_id="header_why_investor",       section="page_headers", title="Why RocketTrade",                           description="Built to help you invest smarter, without the real-money risk.", order_index=2),
-            ContentManagement(content_id="header_why_expert",         section="page_headers", title="Why Become a RocketTrade Expert",            description="Turn your market knowledge into income and influence.", order_index=3),
-            ContentManagement(content_id="header_features_investor",  section="page_headers", title="Everything You Need to Invest Smarter",      description="One platform, six ways to sharpen your edge.", order_index=4),
-            ContentManagement(content_id="header_features_expert",    section="page_headers", title="Everything You Get as an Expert",            description="One platform, six ways to get paid and get seen.", order_index=5),
-            ContentManagement(content_id="header_pricing",            section="page_headers", title="Simple, Transparent Pricing",                description="Compare our Free and Pro plans — create an investor account to get started.", order_index=6),
-            ContentManagement(content_id="header_started",            section="page_headers", title="How to Get Started",                         description="Signing up only takes a few minutes, for investors and experts alike.", order_index=7),
-            ContentManagement(content_id="header_faq",                section="page_headers", title="Frequently Asked Questions",                 description="Everything you need to know before you get started.", order_index=8),
-
-            # Choose Your Path — the two role toggle cards
-            ContentManagement(content_id="role_investor", section="role_options", title="Investor", description="Trade, learn, and get AI-backed predictions", order_index=0),
-            ContentManagement(content_id="role_expert",   section="role_options", title="Expert",   description="Publish insights and mentor investors",       order_index=1),
+            ContentManagement(content_id="header_why_investor",       section="page_headers", title="Why RocketTrade",                           description="Built to help you invest smarter, without the real-money risk.", order_index=1),
+            ContentManagement(content_id="header_features_investor",  section="page_headers", title="Everything You Need to Invest Smarter",      description="One platform, six ways to sharpen your edge.", order_index=2),
+            ContentManagement(content_id="header_pricing",            section="page_headers", title="Simple, Transparent Pricing",                description="Compare our Free and Pro plans — create an investor account to get started.", order_index=3),
+            ContentManagement(content_id="header_started",            section="page_headers", title="How to Get Started",                         description="Signing up only takes a few minutes, for investors and experts alike.", order_index=4),
+            ContentManagement(content_id="header_expert_benefits",    section="page_headers", title="Why Join as a RocketTrade Expert",           description="Use premium tools, earn from your expertise, and grow your professional network with investors.", order_index=5),
+            ContentManagement(content_id="header_faq",                section="page_headers", title="Frequently Asked Questions",                 description="Everything you need to know before you get started.", order_index=6),
 
             # "Everything You Need to Invest Smarter" — investor feature cards
             ContentManagement(content_id="platform_feat_0", section="platform_features", title="Paper Trading Exchange",             description="Trade against live market prices using virtual paper funds — build real skills with zero real-money risk.", order_index=0),
@@ -159,23 +161,17 @@ def seed_landing_content():
             ContentManagement(content_id="platform_feat_4", section="platform_features", title="Educational Content",                description="Learn at your own pace with a growing library of articles — from beginner basics to advanced strategy.", order_index=4),
             ContentManagement(content_id="platform_feat_5", section="platform_features", title="Ask the Experts",                    description="Submit your investing questions directly to verified experts and get personalized answers.", order_index=5),
 
-            # "Everything You Get as an Expert" — expert feature cards
-            ContentManagement(content_id="expert_feat_0", section="expert_features", title="Paid Consultations",             description="Offer 1-on-1 sessions with investors and earn directly for your time and expertise.", order_index=0),
-            ContentManagement(content_id="expert_feat_1", section="expert_features", title="Verified Expert Badge",          description="Stand out with a trust badge that boosts your visibility across the platform.", order_index=1),
-            ContentManagement(content_id="expert_feat_2", section="expert_features", title="Publish Educational Content",    description="Share articles in the Knowledge Hub and become a go-to voice for new investors.", order_index=2),
-            ContentManagement(content_id="expert_feat_3", section="expert_features", title="Answer Investor Questions",      description="Respond to Ask the Experts questions and grow your following one answer at a time.", order_index=3),
-            ContentManagement(content_id="expert_feat_4", section="expert_features", title="Publish Portfolio Insights",     description="Share your strategy and quant calls, and let investors follow your track record.", order_index=4),
-            ContentManagement(content_id="expert_feat_5", section="expert_features", title="AI-Matched Reach",               description="Get surfaced to investors using AI predictions who want a human expert's take.", order_index=5),
 
             # "Why RocketTrade" — investor trust cards
             ContentManagement(content_id="why_investor_0", section="why_investor", title="Zero-Risk Learning", description="Practice with virtual funds against live market prices — sharpen your instincts without risking real money.", order_index=0),
             ContentManagement(content_id="why_investor_1", section="why_investor", title="AI when you need speed. Experts when you need certainty.", description="Live prices and news sentiment keep your paper portfolio in sync with what's actually happening in the market.", order_index=1),
             ContentManagement(content_id="why_investor_2", section="why_investor", title="Expert-Backed Community", description="Learn alongside fellow investors and get answers straight from verified market experts.", order_index=2),
 
-            # "Why Become a RocketTrade Expert" — expert trust cards
-            ContentManagement(content_id="why_expert_0", section="why_expert", title="Get Paid for Your Expertise", description="Earn from paid consultations and premium content — your market knowledge has real value here.", order_index=0),
-            ContentManagement(content_id="why_expert_1", section="why_expert", title="Be the certainty investors need when speed isn't enough.", description="Reach investors who are already using AI predictions and want a real expert to validate the call.", order_index=1),
-            ContentManagement(content_id="why_expert_2", section="why_expert", title="Build a Following You Own", description="Grow your reputation through Q&A, portfolio publishing, and the community forum.", order_index=2),
+
+            # Expert role benefits shown before the FAQ on the landing page
+            ContentManagement(content_id="expert_benefit_0", section="expert_role_benefits", title="Premium Investor Tools Included", description="Experts get access to the same advanced tools as Premium investors, including AI predictions, portfolio insights, paper trading, and market dashboards.", order_index=0),
+            ContentManagement(content_id="expert_benefit_1", section="expert_role_benefits", title="Monthly Compensation", description="Verified experts can earn monthly compensation based on their activity, contributions, and investor engagement on the platform.", order_index=1),
+            ContentManagement(content_id="expert_benefit_2", section="expert_role_benefits", title="Grow Your Network", description="Build your professional presence by sharing insights, answering investor questions, publishing content, and connecting with the RocketTrade community.", order_index=2),
 
             # FAQ (title = question, description = answer)
             ContentManagement(content_id="faq_0", section="faq", title="Is this real money trading?", description="No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.", order_index=0),
@@ -299,15 +295,165 @@ def seed_landing_content():
             ContentManagement(content_id="compensation_need_followers", section="expert_home_misc", title="Need {followers} followers to earn", order_index=10),
             ContentManagement(content_id="compensation_locked_label", section="expert_home_misc", title="Locked", order_index=11),
             ContentManagement(content_id="compensation_locked_msg", section="expert_home_misc", title="Get verified to unlock compensation", order_index=12),
+
+            # Expert Compensation page (ExpertCompensationPage.jsx)
+            ContentManagement(content_id="expert_compensation_header", section="expert_compensation_page", title="Compensation", description="Track your earnings, payout history, and follower eligibility.", order_index=0),
+            ContentManagement(content_id="expert_compensation_notice", section="expert_compensation_page", title="Display-only notice", description="Compensation figures on this page are calculated for display purposes only — no funds are transferred.", order_index=1),
+            ContentManagement(content_id="expert_compensation_locked_title", section="expert_compensation_page", title="Compensation is locked", description="You need a verified expert profile before you can view earnings and payouts. Submit your credential documents to get verified.", order_index=2),
+            ContentManagement(content_id="expert_compensation_locked_cta", section="expert_compensation_page", title="Submit Documents", order_index=3),
+            ContentManagement(content_id="expert_compensation_eligibility_title", section="expert_compensation_page", title="Follower Eligibility", description="Reach {threshold} followers to earn {amount}/month.", order_index=4),
+            ContentManagement(content_id="expert_compensation_history_title", section="expert_compensation_page", title="Payout History", description="Your compensation for each completed month.", order_index=5),
+            ContentManagement(content_id="expert_compensation_history_empty", section="expert_compensation_page", title="No completed months yet — history appears here once your first full calendar month has passed.", order_index=6),
+
+            # Expert Documents page (ExpertDocumentPage.jsx)
+            ContentManagement(content_id="expert_documents_page_header", section="expert_documents_page", title="Submit Your Documents", description="Add links to your certificates, degrees, or employment letters for admin verification.", order_index=0),
+            ContentManagement(content_id="expert_documents_add_label", section="expert_documents_page", title="Add Document", order_index=1),
+            ContentManagement(content_id="expert_documents_submit_cta", section="expert_documents_page", title="Submit Documents →", order_index=2),
+            ContentManagement(content_id="expert_documents_skip_cta", section="expert_documents_page", title="Skip for now", order_index=3),
+            ContentManagement(content_id="expert_documents_error_empty", section="expert_documents_page", title="Please add at least one document.", order_index=4),
+
+            # Expert Knowledge Hub page (ExpertKnowledgeHub.jsx)
+            ContentManagement(content_id="expert_knowledge_header", section="expert_knowledge_page", title="My Articles", description="Create, edit, and track the educational articles you submit for admin review.", order_index=0),
+            ContentManagement(content_id="expert_knowledge_write_cta", section="expert_knowledge_page", title="+ Write Article", order_index=1),
+            ContentManagement(content_id="expert_knowledge_empty_all", section="expert_knowledge_page", title="You haven't written any articles yet.", order_index=2),
+            ContentManagement(content_id="expert_knowledge_empty_filtered", section="expert_knowledge_page", title="No {tab} articles.", order_index=3),
+            ContentManagement(content_id="expert_knowledge_form_new", section="expert_knowledge_page", title="Write New Article", order_index=4),
+            ContentManagement(content_id="expert_knowledge_form_edit", section="expert_knowledge_page", title="Edit Article", order_index=5),
+            ContentManagement(content_id="expert_knowledge_form_submit", section="expert_knowledge_page", title="Submit for Review", order_index=6),
+            ContentManagement(content_id="expert_knowledge_verification_required_title", section="expert_knowledge_page", title="Verification Required", description="Only verified experts can create and publish educational content. Please submit your verification documents to get started.", order_index=7),
+            ContentManagement(content_id="expert_knowledge_verification_pending_title", section="expert_knowledge_page", title="Verification Pending", description="Your verification request is under review by the admin. You will be able to create and submit articles once approved.", order_index=8),
+            ContentManagement(content_id="expert_knowledge_apply_cta", section="expert_knowledge_page", title="Apply for Verification", order_index=9),
+            ContentManagement(content_id="expert_knowledge_under_review", section="expert_knowledge_page", title="⏳ Under Review", order_index=10),
+
+            # Shared Expert Portfolio list page (ExpertPortfolio.jsx)
+            ContentManagement(content_id="expert_portfolio_list_header", section="expert_portfolio_page", title="Expert Portfolio", description="Explore and invest in portfolios managed by our expert consultants.", order_index=0),
+            ContentManagement(content_id="expert_portfolio_list_expert_header", section="expert_portfolio_page", title="Expert Portfolio Directory", description="Preview how investors browse verified expert portfolios.", order_index=1),
+            ContentManagement(content_id="expert_portfolio_search_placeholder", section="expert_portfolio_page", title="Search expert by name or keyword...", order_index=2),
+            ContentManagement(content_id="expert_portfolio_search_cta", section="expert_portfolio_page", title="Search", order_index=3),
+            ContentManagement(content_id="expert_portfolio_empty", section="expert_portfolio_page", title="No experts found.", order_index=4),
+
+
+            # Community Forum page (ForumPage.jsx)
+            ContentManagement(content_id="forum_header", section="forum_page", title="Community Forum",
+                description="Share ideas, discuss markets, and learn from the RocketTrade community.", order_index=0),
+            ContentManagement(content_id="forum_new_post_cta", section="forum_page", title="New Post", order_index=1),
+            ContentManagement(content_id="forum_search_placeholder", section="forum_page", title="Search posts, topics, or authors...", order_index=2),
+            ContentManagement(content_id="forum_trending_label", section="forum_page", title="Trending Right Now", order_index=3),
+            ContentManagement(content_id="forum_activity_label", section="forum_page", title="My Activity", order_index=4),
+            ContentManagement(content_id="forum_topics_label", section="forum_page", title="Browse by Topic", order_index=5),
+            ContentManagement(content_id="forum_latest_label", section="forum_page", title="Latest Posts", order_index=6),
+            ContentManagement(content_id="forum_latest_cta", section="forum_page", title="See all →", order_index=7),
+
+            # Community Forum topics. The content_id maps to the internal category used by existing posts;
+            # admins can edit the visible name and description without breaking old post categories.
+            ContentManagement(content_id="forum_topic_technical", section="forum_topics", title="Technical Analysis",
+                description="Discuss charts, indicators, price action, and trading setups.", order_index=0),
+            ContentManagement(content_id="forum_topic_ai", section="forum_topics", title="AI Predictions",
+                description="Talk about AI forecasts, model signals, and prediction confidence.", order_index=1),
+            ContentManagement(content_id="forum_topic_strategy", section="forum_topics", title="Portfolio Strategy",
+                description="Share asset allocation ideas, diversification plans, and portfolio reviews.", order_index=2),
+            ContentManagement(content_id="forum_topic_news", section="forum_topics", title="Market News",
+                description="Follow market headlines, earnings updates, and macro events.", order_index=3),
+            ContentManagement(content_id="forum_topic_beginner", section="forum_topics", title="Beginners Corner",
+                description="Ask beginner-friendly questions and learn investing fundamentals.", order_index=4),
+            ContentManagement(content_id="forum_topic_trading", section="forum_topics", title="Trading Tips",
+                description="Exchange practical trading habits, watchlist ideas, and risk-control tips.", order_index=5),
+            ContentManagement(content_id="forum_topic_it", section="forum_topics", title="Information Technology",
+                description="Discuss technology stocks, software companies, and digital infrastructure.", order_index=6),
+            ContentManagement(content_id="forum_topic_financials", section="forum_topics", title="Financials",
+                description="Cover banks, insurers, payment networks, and financial-sector trends.", order_index=7),
+            ContentManagement(content_id="forum_topic_consumer", section="forum_topics", title="Consumer Discretionary",
+                description="Discuss consumer brands, retail companies, travel, and discretionary spending trends.", order_index=8),
+            ContentManagement(content_id="forum_topic_communication", section="forum_topics", title="Communication Services",
+                description="Talk about media, telecom, advertising, and communication-platform companies.", order_index=9),
+            ContentManagement(content_id="forum_topic_energy", section="forum_topics", title="Energy",
+                description="Discuss oil, gas, renewables, utilities, and energy-market developments.", order_index=10),
+            ContentManagement(content_id="forum_topic_real_estate", section="forum_topics", title="Real Estate",
+                description="Discuss REITs, property markets, and real-estate investment themes.", order_index=11),
+
+            # Shared Expert Detail page (ExpertDetail.jsx)
+            ContentManagement(content_id="expert_detail_core_title", section="expert_detail_page", title="Core Information", order_index=0),
+            ContentManagement(content_id="expert_detail_portfolio_tab", section="expert_detail_page", title="Portfolio", order_index=1),
+            ContentManagement(content_id="expert_detail_reviews_tab", section="expert_detail_page", title="Reviews", order_index=2),
+            ContentManagement(content_id="expert_detail_ask_cta", section="expert_detail_page", title="Ask Question", order_index=3),
+            ContentManagement(content_id="expert_detail_follow_cta", section="expert_detail_page", title="Follow", order_index=4),
+            ContentManagement(content_id="expert_detail_following_cta", section="expert_detail_page", title="Following", order_index=5),
+            ContentManagement(content_id="expert_detail_rate_cta", section="expert_detail_page", title="Rate", order_index=6),
+            ContentManagement(content_id="expert_detail_edit_rating_cta", section="expert_detail_page", title="Edit Rating", order_index=7),
+            ContentManagement(content_id="expert_detail_reviews_title", section="expert_detail_page", title="Portfolio Reviews", order_index=8),
+
+            # --- Previously-hardcoded investor pages, now editable ---
+
+            # AIChatbot.jsx
+            ContentManagement(content_id="header_ai_chatbot_page", section="page_headers",
+                title="RocketTrade AI Assistant", description="Ask about stocks, market trends, technical analysis, and more", order_index=23),
+
+            # BecomeExpertPage.jsx
+            ContentManagement(content_id="header_become_expert_page", section="page_headers",
+                title="Become an Expert", description="Prove your trading skill to unlock expert privileges — publish educational articles, share your portfolio with premium users, and enjoy complimentary premium benefits.", order_index=24),
+            ContentManagement(content_id="become_expert_approved_heading", section="become_expert_page", title="You are a verified expert!", order_index=0),
+            ContentManagement(content_id="become_expert_approved_desc", section="become_expert_page", title="You can now publish articles, share your portfolio and enjoy premium benefits.", order_index=1),
+            ContentManagement(content_id="become_expert_pending_heading", section="become_expert_page", title="Application under review", order_index=2),
+            ContentManagement(content_id="become_expert_pending_desc", section="become_expert_page", title="Your documents are being reviewed. You will be notified once a decision is made.", order_index=3),
+            ContentManagement(content_id="become_expert_applied_heading", section="become_expert_page", title="Application started \u2014 submit your documents", order_index=4),
+            ContentManagement(content_id="become_expert_applied_cta", section="become_expert_page", title="Upload Documents \u2192", order_index=5),
+            ContentManagement(content_id="become_expert_eligible_heading", section="become_expert_page", title="\U0001F389 You meet the requirements!", order_index=6),
+            ContentManagement(content_id="become_expert_eligible_desc", section="become_expert_page", title="Apply now and upload supporting documents (certificates, degrees, employment letters) for review.", order_index=7),
+            ContentManagement(content_id="become_expert_eligible_cta", section="become_expert_page", title="Apply to Become an Expert \u2192", order_index=8),
+            ContentManagement(content_id="become_expert_default_heading", section="become_expert_page", title="Keep trading to qualify", order_index=9),
+            # "{stocks}" and "{margin}" get swapped client-side for the real numbers
+            ContentManagement(content_id="become_expert_default_desc", section="become_expert_page", title="Trade at least {stocks} different stocks and reach a {margin}% profit margin to apply for expert status.", order_index=10),
+
+            # PortfolioOverviewPage.jsx
+            ContentManagement(content_id="header_portfolio_overview_page", section="page_headers",
+                title="Portfolio Overview", description="Full trading analytics, holdings, and order history", order_index=25),
+
+            # QuantRatingPage.jsx
+            ContentManagement(content_id="header_quant_rating_page", section="page_headers",
+                title="Sector Quant Ratings", description="Calibrated machine-learning buy ratings, modelled per GICS sector. Each score is a true, calibrated probability — not a black-box index.", order_index=26),
+
+            # TransactionHistoryPage.jsx
+            ContentManagement(content_id="header_transaction_history_page", section="page_headers",
+                title="Transaction History", description="All executed buy & sell orders", order_index=27),
+            ContentManagement(content_id="transaction_history_empty_heading", section="transaction_history_page", title="No transactions yet", order_index=0),
+            ContentManagement(content_id="transaction_history_empty_desc", section="transaction_history_page", title="Start trading to see your history here", order_index=1),
+            ContentManagement(content_id="transaction_history_empty_cta", section="transaction_history_page", title="Go to Markets", order_index=2),
+
+            # InvestorProfilePage.jsx — tab section headings (no single page-level header; it's a tabbed settings page)
+            ContentManagement(content_id="investor_profile_personal_info_heading", section="investor_profile_page", title="Personal Information", order_index=0),
+            ContentManagement(content_id="investor_profile_account_settings_heading", section="investor_profile_page", title="Account Settings", order_index=1),
+
+            # TransactionPortalPage.jsx
+            ContentManagement(content_id="header_transaction_portal_page", section="page_headers",
+                title="Transaction Portal", description="Full overview of your paper trading activity", order_index=28),
+            ContentManagement(content_id="transaction_portal_history_cta", section="transaction_portal_page", title="View History \u2192", order_index=0),
+
+            # UpdateParticularPage.jsx — "{username}" gets swapped client-side for the real username
+            ContentManagement(content_id="update_particular_heading", section="update_particular_page", title="Welcome, {username}! \U0001F44B", order_index=0),
+            ContentManagement(content_id="update_particular_desc", section="update_particular_page", title="Let's set up your profile before you start trading.", order_index=1),
+            ContentManagement(content_id="update_particular_submit_cta", section="update_particular_page", title="Get Started \u2192", order_index=2),
+            ContentManagement(content_id="update_particular_skip_cta", section="update_particular_page", title="Skip for now", order_index=3),
+
+            # PaymentSuccess.jsx
+            ContentManagement(content_id="payment_success_loading_heading", section="payment_result_page", title="Activating your subscription...", order_index=0),
+            ContentManagement(content_id="payment_success_loading_desc", section="payment_result_page", title="Please wait a moment.", order_index=1),
+            ContentManagement(content_id="payment_success_error_heading", section="payment_result_page", title="Something went wrong", order_index=2),
+            ContentManagement(content_id="payment_success_error_cta", section="payment_result_page", title="Homepage", order_index=3),
+            ContentManagement(content_id="payment_success_heading", section="payment_result_page", title="Payment Successful", order_index=4),
+            ContentManagement(content_id="payment_success_desc", section="payment_result_page", title="Your subscription is now active.", order_index=5),
+            ContentManagement(content_id="payment_success_cta", section="payment_result_page", title="Homepage", order_index=6),
+
+            # PaymentFail.jsx
+            ContentManagement(content_id="payment_fail_heading", section="payment_result_page", title="Payment Failed", order_index=7),
+            ContentManagement(content_id="payment_fail_desc", section="payment_result_page", title="Please try again.", order_index=8),
+            ContentManagement(content_id="payment_fail_retry_cta", section="payment_result_page", title="Try Again", order_index=9),
+            ContentManagement(content_id="payment_fail_home_cta", section="payment_result_page", title="Go Home", order_index=10),
+
         ]
 
-        # These three sections used to have admin tabs but got dropped — went
-        # through the whole frontend and none of them are actually read
-        # anywhere. "feature" was a set of bubbles nothing displayed, "expert"
-        # was a hero no expert page ever fetched, and "forum_room" was meant
-        # for cover images but ForumPage.jsx just uses its own bundled ones.
-        # This cleans out any leftover rows from when they still existed —
-        # fine to run over and over, it's just a delete.
+        # Old unused sections from earlier content-management experiments.
+        # The current Community Forum uses the "forum_page" and "forum_topics"
+        # sections above; the legacy "forum_room" rows are safe to remove.
         dead_sections = ("feature", "expert", "forum_room")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)

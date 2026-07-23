@@ -6,7 +6,15 @@ import { BellRing, ChevronDown, Menu, MessageCircle, X } from "lucide-react";
 
 import ChatDock from "../components/chat/ChatDock.jsx";
 import NotificationDock from "../components/notifications/NotificationDock.jsx";
-import { getAvatarGradient } from "../utils/userRole.js";
+import { getAvatarGradient, isExpertUser } from "../utils/userRole.js";
+
+function readStoredUser() {
+  try {
+    return JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
+  } catch {
+    return null;
+  }
+}
 
 function NavDropdown({ items }) {
   const navigate = useNavigate();
@@ -28,11 +36,13 @@ function NavDropdown({ items }) {
 
 function DropDownMenu() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
+  const currentUser = readStoredUser();
+  const expertAccount = isExpertUser(currentUser);
 
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
       localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
@@ -40,6 +50,7 @@ function DropDownMenu() {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
         localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       } else {
         console.error("Logout failed:", data.message || data);
@@ -55,9 +66,11 @@ function DropDownMenu() {
       <button onClick={() => navigate("/investor/edit-profile")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Profile
       </button>
-      <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
-        Subscription
-      </button>
+      {!expertAccount && (
+        <button onClick={() => navigate("/investor/subscription")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+          Subscription
+        </button>
+      )}
       <button onClick={() => navigate("/reviews")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Reviews
       </button>
@@ -77,7 +90,7 @@ function DropDownMenu() {
 }
 
 function Profile() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
+  const currentUser = readStoredUser();
   const initials = (currentUser?.full_name || currentUser?.username || currentUser?.user_name || "??")
     .slice(0, 2)
     .toUpperCase();
@@ -118,7 +131,9 @@ function GeneralHeader() {
   const notifDockRef = useRef(null);
   const desktopRightRef = useRef(null);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
+  const currentUser = readStoredUser() || {};
+  const expertAccount = isExpertUser(currentUser);
+  const homePath = expertAccount ? "/expert" : "/investor";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -130,6 +145,7 @@ function GeneralHeader() {
   const handleLogout = async () => {
     if (!currentUser?.user_id) {
       localStorage.removeItem("currentUser");
+      sessionStorage.removeItem("currentUser");
       navigate("/");
       return;
     }
@@ -137,6 +153,7 @@ function GeneralHeader() {
       const data = await logoutAccount(currentUser.user_id);
       if (data.success) {
         localStorage.removeItem("currentUser");
+        sessionStorage.removeItem("currentUser");
         navigate("/");
       }
     } catch (error) {
@@ -166,7 +183,7 @@ function GeneralHeader() {
       ],
     },
     {
-      label: "Forum Community",
+      label: "Community Forum",
       activePaths: ["/forum"],
       onClick: () => navigate("/forum"),
     },
@@ -206,7 +223,7 @@ function GeneralHeader() {
         <img
           alt="logo"
           src={logo}
-          onClick={() => navigate("/investor")}
+          onClick={() => navigate(homePath)}
           className="cursor-pointer w-17.5 md:w-25 lg:w-30"
           style={{ height: "auto" }}
         />
@@ -362,12 +379,14 @@ function GeneralHeader() {
               >
                 Profile
               </button>
-              <button
-                onClick={() => go("/investor/subscription")}
-                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
-              >
-                Subscription
-              </button>
+              {!expertAccount && (
+                <button
+                  onClick={() => go("/investor/subscription")}
+                  className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"
+                >
+                  Subscription
+                </button>
+              )}
               <button
                 onClick={() => go("/reviews")}
                 className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl"

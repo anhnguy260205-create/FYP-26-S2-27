@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPageBackground } from "../../utils/userRole.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -116,6 +117,14 @@ export default function ExpertPortfolio() {
     // Merged roles: experts are investors with the is_expert flag.
     const isExpert = currentUser?.is_expert === true || role === "expert";
 
+    const cms = useContentManagement();
+    const headerContent = isExpert
+        ? cms.text("expert_portfolio_list_expert_header", "Expert Portfolio Directory", "Preview how investors browse verified expert portfolios.")
+        : cms.text("expert_portfolio_list_header", "Expert Portfolio", "Explore and invest in portfolios managed by our expert consultants.");
+    const searchPlaceholder = cms.text("expert_portfolio_search_placeholder", "Search expert by name or keyword...").title;
+    const searchCta = cms.text("expert_portfolio_search_cta", "Search").title;
+    const emptyMessage = cms.text("expert_portfolio_empty", "No experts found.").title;
+
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
     const [experts, setExperts] = useState([]);
@@ -173,7 +182,7 @@ export default function ExpertPortfolio() {
                                 lineHeight: 1,
                             }}
                         >
-                            Expert Portfolio
+                            {headerContent.title}
                         </h1>
 
                         <p
@@ -183,7 +192,7 @@ export default function ExpertPortfolio() {
                                 fontSize: "14px",
                             }}
                         >
-                            Explore and invest in portfolios managed by our expert consultants.
+                            {headerContent.description}
                         </p>
                     </div>
 
@@ -227,7 +236,7 @@ export default function ExpertPortfolio() {
                         />
 
                         <input
-                            placeholder="Search expert by name or keyword..."
+                            placeholder={searchPlaceholder}
                             value={query}
                             onChange={(e) =>
                                 setQuery(e.target.value)
@@ -252,7 +261,7 @@ export default function ExpertPortfolio() {
                             cursor: "pointer",
                         }}
                     >
-                        Search
+                        {searchCta}
                     </button>
                 </div>
 
@@ -343,6 +352,11 @@ export default function ExpertPortfolio() {
                     </div>
 
                     {/* Rows */}
+                    {visible.length === 0 && (
+                        <div className="px-5 py-8 text-center text-sm" style={{ color: C.muted }}>
+                            {emptyMessage}
+                        </div>
+                    )}
                     {visible.map((expert, index) => (
                         <div
                             onClick={() => navigate(`/investor/expertdetails?user_id=${expert.user_id}`, {

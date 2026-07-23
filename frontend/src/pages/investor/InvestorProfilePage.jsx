@@ -9,7 +9,7 @@ import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } f
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
 import { addAssets, getPortfolio } from "../../api/tradingApi.js";
 import { COUNTRIES, splitAddress, joinAddress } from "../../utils/countryCodes.js";
-
+import { useContentManagement } from "../../utils/contentManagement.js";
 /* ─── Light theme tokens ──────────────────────────────────── */
 const ACCENT_TEXT = "#004450";
 const HEADING = "#0B1D4F";
@@ -422,6 +422,8 @@ function DeleteAccountButton() {
 }
 
 function PersonalInformationCard({ investorInfo, onUpdate }) {
+  const { text } = useContentManagement();
+  const heading = text("investor_profile_personal_info_heading", "Personal Information").title;
     const [draftFull, setDraftFull] = useState(investorInfo?.full_name || "");
     const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
@@ -495,7 +497,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                     {/* HEADER */}
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>Personal Information</h1>
+                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>{heading}</h1>
                             <p
                                 style={{
                                     fontSize: "13px",
@@ -714,6 +716,8 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     );
 }
 function AccountSettingsCard({ investorInfo, onUpdate }) {
+  const { text } = useContentManagement();
+  const heading = text("investor_profile_account_settings_heading", "Account Settings").title;
     const [editingSection, setEditingSection] = useState(null);
     const [selectedInterests, setSelectedInterests] = useState(
         () => investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
@@ -786,7 +790,7 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                 <>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>Account Settings</h1>
+                            <h1 className="text-xl font-bold" style={{ color: HEADING }}>{heading}</h1>
                             <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
                                 Stock interests and account type
                             </p>
