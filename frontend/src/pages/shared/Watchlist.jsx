@@ -122,7 +122,9 @@ export default function Watchlist() {
     }, [userId]);
     const navigate = useNavigate();
     const handleSelect = useCallback((symbol) => {
-        navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+        navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+            state: { from: "/watchlist", fromLabel: "Watchlist" },
+        });
     }, [navigate]);
     const rows = symbols.map(sym => {
         const live = liveStocks[sym];

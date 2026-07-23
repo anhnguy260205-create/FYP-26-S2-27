@@ -29,13 +29,14 @@ function LoginPage() {
     // Roles are merged — experts are investors with an is_expert flag and
     // use the investor interface.
     if (role === "investor" || role === "expert") {
-      const dismissed = localStorage.getItem(`profileSetupDismissed_${user.user_id}`) === "1";
-      if (user.first_login) navigate("/investor/subscription");
-      else if (!user.full_name && !dismissed) navigate("/investor/update-particular");
+      // First login → full setup (personal info → transaction PIN → subscription).
+      // The risk-assessment prompt then appears on the investor home for anyone
+      // who hasn't set a risk tolerance and hasn't dismissed it.
+      if (user.first_login) navigate("/investor/setup");
       else navigate("/investor");
     }
     else if (role === "admin") navigate("/adminpanel");
-    else if (role === "hr") navigate("/finance-admin")
+    else if (role === "finance admin") navigate("/finance-admin")
     else setError("Unknown role: " + role);
   };
 
@@ -103,7 +104,11 @@ function LoginPage() {
       } else if (err.code === "auth/network-request-failed") {
         setError("Network error — check your internet connection and try again.");
       } else if (err.message === "Failed to fetch") {
-        setError("Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev.");
+        setError(
+          import.meta.env.DEV
+            ? "Cannot reach backend. For local testing, set frontend/.env VITE_API_URL=http://localhost:8000 and restart npm run dev."
+            : "Cannot reach the server right now. Please check your connection and try again in a moment."
+        );
       } else {
         setError(`Login failed (${err.code || err.message || "unknown"}). See browser console for details.`);
       }

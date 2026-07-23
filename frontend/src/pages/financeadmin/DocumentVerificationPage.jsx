@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban, DollarSign, Users, Star, Lock, Calendar } from "lucide-react";
 import FinanceAdminLayout from "../../layout/FinanceAdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
+import LoginActivityChart from "../../components/admin/LoginActivityChart.jsx";
 
 const API = `${import.meta.env.VITE_API_URL}/admin/experts`;
 
@@ -19,9 +20,29 @@ const docTypeColor = (type) => {
   return "bg-gray-100 text-gray-700";
 };
 
+function CompensationBadge({ eligible }) {
+  const Icon = eligible ? DollarSign : Lock;
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit ${eligible ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+      <Icon size={11} /> {eligible ? "Unlocked" : "Locked"}
+    </span>
+  );
+}
+
 function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
   const { label, color, icon: StatusIcon } = statusConfig[application.verification_status] || statusConfig.not_submitted;
   const initials = (application.full_name || "??").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
+  const [loginActivity, setLoginActivity] = useState(null);
+  const [loginActivityLoading, setLoginActivityLoading] = useState(true);
+
+  useEffect(() => {
+    setLoginActivityLoading(true);
+    authFetch(`${API}/${application.expert_id}/login-activity?days=7`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setLoginActivity(d.days); })
+      .finally(() => setLoginActivityLoading(false));
+  }, [application.expert_id]);
 
   return (
     <div>
@@ -73,6 +94,48 @@ function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
             <Briefcase size={14} /> Professional Background
           </h3>
           <div><p className="text-xs font-bold text-slate-400 uppercase">Years of Experience</p><p className="text-slate-800 mt-1">{application.experience_years ? `${application.experience_years} years` : "—"}</p></div>
+        </div>
+
+        {/* Compensation */}
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+            <DollarSign size={14} /> Compensation
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-20 gap-y-5">
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Users size={11} /> Followers</p>
+              <p className="text-slate-800 mt-1">{(application.follower_count ?? 0).toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Star size={11} /> Rating</p>
+              <p className="text-slate-800 mt-1">{(application.rating_average ?? 0).toFixed(2)}★</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1"><Calendar size={11} /> Active This Week</p>
+              <p className="text-slate-800 mt-1" title="Distinct days with a fresh login in the last 7 days — not hours online, which isn't tracked.">
+                {application.login_days_this_week ?? 0} / 7 days
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase">Status</p>
+              <div className="mt-1"><CompensationBadge eligible={!!application.compensation_eligible} /></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Login Activity */}
+        <div>
+          <h3 className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-2">
+            <Calendar size={14} /> Login Activity (Last 7 Days)
+          </h3>
+          <p className="text-xs text-slate-400 mb-4">Logins per day — not hours online, which isn't tracked anywhere in the app.</p>
+          {loginActivityLoading ? (
+            <p className="text-sm text-slate-400">Loading…</p>
+          ) : loginActivity ? (
+            <LoginActivityChart series={loginActivity} loading={false} />
+          ) : (
+            <p className="text-sm text-slate-400">No login activity data.</p>
+          )}
         </div>
 
         {/* Documents */}
@@ -264,6 +327,7 @@ function VerifyDocumentationPage() {
                   <th className="px-6 py4">Experience</th>
                   <th className="px-6 py-4">Documents</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Compensation</th>
                   <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
@@ -294,6 +358,10 @@ function VerifyDocumentationPage() {
                         </span>
                       </td>
                       <td className="px-6 py-5">
+                        <CompensationBadge eligible={!!app.compensation_eligible} />
+                        <p className="text-xs text-slate-400 mt-1">{(app.follower_count ?? 0).toLocaleString()} followers · {(app.rating_average ?? 0).toFixed(1)}★</p>
+                      </td>
+                      <td className="px-6 py-5">
                         <div className="flex items-center gap-3 w-fit">
                           <button onClick={() => setSelected(app)} className="flex items-center gap-1.5 text-blue-600 text-sm font-medium hover:text-blue-700 hover:underline underline-offset-2">
                             <Eye size={14} /> Review
@@ -314,7 +382,7 @@ function VerifyDocumentationPage() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400">No applications found.</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No applications found.</td></tr>
                 )}
               </tbody>
             </table>

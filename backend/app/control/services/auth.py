@@ -29,6 +29,16 @@ def _cached_auth_profile(email: str) -> dict | None:
     return profile
 
 
+def invalidate_profile_cache(email: str) -> None:
+    """Bust the cached auth profile for one account. Call this after any
+    admin-side change to role/verification/subscription (e.g. approving,
+    rejecting, or cancelling an expert) so the affected user's very next
+    request reflects it — otherwise they can see stale role/is_expert data
+    (like a demoted expert still getting the expert interface) for up to
+    _PROFILE_TTL seconds."""
+    _profile_cache.pop(email, None)
+
+
 def _extract_dev_email(headers: Mapping[str, str]) -> str | None:
     for key in ("x-dev-email", "X-Dev-Email", "x-dev-user-email"):
         value = headers.get(key)
@@ -133,7 +143,7 @@ def require_admin_or_hr(
 ) -> dict:
     role = current_user.get("role")
 
-    if role not in ["admin", "hr"]:
+    if role not in ["admin", "finance admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin or HR access required",

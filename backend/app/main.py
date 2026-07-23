@@ -49,7 +49,13 @@ from app.entity.models.predictionusage import PredictionUsage
 from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
 from app.entity.models.expertfollow import ExpertFollow
 from app.entity.models.expertportfolioreview import ExpertPortfolioReview
-from app.entity.models.expertcompensation import ExpertCompensationLedger
+from app.entity.models.expertcompensation import (
+    ExpertCompensationLedger, ensure_compensation_schema,
+)
+from app.entity.models.wallet import (
+    WalletTransaction, PlatformRevenue, backfill_subscription_revenue,
+)
+from app.entity.models.gift import Gift
 from app.boundary.stock_ws import (
     router as stock_ws_router,
     stock_pool,
@@ -72,6 +78,7 @@ from app.boundary.contentb import router as content_router
 from app.boundary.chatbotb import router as chatbot_router
 from app.boundary.reviewb import router as review_router
 from app.boundary.chatb import router as chat_router
+from app.boundary.walletb import router as wallet_router
 from app.control.controller.alertc import CheckAndTriggerAlertsController
 from app.control.services.firebase_admin_service import seed_all_firebase_accounts
 from app.control.services.email_service import send_renewal_reminder_email
@@ -153,8 +160,7 @@ def ensure_all_schemas(engine):
 
     patches = [
         ("investor",     "risk_tolerance",        "ALTER TABLE investor ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
-        ("expert",       "risk_tolerance",        "ALTER TABLE expert ADD COLUMN risk_tolerance VARCHAR(30) NULL"),
-        ("expert",       "interests",             "ALTER TABLE expert ADD COLUMN interests VARCHAR(255) NULL"),
+        ("investor",     "transaction_pin",       "ALTER TABLE investor ADD COLUMN transaction_pin VARCHAR(255) NULL"),
         ("subscription", "renewal_reminder_sent", "ALTER TABLE subscription ADD COLUMN renewal_reminder_sent TINYINT(1) NOT NULL DEFAULT 0"),
         ("subscription", "amount",                "ALTER TABLE subscription ADD COLUMN amount INT NOT NULL DEFAULT 0"),
         ("transaction",  "realized_pnl",          "ALTER TABLE transaction ADD COLUMN realized_pnl FLOAT NULL"),
@@ -169,9 +175,24 @@ def ensure_all_schemas(engine):
         ("watchlist",    "user_id",               "ALTER TABLE watchlist ADD COLUMN user_id VARCHAR(50) NULL"),
         ("notification", "broadcast_id",           "ALTER TABLE notification ADD COLUMN broadcast_id INT NULL"),
         ("expert_follow", "follower_user_id",      "ALTER TABLE expert_follow ADD COLUMN follower_user_id VARCHAR(50) NULL"),
+        ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
+        ("expert",       "chat_available",         "ALTER TABLE expert ADD COLUMN chat_available TINYINT(1) NOT NULL DEFAULT 1"),
     ]
 
     with engine.connect() as conn:
+        # ── Rename investor.paper_money → investor.assets ────────────────────
+        # Must run before any statement below that references the `assets`
+        # column (e.g. the merged-roles insert). Idempotent: only fires when
+        # the old column is still present and the new one is not.
+        try:
+            if _col_exists(conn, "investor", "paper_money") and not _col_exists(conn, "investor", "assets"):
+                conn.execute(text(
+                    "ALTER TABLE investor CHANGE paper_money assets FLOAT NULL DEFAULT 0"))
+                conn.commit()
+                print("[SCHEMA] Renamed investor.paper_money → investor.assets")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped investor.paper_money→assets rename: {e}")
+
         for table, col, stmt in patches:
             try:
                 if not _col_exists(conn, table, col):
@@ -260,6 +281,41 @@ def ensure_all_schemas(engine):
             conn.commit()
         except Exception as e:
             print(f"[SCHEMA] Skipped expert_follow investor_id/follower_user_id backfill: {e}")
+
+
+        # ── Merged roles migration ──────────────────────────────────────────
+        # Every expert account also gets an investor row (experts now use the
+        # investor UI and trade like investors); verified experts get the
+        # complimentary premium tier.
+        try:
+            result = conn.execute(text(
+                "INSERT INTO investor "
+                "(investor_id, user_id, investor_subscription_status, assets, used_amount) "
+                "SELECT CONCAT('investor_', UUID()), e.user_id, 'inactive', 0, 0 "
+                "FROM expert e "
+                "WHERE e.user_id IS NOT NULL "
+                "AND NOT EXISTS (SELECT 1 FROM investor i WHERE i.user_id = e.user_id)"
+            ))
+            conn.commit()
+            if result.rowcount:
+                print(f"[SCHEMA] Created investor rows for {result.rowcount} existing expert(s)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped expert->investor backfill: {e}")
+
+        try:
+            result = conn.execute(text(
+                "UPDATE investor i "
+                "JOIN expert e ON e.user_id = i.user_id "
+                "JOIN expert_verification ev ON ev.expert_id = e.expert_id "
+                "SET i.investor_subscription_status = 'premium' "
+                "WHERE ev.verification_status IN ('approved', 'active') "
+                "AND i.investor_subscription_status <> 'premium'"
+            ))
+            conn.commit()
+            if result.rowcount:
+                print(f"[SCHEMA] Granted premium to {result.rowcount} verified expert(s)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped verified-expert premium backfill: {e}")
     print("[SCHEMA] All schema patches complete.")
 
 
@@ -319,13 +375,16 @@ async def renewal_reminder_poller():
 
 
 async def expert_compensation_poller():
-    """Once a day, materialize any completed calendar months of expert
-    compensation that haven't been recorded yet (idempotent — safe to run
-    repeatedly)."""
+    """Once a day, settle the most recently completed calendar month: snapshot
+    each expert's premium follower count, credit their assets, and log the
+    payout to the wallet ledger.
+
+    Idempotent — a month already marked paid is skipped, so running daily (and
+    re-running after a restart) never double-pays."""
     await asyncio.sleep(45)  # short delay after server start
     while True:
         try:
-            await asyncio.to_thread(ExpertCompensationLedger.materialize_completed_months)
+            await asyncio.to_thread(ExpertCompensationLedger.run_monthly_payout)
         except Exception as e:
             print(f"[COMPENSATION] Poller error: {e}")
         await asyncio.sleep(86400)  # once a day
@@ -370,6 +429,12 @@ if RUN_SCHEMA_PATCHES:
     ensure_forum_schema(engine)
     ensure_all_schemas(engine)
     ensure_forum_schema(engine)
+    # create_all() adds missing TABLES but never missing COLUMNS — the
+    # compensation rewrite added columns to an existing table.
+    try:
+        ensure_compensation_schema()
+    except Exception as _e:
+        print(f"[SCHEMA] Compensation schema patch skipped: {_e}")
 else:
     print("[STARTUP] Schema patches skipped")
 
@@ -383,6 +448,12 @@ if RUN_SEEDS:
     seed_landing_content()
     seed_forum_posts()
     seed_reviews()
+    # Pull pre-existing subscriptions into the revenue ledger so the finance
+    # dashboard isn't blank on first run. Idempotent.
+    try:
+        backfill_subscription_revenue()
+    except Exception as _e:
+        print(f"[REVENUE] Subscription backfill skipped: {_e}")
 else:
     print("[STARTUP] Seed data skipped")
 
@@ -413,6 +484,7 @@ app.include_router(content_router)
 app.include_router(chatbot_router)
 app.include_router(review_router)
 app.include_router(chat_router)
+app.include_router(wallet_router)
 
 
 @app.middleware("http")

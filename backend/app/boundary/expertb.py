@@ -102,7 +102,6 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
             "full_name": e["full_name"],
             "experience_years": e["experience_years"],
             "rating": e.get("rating"),
-            "risk_tolerance": e["risk_tolerance"],
             "verification_status": e["verification_status"],
             "follower_count": ExpertFollow.get_follower_count(e["user_id"]),
             "portfolio_rating": ExpertPortfolioReview.get_stats(e["user_id"]),
@@ -175,9 +174,9 @@ def public_expert_profile(user_id: str,
             "experience_years": info.get("experience_years"),
             "rating": info.get("rating"),
             "linked_in_url": info.get("linked_in_url"),
-            "risk_tolerance": info.get("risk_tolerance"),
             "verification_status": info.get("verification_status"),
             "address": info.get("address"),
+            "chat_available": info.get("chat_available", True),
             "follower_count": ExpertFollow.get_follower_count(user_id),
             "is_following": ExpertFollow.is_following(current_user["user_id"], user_id),
             "is_self": current_user["user_id"] == user_id,
@@ -300,13 +299,6 @@ class PublishPortfolioRequest(BaseModel):
     published: bool = True
 
 
-@router.post("/publish-my-portfolio")
-def publish_my_portfolio(current_user: dict = Depends(get_current_user)):
-    """Publish the expert's REAL trading portfolio (from the transactions
-    section's Portfolio Overview) to their expert profile."""
-    return ExpertPortfolioRepository.publish_real_portfolio(current_user["user_id"])
-
-
 @router.post("/portfolio-publish")
 def publish_portfolio(
     data: PublishPortfolioRequest,
@@ -348,8 +340,6 @@ class DocumentItem(BaseModel):
 class UpdateExpertProfileRequest(BaseModel):
     experience_years: Optional[int] = None
     linked_in_url: Optional[str] = None
-    risk_tolerance: Optional[str] = None
-    interests: Optional[str] = None
 
 
 @router.post("/update-profile")
@@ -361,12 +351,27 @@ def update_expert_profile(
         current_user["user_id"],
         data.experience_years,
         data.linked_in_url,
-        data.risk_tolerance,
-        data.interests,
     )
     if not ok:
         return {"success": False, "message": "Expert not found"}
     return {"success": True, "message": "Profile updated"}
+
+
+class ChatAvailabilityRequest(BaseModel):
+    available: bool = True
+
+
+@router.post("/chat-availability")
+def set_chat_availability(
+    data: ChatAvailabilityRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Verified experts toggle whether they're currently accepting new
+    chat requests from investors. Existing conversations are unaffected."""
+    ok = Expert.set_chat_available(current_user["user_id"], data.available)
+    if not ok:
+        return {"success": False, "message": "Expert not found"}
+    return {"success": True, "chat_available": data.available}
 
 
 class UpdateDocumentsRequest(BaseModel):

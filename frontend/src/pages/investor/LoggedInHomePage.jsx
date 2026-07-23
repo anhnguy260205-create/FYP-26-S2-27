@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import useLiveStocks from "../../api/useLiveStocks.js";
+import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
+import RiskAssessmentModal, { riskDismissedKey } from "../../components/RiskAssessmentModal.jsx";
 import { getWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
@@ -14,8 +16,9 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles,
+  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase, Bell,
 } from "lucide-react";
+import { authFetch } from "../../api/apiClient.js";
 import {
   CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   SectionHeader, PrimaryButton,
@@ -105,6 +108,15 @@ const PLATFORM_FEATURES = [
     badge: "Beginner to advanced",
     cta: "Explore",
     accent: "amber",
+  },
+  {
+    Icon: Award,
+    title: "Become an Expert",
+    description: "Trade 30 different stocks and hit a 200% profit margin to apply for verified expert status — publish articles and share your portfolio.",
+    to: "/investor/become-expert",
+    badge: "Level up",
+    cta: "Check my progress",
+    accent: "rose",
   },
 ];
 
@@ -203,7 +215,7 @@ function usePortfolioData(userId, stocks) {
   }, [userId]);
 
   const holdings = portfolio?.holdings ?? [];
-  const paperMoney = portfolio?.paper_money ?? 0;
+  const assets = portfolio?.assets ?? 0;
 
   const holdingsValue = holdings.reduce((sum, h) => {
     const price = stocks?.[h.symbol]?.price ?? h.average_cost;
@@ -218,10 +230,10 @@ function usePortfolioData(userId, stocks) {
     if (!live || live.previousClose == null) return sum;
     return sum + (live.price - live.previousClose) * h.quantity;
   }, 0);
-  const totalValue = paperMoney + holdingsValue;
+  const totalValue = assets + holdingsValue;
   const realisedPnL = summary?.realised_pnl ?? 0;
 
-  return { loading, holdings, paperMoney, unrealisedPnL, realisedPnL, todaysPnL, totalValue };
+  return { loading, holdings, assets, unrealisedPnL, realisedPnL, todaysPnL, totalValue };
 }
 
 // Ranks the same POPULAR_SYMBOLS pool already shown on this page by real Quant Rating buy-probability,
@@ -434,7 +446,7 @@ function AIInsightsSection({ portfolioData, header }) {
 
 function PortfolioSummarySection({ portfolioData, userId, header }) {
   const navigate = useNavigate();
-  const { loading, paperMoney, unrealisedPnL, realisedPnL, todaysPnL, totalValue } = portfolioData;
+  const { loading, assets, unrealisedPnL, realisedPnL, todaysPnL, totalValue } = portfolioData;
   const sectionTitle = header("header_portfolio_summary", "Portfolio Summary").title;
   const ctaLabel = header("portfolio_summary_cta", "View Full Portfolio \u2192").title;
 
@@ -496,7 +508,7 @@ function PortfolioSummarySection({ portfolioData, userId, header }) {
         <div className="lg:col-span-2 flex flex-col gap-6">
           <div className={`${CARD_LIGHT} p-6 flex-1 flex flex-col justify-center`}>
             <p className="text-sm text-slate-500 mb-2">Available Funds</p>
-            <p className="font-['DM_Mono'] font-semibold text-slate-900 text-2xl">{fmt$(paperMoney)}</p>
+            <p className="font-['DM_Mono'] font-semibold text-slate-900 text-2xl">{fmt$(assets)}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className={`${CARD_COMPACT_LIGHT} p-4`}>
@@ -592,7 +604,9 @@ function WatchlistSection({ header }) {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+    state: { from: "/investor", fromLabel: "Home" },
+  });
   const sectionTitle = header("header_watchlist", "My Watchlist").title;
   const ctaLabel = header("watchlist_cta", "View Full Watchlist \u2192").title;
   const emptyState = header("header_watchlist_empty", "Start building your watchlist", "Track stocks you're interested in and receive AI insights on how they're moving.");
@@ -765,7 +779,9 @@ function PopularStocksSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+  const handleSelect = (symbol) => navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+    state: { from: "/investor", fromLabel: "Home" },
+  });
 
   return (
     <section>
@@ -917,6 +933,7 @@ function RealtimeDashboardSection({ header, items }) {
     { Icon: BrainCircuit, title: "AI Predictions", description: "Multi-day price forecasts and confidence scores powered by machine learning." },
     { Icon: BadgeCheck, title: "Verified Expert Comments", description: "Get insights straight from verified market experts on every stock page." },
     { Icon: Wallet, title: "Paper Trading", description: "Trade against live market prices using virtual funds, zero real-money risk." },
+    { Icon: Bell, title: "Customised Alerts", description: "Set your own price targets on any stock and get notified the moment they're hit." },
   ];
   const highlights = items("investor_home_dashboard", DEFAULT_HIGHLIGHTS);
 
@@ -943,7 +960,7 @@ function RealtimeDashboardSection({ header, items }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {highlights.map(({ Icon, title, description }) => (
             <div key={title} className="flex flex-col gap-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-[#00D3F2]">
@@ -992,6 +1009,83 @@ function BasicUpgradeBanner({ header }) {
   );
 }
 
+// ── Published expert portfolios (premium perk) ──────────────────────────────
+// Verified experts can publish their portfolio; premium users see them here
+// as reference portfolios. Hidden for basic users and when nothing is published.
+function ExpertPortfoliosSection() {
+  const navigate = useNavigate();
+  const [portfolios, setPortfolios] = useState([]);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch(`${import.meta.env.VITE_API_URL}/expert/published-portfolios`)
+      .then(r => r.json())
+      .then(res => {
+        if (cancelled) return;
+        if (res.success && (res.portfolios || []).length > 0) {
+          setPortfolios(res.portfolios);
+          setVisible(true);
+        }
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <section>
+      <SectionHeader
+        title="Expert Portfolios"
+        subtitle="Reference portfolios published by our verified experts — a Premium perk"
+        dark={false}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {portfolios.map((p) => {
+          const up = (p.return_pct ?? 0) >= 0;
+          return (
+            <div
+              key={p.portfolio_id}
+              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
+                state: { from: "/investor", fromLabel: "Home" },
+              })}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
+                state: { from: "/investor", fromLabel: "Home" },
+              }); }}
+              className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8] shrink-0">
+                    <Briefcase size={19} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
+                    <p className="text-xs text-slate-500 truncate">by {p.expert_name}</p>
+                  </div>
+                </div>
+                <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
+                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {up ? "+" : ""}{Number(p.return_pct ?? 0).toFixed(1)}%
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{p.description || p.investment_objective}</p>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
+                <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
+                <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
+                <span className="inline-flex items-center gap-1 text-[#00A9C4] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function PremiumRenewalBanner({ header, renewalDate }) {
   const navigate = useNavigate();
   const h = header("investor_banner_premium", "You're a Premium Member", "Enjoy unlimited AI predictions, expert access, and advanced analytics. {days} days left until your subscription renews.");
@@ -1032,12 +1126,21 @@ function LoggedInHomePage() {
   const { header, items } = useLandingContentExtras();
   const subscription = useSubscriptionInfo(userId);
 
+  // Preferences / risk-assessment prompt: shown on login when the user has no
+  // risk tolerance set and hasn't ticked "Don't show me again".
+  const [showRisk, setShowRisk] = useState(() => {
+    if (!userId) return false;
+    const hasRisk = !!currentUser?.risk_tolerance;
+    const dismissed = localStorage.getItem(riskDismissedKey(userId)) === "1";
+    return !hasRisk && !dismissed;
+  });
+
   return (
     <motion.div
       className="relative min-h-screen flex flex-col"
       style={{
         fontFamily: "'DM Sans', sans-serif",
-        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 500px, #FFFFFF 100%)",
+        background: getPageBackground(500),
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1052,6 +1155,7 @@ function LoggedInHomePage() {
         <AIInsightsSection portfolioData={portfolioData} header={header} />
         <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
         <WatchlistSection header={header} />
+        <ExpertPortfoliosSection />
 
         {!subscription.loading && (
           subscription.status === "premium"
@@ -1063,6 +1167,12 @@ function LoggedInHomePage() {
 
       </main>
       <Footer />
+
+      <RiskAssessmentModal
+        open={showRisk}
+        userId={userId}
+        onDone={() => setShowRisk(false)}
+      />
     </motion.div>
   );
 }

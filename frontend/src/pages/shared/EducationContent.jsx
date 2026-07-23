@@ -103,11 +103,13 @@ function EducationContent() {
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const role = String(currentUser?.role || "").toLowerCase();
   // Merged roles: experts are investors with the is_expert flag. The write
-  // button is hidden from regular investors — only expert accounts see it.
-  const isExpert = currentUser?.is_expert === true || role === "expert";
-  // Unverified experts still see the button — clicking through to
+  // button is hidden from regular investors — only expert applicants/
+  // accounts see it. is_expert now means VERIFIED, so a pending applicant
+  // (Expert row exists, not yet approved) is only caught by the
+  // verification_status check below — clicking through to
   // /expert/knowledge-hub is what prompts them to submit documents
   // (ExpertKnowledgeHub's own VerificationWall handles that gate).
+  const isExpert = currentUser?.is_expert === true || role === "expert" || currentUser?.verification_status != null;
   const canWrite = isExpert;
 
   const [articles, setArticles] = useState([]);
@@ -154,7 +156,9 @@ function EducationContent() {
               <p style={{ fontFamily: sans, fontSize: 13, color: PAGE.sub, margin: "4px 0 0" }}>Educational articles written by verified experts</p>
             </div>
             {canWrite && (
-              <button onClick={() => navigate("/expert/knowledge-hub")} style={{
+              <button onClick={() => navigate("/expert/knowledge-hub", {
+                state: { from: "/investor/educationcontent", fromLabel: "Educational Content" },
+              })} style={{
                 padding: "10px 22px", borderRadius: 50, cursor: "pointer", border: "none",
                 background: C.success, color: "#fff",
                 fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",

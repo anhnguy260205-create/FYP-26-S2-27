@@ -32,9 +32,9 @@ class GetPortalSummaryController:
         return Transaction.getSummaryStats(user_id)
 
 
-class AddPaperMoneyController:
+class AddAssetsController:
     def add(self, user_id, amount):
-        return Investor.addPaperMoney(user_id, amount)
+        return Investor.addAssets(user_id, amount)
 
 
 class SubmitOrderController:

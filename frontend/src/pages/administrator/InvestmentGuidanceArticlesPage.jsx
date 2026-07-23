@@ -289,10 +289,10 @@ function InvestmentGuidanceArticlesPage() {
   }, []);
 
   const filtered = articles.filter(a => {
-    if (statusFilter === "All")            return true;
+    if (statusFilter === "All") return true;
     if (statusFilter === "Pending Review") return a.status === "pending";
-    if (statusFilter === "Published")      return a.status === "published";
-    if (statusFilter === "Rejected")       return a.status === "rejected";
+    if (statusFilter === "Published") return a.status === "published";
+    if (statusFilter === "Rejected") return a.status === "rejected";
     return true;
   });
 
@@ -404,7 +404,7 @@ function InvestmentGuidanceArticlesPage() {
 
   // ── List ──
   return (
-    <AdminPage title="Education Articles" subtitle="Review and manage articles written by experts.">
+    <AdminPage title="Article Management" subtitle="Review and manage articles written by experts.">
 
       <div className="flex justify-end gap-2 mb-5">
         <button onClick={() => setShowImport(true)}

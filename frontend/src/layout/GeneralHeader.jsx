@@ -172,10 +172,23 @@ function GeneralHeader() {
     },
     {
       label: "Transactions",
-      activePaths: ["/investor/portfolio-overview", "/investor/transaction-history"],
+      activePaths: [
+        "/investor/portfolio-overview",
+        "/investor/transaction-history",
+        "/investor/cash",
+      ],
       submenu: [
         { title: "Portfolio Overview", path: "/investor/portfolio-overview" },
         { title: "Transaction History", path: "/investor/transaction-history" },
+        { title: "Cash In / Cash Out", path: "/investor/cash" },
+      ],
+    },
+    {
+      label: "Expert",
+      activePaths: ["/investor/become-expert", "/investor/compensation"],
+      submenu: [
+        { title: "Expert Application", path: "/investor/become-expert" },
+        { title: "Compensation", path: "/investor/compensation" },
       ],
     },
 

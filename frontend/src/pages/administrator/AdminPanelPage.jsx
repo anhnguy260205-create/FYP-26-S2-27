@@ -97,8 +97,8 @@ function AdminPanelPage() {
                     key={opt.days}
                     onClick={() => setSignupDays(opt.days)}
                     className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${signupDays === opt.days
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     {opt.label}
@@ -109,7 +109,7 @@ function AdminPanelPage() {
 
             <div className="mt-4">
               {signupStats.series.length === 0 ? (
-                <div className="flex items-center justify-center gap-2 text-gray-400 py-14">
+                <div className="flex items-center justify-center gap-2 text-gray-400" style={{ height: 320 }}>
                   {signupsLoading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
@@ -153,6 +153,7 @@ function AdminPanelPage() {
                 breakdown={userTypes.breakdown}
                 total={userTypes.total}
                 loading={userTypesLoading}
+                style={{ marginTop: 80 }}
               />
             )}
           </div>

@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, cloneElement } from "react";
 import { createBrowserRouter, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { StocksProvider } from "./context/StocksContext.jsx";
 
 const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticularPage.jsx"));
+const ProfileSetupPage = lazy(() => import("./pages/investor/ProfileSetupPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
 const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
@@ -23,8 +24,11 @@ const UserProfilesPage = lazy(() => import("./pages/administrator/UserProfilesPa
 const CommunityPostsPage = lazy(() => import("./pages/administrator/CommunityPostsPage.jsx"));
 const CommunityPostDetailsPage = lazy(() => import("./pages/administrator/CommunityPostDetailsPage.jsx"));
 const InvestmentGuidanceArticlesPage = lazy(() => import("./pages/administrator/InvestmentGuidanceArticlesPage.jsx"));
-const DocumentVerificationPage = lazy(() => import("./pages/financeadmin/DocumentVerificationPage.jsx"));
+const ExpertApplicationReviewPage = lazy(() => import("./pages/administrator/ExpertApplicationReviewPage.jsx"));
 const FinanceAdminDashboardPage = lazy(() => import("./pages/financeadmin/FinanceAdminDashboardPage.jsx"));
+const RevenueAnalysisPage = lazy(() => import("./pages/financeadmin/RevenueAnalysisPage.jsx"));
+const PaymentTransactionsPage = lazy(() => import("./pages/financeadmin/PaymentTransactionsPage.jsx"));
+const FinancialReportsPage = lazy(() => import("./pages/financeadmin/FinancialReportsPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
@@ -39,8 +43,8 @@ const BuyStockPage = lazy(() => import("./pages/investor/BuyStockPage.jsx"));
 const SellStockPage = lazy(() => import("./pages/investor/SellStockPage.jsx"));
 const TransactionHistoryPage = lazy(() => import("./pages/investor/TransactionHistoryPage.jsx"));
 const PortfolioOverviewPage = lazy(() => import("./pages/investor/PortfolioOverviewPage.jsx"));
-const ExpertDocumentPage = lazy(() => import("./pages/expert/ExpertDocumentPage.jsx"));
 const ExpertKnowledgeHub = lazy(() => import("./pages/expert/ExpertKnowledgeHub.jsx"));
+const ExpertCompensationPage = lazy(() => import("./pages/expert/ExpertCompensationPage.jsx"));
 const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.jsx"));
 const SubscriptionManagementPage = lazy(() => import("./pages/financeadmin/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
@@ -48,14 +52,23 @@ const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
+const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 
 function S({ children }) {
-    const { pathname } = useLocation();
+    const { pathname, key } = useLocation();
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
 
-    return <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>{children}</Suspense>;
+    // Keying the page on location.key forces a remount (and therefore a
+    // fresh data fetch) even when navigating to the page you're already on
+    // — clicking a header nav link always re-runs the page's mount effects,
+    // rather than being a no-op when the pathname hasn't changed.
+    return (
+        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
+            {cloneElement(children, { key })}
+        </Suspense>
+    );
 }
 
 function wrap(Component) {
@@ -90,8 +103,10 @@ export const router = createBrowserRouter([
     { path: "/buy/:symbol", element: protectWithStocks(["investor"], BuyStockPage) },
     { path: "/sell/:symbol", element: protectWithStocks(["investor"], SellStockPage) },
     { path: "/investor/transaction-history", element: protect(["investor"], TransactionHistoryPage) },
+    { path: "/investor/cash", element: protect(["investor"], CashPortalPage) },
     { path: "/investor/portfolio-overview", element: protectWithStocks(["investor"], PortfolioOverviewPage) },
     { path: "/investor/update-particular", element: protect(["investor"], UpdateParticularPage) },
+    { path: "/investor/setup", element: protect(["investor"], ProfileSetupPage) },
     { path: "/investor", element: protectWithStocks(["investor"], LoggedInHomePage) },
     { path: "/investor/quantrating", element: protectWithStocks(["investor"], QuantRatingPage) },
     { path: "/realtimedashboard", element: protectWithStocks(["investor"], RealTimeDashBoardPage) },
@@ -110,6 +125,9 @@ export const router = createBrowserRouter([
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
     { path: "/investor/expertdetails", element: protect(["investor", "expert"], ExpertDetails) },
     { path: "/investor/become-expert", element: protect(["investor", "expert"], BecomeExpertPage) },
+    // Reachable by any investor — the page itself shows a "verified experts
+    // only" block for anyone who isn't a qualified verified expert yet.
+    { path: "/investor/compensation", element: protect(["investor", "expert"], ExpertCompensationPage) },
 
     { path: "/adminpanel", element: protect(["admin"], AdminPanelPage) },
     { path: "/adminpanel/useraccounts", element: protect(["admin"], UserAccountsPage) },
@@ -118,17 +136,21 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/posts", element: protect(["admin"], CommunityPostsPage) },
     { path: "/adminpanel/posts/:postId", element: protect(["admin"], CommunityPostDetailsPage) },
     { path: "/adminpanel/articles", element: protect(["admin"], InvestmentGuidanceArticlesPage) },
+    { path: "/adminpanel/expert-applications", element: protect(["admin"], ExpertApplicationReviewPage) },
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
 
-    { path: "/finance-admin", element: protect(["hr"], FinanceAdminDashboardPage) },
-    { path: "/finance-admin/document-verification", element: protect(["hr"], DocumentVerificationPage) },
-    { path: "/finance-admin/subscriptions", element: protect(["hr"], SubscriptionManagementPage) },
+    { path: "/finance-admin", element: protect(["finance admin"], FinanceAdminDashboardPage) },
+    { path: "/finance-admin/revenue", element: protect(["finance admin"], RevenueAnalysisPage) },
+    { path: "/finance-admin/subscriptions", element: protect(["finance admin"], SubscriptionManagementPage) },
+    { path: "/finance-admin/payments", element: protect(["finance admin"], PaymentTransactionsPage) },
+    { path: "/finance-admin/reports", element: protect(["finance admin"], FinancialReportsPage) },
 
     // Merged roles: expert features are reached from the investor UI by
     // accounts with the is_expert flag. Remaining /expert pages are kept in
     // the codebase for reference but are no longer routed standalone.
+    // The application form (particulars + documents) lives inline on
+    // /investor/become-expert now — ExpertDocumentPage is no longer routed.
     { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
-    { path: "/expert/documents", element: protectExpert(ExpertDocumentPage) },
 ]);

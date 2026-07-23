@@ -15,6 +15,7 @@ from app.control.services.firebase_admin_service import delete_firebase_user_by_
 from app.control.services.auth import (
     require_admin,
     require_admin_or_hr,
+    invalidate_profile_cache,
 )
 from app.control.services.email_service import send_expert_verified_email, send_expert_rejected_email, send_expert_verification_cancelled_email
 from app.entity.models.expert import Expert
@@ -103,8 +104,17 @@ class AdminUserAccountPage:
     def getRevenueByMonth(self, months=6):
         return self.controller.getRevenueByMonth(months)
 
+    def getRevenueLedger(self, source=None, limit=100):
+        return self.controller.getRevenueLedger(source, limit)
+
     def getSubscriptions(self):
         return self.controller.getSubscriptions()
+
+    def getWalletTransactions(self, txn_type=None, status=None, limit=200):
+        return self.controller.getWalletTransactions(txn_type, status, limit)
+
+    def getPaymentSummary(self):
+        return self.controller.getPaymentSummary()
 
     def getInvestmentArticles(self):
         return AdminListArticlesController().list()
@@ -248,15 +258,44 @@ def get_user_types(current_user: dict = Depends(require_admin_or_hr)):
 
 
 @router.get("/revenue-stats")
-def get_revenue_stats(current_user: dict = Depends(require_admin)):
+def get_revenue_stats(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueStats()}
+
+
+@router.get("/wallet-transactions")
+def get_wallet_transactions(
+    txn_type: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 200,
+    current_user: dict = Depends(require_admin_or_hr),
+):
+    """Platform-wide wallet ledger for the finance admin's Payment
+    Transactions monitor: cash in/out, gifts, fees and payouts."""
+    boundary = AdminUserAccountPage()
+    txns = boundary.getWalletTransactions(txn_type, status, limit)
+    return {"success": True, "count": len(txns), "transactions": txns}
+
+
+@router.get("/payment-summary")
+def get_payment_summary(current_user: dict = Depends(require_admin_or_hr)):
+    boundary = AdminUserAccountPage()
+    return {"success": True, **boundary.getPaymentSummary()}
 
 
 @router.get("/revenue-by-month")
 def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueByMonth(months)}
+
+
+@router.get("/revenue-ledger")
+def get_revenue_ledger(source: str = None, limit: int = 100,
+                       current_user: dict = Depends(require_admin_or_hr)):
+    """Line-by-line platform revenue, optionally filtered to one source
+    (subscription / trade_fee / gift_commission)."""
+    boundary = AdminUserAccountPage()
+    return boundary.getRevenueLedger(source, limit)
 
 
 @router.get("/subscriptions")
@@ -373,6 +412,32 @@ def get_all_experts(current_user: dict = Depends(require_admin_or_hr)):
     }
 
 
+@router.get("/experts/{expert_id}/login-activity")
+def get_expert_login_activity(
+    expert_id: str, days: int = 7,
+    current_user: dict = Depends(require_admin_or_hr),
+):
+    """Logins per day for the review page's activity chart. Counts fresh
+    logins, not hours online — there's no duration tracking anywhere."""
+    from app.entity.models.expert import Expert
+    from app.entity.models.login_mfa import LoginMfaSession
+
+    user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if not user_id:
+        return {"success": False, "message": "Expert not found"}
+
+    info = UserAccount.get_user_information(user_id)
+    if not info:
+        return {"success": False, "message": "Expert not found"}
+
+    days = max(1, min(days, 90))
+    return {
+        "success": True,
+        "days": LoginMfaSession.get_login_counts_by_day(
+            info["email_address"], days=days),
+    }
+
+
 @router.post("/experts/{expert_id}/approve")
 def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
@@ -391,6 +456,9 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
     _user_id = Expert.get_user_id_by_expert_id(expert_id)
     if _user_id:
         Investor.setSubscriptionStatus(_user_id, "premium")
+        info = UserAccount.get_user_information(_user_id)
+        if info:
+            invalidate_profile_cache(info["email_address"])
 
     _notify_expert_verification(
         expert_id,
@@ -415,6 +483,12 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
             "success": False,
             "message": "Expert not found",
         }
+
+    _user_id = Expert.get_user_id_by_expert_id(expert_id)
+    if _user_id:
+        info = UserAccount.get_user_information(_user_id)
+        if info:
+            invalidate_profile_cache(info["email_address"])
 
     _notify_expert_verification(
         expert_id,
@@ -462,6 +536,10 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
             "success": False,
             "message": "Expert not found",
         }
+
+    info = UserAccount.get_user_information(_user_id)
+    if info:
+        invalidate_profile_cache(info["email_address"])
 
     return {
         "success": True,

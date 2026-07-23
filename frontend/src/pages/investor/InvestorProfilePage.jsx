@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
+import { getInvestorInformation, deleteInvestor, requestDeleteOtp, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPageBackground, getAvatarGradient, isExpertUser } from "../../utils/userRole.js";
@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
-import { addPaperMoney } from "../../api/tradingApi.js";
+import { addAssets, getPortfolio } from "../../api/tradingApi.js";
+import { COUNTRIES, splitAddress, joinAddress } from "../../utils/countryCodes.js";
 
 /* ─── Light theme tokens ──────────────────────────────────── */
 const ACCENT_TEXT = "#004450";
@@ -157,8 +158,16 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
     const subscriptionStatus = investorInfo?.investor_subscription_status?.toLowerCase();
 
-    const subscriptionStyle =
-        subscriptionStatus === "premium"
+    // Merged roles: verified experts show an orange Expert badge instead of
+    // the yellow Premium one (they hold complimentary premium anyway).
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
+
+    const badgeLabel = isVerifiedExpert ? "Expert" : subscriptionStatus === "premium" ? "Premium" : "Basic";
+    const subscriptionStyle = isVerifiedExpert
+        ? { background: "rgba(249, 115, 22, 0.15)", border: "1px solid rgba(249, 115, 22, 0.55)", color: "#F97316" }
+        : subscriptionStatus === "premium"
             ? { background: "rgba(255, 215, 0, 0.15)", border: "1px solid rgba(255, 215, 0, 0.5)", color: "#FFD700" }
             : subscriptionStatus === "basic"
                 ? { background: "rgba(0, 0, 0, 0.35)", border: "1px solid rgba(0, 211, 243, 0.4)", color: "#00D3F2" }
@@ -177,7 +186,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                     {[0, 20, 40, 60, 78].map(y => <line key={y} x1="0" y1={y} x2="256" y2={y} stroke="white" strokeWidth="0.5" />)}
                 </svg>
                 <div style={{ position: "absolute", top: "9px", right: "9px", padding: "2px 9px", borderRadius: "100px", background: "rgba(0,0,0,0.35)", border: "0.667px solid rgba(0,211,243,0.4)", fontSize: "10px", fontWeight: 700, color: "#00D3F2", ...subscriptionStyle }}>
-                    ★ {subscriptionStatus === "premium" ? "Premium" : "Basic"}
+                    ★ {badgeLabel}
                 </div>
             </div>
 
@@ -204,7 +213,12 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.08)" }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0092b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
-                    <span style={{ fontSize: "10px", color: TEXT_MUTED2 }}>{isExpertUser(currentUser) ? "Expert" : "Investor"}</span>
+                    {/* Gate on VERIFIED expert, not merely is_expert: an Expert row
+                        exists from the moment someone applies, so isExpertUser()
+                        would label a pending applicant "Expert" before review. */}
+                    <span style={{ fontSize: "10px", color: isVerifiedExpert ? "#F97316" : TEXT_MUTED2, fontWeight: isVerifiedExpert ? 700 : 400 }}>
+                        {isVerifiedExpert ? "Expert" : "Investor"}
+                    </span>
                 </div>
             </div>
 
@@ -230,7 +244,7 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
                 <MenuButton active={activeTab === "personal"} onClick={() => setActiveTab("personal")}><User size={15} style={{ marginRight: "8px" }} /> Personal Information</MenuButton>
                 <MenuButton active={activeTab === "account"} onClick={() => setActiveTab("account")}><ChartNoAxesColumn size={15} style={{ marginRight: "8px" }} /> Account Settings</MenuButton>
                 <MenuButton active={activeTab === "security"} onClick={() => setActiveTab("security")}><Shield size={15} style={{ marginRight: "8px" }} /> Security</MenuButton>
-                <MenuButton active={activeTab === "paper-money"} onClick={() => setActiveTab("paper-money")}><HandCoins size={15} style={{ marginRight: "8px" }} /> Paper Money</MenuButton>
+                <MenuButton active={activeTab === "assets"} onClick={() => setActiveTab("assets")}><HandCoins size={15} style={{ marginRight: "8px" }} /> Assets</MenuButton>
                 <MenuButton active={activeTab === "subscription"} onClick={() => setActiveTab("subscription")}><CircleDollarSign size={15} style={{ marginRight: "8px" }} /> Subscription</MenuButton>
             </div>
         </div>
@@ -239,27 +253,94 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
 function DeleteAccountButton() {
     const navigate = useNavigate();
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [loading, setLoading] = useState(false);
+    // stage: null | "blocked" | "confirm"
+    const [stage, setStage] = useState(null);
+    const [checking, setChecking] = useState(false);
+    const [blockReason, setBlockReason] = useState("");
+    const [pin, setPin] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [sendingOtp, setSendingOtp] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState("");
 
-    const handleDeleteAccount = async () => {
-        const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-        setLoading(true);
+    const reset = () => {
+        setStage(null); setBlockReason(""); setPin(""); setOtp("");
+        setOtpSent(false); setError(""); setDeleting(false);
+    };
+
+    // Preflight: an account can only be deleted once it's fully emptied.
+    const startDelete = async () => {
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+        setChecking(true);
+        setError("");
         try {
-            const result = await deleteInvestor(currentUser?.user_id);
+            const pf = await getPortfolio(currentUser?.user_id);
+            const holdings = (pf?.holdings || []).filter((h) => (h.quantity || 0) > 0);
+            const assets = Number(pf?.assets || 0);
+            if (holdings.length > 0) {
+                setBlockReason("You still hold stocks. Sell all your holdings before deleting your account.");
+                setStage("blocked");
+                return;
+            }
+            if (assets > 0.005) {
+                setBlockReason(`You still have $${assets.toFixed(2)} in your account. Cash out your full balance before deleting your account.`);
+                setStage("blocked");
+                return;
+            }
+            // Emptied — start the 2FA confirmation and send the email OTP.
+            setStage("confirm");
+            sendOtp();
+        } catch (e) {
+            console.error(e);
+            setError("Could not verify your account balance. Please try again.");
+            setStage("confirm");
+        } finally {
+            setChecking(false);
+        }
+    };
+
+    const sendOtp = async () => {
+        setSendingOtp(true);
+        setError("");
+        try {
+            const res = await requestDeleteOtp();
+            if (res?.success) setOtpSent(true);
+            else setError(res?.message || "Could not send verification email.");
+        } catch {
+            setError("Could not send verification email.");
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
+    const confirmDelete = async () => {
+        if (pin.length !== 6) return setError("Enter your 6-digit transaction PIN.");
+        if (otp.length !== 6) return setError("Enter the 6-digit code sent to your email.");
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+        setDeleting(true);
+        setError("");
+        try {
+            const result = await deleteInvestor(currentUser?.user_id, pin, otp);
             if (result.success) {
                 sessionStorage.removeItem("currentUser");
                 navigate("/");
             } else {
-                alert(result.message || "Failed to delete account");
+                setError(result.message || result.detail || "Failed to delete account");
             }
         } catch (error) {
             console.error(error);
-            alert("Failed to delete account");
+            setError("Failed to delete account");
         } finally {
-            setLoading(false);
-            setShowConfirm(false);
+            setDeleting(false);
         }
+    };
+
+    const pinBox = {
+        width: "100%", height: 52, textAlign: "center", fontFamily: "monospace",
+        fontSize: 24, letterSpacing: "12px", borderRadius: 12,
+        border: "1px solid rgba(15,23,42,0.2)", background: CARD_BG_MUTED,
+        color: HEADING, outline: "none",
     };
 
     return (
@@ -268,36 +349,69 @@ function DeleteAccountButton() {
                 <p style={{ fontSize: "14px", color: TEXT_MUTED, fontWeight: 500 }}>Danger Zone</p>
                 <div style={{ width: "85%", height: "1px", background: DIVIDER }} />
                 <button
-                    onClick={() => setShowConfirm(true)}
-                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: DANGER, fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: "pointer" }}
+                    onClick={startDelete}
+                    disabled={checking}
+                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: DANGER, fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: checking ? "wait" : "pointer" }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = "#B91C1C"; e.currentTarget.style.border = "1px solid #B91C1C"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = DANGER; e.currentTarget.style.border = "1px solid rgba(220,38,38,0.3)"; }}
                 >
-                    Delete Account
+                    {checking ? "Checking…" : "Delete Account"}
                 </button>
             </div>
 
-            {showConfirm && (
+            {stage === "blocked" && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Delete Account</h2>
-                        <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>
-                            This will permanently delete your account and all associated data. This action cannot be undone.
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "420px", width: "90%", boxShadow: MODAL_SHADOW, textAlign: "center" }}>
+                        <div style={{ fontSize: 30, marginBottom: 8 }}>🧹</div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Empty your account first</h2>
+                        <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>{blockReason}</p>
+                        <div className="flex gap-3 justify-center">
+                            <button onClick={reset} style={{ padding: "8px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
+                                Close
+                            </button>
+                            <button onClick={() => navigate("/investor/portfolio-overview")} style={{ padding: "8px 20px", borderRadius: "8px", background: "#0092b8", border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                                Go to Portfolio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {stage === "confirm" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "420px", width: "90%", boxShadow: MODAL_SHADOW }}>
+                        <div style={{ fontSize: 28, marginBottom: 6, textAlign: "center" }}>⚠️</div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px", textAlign: "center" }}>Confirm account deletion</h2>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "20px", lineHeight: 1.6, textAlign: "center" }}>
+                            This permanently deletes your account and all data. Confirm with your transaction PIN and the code we emailed you.
                         </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowConfirm(false)}
-                                disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}
-                            >
+
+                        <label style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED, display: "block", marginBottom: 6 }}>Transaction PIN</label>
+                        <input type="password" inputMode="numeric" maxLength={6} value={pin} placeholder="••••••"
+                            onChange={(e) => { setPin(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+                            style={{ ...pinBox, marginBottom: 16 }} />
+
+                        <label style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED, display: "block", marginBottom: 6 }}>
+                            Email verification code
+                        </label>
+                        <input type="text" inputMode="numeric" maxLength={6} value={otp} placeholder="••••••"
+                            onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+                            style={pinBox} />
+                        <button type="button" onClick={sendOtp} disabled={sendingOtp}
+                            style={{ marginTop: 8, background: "none", border: "none", color: "#0092b8", fontSize: 13, fontWeight: 600, cursor: sendingOtp ? "wait" : "pointer" }}>
+                            {sendingOtp ? "Sending…" : otpSent ? "Resend code" : "Send code to my email"}
+                        </button>
+
+                        {error && <p style={{ color: DANGER, fontSize: 13, fontWeight: 500, marginTop: 10 }}>{error}</p>}
+
+                        <div className="flex gap-3 justify-center" style={{ marginTop: 22 }}>
+                            <button onClick={reset} disabled={deleting}
+                                style={{ flex: 1, padding: "10px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleDeleteAccount}
-                                disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.45)", color: DANGER, fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
-                            >
-                                {loading ? "Deleting…" : "Yes"}
+                            <button onClick={confirmDelete} disabled={deleting || pin.length !== 6 || otp.length !== 6}
+                                style={{ flex: 1, padding: "10px 20px", borderRadius: "8px", background: (deleting || pin.length !== 6 || otp.length !== 6) ? "rgba(220,38,38,0.4)" : DANGER, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: (deleting || pin.length !== 6 || otp.length !== 6) ? "not-allowed" : "pointer" }}>
+                                {deleting ? "Deleting…" : "Delete forever"}
                             </button>
                         </div>
                     </div>
@@ -312,7 +426,9 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-    const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
+    const initialLoc = splitAddress(investorInfo?.address || "");
+    const [draftCity, setDraftCity] = useState(initialLoc.city);
+    const [draftCountry, setDraftCountry] = useState(initialLoc.country);
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
     // Generate initials from username
@@ -323,7 +439,9 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
         setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-        setDraftLoc(investorInfo?.address || "");
+        const loc = splitAddress(investorInfo?.address || "");
+        setDraftCity(loc.city);
+        setDraftCountry(loc.country);
     }, [investorInfo]);
 
     const cancelEdit = () => {
@@ -331,11 +449,15 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
         setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-        setDraftLoc(investorInfo?.address || "");
+        const loc = splitAddress(investorInfo?.address || "");
+        setDraftCity(loc.city);
+        setDraftCountry(loc.country);
         setEditingSection(null);
     };
     const handleChange = async () => {
+        if (!draftCountry) { alert("Please select your country."); return; }
         try {
+            const draftLoc = joinAddress(draftCity, draftCountry);
             const result = await updateUserInformation(
                 investorInfo.user_id,
                 draftUser,
@@ -351,6 +473,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                 stored.full_name = draftFull;
                 stored.username = draftUser;
                 stored.email_address = draftEmail;
+                stored.address = draftLoc;
                 sessionStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Profile updated");
@@ -553,13 +676,30 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 />
                             </FormField>
 
-                            <FormField label="Location" htmlFor="field-location">
+                            <FormField label="City" htmlFor="field-city">
                                 <TextInput
-                                    id="field-location"
-                                    value={draftLoc}
-                                    onChange={setDraftLoc}
-                                    placeholder="City, Country"
+                                    id="field-city"
+                                    value={draftCity}
+                                    onChange={setDraftCity}
+                                    placeholder="e.g. Singapore"
                                 />
+                            </FormField>
+                        </div>
+
+                        <div>
+                            <FormField label="Country *" htmlFor="field-country">
+                                <select
+                                    id="field-country"
+                                    value={draftCountry}
+                                    onChange={(e) => setDraftCountry(e.target.value)}
+                                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] focus:outline-none transition"
+                                    style={{ height: "46px", color: draftCountry ? "#1f2937" : "#9ca3af" }}
+                                >
+                                    <option value="">Select your country…</option>
+                                    {COUNTRIES.map((c) => (
+                                        <option key={c.iso + c.name} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
                             </FormField>
                         </div>
 
@@ -584,6 +724,14 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
     const role = currentUser?.role;
     const userId = currentUser?.user_id;
+    // Gate on VERIFIED expert, not merely is_expert — see the same pattern
+    // used for the profile badge above.
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
+    const accountTypeLabel = isVerifiedExpert
+        ? "Expert"
+        : role ? role.charAt(0).toUpperCase() + role.slice(1) : "Investor";
     const isEditing = (section) => editingSection === section;
 
     useEffect(() => {
@@ -693,8 +841,10 @@ function AccountSettingsCard({ investorInfo, onUpdate }) {
                         <div className="flex items-center gap-4">
                             <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(0,211,242,0.1)", border: "1px solid rgba(0,211,242,0.3)", display: "flex", alignItems: "center", justifyContent: "center", color: "#00D3F2" }}>$</div>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: "18px", color: HEADING }}>{role}</div>
-                                <div style={{ color: TEXT_MUTED2 }}>Trade & track your portfolio</div>
+                                <div style={{ fontWeight: 700, fontSize: "18px", color: HEADING }}>{accountTypeLabel}</div>
+                                <div style={{ color: TEXT_MUTED2 }}>
+                                    {isVerifiedExpert ? "Share your expertise & track your portfolio" : "Trade & track your portfolio"}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -873,16 +1023,16 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function PaperMoneyCard({ investorInfo, onUpdate }) {
+function AssetsCard({ investorInfo, onUpdate }) {
     const navigate = useNavigate();
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
     const MAX_BALANCE = 10000;
-    const paperMoney = investorInfo?.paper_money ?? 0;
+    const assets = investorInfo?.assets ?? 0;
     const usedAmount = investorInfo?.used_amount ?? 0;
-    const progressPct = Math.min(100, (paperMoney / MAX_BALANCE) * 100);
-    const maxAddable = Math.max(0, MAX_BALANCE - paperMoney);
+    const progressPct = Math.min(100, (assets / MAX_BALANCE) * 100);
+    const maxAddable = Math.max(0, MAX_BALANCE - assets);
 
     const [showModal, setShowModal] = useState(false);
     const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -904,7 +1054,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
     const handleConfirmAdd = async () => {
         setAdding(true);
         try {
-            const result = await addPaperMoney(currentUser.user_id, selectedAmount);
+            const result = await addAssets(currentUser.user_id, selectedAmount);
             if (result.success) {
                 setShowModal(false);
                 onUpdate();
@@ -928,7 +1078,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
             <GlassCard>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Paper Money</h1>
+                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Assets</h1>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
                             Manage your virtual trading funds
                         </p>
@@ -945,10 +1095,10 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                             </div>
                             <div>
                                 <div style={{ fontWeight: 700, fontSize: "16px", color: HEADING }}>
-                                    Available Balance: ${paperMoney.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    Available Balance: ${assets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
-                                    Use paper money to practice stock trading without risking real capital.
+                                    Use your assets to practice stock trading without risking real capital.
                                 </div>
                             </div>
                         </div>
@@ -973,7 +1123,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     {!isPremium && (
                         <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                             <p style={{ fontSize: "12px", color: AMBER, margin: 0 }}>
-                                Adding paper money is a <strong>Premium</strong> feature.
+                                Adding assets is a <strong>Premium</strong> feature.
                             </p>
                             <button
                                 onClick={() => navigate("/investor/subscription")}
@@ -987,15 +1137,15 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     {/* Progress bar */}
                     <div style={{ marginTop: "24px" }}>
                         <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
-                            <span>Paper Trading Capital</span>
-                            <span>${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
+                            <span>Assets</span>
+                            <span>${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
                         </div>
                         <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
                             <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
                         </div>
                         <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
                             <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                            <span>Cash: ${paperMoney.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span>Cash: ${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>
@@ -1005,7 +1155,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
             {showModal === "add" && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Paper Money</h2>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Assets</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "24px" }}>
                             Max you can add: <strong style={{ color: SUCCESS }}>${maxAddable.toLocaleString()}</strong>
                         </p>
@@ -1031,7 +1181,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                         <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
                             <p style={{ fontSize: "12px", color: TEXT_MUTED2, margin: "0 0 4px" }}>New balance after top-up</p>
                             <p style={{ fontSize: "20px", fontWeight: 700, color: SUCCESS, margin: 0 }}>
-                                ${(paperMoney + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${(assets + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
 
@@ -1058,7 +1208,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                         </div>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Premium Feature</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Adding paper money is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
+                            Adding assets is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowModal(false)}
@@ -1080,7 +1230,7 @@ function PaperMoneyCard({ investorInfo, onUpdate }) {
                     <div style={{ background: CARD_BG, border: "1px solid rgba(29,78,216,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
                         <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Balance at Maximum</h2>
                         <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Your paper money balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
+                            Your assets balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
                         </p>
                         <button onClick={() => setShowModal(false)}
                             style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(29,78,216,0.1)", border: "1px solid rgba(29,78,216,0.3)", color: BLUE, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
@@ -1097,6 +1247,12 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = currentUser?.user_id;
     const plan = investorInfo?.investor_subscription_status?.toLowerCase() || "inactive";
+    // Verified experts get premium access as a complimentary perk of their
+    // expert status, not a purchased/renewable plan — no renewal countdown
+    // or cancel/renew buttons make sense for them.
+    const isVerifiedExpert =
+        currentUser?.is_expert === true &&
+        ["approved", "active"].includes(String(currentUser?.verification_status || "").toLowerCase());
 
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -1155,6 +1311,64 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
     );
 
     const history = details?.history || [];
+
+    /* ── Verified expert: complimentary, no renewal ──────────── */
+    if (isVerifiedExpert) {
+        return (
+            <GlassCard>
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                            <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Expert Access</p>
+                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>
+                                Full premium access, complimentary for verified experts
+                            </p>
+                        </div>
+                        <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.5)", color: "#F97316", fontSize: "12px", fontWeight: 700 }}>
+                            ★ Expert
+                        </div>
+                    </div>
+
+                    <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6 }}>
+                        As a verified expert, you have full access to every premium investor feature automatically —
+                        no subscription to renew or manage. This stays active for as long as your expert verification does.
+                    </p>
+
+                    {/* Past subscription history, if any (e.g. from before becoming an expert) */}
+                    {!loading && history.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                            <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead>
+                                        <tr style={{ background: CARD_BG_MUTED }}>
+                                            {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {history.map((row, i) => (
+                                            <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
+                                                <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px" }}>
+                                                    <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
+                                                        {row.sub_status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </GlassCard>
+        );
+    }
 
     /* ── Inactive ───────────────────────────────────────────── */
     if (plan === "inactive") {
@@ -1227,7 +1441,7 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             { label: "Unlimited AI Stock Predictions", included: false },
             { label: "Expert Consultation Access", included: false },
             { label: "Advanced Portfolio Analytics", included: false },
-            { label: "Top Up Paper Money", included: false },
+            { label: "Top Up Assets", included: false },
         ];
         const startDate = details?.latest?.sub_date
             ? new Date(details.latest.sub_date).toLocaleDateString()
@@ -1440,7 +1654,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "paper-money" && <PaperMoneyCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
+                    {activeTab === "assets" && <AssetsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                 </div>
             </main>

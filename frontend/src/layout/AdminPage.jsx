@@ -9,6 +9,7 @@ const menuItems = [
   { name: "User Account Management", path: "/adminpanel/useraccounts" },
   { name: "Community Management", path: "/adminpanel/posts" },
   { name: "Article Management", path: "/adminpanel/articles" },
+  { name: "Expert Application Review", path: "/adminpanel/expert-applications" },
   { name: "Content Management", path: "/adminpanel/contentmanagement" },
   { name: "Review Management", path: "/adminpanel/reviews" },
   { name: "Notification Management", path: "/adminpanel/notifications" },
@@ -67,7 +68,7 @@ function AdminLayout({ title, subtitle, children }) {
         `}
       >
         <div className="h-13.5 flex items-center justify-between px-4 border-b shrink-0">
-          <h1 className="text-[15px] font-bold text-slate-900">Admin Panel</h1>
+          <h1 className="text-[15px] font-bold text-slate-900">Administration Panel</h1>
           <button
             className="md:hidden text-slate-500 hover:text-slate-800"
             onClick={() => setSidebarOpen(false)}
@@ -131,11 +132,11 @@ function AdminLayout({ title, subtitle, children }) {
               aria-expanded={profileMenuOpen}
             >
               <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                AD
+                OA
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-[10px] font-semibold text-slate-900">Admin User</p>
-                <p className="text-[9px] text-slate-500">administrator</p>
+                <p className="text-[10px] font-semibold text-slate-900">Operation Admin</p>
+                <p className="text-[9px] text-slate-500">Opertation administrator</p>
               </div>
             </button>
 

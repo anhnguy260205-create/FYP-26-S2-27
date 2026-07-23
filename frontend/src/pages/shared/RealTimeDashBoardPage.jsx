@@ -65,9 +65,11 @@ function SearchBar({ onSearch, loading }) {
 function MarketStatus({ marketStatus, lastUpdated }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className={marketStatus === "OPEN" ? "text-emerald-600 font-medium" : "text-slate-500"}>
-        {marketStatus === "OPEN" ? "🟢 Market Open" : "⚪ Market Closed"}
-      </span>
+      <span style={{
+        width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+        background: marketStatus === "OPEN" ? "#0F9D58" : "#94A3B8",
+        boxShadow: marketStatus === "OPEN" ? "0 0 0 5px rgba(15,157,88,0.18)" : "none",
+      }} className={marketStatus === "OPEN" ? "animate-pulse" : ""} />
       <span className="text-slate-400">|</span>
       <span className={marketStatus === "OPEN" ? "text-[#0092b8] font-medium" : "text-slate-500"}>
         {marketStatus === "OPEN" ? "Live Data" : "Offline Data"}
@@ -261,7 +263,9 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
   const handleSelect = useCallback((symbol) => {
-    navigate(`/realtimedashboard/astockdashboard/${symbol}`);
+    navigate(`/realtimedashboard/astockdashboard/${symbol}`, {
+      state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+    });
   }, [navigate]);
 
   const filtered = useMemo(() => {
@@ -458,11 +462,7 @@ function RealTimeDashBoardPage() {
         {/* ── Page header ────────────────────────────────────── */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{
-              width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-              background: marketStatus === "OPEN" ? "#0F9D58" : "#94A3B8",
-              boxShadow: marketStatus === "OPEN" ? "0 0 0 5px rgba(15,157,88,0.18)" : "none",
-            }} className={marketStatus === "OPEN" ? "animate-pulse" : ""} />
+
             <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#0B1D4F", margin: 0, lineHeight: 1 }}>
               Real-Time Dashboard
             </h1>
@@ -542,7 +542,9 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {topPicks.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
+                          state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+                        })}
                         isTopPick={true} />
                     ))}
                   </div>
@@ -559,7 +561,9 @@ function RealTimeDashBoardPage() {
                   <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
                     {forYou.map(stock => (
                       <StockCard key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]}
-                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`)}
+                        onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
+                          state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
+                        })}
                         isTopPick={false} />
                     ))}
                   </div>

@@ -15,9 +15,13 @@ class Investor(Base):
                          default=lambda: f"investor_{uuid4()}")
     interests = Column(String(255), nullable=True)
     risk_tolerance = Column(String(30), nullable=True)
-    paper_money = Column(Float, default=2000)
+    assets = Column(Float, default=0)
     used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
+    # 6-digit transaction PIN, stored hashed (never in plaintext). Required to
+    # confirm every buy, sell and cash-out. NULL until the user sets one during
+    # first-login setup.
+    transaction_pin = Column(String(255), nullable=True)
 
     @staticmethod
     def get_all_user_ids():
@@ -60,7 +64,7 @@ class Investor(Base):
                 "user_id": investor.user_id,
                 "interests": investor.interests,
                 "risk_tolerance": investor.risk_tolerance,
-                "paper_money": investor.paper_money,
+                "assets": investor.assets,
                 "used_amount": investor.used_amount,
                 "investor_subscription_status": investor.investor_subscription_status
             }
@@ -79,7 +83,7 @@ class Investor(Base):
             "investor_id": investor["investor_id"],
             "interests": investor["interests"],
             "risk_tolerance": investor["risk_tolerance"],
-            "paper_money": investor["paper_money"],
+            "assets": investor["assets"],
             "used_amount": investor["used_amount"],
             "investor_subscription_status": investor["investor_subscription_status"]
         }
@@ -87,16 +91,23 @@ class Investor(Base):
     @staticmethod
     def buyStock(user_id, symbol, quantity, price):
         """
-        Deduct cost from paper_money, increase used_amount, add shares to holding,
+        Deduct cost from assets, increase used_amount, add shares to holding,
         and record the transaction. Returns dict with success flag and message.
         """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
+        from app.entity.models.wallet import (
+            WalletTransaction, PlatformRevenue, TXN_PLATFORM_FEE, REV_TRADE_FEE,
+        )
+        from app.control.services.trading_engine import calculate_platform_fee
 
         if quantity <= 0 or price <= 0:
             return {"success": False, "message": "Invalid quantity or price"}
 
         total_cost = round(price * quantity, 2)
+        # Commission sits ON TOP of a buy — the investor needs both.
+        platform_fee = calculate_platform_fee(total_cost)
+        total_debit = round(total_cost + platform_fee, 2)
 
         with get_session() as session:
             investor = session.query(Investor).filter(
@@ -105,15 +116,36 @@ class Investor(Base):
             if not investor:
                 return {"success": False, "message": "Investor not found"}
 
-            if investor.paper_money < total_cost:
-                return {"success": False, "message": "Insufficient paper funds"}
+            if investor.assets < total_debit:
+                return {
+                    "success": False,
+                    "message": (
+                        f"Insufficient assets — need ${total_debit:,.2f} "
+                        f"(${total_cost:,.2f} + ${platform_fee:,.2f} platform fee), "
+                        f"have ${investor.assets:,.2f}"
+                    ),
+                }
 
-            investor.paper_money -= total_cost
+            investor.assets -= total_debit
+            # used_amount tracks capital deployed into positions, so the fee
+            # (an expense, not a position) is deliberately excluded.
             investor.used_amount += total_cost
             investor_id = investor.investor_id
             session.flush()
 
-            new_balance = investor.paper_money
+            new_balance = investor.assets
+
+            if platform_fee > 0:
+                WalletTransaction.record(
+                    session, investor_id, TXN_PLATFORM_FEE, -platform_fee,
+                    description=f"Platform fee — buy {symbol}",
+                    balance_after=new_balance,
+                )
+                PlatformRevenue.record(
+                    session, REV_TRADE_FEE, platform_fee,
+                    user_id=user_id,
+                    description=f"Buy {symbol} — ${total_cost:,.2f} executed",
+                )
 
         Holding.addShares(investor_id, symbol, quantity, price)
         transaction_id = Transaction.createTransaction(
@@ -124,18 +156,24 @@ class Investor(Base):
             "success": True,
             "message": "Buy order executed successfully",
             "transaction_id": transaction_id,
-            "paper_money": new_balance,
-            "total_amount": total_cost
+            "assets": new_balance,
+            "total_amount": total_cost,
+            "platform_fee": platform_fee,
+            "net_amount": total_debit,
         }
 
     @staticmethod
     def sellStock(user_id, symbol, quantity, price):
         """
-        Remove shares from holding, credit proceeds to paper_money,
+        Remove shares from holding, credit proceeds to assets,
         decrease used_amount, and record the transaction.
         """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
+        from app.entity.models.wallet import (
+            WalletTransaction, PlatformRevenue, TXN_PLATFORM_FEE, REV_TRADE_FEE,
+        )
+        from app.control.services.trading_engine import calculate_platform_fee
 
         if quantity <= 0 or price <= 0:
             return {"success": False, "message": "Invalid quantity or price"}
@@ -155,6 +193,9 @@ class Investor(Base):
 
         total_proceeds = round(price * quantity, 2)
         cost_basis = round(existing_holding["average_cost"] * quantity, 2)
+        # Commission comes OUT of the proceeds on a sell.
+        platform_fee = calculate_platform_fee(total_proceeds)
+        net_proceeds = round(total_proceeds - platform_fee, 2)
 
         removed = Holding.removeShares(investor_id, symbol, quantity)
         if not removed:
@@ -164,12 +205,24 @@ class Investor(Base):
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
-            investor.paper_money += total_proceeds
+            investor.assets += net_proceeds
             investor.used_amount -= cost_basis
             if investor.used_amount < 0:
                 investor.used_amount = 0
             session.flush()
-            new_balance = investor.paper_money
+            new_balance = investor.assets
+
+            if platform_fee > 0:
+                WalletTransaction.record(
+                    session, investor_id, TXN_PLATFORM_FEE, -platform_fee,
+                    description=f"Platform fee — sell {symbol}",
+                    balance_after=new_balance,
+                )
+                PlatformRevenue.record(
+                    session, REV_TRADE_FEE, platform_fee,
+                    user_id=user_id,
+                    description=f"Sell {symbol} — ${total_proceeds:,.2f} executed",
+                )
 
         transaction_id = Transaction.createTransaction(
             investor_id, symbol, "sell", quantity, price, total_proceeds
@@ -179,8 +232,10 @@ class Investor(Base):
             "success": True,
             "message": "Sell order executed successfully",
             "transaction_id": transaction_id,
-            "paper_money": new_balance,
-            "total_amount": total_proceeds
+            "assets": new_balance,
+            "total_amount": total_proceeds,
+            "platform_fee": platform_fee,
+            "net_amount": net_proceeds,
         }
 
     @staticmethod
@@ -194,13 +249,13 @@ class Investor(Base):
             if not investor:
                 return None
             investor_id = investor.investor_id
-            paper_money = investor.paper_money
+            assets = investor.assets
             used_amount = investor.used_amount
 
         holdings = Holding.getHoldingsByInvestor(investor_id)
 
         return {
-            "paper_money": paper_money,
+            "assets": assets,
             "used_amount": used_amount,
             "holdings": holdings
         }
@@ -219,6 +274,7 @@ class Investor(Base):
         from app.entity.models.expertportfolioreview import ExpertPortfolioReview
         from app.entity.models.expertprofileview import ExpertProfileView
         from app.entity.models.chat import Conversation, ChatMessage
+        from app.entity.models.wallet import WalletTransaction
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -231,6 +287,9 @@ class Investor(Base):
             # exists for almost any real account).
             session.query(Transaction).filter(
                 Transaction.investor_id == investor.investor_id
+            ).delete()
+            session.query(WalletTransaction).filter(
+                WalletTransaction.investor_id == investor.investor_id
             ).delete()
             session.query(Holding).filter(
                 Holding.investor_id == investor.investor_id
@@ -330,7 +389,7 @@ class Investor(Base):
             return True
 
     @staticmethod
-    def addPaperMoney(user_id, amount):
+    def addAssets(user_id, amount):
         MAX_BALANCE = 10000.0
         if amount <= 0:
             return {"success": False, "message": "Amount must be greater than 0"}
@@ -342,11 +401,11 @@ class Investor(Base):
                 return {"success": False, "message": "Investor not found"}
             if investor.investor_subscription_status != "premium":
                 return {"success": False, "message": "Premium subscription required"}
-            new_balance = round(investor.paper_money + amount, 2)
+            new_balance = round(investor.assets + amount, 2)
             if new_balance > MAX_BALANCE:
                 return {"success": False, "message": f"Balance cannot exceed ${MAX_BALANCE:,.0f}"}
-            investor.paper_money = new_balance
-            return {"success": True, "paper_money": new_balance}
+            investor.assets = new_balance
+            return {"success": True, "assets": new_balance}
 
     @staticmethod
     def setSubscriptionStatus(user_id, status: str):
@@ -385,11 +444,24 @@ class Investor(Base):
     @staticmethod
     def getExpertEligibility(user_id, min_distinct_stocks=30, min_profit_margin=200.0):
         """Expert-upgrade requirements: traded >= 30 distinct stocks and hit a
-        realized profit margin of >= 200% on the S$2,000 starting capital.
-        Profit = paper_money + used_amount (cost basis of holdings) - 2000."""
-        from app.entity.models.transaction import Transaction
+        realized profit margin of >= 200%.
 
-        STARTING_CAPITAL = 2000.0
+        Profit is realized trading P&L — the sum of realized_pnl across every
+        sell (Transaction.getRealizedPnl) — earned purely from buy/sell
+        activity. Deliberately NOT the account balance, which also moves on
+        deposits, withdrawals, gifts, platform fees and compensation payouts,
+        none of which reflect trading skill.
+
+        Accounts start with 0 assets and fund themselves via the Cash Portal,
+        so there is no fixed starting capital. The margin is measured against
+        the net capital the user has put in (deposits - withdrawals):
+            profit = realized P&L
+            capital_in = total cash_in - total cash_out
+            profit_margin = profit / capital_in * 100   (0 when no capital in)
+        """
+        from app.entity.models.transaction import Transaction
+        from app.entity.models.wallet import WalletTransaction
+
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
@@ -397,12 +469,15 @@ class Investor(Base):
             if not investor:
                 return None
             investor_id = investor.investor_id
-            paper_money = investor.paper_money or 0
-            used_amount = investor.used_amount or 0
 
         distinct_stocks = Transaction.getDistinctSymbolCount(investor_id)
-        profit = round(paper_money + used_amount - STARTING_CAPITAL, 2)
-        profit_margin = round(profit / STARTING_CAPITAL * 100, 2)
+        profit = Transaction.getRealizedPnl(investor_id)
+
+        totals = WalletTransaction.get_totals(investor_id)
+        capital_in = round((totals.get("cash_in", 0.0) or 0.0)
+                           - (totals.get("cash_out", 0.0) or 0.0), 2)
+        # No capital deployed → margin is undefined; treat as 0% (not eligible).
+        profit_margin = round(profit / capital_in * 100, 2) if capital_in > 0 else 0.0
 
         return {
             "distinct_stocks": distinct_stocks,
@@ -445,6 +520,69 @@ class Investor(Base):
                 return False
             investor.risk_tolerance = risk_tolerance
             return True
+
+    # ── Transaction PIN ──────────────────────────────────────────────────
+    # A 6-digit PIN confirms every buy, sell and cash-out. It is stored
+    # salted+hashed with PBKDF2 — never in plaintext.
+
+    @staticmethod
+    def _hash_pin(pin: str) -> str:
+        import hashlib
+        import os
+        salt = os.urandom(16)
+        digest = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, 200_000)
+        return f"pbkdf2_sha256$200000${salt.hex()}${digest.hex()}"
+
+    @staticmethod
+    def _verify_pin_hash(pin: str, stored: str) -> bool:
+        import hashlib
+        import hmac
+        if not stored or stored.count("$") != 3:
+            return False
+        try:
+            _algo, iterations, salt_hex, digest_hex = stored.split("$")
+            salt = bytes.fromhex(salt_hex)
+            expected = bytes.fromhex(digest_hex)
+            candidate = hashlib.pbkdf2_hmac(
+                "sha256", pin.encode("utf-8"), salt, int(iterations))
+            return hmac.compare_digest(candidate, expected)
+        except (ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def setTransactionPin(user_id, pin: str):
+        pin = (pin or "").strip()
+        if not (pin.isdigit() and len(pin) == 6):
+            return {"success": False, "message": "PIN must be exactly 6 digits"}
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor:
+                return {"success": False, "message": "Investor not found"}
+            investor.transaction_pin = Investor._hash_pin(pin)
+        return {"success": True, "message": "Transaction PIN set"}
+
+    @staticmethod
+    def hasTransactionPin(user_id) -> bool:
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            return bool(investor and investor.transaction_pin)
+
+    @staticmethod
+    def verifyTransactionPin(user_id, pin: str) -> bool:
+        pin = (pin or "").strip()
+        if not (pin.isdigit() and len(pin) == 6):
+            return False
+        with get_session() as session:
+            investor = session.query(Investor).filter(
+                Investor.user_id == user_id
+            ).first()
+            if not investor or not investor.transaction_pin:
+                return False
+            return Investor._verify_pin_hash(pin, investor.transaction_pin)
 
 
 def seed_investor_account():

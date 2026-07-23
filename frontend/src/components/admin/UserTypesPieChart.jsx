@@ -14,7 +14,7 @@ const STROKE_HOVER = 30;
 const GAP = 3;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-function UserTypesPieChart({ breakdown, total, loading }) {
+function UserTypesPieChart({ breakdown, total, loading, style }) {
   const [hoverIndex, setHoverIndex] = useState(null);
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const [grown, setGrown] = useState(false);
@@ -41,7 +41,7 @@ function UserTypesPieChart({ breakdown, total, loading }) {
   const hovered = hoverIndex !== null ? arcs[hoverIndex] : null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-center gap-6" style={style}>
       <div className={`relative shrink-0 ${loading ? "opacity-50 transition-opacity" : "transition-opacity"}`}>
         <svg
           width={SIZE}

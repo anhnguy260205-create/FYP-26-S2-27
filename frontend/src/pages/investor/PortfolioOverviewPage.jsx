@@ -187,7 +187,7 @@ function PortfolioOverviewPage() {
   }, [currentUser?.user_id]);
 
   const holdings = portfolio?.holdings ?? [];
-  const paperMoney = portfolio?.paper_money ?? 0;
+  const assets = portfolio?.assets ?? 0;
 
   const unrealisedPnL = useMemo(() =>
     holdings.reduce((sum, h) => {
@@ -203,7 +203,7 @@ function PortfolioOverviewPage() {
     }, 0),
     [holdings, liveStocks]);
 
-  const totalValue = paperMoney + holdingsValue;
+  const totalValue = assets + holdingsValue;
   const realisedPnL = summary?.realised_pnl ?? 0;
 
   if (loading) {
@@ -229,19 +229,21 @@ function PortfolioOverviewPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
-            Portfolio Overview
-          </h1>
-          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-            Full trading analytics, holdings, and order history
-          </p>
+          <div>
+            <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: "0 0 4px", letterSpacing: "0.04em" }}>
+              Portfolio Overview
+            </h1>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
+              Full trading analytics, holdings, and order history
+            </p>
+          </div>
           <hr style={{ marginTop: 16, border: "none", borderTop: `1px solid ${C.divider}` }} />
         </div>
 
         {/* Stat cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
           <StatCard label="Total portfolio value" value={fmt$(totalValue)} sub="Cash + holdings" highlighted />
-          <StatCard label="Available funds" value={fmt$(paperMoney)} />
+          <StatCard label="Available funds" value={fmt$(assets)} />
           <StatCard label="Unrealized P&L" value={fmtSigned$(unrealisedPnL)} valueColor={unrealisedPnL >= 0 ? C.success : C.danger} />
           <StatCard label="Realized P&L" value={fmtSigned$(realisedPnL)} valueColor={realisedPnL >= 0 ? C.success : C.danger} />
         </div>
@@ -289,7 +291,9 @@ function PortfolioOverviewPage() {
                     return (
                       <tr key={h.symbol}
                         style={{ borderBottom: isLast ? "none" : `1px solid ${C.rowBorder}`, cursor: "pointer" }}
-                        onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`)}
+                        onClick={() => navigate(`/realtimedashboard/astockdashboard/${h.symbol}`, {
+                          state: { from: "/investor/portfolio-overview", fromLabel: "Portfolio Overview" },
+                        })}
                         onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,211,242,0.06)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                       >

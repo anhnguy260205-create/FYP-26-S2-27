@@ -1,4 +1,6 @@
+import { signOut } from "firebase/auth";
 import { authFetch } from "./apiClient";
+import { auth } from "../firebase";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/user`;
 
@@ -107,11 +109,19 @@ export const resendLoginOtp = async () => {
 
 export const logoutAccount = async () => {
   const response = await authFetch(`${BASE_URL}/logout`, { method: "POST" });
-  return response.json();
+  const result = await response.json();
+  // End the Firebase session too — otherwise auth_time (and the email-OTP
+  // verification tied to it) survives the app-level logout, letting the
+  // next login skip the OTP step.
+  await signOut(auth).catch(() => {});
+  return result;
 };
 
 /** Fire-and-forget logout for tab close/navigation-away — keepalive lets the
- * request finish after the page starts unloading. */
+ * request finish after the page starts unloading. This fires on every
+ * pagehide (refresh, HMR reload, actual tab close) so it must NOT sign out
+ * of Firebase — that would kill the session on every reload, not just real
+ * logouts. Only the explicit logoutAccount() ends the Firebase session. */
 export const logoutOnUnload = () => {
   authFetch(`${BASE_URL}/logout`, { method: "POST", keepalive: true });
 };
@@ -147,9 +157,19 @@ export const updateUserInformation = async (
   return response.json();
 };
 
-export const deleteInvestor = async (userId) => {
+/** Step 1 of secured deletion — email a 6-digit OTP to the account holder. */
+export const requestDeleteOtp = async () => {
+  const response = await authFetch(`${BASE_URL}/delete-investor/request-otp`, {
+    method: "POST",
+  });
+  return response.json();
+};
+
+/** Step 2 — delete, confirmed with the transaction PIN and the email OTP. */
+export const deleteInvestor = async (userId, pin = null, otp = null) => {
   const response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
     method: "DELETE",
+    body: JSON.stringify({ pin, otp }),
   });
   return response.json();
 };
@@ -194,6 +214,32 @@ export const updateRiskTolerance = async (userId, riskTolerance) => {
   const response = await authFetch(`${BASE_URL}/update-risk-tolerance`, {
     method: "POST",
     body: JSON.stringify({ risk_tolerance: riskTolerance }),
+  });
+  return response.json();
+};
+
+// ── Transaction PIN ─────────────────────────────────────────────────────────
+
+/** Whether the current user has set a 6-digit transaction PIN. */
+export const getPinStatus = async () => {
+  const response = await authFetch(`${BASE_URL}/pin/status`);
+  return response.json();
+};
+
+/** Set (or reset) the 6-digit transaction PIN — requires it entered twice. */
+export const setTransactionPin = async (pin, confirmPin) => {
+  const response = await authFetch(`${BASE_URL}/pin/set`, {
+    method: "POST",
+    body: JSON.stringify({ pin, confirm_pin: confirmPin }),
+  });
+  return response.json();
+};
+
+/** Verify a 6-digit PIN. Returns { success, valid }. */
+export const verifyTransactionPin = async (pin) => {
+  const response = await authFetch(`${BASE_URL}/pin/verify`, {
+    method: "POST",
+    body: JSON.stringify({ pin }),
   });
   return response.json();
 };

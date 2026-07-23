@@ -9,31 +9,76 @@ from app.control.controller.tradingc import (
     GetTransactionHistoryController,
     GetPortalTransactionsController,
     GetPortalSummaryController,
-    AddPaperMoneyController,
+    AddAssetsController,
     SubmitOrderController,
     GetOrdersController,
     CancelOrderController,
 )
 from app.control.services.auth import get_current_user
+from app.control.services.trading_engine import (
+    calculate_platform_fee, PLATFORM_FEE_MIN, PLATFORM_FEE_RATE,
+)
 from app.boundary.stock_ws import get_live_price, get_market_status
+from app.entity.models.investor import Investor
 
 router = APIRouter(prefix="/trading", tags=["Trading"])
+
+
+def _require_transaction_pin(user_id: str, pin: Optional[str]):
+    """Confirm the caller's 6-digit transaction PIN before a money move.
+    Every account must have a PIN — trading is blocked until one is set
+    (legacy accounts are forced to set one on their next login)."""
+    if not Investor.hasTransactionPin(user_id):
+        raise HTTPException(
+            status_code=428,
+            detail="Set a 6-digit transaction PIN before trading.",
+        )
+    if not pin or not Investor.verifyTransactionPin(user_id, pin):
+        raise HTTPException(status_code=403, detail="Incorrect transaction PIN")
+
+
+@router.get("/fee-schedule")
+def get_fee_schedule():
+    """Lets the Buy/Sell screens show the commission before the user commits,
+    using the same numbers the server will actually charge."""
+    return {
+        "success": True,
+        "minimum": PLATFORM_FEE_MIN,
+        "rate": PLATFORM_FEE_RATE,
+        "rate_percent": round(PLATFORM_FEE_RATE * 100, 4),
+        "description": (
+            f"${PLATFORM_FEE_MIN:.2f} minimum, or "
+            f"{PLATFORM_FEE_RATE * 100:g}% of trade value — whichever is greater"
+        ),
+    }
+
+
+@router.get("/fee-quote")
+def get_fee_quote(trade_value: float):
+    return {
+        "success": True,
+        "trade_value": round(trade_value, 2),
+        "fee": calculate_platform_fee(trade_value),
+    }
 
 
 class BuyRequest(BaseModel):
     symbol: str
     quantity: int
+    pin: Optional[str] = None
 
 
 class SellRequest(BaseModel):
     symbol: str
     quantity: int
+    pin: Optional[str] = None
 
 
 @router.post("/buy")
 def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
     if get_market_status() != "OPEN":
         raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
+    _require_transaction_pin(current_user["user_id"], data.pin)
     server_price = get_live_price(data.symbol.upper())
     if server_price is None:
         raise HTTPException(status_code=503, detail=f"Could not fetch current price for {data.symbol}")
@@ -47,6 +92,7 @@ def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
 def sell_stock(data: SellRequest, current_user: dict = Depends(get_current_user)):
     if get_market_status() != "OPEN":
         raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
+    _require_transaction_pin(current_user["user_id"], data.pin)
     server_price = get_live_price(data.symbol.upper())
     if server_price is None:
         raise HTTPException(status_code=503, detail=f"Could not fetch current price for {data.symbol}")
@@ -76,16 +122,16 @@ def get_transaction_history(
     return {"success": True, "transactions": result}
 
 
-class AddPaperMoneyRequest(BaseModel):
+class AddAssetsRequest(BaseModel):
     amount: float
 
 
-@router.post("/add-paper-money")
-def add_paper_money(
-    data: AddPaperMoneyRequest,
+@router.post("/add-assets")
+def add_assets(
+    data: AddAssetsRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    return AddPaperMoneyController().add(current_user["user_id"], data.amount)
+    return AddAssetsController().add(current_user["user_id"], data.amount)
 
 
 class OrderRequest(BaseModel):
@@ -93,6 +139,7 @@ class OrderRequest(BaseModel):
     order_type: str   # "buy" | "sell"
     quantity: int
     limit_price: float
+    pin: Optional[str] = None
 
 
 @router.post("/order")
@@ -101,6 +148,7 @@ def submit_order(data: OrderRequest, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
     if data.quantity <= 0 or data.limit_price <= 0:
         raise HTTPException(status_code=400, detail="quantity and limit_price must be positive")
+    _require_transaction_pin(current_user["user_id"], data.pin)
     return SubmitOrderController().submit(
         current_user["user_id"], data.symbol, data.order_type, data.quantity, data.limit_price
     )

@@ -63,9 +63,9 @@ def seed(email: str, all30: bool = False):
         investor = session.query(Investor).filter(
             Investor.user_id == user_id).first()
         needed = total_cost + 500  # keep some cash after buying
-        if investor.paper_money < needed:
-            investor.paper_money = needed
-            print(f"[OK] Paper money topped up to ${needed:,.2f}")
+        if investor.assets < needed:
+            investor.assets = needed
+            print(f"[OK] Assets topped up to ${needed:,.2f}")
 
     bought = 0
     for symbol, qty, price in lots:
