@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { getInvestorInformation, deleteInvestor, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
+import { getInvestorInformation, deleteInvestor, requestDeleteOtp, getSubscriptionDetails, updateSubscriptionStatus, cancelSubscription } from "../../api/userApi.js";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPageBackground, getAvatarGradient, isExpertUser } from "../../utils/userRole.js";
@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
 import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
-import { addAssets } from "../../api/tradingApi.js";
+import { addAssets, getPortfolio } from "../../api/tradingApi.js";
+import { COUNTRIES, splitAddress, joinAddress } from "../../utils/countryCodes.js";
 
 /* ─── Light theme tokens ──────────────────────────────────── */
 const ACCENT_TEXT = "#004450";
@@ -252,27 +253,94 @@ function LeftSection({ activeTab, setActiveTab, investorInfo, currentUser }) {
 
 function DeleteAccountButton() {
     const navigate = useNavigate();
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [loading, setLoading] = useState(false);
+    // stage: null | "blocked" | "confirm"
+    const [stage, setStage] = useState(null);
+    const [checking, setChecking] = useState(false);
+    const [blockReason, setBlockReason] = useState("");
+    const [pin, setPin] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [sendingOtp, setSendingOtp] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState("");
 
-    const handleDeleteAccount = async () => {
-        const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
-        setLoading(true);
+    const reset = () => {
+        setStage(null); setBlockReason(""); setPin(""); setOtp("");
+        setOtpSent(false); setError(""); setDeleting(false);
+    };
+
+    // Preflight: an account can only be deleted once it's fully emptied.
+    const startDelete = async () => {
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+        setChecking(true);
+        setError("");
         try {
-            const result = await deleteInvestor(currentUser?.user_id);
+            const pf = await getPortfolio(currentUser?.user_id);
+            const holdings = (pf?.holdings || []).filter((h) => (h.quantity || 0) > 0);
+            const assets = Number(pf?.assets || 0);
+            if (holdings.length > 0) {
+                setBlockReason("You still hold stocks. Sell all your holdings before deleting your account.");
+                setStage("blocked");
+                return;
+            }
+            if (assets > 0.005) {
+                setBlockReason(`You still have $${assets.toFixed(2)} in your account. Cash out your full balance before deleting your account.`);
+                setStage("blocked");
+                return;
+            }
+            // Emptied — start the 2FA confirmation and send the email OTP.
+            setStage("confirm");
+            sendOtp();
+        } catch (e) {
+            console.error(e);
+            setError("Could not verify your account balance. Please try again.");
+            setStage("confirm");
+        } finally {
+            setChecking(false);
+        }
+    };
+
+    const sendOtp = async () => {
+        setSendingOtp(true);
+        setError("");
+        try {
+            const res = await requestDeleteOtp();
+            if (res?.success) setOtpSent(true);
+            else setError(res?.message || "Could not send verification email.");
+        } catch {
+            setError("Could not send verification email.");
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
+    const confirmDelete = async () => {
+        if (pin.length !== 6) return setError("Enter your 6-digit transaction PIN.");
+        if (otp.length !== 6) return setError("Enter the 6-digit code sent to your email.");
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
+        setDeleting(true);
+        setError("");
+        try {
+            const result = await deleteInvestor(currentUser?.user_id, pin, otp);
             if (result.success) {
                 sessionStorage.removeItem("currentUser");
                 navigate("/");
             } else {
-                alert(result.message || "Failed to delete account");
+                setError(result.message || result.detail || "Failed to delete account");
             }
         } catch (error) {
             console.error(error);
-            alert("Failed to delete account");
+            setError("Failed to delete account");
         } finally {
-            setLoading(false);
-            setShowConfirm(false);
+            setDeleting(false);
         }
+    };
+
+    const pinBox = {
+        width: "100%", height: 52, textAlign: "center", fontFamily: "monospace",
+        fontSize: 24, letterSpacing: "12px", borderRadius: 12,
+        border: "1px solid rgba(15,23,42,0.2)", background: CARD_BG_MUTED,
+        color: HEADING, outline: "none",
     };
 
     return (
@@ -281,36 +349,69 @@ function DeleteAccountButton() {
                 <p style={{ fontSize: "14px", color: TEXT_MUTED, fontWeight: 500 }}>Danger Zone</p>
                 <div style={{ width: "85%", height: "1px", background: DIVIDER }} />
                 <button
-                    onClick={() => setShowConfirm(true)}
-                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: DANGER, fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: "pointer" }}
+                    onClick={startDelete}
+                    disabled={checking}
+                    style={{ padding: "8px 16px", borderRadius: "6px", background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", color: DANGER, fontSize: "12px", fontWeight: 600, transition: "all 0.2s ease", cursor: checking ? "wait" : "pointer" }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = "#B91C1C"; e.currentTarget.style.border = "1px solid #B91C1C"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = DANGER; e.currentTarget.style.border = "1px solid rgba(220,38,38,0.3)"; }}
                 >
-                    Delete Account
+                    {checking ? "Checking…" : "Delete Account"}
                 </button>
             </div>
 
-            {showConfirm && (
+            {stage === "blocked" && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW, textAlign: "center" }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Delete Account</h2>
-                        <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>
-                            This will permanently delete your account and all associated data. This action cannot be undone.
-                        </p>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "420px", width: "90%", boxShadow: MODAL_SHADOW, textAlign: "center" }}>
+                        <div style={{ fontSize: 30, marginBottom: 8 }}>🧹</div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "12px" }}>Empty your account first</h2>
+                        <p style={{ fontSize: "14px", color: TEXT_MUTED, marginBottom: "24px", lineHeight: 1.6 }}>{blockReason}</p>
                         <div className="flex gap-3 justify-center">
-                            <button
-                                onClick={() => setShowConfirm(false)}
-                                disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}
-                            >
+                            <button onClick={reset} style={{ padding: "8px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
+                                Close
+                            </button>
+                            <button onClick={() => navigate("/investor/portfolio-overview")} style={{ padding: "8px 20px", borderRadius: "8px", background: "#0092b8", border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
+                                Go to Portfolio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {stage === "confirm" && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "420px", width: "90%", boxShadow: MODAL_SHADOW }}>
+                        <div style={{ fontSize: 28, marginBottom: 6, textAlign: "center" }}>⚠️</div>
+                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px", textAlign: "center" }}>Confirm account deletion</h2>
+                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "20px", lineHeight: 1.6, textAlign: "center" }}>
+                            This permanently deletes your account and all data. Confirm with your transaction PIN and the code we emailed you.
+                        </p>
+
+                        <label style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED, display: "block", marginBottom: 6 }}>Transaction PIN</label>
+                        <input type="password" inputMode="numeric" maxLength={6} value={pin} placeholder="••••••"
+                            onChange={(e) => { setPin(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+                            style={{ ...pinBox, marginBottom: 16 }} />
+
+                        <label style={{ fontSize: 12, fontWeight: 600, color: TEXT_MUTED, display: "block", marginBottom: 6 }}>
+                            Email verification code
+                        </label>
+                        <input type="text" inputMode="numeric" maxLength={6} value={otp} placeholder="••••••"
+                            onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+                            style={pinBox} />
+                        <button type="button" onClick={sendOtp} disabled={sendingOtp}
+                            style={{ marginTop: 8, background: "none", border: "none", color: "#0092b8", fontSize: 13, fontWeight: 600, cursor: sendingOtp ? "wait" : "pointer" }}>
+                            {sendingOtp ? "Sending…" : otpSent ? "Resend code" : "Send code to my email"}
+                        </button>
+
+                        {error && <p style={{ color: DANGER, fontSize: 13, fontWeight: 500, marginTop: 10 }}>{error}</p>}
+
+                        <div className="flex gap-3 justify-center" style={{ marginTop: 22 }}>
+                            <button onClick={reset} disabled={deleting}
+                                style={{ flex: 1, padding: "10px 20px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleDeleteAccount}
-                                disabled={loading}
-                                style={{ width: "100px", padding: "8px 20px", borderRadius: "8px", background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.45)", color: DANGER, fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}
-                            >
-                                {loading ? "Deleting…" : "Yes"}
+                            <button onClick={confirmDelete} disabled={deleting || pin.length !== 6 || otp.length !== 6}
+                                style={{ flex: 1, padding: "10px 20px", borderRadius: "8px", background: (deleting || pin.length !== 6 || otp.length !== 6) ? "rgba(220,38,38,0.4)" : DANGER, border: "none", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: (deleting || pin.length !== 6 || otp.length !== 6) ? "not-allowed" : "pointer" }}>
+                                {deleting ? "Deleting…" : "Delete forever"}
                             </button>
                         </div>
                     </div>
@@ -325,7 +426,9 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
     const [draftPhone, setDraftPhone] = useState(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-    const [draftLoc, setDraftLoc] = useState(investorInfo?.address || "");
+    const initialLoc = splitAddress(investorInfo?.address || "");
+    const [draftCity, setDraftCity] = useState(initialLoc.city);
+    const [draftCountry, setDraftCountry] = useState(initialLoc.country);
     const [editingSection, setEditingSection] = useState(null);
     const isEditing = (section) => editingSection === section;
     // Generate initials from username
@@ -336,7 +439,9 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
         setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-        setDraftLoc(investorInfo?.address || "");
+        const loc = splitAddress(investorInfo?.address || "");
+        setDraftCity(loc.city);
+        setDraftCountry(loc.country);
     }, [investorInfo]);
 
     const cancelEdit = () => {
@@ -344,11 +449,15 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
         setDraftEmail(investorInfo?.email_address || "");
         setDraftUser(investorInfo?.username || "");
         setDraftPhone(investorInfo?.phone_number != null ? String(investorInfo.phone_number) : "");
-        setDraftLoc(investorInfo?.address || "");
+        const loc = splitAddress(investorInfo?.address || "");
+        setDraftCity(loc.city);
+        setDraftCountry(loc.country);
         setEditingSection(null);
     };
     const handleChange = async () => {
+        if (!draftCountry) { alert("Please select your country."); return; }
         try {
+            const draftLoc = joinAddress(draftCity, draftCountry);
             const result = await updateUserInformation(
                 investorInfo.user_id,
                 draftUser,
@@ -364,6 +473,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                 stored.full_name = draftFull;
                 stored.username = draftUser;
                 stored.email_address = draftEmail;
+                stored.address = draftLoc;
                 sessionStorage.setItem("currentUser", JSON.stringify(stored));
 
                 alert("Profile updated");
@@ -566,13 +676,30 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 />
                             </FormField>
 
-                            <FormField label="Location" htmlFor="field-location">
+                            <FormField label="City" htmlFor="field-city">
                                 <TextInput
-                                    id="field-location"
-                                    value={draftLoc}
-                                    onChange={setDraftLoc}
-                                    placeholder="City, Country"
+                                    id="field-city"
+                                    value={draftCity}
+                                    onChange={setDraftCity}
+                                    placeholder="e.g. Singapore"
                                 />
+                            </FormField>
+                        </div>
+
+                        <div>
+                            <FormField label="Country *" htmlFor="field-country">
+                                <select
+                                    id="field-country"
+                                    value={draftCountry}
+                                    onChange={(e) => setDraftCountry(e.target.value)}
+                                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] focus:outline-none transition"
+                                    style={{ height: "46px", color: draftCountry ? "#1f2937" : "#9ca3af" }}
+                                >
+                                    <option value="">Select your country…</option>
+                                    {COUNTRIES.map((c) => (
+                                        <option key={c.iso + c.name} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
                             </FormField>
                         </div>
 

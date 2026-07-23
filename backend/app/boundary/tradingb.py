@@ -26,9 +26,13 @@ router = APIRouter(prefix="/trading", tags=["Trading"])
 
 def _require_transaction_pin(user_id: str, pin: Optional[str]):
     """Confirm the caller's 6-digit transaction PIN before a money move.
-    No-op for legacy accounts that never set a PIN."""
+    Every account must have a PIN — trading is blocked until one is set
+    (legacy accounts are forced to set one on their next login)."""
     if not Investor.hasTransactionPin(user_id):
-        return
+        raise HTTPException(
+            status_code=428,
+            detail="Set a 6-digit transaction PIN before trading.",
+        )
     if not pin or not Investor.verifyTransactionPin(user_id, pin):
         raise HTTPException(status_code=403, detail="Incorrect transaction PIN")
 
@@ -135,6 +139,7 @@ class OrderRequest(BaseModel):
     order_type: str   # "buy" | "sell"
     quantity: int
     limit_price: float
+    pin: Optional[str] = None
 
 
 @router.post("/order")
@@ -143,6 +148,7 @@ def submit_order(data: OrderRequest, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=403, detail="Market is closed. Trading is only available Mon–Fri, 9:30am–4:00pm ET.")
     if data.quantity <= 0 or data.limit_price <= 0:
         raise HTTPException(status_code=400, detail="quantity and limit_price must be positive")
+    _require_transaction_pin(current_user["user_id"], data.pin)
     return SubmitOrderController().submit(
         current_user["user_id"], data.symbol, data.order_type, data.quantity, data.limit_price
     )

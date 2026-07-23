@@ -52,7 +52,7 @@ export const addAssets = async (userId, amount) => {
   return response.json();
 };
 
-export const submitOrder = async (userId, symbol, orderType, quantity, limitPrice) => {
+export const submitOrder = async (userId, symbol, orderType, quantity, limitPrice, pin = null) => {
   const response = await authFetch(`${BASE_URL}/order`, {
     method: "POST",
     body: JSON.stringify({
@@ -60,6 +60,7 @@ export const submitOrder = async (userId, symbol, orderType, quantity, limitPric
       order_type: orderType,
       quantity,
       limit_price: limitPrice,
+      pin,
     }),
   });
   return response.json();

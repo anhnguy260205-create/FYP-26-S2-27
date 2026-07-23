@@ -31,3 +31,45 @@ export const COUNTRY_CODES = [
 ];
 
 export const DEFAULT_COUNTRY_CODE = "+65";
+
+// Country list for the "Country" dropdown on the personal-information forms.
+// Derived from COUNTRY_CODES (deduped by name), Singapore first, rest A–Z.
+export const COUNTRIES = (() => {
+  const seen = new Set();
+  const list = [];
+  for (const c of COUNTRY_CODES) {
+    if (!seen.has(c.label)) { seen.add(c.label); list.push({ name: c.label, iso: c.iso }); }
+  }
+  const sg = list.find((c) => c.name === "Singapore");
+  const rest = list.filter((c) => c.name !== "Singapore").sort((a, b) => a.name.localeCompare(b.name));
+  return sg ? [sg, ...rest] : rest;
+})();
+
+const COUNTRY_NAMES = COUNTRIES.map((c) => c.name);
+
+// Personal info stores city + country combined in the single `address` column
+// as "City, Country" (no schema change). These helpers split/join it so the
+// forms can show a free-text City field and a Country dropdown separately.
+export function splitAddress(address) {
+  const raw = (address || "").trim();
+  if (!raw) return { city: "", country: "" };
+  // Prefer an exact known-country suffix so cities containing commas still work.
+  const match = COUNTRY_NAMES.find(
+    (n) => raw.toLowerCase() === n.toLowerCase() || raw.toLowerCase().endsWith(", " + n.toLowerCase())
+  );
+  if (match) {
+    const city = raw.slice(0, raw.length - match.length).replace(/,\s*$/, "").trim();
+    return { city, country: match };
+  }
+  // Fall back to last comma split.
+  const idx = raw.lastIndexOf(",");
+  if (idx === -1) return { city: raw, country: "" };
+  return { city: raw.slice(0, idx).trim(), country: raw.slice(idx + 1).trim() };
+}
+
+export function joinAddress(city, country) {
+  const c = (city || "").trim();
+  const k = (country || "").trim();
+  if (c && k) return `${c}, ${k}`;
+  return c || k || "";
+}

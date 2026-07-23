@@ -138,7 +138,27 @@ def send_password_reset_email(to_email: str, otp_code: str):
     _send(msg, to_email, label="password reset OTP")
 
 
-#  Login verification OTP (2nd factor) 
+#  Account deletion confirmation OTP
+
+def send_account_deletion_otp_email(to_email: str, otp_code: str):
+    subject = "Deskstock Account Deletion Code"
+    body = (
+        f"<p>We received a request to <b>permanently delete</b> your Deskstock account.</p>"
+        f"<p>To confirm, enter this verification code:</p>"
+        f"<h2 style='letter-spacing:4px;font-family:monospace;'>{otp_code}</h2>"
+        f"<p>This code will expire in <b>10 minutes</b>. "
+        f"If you did not request this, do NOT share this code — simply ignore "
+        f"this email and your account will remain active.</p>"
+    )
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = GMAIL_USER
+    msg["To"] = to_email
+    msg.attach(MIMEText(body, "html"))
+    return _send(msg, to_email, label="account deletion OTP")
+
+
+#  Login verification OTP (2nd factor)
 
 def send_login_otp_email(to_email: str, otp_code: str):
     subject = "Deskstock Login Verification Code"

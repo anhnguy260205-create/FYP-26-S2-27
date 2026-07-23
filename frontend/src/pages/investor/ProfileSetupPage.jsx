@@ -6,7 +6,7 @@ import {
   updateInvestorInterests,
   setTransactionPin,
 } from "../../api/userApi.js";
-import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "../../utils/countryCodes.js";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, COUNTRIES, joinAddress } from "../../utils/countryCodes.js";
 
 const SPECIALTIES = [
   "Information Technology",
@@ -54,7 +54,8 @@ export default function ProfileSetupPage() {
   const [fullName, setFullName] = useState("");
   const [dialCode, setDialCode] = useState(DEFAULT_COUNTRY_CODE);
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
   const [interests, setInterests] = useState([]);
 
   // Steps 2 & 3 — transaction PIN
@@ -72,6 +73,7 @@ export default function ProfileSetupPage() {
   const nextFromInfo = () => {
     if (!fullName.trim()) return setError("Please enter your full name.");
     if (!phone.trim()) return setError("Please enter your phone number.");
+    if (!country) return setError("Please select your country.");
     setError("");
     setStep(1);
   };
@@ -89,13 +91,14 @@ export default function ProfileSetupPage() {
     setError("");
     try {
       const fullPhone = `${dialCode} ${phone.trim()}`;
+      const address = joinAddress(city, country);
       await updateUserInformation(
         currentUser.user_id,
         currentUser.username,
         fullName.trim(),
         currentUser.email_address,
         fullPhone,
-        address.trim()
+        address
       );
       if (interests.length > 0) {
         await updateInvestorInterests(currentUser.user_id, interests.join(","));
@@ -111,7 +114,7 @@ export default function ProfileSetupPage() {
         ...currentUser,
         full_name: fullName.trim(),
         phone_number: fullPhone,
-        address: address.trim(),
+        address: address,
         interests: interests.join(","),
         has_pin: true,
       };
@@ -221,15 +224,30 @@ export default function ProfileSetupPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[13px] text-gray-600 pl-1">Location</label>
+                  <label className="font-semibold text-[13px] text-gray-600 pl-1">City</label>
                   <input
                     type="text"
                     placeholder="e.g. Singapore"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
                     className={inputCls}
                     style={{ height: 48 }}
                   />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-[13px] text-gray-600 pl-1">Country *</label>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className={inputCls}
+                    style={{ height: 48, color: country ? "#1f2937" : "#9ca3af" }}
+                  >
+                    <option value="">Select your country…</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.iso + c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex flex-col gap-2">

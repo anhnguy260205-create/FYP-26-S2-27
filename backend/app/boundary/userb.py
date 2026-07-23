@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 
-from app.control.services.email_service import send_welcome_email
+from app.control.services.email_service import send_welcome_email, send_account_deletion_otp_email
 from app.control.controller.userc import (
     CreateAccountController,
     InvestorInformationController,
@@ -289,12 +289,67 @@ def update_information(
     return {"success": True, "message": "Information updated successfully"}
 
 
+@router.post("/delete-investor/request-otp")
+@limiter.limit("5/minute")
+def request_delete_otp(request: Request, current_user: dict = Depends(get_current_user)):
+    """Step 1 of the secured delete flow: email a 6-digit OTP to the account
+    holder. Deleting also requires the transaction PIN, so this is 2FA."""
+    from app.entity.models.password_reset import PasswordReset
+    email = current_user["email"]
+    otp = PasswordReset.createOtp(email)
+    try:
+        send_account_deletion_otp_email(email, otp)
+    except Exception as e:
+        print(f"[DELETE] Failed to send deletion OTP to {email}: {e}")
+        return {"success": False, "message": "Could not send verification email. Please try again."}
+    return {"success": True, "message": "A verification code has been sent to your email."}
+
+
+class DeleteInvestorRequest(BaseModel):
+    pin: Optional[str] = None
+    otp: Optional[str] = None
+
+
 @router.delete("/delete-investor/{user_id}")
 def delete_account(
-    user_id: str, current_user: dict = Depends(get_current_user)
+    user_id: str,
+    data: DeleteInvestorRequest,
+    current_user: dict = Depends(get_current_user),
 ):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
+
+    # Self-service deletion is gated by three checks. Admins deleting another
+    # account bypass the PIN/OTP (they've authenticated as admin) but the
+    # account must still be emptied first.
+    from app.entity.models.investor import Investor
+    from app.entity.models.password_reset import PasswordReset
+
+    portfolio = Investor.getPortfolio(user_id)
+    if portfolio:
+        holdings = [h for h in (portfolio.get("holdings") or []) if (h.get("quantity") or 0) > 0]
+        if holdings:
+            raise HTTPException(
+                status_code=409,
+                detail="You still hold stocks. Sell all your holdings before deleting your account.",
+            )
+        if round(float(portfolio.get("assets") or 0), 2) > 0:
+            raise HTTPException(
+                status_code=409,
+                detail="You still have assets in your account. Cash out your full balance before deleting your account.",
+            )
+
+    is_self = current_user["user_id"] == user_id
+    if is_self:
+        # 6-digit transaction PIN
+        if not Investor.hasTransactionPin(user_id):
+            raise HTTPException(status_code=428, detail="Set a transaction PIN before deleting your account.")
+        if not data.pin or not Investor.verifyTransactionPin(user_id, data.pin):
+            raise HTTPException(status_code=403, detail="Incorrect transaction PIN")
+        # Email OTP
+        if not data.otp or not PasswordReset.verifyOtp(current_user["email"], data.otp.strip()):
+            raise HTTPException(status_code=403, detail="Invalid or expired email verification code.")
+
     result = DeleteInvestorController().delete_account(user_id)
     if not result:
         return {"success": False, "message": "Account not found"}
