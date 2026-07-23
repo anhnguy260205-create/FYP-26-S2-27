@@ -24,10 +24,7 @@ from app.boundary.adminb import router as admin_router
 from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
-from app.entity.models.useraccount import (
-    seed_admin_account,
-    seed_hr_account,
-)
+from app.entity.models.useraccount import seed_admin_account
 from app.entity.models.investor import seed_investor_account
 from app.entity.models.expert import seed_expert_account, seed_jordan_account
 from app.entity.models.expertverification import ExpertVerification
@@ -214,6 +211,20 @@ def ensure_all_schemas(engine):
                 print(f"[SCHEMA] Backfilled amount for {result.rowcount} existing premium subscription(s)")
         except Exception as e:
             print(f"[SCHEMA] Skipped subscription.amount backfill: {e}")
+
+
+        try:
+            current_type = conn.execute(text(
+                "SELECT DATA_TYPE FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'content_management' AND COLUMN_NAME = 'description'"
+            )).scalar()
+            if current_type and current_type.lower() != "mediumtext":
+                conn.execute(text(
+                    "ALTER TABLE content_management MODIFY COLUMN description MEDIUMTEXT NULL"))
+                conn.commit()
+                print("[SCHEMA] Widened content_management.description to MEDIUMTEXT")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped content_management.description widen: {e}")
 
 
         try:
@@ -430,7 +441,6 @@ else:
 if RUN_SEEDS:
     seed_profiles()
     seed_admin_account()
-    seed_hr_account()
     seed_investor_account()
     seed_expert_account()
     seed_jordan_account()
