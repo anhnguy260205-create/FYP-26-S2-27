@@ -1,12 +1,11 @@
 import Header from "./Header.jsx";
 import GeneralHeader from "./GeneralHeader.jsx";
-import ExpertHeader from "./ExpertHeader.jsx";
+import { isExpertUser } from "../utils/userRole.js";
 
 function RoleHeader() {
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
-  if (currentUser?.role === "investor") return <GeneralHeader />;
-  if (currentUser?.role === "expert") return <ExpertHeader />;
+  if (currentUser?.role === "investor" || isExpertUser(currentUser)) return <GeneralHeader />;
   return <Header />;
 }
 
