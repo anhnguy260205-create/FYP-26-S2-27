@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { fetchRating, fetchSectorRanking } from "../../api/ratingApi.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -113,6 +114,8 @@ function Stars({ value }) {
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function QuantRatingPage() {
+  const { text } = useContentManagement();
+  const header = text("header_quant_rating_page", "Sector Quant Ratings", "Calibrated machine-learning buy ratings, modelled per GICS sector. Each score is a true, calibrated probability — not a black-box index.");
   const [symbol, setSymbol] = useState("AAPL");
   const [query, setQuery] = useState("AAPL");
   const [rating, setRating] = useState(null);
@@ -175,10 +178,9 @@ export default function QuantRatingPage() {
       <main className="max-w mx-auto ">
         {/* Title */}
         <div className="mb-6">
-          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading }}>Sector Quant Ratings</h1>
+          <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: PAGE.heading }}>{header.title}</h1>
           <p className="text-sm mt-1" style={{ color: PAGE.sub }}>
-            Calibrated machine-learning buy ratings, modelled per GICS sector. Each score is a true,
-            calibrated probability — not a black-box index.
+            {header.description}
           </p>
         </div>
 

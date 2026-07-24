@@ -1,14 +1,21 @@
 import Header from "../../layout/Header.jsx";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { firebaseLogin, verifyLoginOtp, resendLoginOtp } from "../../api/userApi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
 import login from "../../images/login.jpg";
+import { isExpertUser } from "../../utils/userRole.js";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where to send the user after a successful login, if they got here by
+  // clicking something specific (e.g. "Read all reviews") rather than the
+  // generic Login link. Falls back to the normal role-based landing page —
+  // see goToRole() below.
+  const from = location.state?.from;
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(() =>
     new URLSearchParams(window.location.search).get("suspended") === "1"
@@ -29,20 +36,32 @@ function LoginPage() {
 
   const goToRole = (user) => {
     sessionStorage.setItem("currentUser", JSON.stringify(user));
+    localStorage.removeItem("currentUser"); // prevent stale account data from affecting banners/routes
+
     const role = user.role;
-    // Roles are merged — experts are investors with an is_expert flag and
-    // use the investor interface.
-    if (role === "investor" || role === "expert") {
-      // First login → full setup (personal info → transaction PIN → subscription).
-      // The risk-assessment prompt then appears on the investor home for anyone
-      // who hasn't set a risk tolerance and hasn't dismissed it.
-      if (user.first_login) navigate("/investor/setup");
-      else navigate("/investor");
+    const safeFrom = from && from !== "/login" ? from : null;
+    const canUseExpertRoute = isExpertUser(user) || role === "expert" || user.verification_status != null;
+    const safeExpertFrom = safeFrom?.startsWith("/expert") && canUseExpertRoute ? safeFrom : null;
+
+    if (role === "admin") {
+      navigate("/adminpanel");
+      return;
     }
-    else if (role === "admin") navigate("/adminpanel");
-    else if (role === "finance admin") navigate("/finance-admin")
-    else setError("Unknown role: " + role);
-  };
+
+    if (role === "finance admin") {
+      navigate("/finance-admin");
+      return;
+    }
+
+    // Roles are merged — experts still have investor access, but expert-only
+    // deep links are respected when the account has expert privileges.
+    if (role === "investor" || role === "expert") {
+      if (user.first_login) navigate("/investor/setup");
+      else navigate(safeExpertFrom || safeFrom || "/investor");
+      return;
+    }
+
+    setError("Unknown role: " + role);  };
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault();

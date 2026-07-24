@@ -147,10 +147,4 @@ export const router = createBrowserRouter([
     { path: "/finance-admin/payments", element: protect(["finance admin"], PaymentTransactionsPage) },
     { path: "/finance-admin/reports", element: protect(["finance admin"], FinancialReportsPage) },
 
-    // Merged roles: expert features are reached from the investor UI by
-    // accounts with the is_expert flag. Remaining /expert pages are kept in
-    // the codebase for reference but are no longer routed standalone.
-    // The application form (particulars + documents) lives inline on
-    // /investor/become-expert now — ExpertDocumentPage is no longer routed.
-    { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
 ]);

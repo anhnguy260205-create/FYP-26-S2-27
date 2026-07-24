@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
 from app.control.controller.contentc import (
@@ -13,7 +13,8 @@ router = APIRouter(tags=["Content"])
 
 class UpdateContentRequest(BaseModel):
     title: str
-    description: str
+    description: str = ""
+    image_url: Optional[str] = None
 
 
 class ReorderSectionRequest(BaseModel):
@@ -40,7 +41,7 @@ def update_content(
     data: UpdateContentRequest,
     _: dict = Depends(require_admin),
 ):
-    success = UpdateContentController().update(content_id, data.title, data.description)
+    success = UpdateContentController().update(content_id, data.title, data.description, data.image_url)
     if not success:
         return {"success": False, "message": "Content not found"}
     return {"success": True, "message": "Content updated"}

@@ -8,6 +8,7 @@ import {
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getExpertCompensationSummary } from "../../api/expertApi.js";
+import { fillTemplate, useContentManagement } from "../../utils/contentManagement.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -67,7 +68,7 @@ function StatusPill({ eligible }) {
   );
 }
 
-function LockedView({ reason, verified }) {
+function LockedView({ reason, verified, locked, lockedCta }) {
   const navigate = useNavigate();
   return (
     <motion.div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #B273FF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}
@@ -78,15 +79,15 @@ function LockedView({ reason, verified }) {
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(91,108,136,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: C.muted }}>
             <Lock size={24} />
           </div>
-          <h1 style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: C.heading, margin: 0 }}>Compensation is locked</h1>
+          <h1 style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: C.heading, margin: 0 }}>{locked?.title || "Compensation is locked"}</h1>
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "10px 0 0", lineHeight: 1.7 }}>
             {verified
-              ? reason
-              : "Only accessible for qualified, verified experts. Apply and get approved to unlock this page."}
+              ? (reason || locked?.description || "You do not meet the compensation requirements yet.")
+              : (locked?.description || "Only accessible for qualified, verified experts. Apply and get approved to unlock this page.")}
           </p>
           <button onClick={() => navigate("/investor/become-expert")}
             style={{ marginTop: 22, padding: "12px 26px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: mono, fontSize: 13, fontWeight: 700, background: C.accent, color: C.accentText, boxShadow: "0 6px 16px rgba(0,211,242,0.35)" }}>
-            {verified ? "View Expert Application" : "Become an Expert →"}
+            {verified ? (lockedCta || "View Expert Application") : (lockedCta || "Become an Expert →")}
           </button>
         </div>
       </main>
@@ -108,13 +109,21 @@ export default function ExpertCompensationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const cms = useContentManagement();
+  const pageHeader = cms.text("expert_compensation_header", "Compensation", "Track your earnings, payout history, and follower eligibility.");
+  const notice = cms.text("expert_compensation_notice", "Display-only notice", "Compensation figures on this page are calculated for display purposes only — no funds are transferred.");
+  const locked = cms.text("expert_compensation_locked_title", "Compensation is locked", "You need a verified expert profile before you can view earnings and payouts. Submit your credential documents to get verified.");
+  const lockedCta = cms.text("expert_compensation_locked_cta", "Become an Expert →").title;
+  const eligibilityText = cms.text("expert_compensation_eligibility_title", "Follower Eligibility", "Reach {threshold} followers to earn {amount}/month.");
+  const historyText = cms.text("expert_compensation_history_title", "Payout History", "Your compensation for each completed month.");
+  const historyEmpty = cms.text("expert_compensation_history_empty", "No completed months yet — history appears here once your first full calendar month has passed.").title;
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(to bottom, #B273FF 0px, #FFFFFF 130px, #FFFFFF 100%)" }}>
         <GeneralHeader />
         <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ fontFamily: mono, fontSize: 13, color: C.muted }}>Loading…</p>
-        </main>
+          <p style={{ fontFamily: mono, fontSize: 13, color: C.muted }}>Loading…</p>        </main>
         <Footer />
       </div>
     );
@@ -126,7 +135,7 @@ export default function ExpertCompensationPage() {
   // Not verified, or verified but not (yet) meeting the follower/rating bar —
   // either way, no compensation dashboard for them.
   if (!verified || !eligible) {
-    return <LockedView verified={verified} reason={summary?.ineligible_reason} />;
+    return <LockedView verified={verified} reason={summary?.ineligible_reason} locked={locked} lockedCta={lockedCta} />;
   }
 
   const followerCount = summary?.follower_count ?? 0;
@@ -141,17 +150,15 @@ export default function ExpertCompensationPage() {
       <GeneralHeader />
       <main style={{ flex: 1, maxWidth: 1000, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
         <div style={{ marginBottom: 20 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 26, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>Compensation</h1>
-          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "4px 0 0" }}>Your earnings, payout history, and eligibility.</p>
+          <h1 style={{ fontFamily: mono, fontSize: 26, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>{pageHeader.title}</h1>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "4px 0 0" }}>{pageHeader.description}</p>
         </div>
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, border: "1px solid rgba(180,131,9,0.25)", background: "rgba(180,131,9,0.08)", padding: "12px 16px", marginBottom: 20 }}>
           <Info size={14} color="#B45309" style={{ marginTop: 2, flexShrink: 0 }} />
           <p style={{ fontFamily: sans, fontSize: 12, color: "#8a5a08", margin: 0 }}>
-            Paid monthly for the month that just closed — ${summary?.rate_per_premium_follower?.toFixed(2) ?? "0.10"} per premium follower.
-            Payouts are credited straight to your assets and show up in Transaction History.
-          </p>
-        </div>
+            {notice.description}
+          </p>        </div>
 
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4" style={{ marginBottom: 20 }}>
           <StatCard icon={<Wallet size={18} />} label="Projected This Month" value={formatCurrency(summary?.projected_payout)} />
@@ -161,7 +168,10 @@ export default function ExpertCompensationPage() {
         </div>
 
         <section style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "22px 24px", marginBottom: 20 }}>
-          <h3 style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 16px" }}>Eligibility</h3>
+          <h3 style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>{eligibilityText.title}</h3>
+          <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 16px" }}>
+            {fillTemplate(eligibilityText.description, { threshold: followerThreshold.toLocaleString(), amount: formatCurrency(summary?.flat_monthly_amount ?? summary?.monthly_amount ?? 0) })}
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 6 }}>
@@ -179,18 +189,16 @@ export default function ExpertCompensationPage() {
               </div>
               <div style={{ height: 8, borderRadius: 6, background: "rgba(11,29,79,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${Math.min(100, (ratingAverage / Math.max(1, ratingThreshold)) * 100)}%`, height: "100%", background: C.success, borderRadius: 6 }} />
-              </div>
-            </div>
+              </div>            </div>
           </div>
         </section>
 
         <section style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "22px 24px" }}>
-          <h3 style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>Payout History</h3>
-          <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 16px" }}>Your compensation for each completed month.</p>
+          <h3 style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>{historyText.title}</h3>
+          <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "0 0 16px" }}>{historyText.description}</p>
           {history.length === 0 ? (
             <div style={{ border: "1px dashed rgba(11,29,79,0.2)", borderRadius: 12, padding: "36px 0", textAlign: "center", fontSize: 13, color: C.muted }}>
-              No completed months yet — history appears here once your first full calendar month has passed.
-            </div>
+              {historyEmpty}            </div>
           ) : (
             <div style={{ overflowX: "auto", borderRadius: 12, border: `1px solid ${C.border}` }}>
               <table className="w-full text-left text-sm">

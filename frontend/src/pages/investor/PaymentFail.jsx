@@ -3,12 +3,19 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate } from "react-router-dom";
 import { XCircle } from "lucide-react";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 import { useEffect } from "react";
 
 const DANGER = "#DC2626";
 
 function PaymentFail() {
+    const navigate = useNavigate();
+    const { text } = useContentManagement();
+    const heading = text("payment_fail_heading", "Payment Failed").title;
+    const desc = text("payment_fail_desc", "Please try again.").title;
+    const retryCta = text("payment_fail_retry_cta", "Try Again").title;
+    const homeCta = text("payment_fail_home_cta", "Go Home").title;
     return (
         <motion.div
             className="min-h-screen flex flex-col"
@@ -39,9 +46,9 @@ function PaymentFail() {
                         className="text-2xl sm:text-3xl font-bold"
                         style={{ fontFamily: "'DM Mono', monospace", color: DANGER }}
                     >
-                        Payment Failed
+                        {heading}
                     </h1>
-                    <p className="text-[#5B6C88] text-sm">Please try again.</p>
+                    <p className="text-[#5B6C88] text-sm">{desc}</p>
                     <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full">
                         <button
                             onClick={() => navigate("/investor/subscription")}
@@ -50,7 +57,7 @@ function PaymentFail() {
                             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
                             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                         >
-                            Try Again
+                            {retryCta}
                         </button>
                         <button
                             onClick={() => navigate("/")}
@@ -59,7 +66,7 @@ function PaymentFail() {
                             onMouseEnter={(e) => (e.currentTarget.style.background = "#1E293B")}
                             onMouseLeave={(e) => (e.currentTarget.style.background = "#0F172A")}
                         >
-                            Go Home
+                            {homeCta}
                         </button>
                     </div>
                 </div>

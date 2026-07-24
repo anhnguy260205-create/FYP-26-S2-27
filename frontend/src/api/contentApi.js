@@ -53,18 +53,22 @@ export function usePlanContent() {
 
   const freeName = c.find((x) => x.content_id === "free_plan_name");
   const freePrice = c.find((x) => x.content_id === "free_plan_price");
+  const freeCta = c.find((x) => x.content_id === "free_plan_cta");
   const freePlan = {
     name: freeName?.title ?? "Starter",
     price: freePrice?.title ?? "$0.00",
     priceSubtitle: freePrice?.description ?? "forever, no card needed",
+    cta: freeCta?.title ?? "Get Started Free",
   };
 
   const premName = c.find((x) => x.content_id === "premium_plan_name");
   const premPrice = c.find((x) => x.content_id === "premium_plan_price");
+  const premCta = c.find((x) => x.content_id === "premium_plan_cta");
   const premiumPlan = {
     name: premName?.title ?? "Pro",
     price: premPrice?.title ?? "$20.99",
     priceSubtitle: premPrice?.description ?? "per month, billed annually",
+    cta: premCta?.title ?? "Upgrade to Premium",
   };
 
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 import Footer from "../../layout/Footer.jsx";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
@@ -481,6 +482,13 @@ function ExpertDetails() {
     const me = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
     const isExpert = isExpertUser(me);
     const isPremium = String(me?.subscription_status || "").toLowerCase() === "premium";
+    const cms = useContentManagement();
+    const askCta = cms.text("expert_detail_ask_cta", "Ask Question").title;
+    const followCta = cms.text("expert_detail_follow_cta", "Follow").title;
+    const followingCta = cms.text("expert_detail_following_cta", "Following").title;
+    const rateCta = cms.text("expert_detail_rate_cta", "Rate").title;
+    const editRatingCta = cms.text("expert_detail_edit_rating_cta", "Edit Rating").title;
+    const coreTitle = cms.text("expert_detail_core_title", "Core Information").title;
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState(null);
@@ -707,10 +715,10 @@ function ExpertDetails() {
     // only the panel below switches.
     const [tab, setTab] = useState("portfolio");
     const TABS = [
-        { key: "portfolio", label: "Portfolio" },
-        { key: "reviews", label: "Reviews" },
-        ...(isSelf ? [{ key: "settings", label: "Settings" }] : []),
-    ];
+        { key: "overview", label: "Overview" },
+        { key: "portfolio", label: cms.text("expert_detail_portfolio_tab", "Portfolio").title },
+        { key: "reviews", label: cms.text("expert_detail_reviews_tab", "Reviews").title },
+        ...(isSelf ? [{ key: "settings", label: "Settings" }] : []),    ];
 
     return (
         <motion.div
@@ -820,7 +828,7 @@ function ExpertDetails() {
                                                 : "0 10px 20px rgba(212,160,23,0.25)",
                                         }}>
                                         <MessageSquare size={16} />
-                                        {isPremium ? "Ask Question" : "Upgrade to Ask Questions 🔒"}
+                                        {isPremium ? askCta : "Upgrade to Ask Questions 🔒"}
                                     </button>
                                 ) : (
                                     <span className="flex items-center gap-2" style={{
@@ -850,7 +858,7 @@ function ExpertDetails() {
                                             border: following ? "1px solid rgba(11,29,79,0.2)" : "none",
                                         }}>
                                         {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                                        {following ? "Following" : "Follow"}
+                                        {following ? followingCta : followCta}
                                     </button>
                                     <button onClick={openRateModal}
                                         className="flex items-center gap-2"
@@ -863,7 +871,7 @@ function ExpertDetails() {
                                             border: "1px solid rgba(11,29,79,0.2)",
                                         }}>
                                         <Star size={16} />
-                                        {myReview ? "Edit Rating" : "Rate"}
+                                        {myReview ? editRatingCta : rateCta}
                                     </button>
                                 </div>
                             )}
@@ -900,6 +908,32 @@ function ExpertDetails() {
                                 </button>
                             ))}
                         </div>
+
+                        {tab === "overview" && (
+                            <div style={{ ...CARD, padding: 30 }}>
+                                <h2 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>{coreTitle}</h2>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <InfoCard icon={Mail} label="Email">
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.email_address || "—"}</div>
+                                    </InfoCard>
+                                    <InfoCard icon={Link2} label="LinkedIn">
+                                        {profile.linked_in_url ? (
+                                            <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
+                                                target="_blank" rel="noreferrer"
+                                                style={{ fontSize: 14, color: "#0092b8", wordBreak: "break-all" }}>
+                                                {profile.linked_in_url}
+                                            </a>
+                                        ) : <div style={{ fontSize: 14, color: "#0F172A" }}>—</div>}
+                                    </InfoCard>
+                                    <InfoCard icon={MapPin} label="Location">
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.address || "—"}</div>
+                                    </InfoCard>
+                                    <InfoCard icon={Shield} label="Username">
+                                        <div style={{ fontSize: 14, color: "#0F172A" }}>@{profile.username || "—"}</div>
+                                    </InfoCard>
+                                </div>
+                            </div>
+                        )}
 
                         {tab === "portfolio" && (
                             <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />

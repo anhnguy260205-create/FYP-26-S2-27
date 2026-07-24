@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { verifySession, getSubscriptionStatus } from "../../api/userApi.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const SUCCESS = "#0F9D58";
 const DANGER = "#DC2626";
@@ -14,6 +15,14 @@ function PaymentSuccess() {
     const [searchParams] = useSearchParams();
     const [status, setStatus] = useState("loading");
     const [error, setError] = useState(null);
+    const { text } = useContentManagement();
+    const loadingHeading = text("payment_success_loading_heading", "Activating your subscription...").title;
+    const loadingDesc = text("payment_success_loading_desc", "Please wait a moment.").title;
+    const errorHeading = text("payment_success_error_heading", "Something went wrong").title;
+    const errorCta = text("payment_success_error_cta", "Homepage").title;
+    const successHeading = text("payment_success_heading", "Payment Successful").title;
+    const successDesc = text("payment_success_desc", "Your subscription is now active.").title;
+    const successCta = text("payment_success_cta", "Homepage").title;
 
     useEffect(() => {
         const activate = async () => {
@@ -81,9 +90,9 @@ function PaymentSuccess() {
                                 className="text-xl sm:text-2xl font-bold text-[#0B1D4F]"
                                 style={{ fontFamily: "'DM Mono', monospace" }}
                             >
-                                Activating your subscription...
+                                {loadingHeading}
                             </h1>
-                            <p className="text-[#5B6C88] text-sm">Please wait a moment.</p>
+                            <p className="text-[#5B6C88] text-sm">{loadingDesc}</p>
                         </>
                     ) : error ? (
                         <>
@@ -97,7 +106,7 @@ function PaymentSuccess() {
                                 className="text-2xl sm:text-3xl font-bold"
                                 style={{ fontFamily: "'DM Mono', monospace", color: DANGER }}
                             >
-                                Something went wrong
+                                {errorHeading}
                             </h1>
                             <p className="text-[#5B6C88] text-sm">{error}</p>
                             <button
@@ -107,7 +116,7 @@ function PaymentSuccess() {
                                 onMouseEnter={(e) => (e.currentTarget.style.background = "#1E293B")}
                                 onMouseLeave={(e) => (e.currentTarget.style.background = "#0F172A")}
                             >
-                                Homepage
+                                {errorCta}
                             </button>
                         </>
                     ) : (
@@ -122,9 +131,9 @@ function PaymentSuccess() {
                                 className="text-2xl sm:text-3xl font-bold"
                                 style={{ fontFamily: "'DM Mono', monospace", color: SUCCESS }}
                             >
-                                Payment Successful
+                                {successHeading}
                             </h1>
-                            <p className="text-[#5B6C88] text-sm">Your subscription is now active.</p>
+                            <p className="text-[#5B6C88] text-sm">{successDesc}</p>
                             <button
                                 onClick={() => navigate("/investor")}
                                 className="mt-2 px-6 py-3 rounded-xl font-semibold text-sm cursor-pointer"
@@ -132,7 +141,7 @@ function PaymentSuccess() {
                                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
                                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                             >
-                                Homepage
+                                {successCta}
                             </button>
                         </>
                     )}

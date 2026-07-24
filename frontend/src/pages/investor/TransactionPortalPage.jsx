@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getPortalTransactions, getPortalSummary } from "../../api/tradingApi.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -45,6 +46,9 @@ function StatCard({ label, value, colour }) {
 }
 
 export default function TransactionPortalPage() {
+  const { text } = useContentManagement();
+  const header = text("header_transaction_portal_page", "Transaction Portal", "Full overview of your paper trading activity");
+  const historyCta = text("transaction_portal_history_cta", "View History →").title;
     const navigate = useNavigate();
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
     const userId = currentUser?.user_id;
@@ -88,9 +92,9 @@ export default function TransactionPortalPage() {
                 {/* Page header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
                     <div>
-                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", margin: 0 }}>Transaction Portal</h1>
+                        <h1 style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", margin: 0 }}>{header.title}</h1>
                         <p style={{ color: C.muted, margin: "4px 0 0", fontSize: 13 }}>
-                            Full overview of your paper trading activity
+                            {header.description}
                         </p>
                     </div>
                     <button
@@ -100,7 +104,7 @@ export default function TransactionPortalPage() {
                             background: C.card, color: C.text, cursor: "pointer", fontSize: 13, fontFamily: sans,
                         }}
                     >
-                        View History →
+                        {historyCta}
                     </button>
                 </div>
 

@@ -7,6 +7,8 @@ import { fetchStockSnapshot } from "../../api/stockApi.js";
 import { getReviewStats, getReviews } from "../../api/reviewApi.js";
 import { useLandingContent, usePlanContent } from "../../api/contentApi.js";
 import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
+import { SectionHeader } from "../../components/dashboard/DashboardKit.jsx";
+import aboutUsImg from "../../images/about_us.jpg";
 import {
   Bot, TrendingUp, Sparkles, Bell, Users, Zap, ShieldCheck, ArrowRight, Star,
   Wallet, BrainCircuit, MessagesSquare, GraduationCap, MessageCircleQuestion, Check, ChevronDown, Play, Award,
@@ -129,21 +131,16 @@ function Hero() {
   const ctaSecondary = content?.find((c) => c.content_id === "hero_cta_secondary")?.title ?? "Login";
 
   return (
-    <div className="hero-section relative w-full h-200 text-white flex items-center justify-center overflow-hidden bg-linear-to-b from-black via-blue-950 white">
-      {/* Background glow */}
+    <div className="hero-section relative w-full h-200 text-white flex items-center justify-center overflow-hidden">
+      <img src={hero.image_url || aboutUsImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      {/* Same dark gradient treatment as the investor/expert hero photos */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.35))" }}
+      />
       <div
         className="absolute inset-0"
         style={{ background: "radial-gradient(circle at 50% 30%, rgba(59,130,246,0.22) 0%, transparent 60%)" }}
-      />
-      {/* Grid */}
-      <div
-        className="absolute inset-0"
-        style={{
-          opacity: 0.15,
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
       />
       <div className="relative z-20 text-center px-6 max-w-3xl py-20 sm:py-28">
         <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 mb-6 text-xs font-semibold tracking-wide text-cyan-300 uppercase">
@@ -156,7 +153,7 @@ function Hero() {
           </span>
         </h1>
 
-        <p className="mt-4 mb-8 text-slate-400 text-base sm:text-lg">
+        <p className="mt-4 mb-8 text-slate-300 text-base sm:text-lg">
           {hero.description}
         </p>
 
@@ -187,16 +184,12 @@ function Hero() {
 
 const FEATURE_THEMES = {
   cyan: {
-    border: "border-blue-100",
-    bg: "bg-blue-50",
-    hoverBorder: "hover:border-cyan-400/50",
+    ring: "ring-slate-200 hover:ring-cyan-300",
     iconBg: "bg-cyan-100",
     iconColor: "text-cyan-600",
   },
   purple: {
-    border: "border-purple-100",
-    bg: "bg-purple-50",
-    hoverBorder: "hover:border-purple-400/50",
+    ring: "ring-slate-200 hover:ring-purple-300",
     iconBg: "bg-purple-100",
     iconColor: "text-purple-600",
   },
@@ -206,16 +199,13 @@ function FeatureCards({ heading, subtitle, items, theme = "cyan" }) {
   const t = FEATURE_THEMES[theme];
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 pb-14">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {items.map(({ Icon, title, description }) => (
           <div
             key={title}
-            className={`rounded-2xl border ${t.border} ${t.bg} p-6 shadow-sm hover:shadow-lg ${t.hoverBorder} hover:-translate-y-1 transition-all duration-300`}
+            className={`rounded-2xl bg-white ring-1 ${t.ring} shadow-md shadow-slate-900/5 p-6 transition-all duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10`}
           >
             <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-4`}>
               <Icon className={t.iconColor} size={22} />
@@ -236,10 +226,10 @@ function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate("/login")}
-      onKeyDown={(e) => { if (e.key === "Enter") navigate("/login"); }}
+      onClick={() => navigate("/login", { state: { from: "/investor/subscription" } })}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate("/login", { state: { from: "/investor/subscription" } }); }}
       className={`group relative overflow-hidden w-full max-w-sm rounded-3xl p-8 border-2 transition-all duration-300 hover:-translate-y-1 cursor-pointer ${highlighted
-        ? "bg-amber-100 border-amber-400 shadow-[0_8px_30px_rgba(251,191,36,0.35)] hover:shadow-[0_14px_45px_rgba(251,191,36,0.5)] h-120"
+        ? "bg-amber-100 border-amber-400 shadow-[0_8px_30px_rgba(251,191,36,0.35)] hover:shadow-[0_14px_45px_rgba(251,191,36,0.5)]"
         : "bg-blue-100 border-blue-300 shadow-[0_8px_30px_rgba(37,99,235,0.18)] hover:border-blue-500 hover:shadow-[0_14px_45px_rgba(37,99,235,0.3)]"
         }`}
     >
@@ -261,6 +251,15 @@ function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
             </div>
           ))}
         </div>
+        <button
+          type="button"
+          className={`w-full mt-6 py-3 rounded-xl font-bold text-sm transition-colors ${highlighted
+            ? "bg-amber-500 text-white group-hover:bg-amber-600"
+            : "bg-blue-600 text-white group-hover:bg-blue-700"
+            }`}
+        >
+          {plan.cta}
+        </button>
       </div>
     </div>
   );
@@ -270,10 +269,7 @@ function PricingSection({ heading, subtitle }) {
   const { freeFeatures, premiumFeatures, freePlan, premiumPlan } = usePlanContent();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-16">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
       <div className="flex flex-col md:flex-row gap-20 items-center md:items-start justify-center">
         <PlanCard badge="Free" badgeClass="bg-blue-100 text-blue-700" plan={freePlan} features={freeFeatures} />
         <PlanCard badge="⭐ Premium" badgeClass="bg-amber-100 text-amber-700" plan={premiumPlan} features={premiumFeatures} highlighted />
@@ -318,10 +314,7 @@ function FAQSection({ heading, subtitle, faqs = FAQS }) {
   const [openIndex, setOpenIndex] = useState(0);
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 pb-16">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
       <div className="space-y-3">
         {faqs.map((faq, index) => (
           <FAQItem
@@ -350,10 +343,7 @@ function FAQSection({ heading, subtitle, faqs = FAQS }) {
 function MarketingVideoSection({ heading, subtitle }) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-black">{heading}</h2>
-        <p className="text-slate-400 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
       <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
         <button
           type="button"
@@ -436,24 +426,55 @@ const EXPERT_WHY = [
   },
 ];
 
+const EXPERT_ROLE_BENEFITS = [
+  {
+    Icon: BrainCircuit,
+    title: "Premium Investor Tools Included",
+    description: "Experts get access to the same advanced tools as Premium investors, including AI predictions, portfolio insights, paper trading, and market dashboards.",
+    stat: { value: "All-in-one", label: "premium tools included" },
+    accent: {
+      iconBg: "bg-cyan-100",
+      iconColor: "text-cyan-600",
+      statColor: "text-cyan-700",
+      border: "hover:border-cyan-400/50",
+    },
+  },
+  {
+    Icon: DollarSign,
+    title: "Monthly Compensation",
+    description: "Verified experts can earn monthly compensation based on their activity, contributions, and investor engagement on the platform.",
+    stat: { value: "Monthly", label: "earn from your expertise" },
+    emphasized: true,
+  },
+  {
+    Icon: Users,
+    title: "Grow Your Network",
+    description: "Build your professional presence by sharing insights, answering investor questions, publishing content, and connecting with the RocketTrade community.",
+    stat: { value: "Reach", label: "expand your relationships" },
+    accent: {
+      iconBg: "bg-amber-100",
+      iconColor: "text-amber-600",
+      statColor: "text-amber-700",
+      border: "hover:border-amber-400/50",
+    },
+  },
+];
+
 function WhyCards({ heading, subtitle, items }) {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 py-14">
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch mt-2">
         {items.map(({ Icon, title, description, stat, emphasized, accent }) => (
           <div
             key={title}
             className={`relative h-full flex flex-col rounded-2xl p-6 transition-all duration-300 ${emphasized
-              ? "border border-indigo-400/50 bg-linear-to-br from-indigo-600 to-blue-700 shadow-[0_0_45px_rgba(79,70,229,0.35)] hover:shadow-[0_0_60px_rgba(79,70,229,0.45)] lg:scale-105 lg:-translate-y-2 z-10"
-              : `border border-blue-100 bg-blue-50 shadow-sm hover:shadow-lg hover:-translate-y-1 ${accent.border}`
+              ? "border border-indigo-300 bg-linear-to-br from-indigo-600 to-blue-700 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/25 lg:scale-[1.02] z-10"
+              : `border border-slate-200 bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 ${accent.border}`
               }`}
           >
             {emphasized && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white text-indigo-700 shadow-sm">
+              <span className="mb-4 self-start text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white text-indigo-700 shadow-sm">
                 Our Edge
               </span>
             )}
@@ -464,8 +485,8 @@ function WhyCards({ heading, subtitle, items }) {
               <Icon className={emphasized ? "text-white" : accent.iconColor} size={22} />
             </div>
             <h3 className={`font-bold text-base mb-1.5 ${emphasized ? "text-white" : "text-slate-900"}`}>{title}</h3>
-            <p className={`text-sm flex-1 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{description}</p>
-            <div className={`mt-4 pt-4 border-t ${emphasized ? "border-white/15" : "border-slate-200"}`}>
+            <p className={`text-sm flex-1 leading-relaxed ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{description}</p>
+            <div className={`mt-5 pt-5 border-t ${emphasized ? "border-white/15" : "border-slate-200"}`}>
               <span className={`text-2xl font-extrabold ${emphasized ? "text-white" : accent.statColor}`}>{stat.value}</span>
               <span className={`block text-xs mt-0.5 ${emphasized ? "text-indigo-100" : "text-slate-500"}`}>{stat.label}</span>
             </div>
@@ -473,6 +494,28 @@ function WhyCards({ heading, subtitle, items }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function LandingSectionDivider({ label = "Next Section" }) {
+  return (
+    <div className="bg-white px-4 sm:px-8 py-6">
+      <div className="max-w-6xl mx-auto flex items-center gap-4">
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-slate-300" />
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+          {label}
+        </span>
+        <div className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-200 to-slate-300" />
+      </div>
+    </div>
+  );
+}
+
+function LandingPanel({ children, className = "", muted = false }) {
+  return (
+    <section className={`bg-white ${muted ? "bg-slate-50/70" : ""} border-b border-slate-100 ${className}`}>
+      {children}
+    </section>
   );
 }
 const ROLE_OPTIONS = [
@@ -496,11 +539,8 @@ const ROLE_OPTIONS = [
 
 function RoleToggle({ activeRole, onSelect, heading, subtitle, options = ROLE_OPTIONS }) {
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-2 pb-10 text-center">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-      <p className="text-slate-500 mt-2 mb-8 text-sm sm:text-base">
-        {subtitle}
-      </p>
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-2 pb-10">
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         {options.map(({ value, Icon, title, description, active, activeIcon }) => {
           const selected = activeRole === value;
@@ -595,15 +635,12 @@ function RegistrationGuide({ heading, subtitle, steps = REGISTRATION_STEPS }) {
   const navigate = useNavigate();
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-14 pb-10">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{heading}</h2>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">{subtitle}</p>
-      </div>
+      <SectionHeader title={heading} subtitle={subtitle} dark={false} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {steps.map(({ Icon, step, title, description }) => (
           <div
             key={step}
-            className="relative rounded-2xl border border-blue-100 bg-blue-50 p-6 shadow-sm hover:shadow-lg hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300"
+            className="relative rounded-2xl bg-white ring-1 ring-slate-200 shadow-md shadow-slate-900/5 p-6 transition-all duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-cyan-300"
           >
             <span className="absolute top-4 right-4 text-xs font-bold text-cyan-300">STEP {step}</span>
             <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">
@@ -674,9 +711,10 @@ function CtaButton({ children, onClick, primary }) {
     }
     : {
       padding: "12px 28px", borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: "pointer",
-      background: hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
-      border: hovered ? "1px solid rgba(255,255,255,0.35)" : "1px solid rgba(255,255,255,0.12)",
-      color: hovered ? "white" : "rgba(255,255,255,0.8)",
+      background: hovered ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)",
+      border: hovered ? "1px solid rgba(125,211,252,0.9)" : "1px solid rgba(255,255,255,0.22)",
+      color: "white",
+      backdropFilter: "blur(10px)",
       transform: hovered ? "translateY(-2px)" : "translateY(0)",
       transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease",
     };
@@ -710,7 +748,7 @@ function TestimonialsSection() {
         {[1, 2, 3, 4, 5].map(i => (
           <Star key={i} size={size}
             fill={i <= Math.round(Number(value)) ? "#fbbf24" : "none"}
-            color={i <= Math.round(Number(value)) ? "#fbbf24" : "rgba(255,255,255,0.2)"}
+            color={i <= Math.round(Number(value)) ? "#fbbf24" : "#cbd5e1"}
           />
         ))}
       </div>
@@ -735,37 +773,51 @@ function TestimonialsSection() {
 
   function rolePill(role) {
     const r = String(role || "").toLowerCase();
-    if (r === "expert") return { label: "Expert", style: { background: "rgba(0,211,242,0.12)", color: "#22d3ee", border: "1px solid rgba(0,211,242,0.25)" } };
-    if (r === "premium") return { label: "Premium", style: { background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" } };
-    return { label: "Member", style: { background: "rgba(255,255,255,0.06)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.12)" } };
+    if (r === "expert") return { label: "Expert", style: { background: "rgba(34,211,238,0.12)", color: "#67e8f9", border: "1px solid rgba(103,232,249,0.35)" } };
+    if (r === "premium") return { label: "Premium", style: { background: "rgba(251,191,36,0.13)", color: "#fde68a", border: "1px solid rgba(253,230,138,0.4)" } };
+    return { label: "Member", style: { background: "rgba(148,163,184,0.14)", color: "#cbd5e1", border: "1px solid rgba(203,213,225,0.25)" } };
   }
 
   return (
-    <section style={{ background: "#060f23", padding: "80px 24px 90px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <section style={{
+      position: "relative",
+      overflow: "hidden",
+      background: "linear-gradient(135deg, #020617 0%, #0f172a 45%, #0b3b5a 100%)",
+      padding: "86px 24px 98px",
+      borderTop: "1px solid rgba(148,163,184,0.18)",
+    }}>
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "radial-gradient(circle at 15% 20%, rgba(34,211,238,0.20), transparent 32%), radial-gradient(circle at 85% 15%, rgba(251,191,36,0.14), transparent 28%), radial-gradient(circle at 50% 100%, rgba(37,99,235,0.22), transparent 40%)",
+        pointerEvents: "none",
+      }} />
+      <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 1 }}>
 
         {/* Heading */}
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px",
-            borderRadius: 20, background: "rgba(55,138,221,0.12)", border: "1px solid rgba(55,138,221,0.25)",
-            color: "#60a5fa", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
+            borderRadius: 20, background: "rgba(34,211,238,0.12)", border: "1px solid rgba(125,211,252,0.35)",
+            color: "#67e8f9", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
             textTransform: "uppercase", marginBottom: 16
           }}>
             ★ Community Reviews
           </div>
-          <h2 style={{ fontSize: 34, fontWeight: 800, color: "white", margin: "0 0 16px", lineHeight: 1.2 }}>
+          <h2 style={{ fontSize: 36, fontWeight: 850, color: "#ffffff", margin: "0 0 14px", lineHeight: 1.15 }}>
             Trusted by investors and market experts
           </h2>
+          <p style={{ maxWidth: 650, margin: "0 auto 22px", color: "#cbd5e1", fontSize: 15.5, lineHeight: 1.7 }}>
+            Real feedback from people using RocketTrade to practise trading, explore market insights, and connect with experts.
+          </p>
           {/* Aggregate score bar */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 12,
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 50, padding: "10px 22px"
+            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.16)",
+            borderRadius: 50, padding: "10px 22px", backdropFilter: "blur(12px)"
           }}>
             <StarRow value={avg} size={18} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: "white" }}>{avg}</span>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#ffffff" }}>{avg}</span>
+            <span style={{ fontSize: 13, color: "#cbd5e1" }}>
               from {stats.total} review{stats.total !== 1 ? "s" : ""}
             </span>
           </div>
@@ -777,25 +829,26 @@ function TestimonialsSection() {
             const pill = rolePill(review.author_role);
             return (
               <div key={review.review_id} style={{
-                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 16, padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12,
+                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)",
+                borderRadius: 18, padding: "22px 20px", display: "flex", flexDirection: "column", gap: 12,
+                boxShadow: "0 18px 40px rgba(0,0,0,0.22)", backdropFilter: "blur(14px)",
               }}>
                 <StarRow value={review.rating} />
                 {review.title && (
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "white", margin: 0, lineHeight: 1.3 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", margin: 0, lineHeight: 1.3 }}>
                     {review.title}
                   </h3>
                 )}
-                <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, margin: 0, flex: 1 }}>
+                <p style={{ fontSize: 13.5, color: "#dbeafe", lineHeight: 1.75, margin: 0, flex: 1 }}>
                   {review.comment.length > 200 ? review.comment.slice(0, 200) + "…" : review.comment}
                 </p>
                 <div style={{
                   display: "flex", alignItems: "center", gap: 10, marginTop: "auto", paddingTop: 10,
-                  borderTop: "1px solid rgba(255,255,255,0.06)"
+                  borderTop: "1px solid rgba(255,255,255,0.13)"
                 }}>
                   <AvatarCircle name={review.author} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {review.author}
                     </div>
                     <span style={{
@@ -813,14 +866,14 @@ function TestimonialsSection() {
 
         {/* CTA */}
         <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>
-            Join thousands of users already investing smarter with RocketTrade
+          <p style={{ fontSize: 14, color: "#cbd5e1", marginBottom: 16 }}>
+            Join the community and start exploring RocketTrade with confidence.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <CtaButton onClick={() => navigate("/register")} primary>
               Get started free
             </CtaButton>
-            <CtaButton onClick={() => navigate("/login")}>
+            <CtaButton onClick={() => navigate("/login", { state: { from: "/reviews" } })}>
               Read all reviews
             </CtaButton>
           </div>
@@ -832,15 +885,12 @@ function TestimonialsSection() {
 
 
 function HomePage() {
-  const [activeRole, setActiveRole] = useState("investor");
   const { header, items } = useLandingContentExtras();
 
   const videoHeader = header("header_video", "See RocketTrade in Action", "Watch a quick walkthrough of the platform and its AI-powered tools.");
-  const pathHeader = header("header_path", "Choose Your Path", "Tell us who you are, so we can show you what matters most.");
   const whyInvestorHeader = header("header_why_investor", "Why RocketTrade", "Built to help you invest smarter, without the real-money risk.");
-  const whyExpertHeader = header("header_why_expert", "Why Become a RocketTrade Expert", "Turn your market knowledge into income and influence.");
   const featuresInvestorHeader = header("header_features_investor", "Everything You Need to Invest Smarter", "One platform, six ways to sharpen your edge.");
-  const featuresExpertHeader = header("header_features_expert", "Everything You Get as an Expert", "One platform, six ways to get paid and get seen.");
+  const expertBenefitsHeader = header("header_expert_benefits", "Why Join as a RocketTrade Expert", "Use premium tools, earn from your expertise, and grow your professional network with investors.");
   const startedHeader = header("header_started", "How to Get Started", "Signing up only takes a few minutes, for investors and experts alike.");
   const faqHeader = header("header_faq", "Frequently Asked Questions", "Everything you need to know before you get started.");
   const pricingHeader = header("header_pricing", "Simple, Transparent Pricing", "Compare our Free and Pro plans — create an investor account to get started.");
@@ -856,66 +906,57 @@ function HomePage() {
       <MarketOverviewTicker />
       <main className="flex-1 flex flex-col">
         <Hero />
-        <div style={{ paddingTop: "100px", paddingBottom: "60px", background: "white" }}>
+        <LandingPanel className="pt-24 pb-16">
           <MarketingVideoSection heading={videoHeader.title} subtitle={videoHeader.description} />
-        </div>
-        <div className="bg-white">
-          <RoleToggle
-            activeRole={activeRole}
-            onSelect={setActiveRole}
-            heading={pathHeader.title}
-            subtitle={pathHeader.description}
-            options={items("role_options", ROLE_OPTIONS)}
-          />
-        </div>
-        {activeRole === "investor" ? (
-          <>
-            <div className="bg-white">
-              <WhyCards
-                heading={whyInvestorHeader.title}
-                subtitle={whyInvestorHeader.description}
-                items={items("why_investor", WHY_ROCKETTRADE)}
-              />
-              <FeatureCards
-                heading={featuresInvestorHeader.title}
-                subtitle={featuresInvestorHeader.description}
-                items={items("platform_features", PLATFORM_FEATURES)}
-                theme="cyan"
-              />
-              <PricingSection heading={pricingHeader.title} subtitle={pricingHeader.description} />
-            </div>
+        </LandingPanel>
 
-          </>
-        ) : (
-          <div className="bg-white">
-            <WhyCards
-              heading={whyExpertHeader.title}
-              subtitle={whyExpertHeader.description}
-              items={items("why_expert", EXPERT_WHY)}
-            />
-            <FeatureCards
-              heading={featuresExpertHeader.title}
-              subtitle={featuresExpertHeader.description}
-              items={items("expert_features", EXPERT_FEATURES)}
-              theme="purple"
-            />
-          </div>
-        )}
-        <TestimonialsSection />
-        <div className="bg-white">
+        <LandingPanel muted>
+          <WhyCards
+            heading={whyInvestorHeader.title}
+            subtitle={whyInvestorHeader.description}
+            items={items("why_investor", WHY_ROCKETTRADE)}
+          />
+        </LandingPanel>
+
+        <LandingPanel>
+          <FeatureCards
+            heading={featuresInvestorHeader.title}
+            subtitle={featuresInvestorHeader.description}
+            items={items("platform_features", PLATFORM_FEATURES)}
+            theme="cyan"
+          />
+        </LandingPanel>
+
+        <LandingPanel muted>
+          <PricingSection heading={pricingHeader.title} subtitle={pricingHeader.description} />
+        </LandingPanel>
+
+        <LandingPanel>
           <RegistrationGuide
             heading={startedHeader.title}
             subtitle={startedHeader.description}
             steps={items("get_started_steps", REGISTRATION_STEPS)}
           />
-        </div>
-        <div className="bg-white flex-1">
+        </LandingPanel>
+
+        <LandingPanel muted>
+          <WhyCards
+            heading={expertBenefitsHeader.title}
+            subtitle={expertBenefitsHeader.description}
+            items={items("expert_role_benefits", EXPERT_ROLE_BENEFITS)}
+          />
+        </LandingPanel>
+
+        <LandingSectionDivider label="Questions before getting started" />
+        <LandingPanel className="flex-1 pt-2">
           <FAQSection
             heading={faqHeader.title}
             subtitle={faqHeader.description}
             faqs={items("faq", FAQS)}
           />
-        </div>
+        </LandingPanel>
+
+        <TestimonialsSection />
 
       </main>
       <Footer />

@@ -4,6 +4,7 @@ import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import { Award, TrendingUp, BarChart3, FileText, CheckCircle2, Clock, Plus, Trash2, Sparkles, Users, Star } from "lucide-react";
+import { useContentManagement, fillTemplate } from "../../utils/contentManagement.js";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
@@ -450,6 +451,18 @@ function UpdateParticularsPanel({ userId, onClose }) {
 }
 
 export default function BecomeExpertPage() {
+  const { text } = useContentManagement();
+  const header = text("header_become_expert_page", "Become an Expert", "Prove your trading skill to unlock expert privileges — publish educational articles, share your portfolio with premium users, and enjoy complimentary premium benefits.");
+  const approvedHeading = text("become_expert_approved_heading", "You are a verified expert!").title;
+  const approvedDesc = text("become_expert_approved_desc", "You can now publish articles, share your portfolio and enjoy premium benefits.").title;
+  const pendingHeading = text("become_expert_pending_heading", "Application under review").title;
+  const pendingDesc = text("become_expert_pending_desc", "Your documents are being reviewed. You will be notified once a decision is made.").title;
+  const appliedHeading = text("become_expert_applied_heading", "Application started — submit your documents").title;
+  const eligibleHeading = text("become_expert_eligible_heading", "🎉 You meet the requirements!").title;
+  const eligibleDesc = text("become_expert_eligible_desc", "Apply now to fill in your details and upload supporting documents for review.").title;
+  const eligibleCta = text("become_expert_eligible_cta", "Apply to Become an Expert →").title;
+  const defaultHeading = text("become_expert_default_heading", "Keep trading to qualify").title;
+  const defaultDescTemplate = text("become_expert_default_desc", "Trade at least {stocks} different stocks and reach a {margin}% profit margin to apply for expert status.").title;
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
   const [info, setInfo] = useState(null);
@@ -510,10 +523,9 @@ export default function BecomeExpertPage() {
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(0,211,242,0.12)", border: "1px solid rgba(0,211,242,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
             <Award size={26} color={C.cyan} />
           </div>
-          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>Become an Expert</h1>
+          <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>{header.title}</h1>
           <p style={{ fontFamily: sans, fontSize: 14, color: C.sub, margin: "8px auto 0", maxWidth: 560 }}>
-            Prove your trading skill to unlock expert privileges — publish educational articles,
-            share your portfolio with premium users, and enjoy complimentary premium benefits.
+            {header.description}
           </p>
         </div>
 
@@ -547,9 +559,9 @@ export default function BecomeExpertPage() {
                 ) : (
                   <>
                     <CheckCircle2 size={26} color={C.success} style={{ margin: "0 auto 8px" }} />
-                    <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.success, margin: 0 }}>You are a verified expert!</p>
+                    <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.success, margin: 0 }}>{approvedHeading}</p>
                     <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "6px 0 0" }}>
-                      You can now publish articles, share your portfolio and enjoy premium benefits.
+                      {approvedDesc}
                     </p>
                     <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "16px 0 0" }}>
                       Keep your professional details up to date — investors and admins see this information on your expert profile.
@@ -572,9 +584,9 @@ export default function BecomeExpertPage() {
                 ) : (
                   <>
                     <Clock size={26} color="#B45309" style={{ margin: "0 auto 8px" }} />
-                    <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: "#B45309", margin: 0 }}>Application under review</p>
+                    <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: "#B45309", margin: 0 }}>{pendingHeading}</p>
                     <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "6px 0 0" }}>
-                      Your documents are being reviewed. You will be notified once a decision is made.
+                      {pendingDesc}
                     </p>
                     <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "16px 0 0" }}>
                       Keep your professional details up to date — investors and admins see this information on your expert profile.
@@ -587,7 +599,7 @@ export default function BecomeExpertPage() {
                 )
               ) : info?.has_applied ? (
                 <>
-                  <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>Complete your application</p>
+                  <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>{appliedHeading}</p>
                   <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "0 0 18px" }}>
                     First enter your details, then upload supporting documents (certificates, degrees, employment letters) for review.
                   </p>
@@ -596,22 +608,21 @@ export default function BecomeExpertPage() {
               ) : info?.eligible ? (
                 <>
                   <p style={{ fontFamily: mono, fontSize: 15, fontWeight: 700, color: C.heading, margin: 0 }}>
-                    🎉 You meet the requirements!
+                    {eligibleHeading}
                   </p>
                   <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "6px 0 0" }}>
-                    Apply now to fill in your details and upload supporting documents for review.
+                    {eligibleDesc}
                   </p>
                   <button onClick={handleApply} disabled={applying}
                     style={{ marginTop: 14, padding: "12px 26px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: mono, fontSize: 13, fontWeight: 700, background: C.accent, color: C.accentText, boxShadow: "0 6px 16px rgba(0,211,242,0.35)", opacity: applying ? 0.6 : 1 }}>
-                    {applying ? "Applying…" : "Apply to Become an Expert →"}
+                    {applying ? "Applying…" : eligibleCta}
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: C.heading, margin: 0 }}>Keep trading to qualify</p>
+                  <p style={{ fontFamily: mono, fontSize: 14, fontWeight: 700, color: C.heading, margin: 0 }}>{defaultHeading}</p>
                   <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "6px 0 0" }}>
-                    Trade at least {info?.required_stocks ?? 30} different stocks and reach a{" "}
-                    {info?.required_profit_margin ?? 200}% profit margin to apply for expert status.
+                    {fillTemplate(defaultDescTemplate, { stocks: info?.required_stocks ?? 30, margin: info?.required_profit_margin ?? 200 })}
                   </p>
                 </>
               )}
