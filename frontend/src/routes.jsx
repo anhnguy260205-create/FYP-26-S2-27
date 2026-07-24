@@ -31,7 +31,6 @@ const PaymentTransactionsPage = lazy(() => import("./pages/financeadmin/PaymentT
 const FinancialReportsPage = lazy(() => import("./pages/financeadmin/FinancialReportsPage.jsx"));
 const SubscriptionPage = lazy(() => import("./pages/investor/SubscriptionPage.jsx"));
 const LoggedInHomePage = lazy(() => import("./pages/investor/LoggedInHomePage.jsx"));
-const ExpertLoggedInPage = lazy(() => import("./pages/expert/ExpertLoggedInPage.jsx"));
 const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"));
 const PaymentFail = lazy(() => import("./pages/investor/PaymentFail.jsx"));
 const InvestorProfilePage = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
@@ -148,8 +147,4 @@ export const router = createBrowserRouter([
     { path: "/finance-admin/payments", element: protect(["finance admin"], PaymentTransactionsPage) },
     { path: "/finance-admin/reports", element: protect(["finance admin"], FinancialReportsPage) },
 
-    // Merged roles: expert features are reachable from the investor UI by
-    // accounts with the is_expert flag. The standalone expert dashboard route
-    // is also kept so verified expert accounts can still land on their expert home page.
-    { path: "/expert", element: protectExpert(ExpertLoggedInPage) },    { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
 ]);

@@ -133,7 +133,7 @@ function GeneralHeader() {
 
   const currentUser = readStoredUser() || {};
   const expertAccount = isExpertUser(currentUser);
-  const homePath = expertAccount ? "/expert" : "/investor";
+  const homePath = "/investor";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
