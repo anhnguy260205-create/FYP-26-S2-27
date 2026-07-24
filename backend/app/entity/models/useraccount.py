@@ -107,6 +107,9 @@ class UserAccount(Base):
             if not user:
                 return None
 
+            if user.account_status == "suspended":
+                return {"suspended": True, "email": email_address}
+
             user.last_login = datetime.now(ZoneInfo("Asia/Singapore"))
             user.is_active = True
             user.account_status = "active"
@@ -179,6 +182,9 @@ class UserAccount(Base):
 
             if not user:
                 return None
+
+            if user.account_status == "suspended":
+                return {"suspended": True, "email": email}
 
             profile_name = user.profile.profile_name if user.profile else None
             investor = session.query(Investor).filter(
@@ -262,8 +268,3 @@ def seed_hr_account():
         phone_number="1234567890",
         address="Finance Operations Department",
     )
-
-
-if __name__ == "__main__":
-    seed_admin_account()
-    seed_hr_account()

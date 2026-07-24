@@ -93,26 +93,40 @@ function resizeImageToDataUrl(file, maxWidth = 1600, quality = 0.82) {
 //       "footer"      — the footer editor
 // Landing Page subtabs
 const LANDING_SUBTABS = [
-  { key: "hero",               label: "Header",           icon: Rocket,       kind: "hero",
-    hint: "Controls the main landing-page hero headline, supporting text, header image, and primary action buttons." },
-  { key: "video",              label: "Video Section",    icon: PlayCircle,   kind: "generic", preview: "video",
+  {
+    key: "hero", label: "Header", icon: Rocket, kind: "hero",
+    hint: "Controls the main landing-page hero headline, supporting text, header image, and primary action buttons."
+  },
+  {
+    key: "video", label: "Video Section", icon: PlayCircle, kind: "generic", preview: "video",
     headerId: "header_video", itemsSection: null,
-    hint: "Controls the title and supporting text displayed above the landing-page video section." },
-  { key: "why_investor",       label: "Why RocketTrade",  icon: ShieldCheck,  kind: "generic", preview: "why_cards",
+    hint: "Controls the title and supporting text displayed above the landing-page video section."
+  },
+  {
+    key: "why_investor", label: "Why RocketTrade", icon: ShieldCheck, kind: "generic", preview: "why_cards",
     headerId: "header_why_investor", itemsSection: "why_investor",
-    hint: "Controls the credibility and value proposition cards shown to visitors on the landing page." },
-  { key: "platform_features",  label: "Platform Features", icon: Sparkles,    kind: "generic", preview: "cards",
+    hint: "Controls the credibility and value proposition cards shown to visitors on the landing page."
+  },
+  {
+    key: "platform_features", label: "Platform Features", icon: Sparkles, kind: "generic", preview: "cards",
     headerId: "header_features_investor", itemsSection: "platform_features",
-    hint: "Controls the feature cards that explain RocketTrade’s core investor tools and platform capabilities." },
-  { key: "get_started",        label: "Get Started Steps", icon: ListChecks,  kind: "generic", preview: "steps",
+    hint: "Controls the feature cards that explain RocketTrade’s core investor tools and platform capabilities."
+  },
+  {
+    key: "get_started", label: "Get Started Steps", icon: ListChecks, kind: "generic", preview: "steps",
     headerId: "header_started", itemsSection: "get_started_steps",
-    hint: "Controls the step-by-step onboarding guide shown to new visitors before they sign up." },
-  { key: "expert_benefits",    label: "Expert Benefits",  icon: Award,       kind: "generic", preview: "expert_benefits",
+    hint: "Controls the step-by-step onboarding guide shown to new visitors before they sign up."
+  },
+  {
+    key: "expert_benefits", label: "Expert Benefits", icon: Award, kind: "generic", preview: "expert_benefits",
     headerId: "header_expert_benefits", itemsSection: "expert_role_benefits",
-    hint: "Controls the Expert Benefits section that explains why users may choose to become verified experts." },
-  { key: "faq",                label: "FAQ",              icon: HelpCircle,   kind: "generic", preview: "faq",
+    hint: "Controls the Expert Benefits section that explains why users may choose to become verified experts."
+  },
+  {
+    key: "faq", label: "FAQ", icon: HelpCircle, kind: "generic", preview: "faq",
     headerId: "header_faq", itemsSection: "faq",
-    hint: "Controls the frequently asked questions section shown near the bottom of the landing page." },
+    hint: "Controls the frequently asked questions section shown near the bottom of the landing page."
+  },
 ];
 
 // Investor Home subtabs — reused by BOTH the Basic and Premium tabs below.
@@ -120,51 +134,70 @@ const LANDING_SUBTABS = [
 // page) and "bottom" (everything below it), since the banner itself is the
 // one thing that's actually different between the two tiers.
 const INVESTOR_SHARED_TOP = [
-  { key: "empty_state", label: "Welcome Header", icon: Wallet, kind: "generic", preview: "empty_portfolio",
+  {
+    key: "empty_state", label: "Welcome Header", icon: Wallet, kind: "generic", preview: "empty_portfolio",
     headerId: "hero_empty_state", itemsSection: null,
-    hint: "Controls the welcome message displayed before an investor makes their first trade. After the first trade, the dashboard switches to the live portfolio summary." },
-  { key: "ai_insights", label: "AI Insights", icon: Sparkles, kind: "generic", preview: "ai_insights",
+    hint: "Controls the welcome message displayed before an investor makes their first trade. After the first trade, the dashboard switches to the live portfolio summary."
+  },
+  {
+    key: "ai_insights", label: "AI Insights", icon: Sparkles, kind: "generic", preview: "ai_insights",
     headerId: "header_ai_insights", itemsSection: "investor_home_taglines",
-    hint: "Controls the AI Insights heading and the short advisory messages shown on the dashboard. The displayed message changes according to the investor’s portfolio risk level, with a default loading message while the portfolio data is being prepared." },
-  { key: "portfolio_summary", label: "Portfolio Summary", icon: LayoutDashboard, kind: "generic", preview: "section_header",
+    hint: "Controls the AI Insights heading and the short advisory messages shown on the dashboard. The displayed message changes according to the investor’s portfolio risk level, with a default loading message while the portfolio data is being prepared."
+  },
+  {
+    key: "portfolio_summary", label: "Portfolio Summary", icon: LayoutDashboard, kind: "generic", preview: "section_header",
     headerId: "header_portfolio_summary", ctaId: "portfolio_summary_cta", itemsSection: null,
-    hint: "Controls the Portfolio Summary heading and the link text that opens the full portfolio page." },
-  { key: "watchlist", label: "My Watchlist", icon: ListChecks, kind: "generic", preview: "section_header",
+    hint: "Controls the Portfolio Summary heading and the link text that opens the full portfolio page."
+  },
+  {
+    key: "watchlist", label: "My Watchlist", icon: ListChecks, kind: "generic", preview: "section_header",
     headerId: "header_watchlist", ctaId: "watchlist_cta", itemsSection: null,
-    hint: "Controls the Watchlist heading and the link text that opens the full watchlist page." },
-  { key: "watchlist_empty", label: "Empty Watchlist Message", icon: ListChecks, kind: "generic", preview: "watchlist_empty",
+    hint: "Controls the Watchlist heading and the link text that opens the full watchlist page."
+  },
+  {
+    key: "watchlist_empty", label: "Empty Watchlist Message", icon: ListChecks, kind: "generic", preview: "watchlist_empty",
     headerId: "header_watchlist_empty", ctaId: "watchlist_empty_cta", itemsSection: null,
-    hint: "Controls the empty-state message shown before an investor adds their first stock to the watchlist." },
+    hint: "Controls the empty-state message shown before an investor adds their first stock to the watchlist."
+  },
 ];
 
 const INVESTOR_SHARED_BOTTOM = [
-  { key: "investor_features",  label: "Dashboard Features",   icon: Sparkles, kind: "generic", preview: "cards",
+  {
+    key: "investor_features", label: "Dashboard Features", icon: Sparkles, kind: "generic", preview: "cards",
     headerId: "header_investor_features", itemsSection: "investor_home_features",
     perCardCtaSection: "investor_home_features_cta", perCardBadgeSection: "investor_home_features_badge",
-    hint: "Controls the dashboard feature cards shared by Basic and Premium investors. These cards link to key tools such as paper trading, AI predictions, the Community Forum, the chatbot, and education content." },
-  { key: "investor_dashboard", label: "Realtime Dashboard",  icon: LayoutDashboard, kind: "generic", preview: "realtime_dashboard",
+    hint: "Controls the dashboard feature cards shared by Basic and Premium investors. These cards link to key tools such as paper trading, AI predictions, the Community Forum, the chatbot, and education content."
+  },
+  {
+    key: "investor_dashboard", label: "Realtime Dashboard", icon: LayoutDashboard, kind: "generic", preview: "realtime_dashboard",
     headerId: "header_investor_dashboard", itemsSection: "investor_home_dashboard",
-    hint: "Controls the Realtime Trading Dashboard section shown near the bottom of the investor home page. This section is shared by Basic and Premium investors." },
+    hint: "Controls the Realtime Trading Dashboard section shown near the bottom of the investor home page. This section is shared by Basic and Premium investors."
+  },
 ];
 
 const BASIC_INVESTOR_SUBTABS = [
   ...INVESTOR_SHARED_TOP,
-  { key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
+  {
+    key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
     headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner." },
+    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner."
+  },
   ...INVESTOR_SHARED_BOTTOM,
 ];
 
 const PREMIUM_INVESTOR_SUBTABS = [
   ...INVESTOR_SHARED_TOP,
-  { key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
+  {
+    key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
     headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner." },
+    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner."
+  },
   ...INVESTOR_SHARED_BOTTOM,
 ];
 
 const COMMUNITY_FORUM_SUBTABS = [
-  { key: "forum_overview", label: "Overview", icon: MessagesSquare, kind: "generic", preview: "forum_overview",
+  {
+    key: "forum_overview", label: "Overview", icon: MessagesSquare, kind: "generic", preview: "forum_overview",
     headerId: "forum_header", ctaId: "forum_new_post_cta", itemsSection: null,
     extraIds: [
       { id: "forum_search_placeholder", label: "Search field placeholder" },
@@ -174,10 +207,13 @@ const COMMUNITY_FORUM_SUBTABS = [
       { id: "forum_latest_label", label: "Latest posts section heading" },
       { id: "forum_latest_cta", label: "Latest posts link text" },
     ],
-    hint: "Controls the main Community Forum heading, subtitle, primary action text, search placeholder, and section labels used on the forum home page." },
-  { key: "forum_topics", label: "Forum Topics", icon: BookOpen, kind: "generic", preview: "forum_topics",
+    hint: "Controls the main Community Forum heading, subtitle, primary action text, search placeholder, and section labels used on the forum home page."
+  },
+  {
+    key: "forum_topics", label: "Forum Topics", icon: BookOpen, kind: "generic", preview: "forum_topics",
     headerId: "forum_topics_label", itemsSection: "forum_topics",
-    hint: "Controls the visible topic names, short descriptions, and topic images used in the Community Forum topic grid. Each topic's picture can be replaced the same way as the other header images. The underlying category keys remain fixed so existing posts continue to appear correctly." },
+    hint: "Controls the visible topic names, short descriptions, and topic images used in the Community Forum topic grid. Each topic's picture can be replaced the same way as the other header images. The underlying category keys remain fixed so existing posts continue to appear correctly."
+  },
 ];
 
 // New cleaner admin grouping:
@@ -194,33 +230,42 @@ const INVESTOR_EXPERT_HOME_SUBTABS = [
 ];
 
 const BASIC_INVESTOR_ONLY_SUBTABS = [
-  { key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
+  {
+    key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
     headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner." },
+    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner."
+  },
 ];
 
 const PREMIUM_INVESTOR_ONLY_SUBTABS = [
-  { key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
+  {
+    key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
     headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner." },
+    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner."
+  },
 ];
 
 // Expert Home subtabs (ExpertLoggedInPage.jsx), in the order they actually
 // appear scrolling down the page: hero, model portfolio, profile, tools,
 // then the verification documents banner at the very bottom.
 const EXPERT_SUBTABS = [
-  { key: "expert_hero",  label: "Header", icon: GraduationCap, kind: "generic", preview: "expert_hero",
+  {
+    key: "expert_hero", label: "Header", icon: GraduationCap, kind: "generic", preview: "expert_hero",
     headerId: "expert_hero_subtitle", itemsSection: null,
-    hint: "Controls the subtitle shown under the “Welcome back” heading on the Expert home page." },
-  { key: "model_portfolio", label: "Model Portfolio", icon: LayoutDashboard, kind: "generic", preview: "model_portfolio",
+    hint: "Controls the subtitle shown under the “Welcome back” heading on the Expert home page."
+  },
+  {
+    key: "model_portfolio", label: "Model Portfolio", icon: LayoutDashboard, kind: "generic", preview: "model_portfolio",
     headerId: "header_model_portfolio", itemsSection: null,
     extraIds: [
       { id: "model_portfolio_empty_msg", label: "Message shown before they've set one up" },
       { id: "model_portfolio_cta_create", label: "Button text (no portfolio yet)" },
       { id: "model_portfolio_cta_manage", label: "Button text (already has one)" },
     ],
-    hint: "Controls the Model Portfolio card on the Expert home page. Live data values such as holdings, invested amount, cash balance, and risk level remain system-generated." },
-  { key: "expert_profile", label: "Your Profile", icon: Award, kind: "generic", preview: "expert_profile",
+    hint: "Controls the Model Portfolio card on the Expert home page. Live data values such as holdings, invested amount, cash balance, and risk level remain system-generated."
+  },
+  {
+    key: "expert_profile", label: "Your Profile", icon: Award, kind: "generic", preview: "expert_profile",
     headerId: "header_expert_profile", itemsSection: null,
     extraIds: [
       { id: "expert_profile_edit_cta", label: "\u201cEdit Profile\u201d link text" },
@@ -230,11 +275,15 @@ const EXPERT_SUBTABS = [
       { id: "compensation_locked_label", label: "Compensation: label before they're verified" },
       { id: "compensation_locked_msg", label: "Compensation: message before they're verified" },
     ],
-    hint: "Controls the Expert Profile and Compensation summary cards shown on the Expert home page. Ratings, follower counts, and payout figures remain system-generated." },
-  { key: "expert_tools", label: "Your Tools",         icon: Layers, kind: "generic", preview: "cards",
+    hint: "Controls the Expert Profile and Compensation summary cards shown on the Expert home page. Ratings, follower counts, and payout figures remain system-generated."
+  },
+  {
+    key: "expert_tools", label: "Your Tools", icon: Layers, kind: "generic", preview: "cards",
     headerId: "header_expert_tools", ctaId: "expert_tools_cta", itemsSection: "expert_tools",
-    hint: "Controls the Expert tool cards that link to dashboard features such as market data, Knowledge Hub, Community Forum, Model Portfolio, and Messages." },
-  { key: "expert_documents", label: "Verification Documents", icon: HelpCircle, kind: "generic", preview: "documents",
+    hint: "Controls the Expert tool cards that link to dashboard features such as market data, Knowledge Hub, Community Forum, Model Portfolio, and Messages."
+  },
+  {
+    key: "expert_documents", label: "Verification Documents", icon: HelpCircle, kind: "generic", preview: "documents",
     headerId: "header_documents", itemsSection: null,
     extraIds: [
       { id: "documents_desc_verified", label: "Description (already verified)" },
@@ -242,7 +291,8 @@ const EXPERT_SUBTABS = [
       { id: "documents_cta_verified", label: "Button text (already verified)" },
       { id: "documents_cta_unverified", label: "Button text (not verified yet)" },
     ],
-    hint: "Controls the Verification Documents banner shown on the Expert home page." },
+    hint: "Controls the Verification Documents banner shown on the Expert home page."
+  },
 ];
 
 
@@ -259,50 +309,74 @@ const EXPERT_PAGES_SUBTABS = [
 // The Become Expert application and profile setup are moved to Investor Setup & Applications
 // so the main investor pages stay focused on dashboard/trading/profile screens.
 const INVESTOR_PAGES_SUBTABS = [
-  { key: "ai_chatbot_page", label: "AI Chatbot", icon: Bot, kind: "generic", preview: "ai_chatbot_page",
+  {
+    key: "ai_chatbot_page", label: "AI Chatbot", icon: Bot, kind: "generic", preview: "ai_chatbot_page",
     headerId: "header_ai_chatbot_page", itemsSection: null,
-    hint: "Controls the title and subtitle shown on the AI Chatbot page. The conversation messages, quick prompts, and AI replies remain system-generated." },
-  { key: "portfolio_overview_page", label: "Portfolio Overview", icon: LayoutDashboard, kind: "generic", preview: "portfolio_overview_page",
+    hint: "Controls the title and subtitle shown on the AI Chatbot page. The conversation messages, quick prompts, and AI replies remain system-generated."
+  },
+  {
+    key: "portfolio_overview_page", label: "Portfolio Overview", icon: LayoutDashboard, kind: "generic", preview: "portfolio_overview_page",
     headerId: "header_portfolio_overview_page", itemsSection: null,
-    hint: "Controls the Portfolio Overview page header. Portfolio value, charts, holdings, and order data remain system-generated from the investor's account." },
-  { key: "quant_rating_page", label: "Quant Ratings", icon: Gauge, kind: "generic", preview: "quant_rating_page",
+    hint: "Controls the Portfolio Overview page header. Portfolio value, charts, holdings, and order data remain system-generated from the investor's account."
+  },
+  {
+    key: "quant_rating_page", label: "Quant Ratings", icon: Gauge, kind: "generic", preview: "quant_rating_page",
     headerId: "header_quant_rating_page", itemsSection: null,
-    hint: "Controls the Sector Quant Ratings page header. Ratings, model confidence, scores, and sector leaderboards remain system-generated." },
-  { key: "transaction_portal_page", label: "Transaction Portal", icon: LayoutDashboard, kind: "generic", preview: "transaction_portal_page",
+    hint: "Controls the Sector Quant Ratings page header. Ratings, model confidence, scores, and sector leaderboards remain system-generated."
+  },
+  {
+    key: "transaction_portal_page", label: "Transaction Portal", icon: LayoutDashboard, kind: "generic", preview: "transaction_portal_page",
     headerId: "header_transaction_portal_page", itemsSection: "transaction_portal_page",
-    hint: "Controls the Transaction Portal heading, subtitle, and View History link text. Trade totals, filters, and transaction rows remain system-generated." },
-  { key: "transaction_history_page", label: "Transaction History", icon: FileText, kind: "generic", preview: "transaction_history_page",
+    hint: "Controls the Transaction Portal heading, subtitle, and View History link text. Trade totals, filters, and transaction rows remain system-generated."
+  },
+  {
+    key: "transaction_history_page", label: "Transaction History", icon: FileText, kind: "generic", preview: "transaction_history_page",
     headerId: "header_transaction_history_page", itemsSection: "transaction_history_page",
-    hint: "Controls the Transaction History page heading, subtitle, and empty-state text shown before the investor's first trade. Transaction rows and totals remain system-generated." },
-  { key: "investor_profile_page", label: "Profile & Settings", icon: Users, kind: "generic", preview: "investor_profile_page",
+    hint: "Controls the Transaction History page heading, subtitle, and empty-state text shown before the investor's first trade. Transaction rows and totals remain system-generated."
+  },
+  {
+    key: "investor_profile_page", label: "Profile & Settings", icon: Users, kind: "generic", preview: "investor_profile_page",
     headerId: null, itemsSection: "investor_profile_page",
-    hint: "Controls the Personal Information and Account Settings section headings on the investor profile page. Form fields, user details, and account data remain system-generated." },
+    hint: "Controls the Personal Information and Account Settings section headings on the investor profile page. Form fields, user details, and account data remain system-generated."
+  },
 ];
 
 const INVESTOR_SETUP_SUBTABS = [
-  { key: "update_particular_page", label: "Complete Profile", icon: Users, kind: "generic", preview: "update_particular_page",
+  {
+    key: "update_particular_page", label: "Complete Profile", icon: Users, kind: "generic", preview: "update_particular_page",
     headerId: null, itemsSection: "update_particular_page",
-    hint: "Controls the profile setup screen new investors see after signing up. Keep “{username}” in the heading because it is replaced with the real username." },
-  { key: "become_expert_page", label: "Become an Expert Application", icon: Award, kind: "generic", preview: "become_expert_page",
+    hint: "Controls the profile setup screen new investors see after signing up. Keep “{username}” in the heading because it is replaced with the real username."
+  },
+  {
+    key: "become_expert_page", label: "Become an Expert Application", icon: Award, kind: "generic", preview: "become_expert_page",
     headerId: "header_become_expert_page", itemsSection: "become_expert_page",
-    hint: "This remains in Investor Setup because only investors apply to become verified experts. It controls the application heading, status messages, and action buttons. Progress numbers stay system-generated." },
+    hint: "This remains in Investor Setup because only investors apply to become verified experts. It controls the application heading, status messages, and action buttons. Progress numbers stay system-generated."
+  },
 ];
 
 const MEMBERSHIP_PAYMENT_SUBTABS = [
-  { key: "membership_plans", label: "Plans & Pricing", icon: CreditCard, kind: "membership",
-    hint: "Controls the Free and Premium membership plan cards used on the landing page and subscription page." },
-  { key: "payment_result_page", label: "Payment Result Pages", icon: DollarSign, kind: "generic", preview: "payment_result_page",
+  {
+    key: "membership_plans", label: "Plans & Pricing", icon: CreditCard, kind: "membership",
+    hint: "Controls the Free and Premium membership plan cards used on the landing page and subscription page."
+  },
+  {
+    key: "payment_result_page", label: "Payment Result Pages", icon: DollarSign, kind: "generic", preview: "payment_result_page",
     headerId: null, itemsSection: "payment_result_page",
-    hint: "Controls the loading, success, and failure screens shown after subscription checkout. Payment verification and subscription status remain system-generated." },
+    hint: "Controls the loading, success, and failure screens shown after subscription checkout. Payment verification and subscription status remain system-generated."
+  },
 ];
 
 const INVESTOR_BANNER_SUBTABS = [
-  { key: "basic_banner", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
+  {
+    key: "basic_banner", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
     headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription banner instead, and Expert accounts do not see either investor banner." },
-  { key: "premium_banner", label: "Premium Subscription Banner", icon: Crown, kind: "generic", preview: "banner_premium",
+    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription banner instead, and Expert accounts do not see either investor banner."
+  },
+  {
+    key: "premium_banner", label: "Premium Subscription Banner", icon: Crown, kind: "generic", preview: "banner_premium",
     headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends." },
+    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends."
+  },
 ];
 
 // "Landing Page" bundles every section that only lives on Homepage.jsx into
@@ -311,7 +385,7 @@ const INVESTOR_BANNER_SUBTABS = [
 // not investor profile setup. The footer stays separate because it appears
 // across the whole platform.
 const MAIN_TABS = [
-  { key: "landing",    label: "Landing Page",     icon: Rocket,     subtabs: LANDING_SUBTABS },
+  { key: "landing", label: "Landing Page", icon: Rocket, subtabs: LANDING_SUBTABS },
   { key: "membership", label: "Membership & Payment", icon: CreditCard, subtabs: MEMBERSHIP_PAYMENT_SUBTABS },
   { key: "investor_expert_home", label: "Shared Investor + Expert", icon: Wallet, subtabs: INVESTOR_EXPERT_HOME_SUBTABS },
   { key: "investor_banners", label: "Investor Banners", icon: Crown, subtabs: INVESTOR_BANNER_SUBTABS },
@@ -319,8 +393,10 @@ const MAIN_TABS = [
   { key: "investor_setup", label: "Investor Setup & Applications", icon: UserPlus, subtabs: INVESTOR_SETUP_SUBTABS },
   { key: "expert_home", label: "Expert Home", icon: GraduationCap, subtabs: EXPERT_SUBTABS },
   { key: "expert_pages", label: "Expert Pages", icon: Briefcase, subtabs: EXPERT_PAGES_SUBTABS },
-  { key: "footer",     label: "Footer",           icon: Link2,      kind: "footer",
-    hint: "Controls the footer brand text, supporting tagline, and footer links displayed across the platform." },
+  {
+    key: "footer", label: "Footer", icon: Link2, kind: "footer",
+    hint: "Controls the footer brand text, supporting tagline, and footer links displayed across the platform."
+  },
 ];
 
 // Sections where item order is meaningful and can be dragged to reorder.
@@ -747,7 +823,7 @@ function PortfolioOverviewPagePreview({ heading, description }) {
         <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-2">Cumulative P&L, last 30 days</p><div className="h-16 rounded bg-cyan-50 border border-cyan-100 relative overflow-hidden"><div className="absolute bottom-3 left-3 right-3 h-7 border-b-2 border-cyan-500 rounded-[50%]" /></div></div>
         <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-2">Diversification</p><div className="w-16 h-16 rounded-full border-[12px] border-cyan-300 mx-auto" /></div>
       </div>
-      <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-1">Current holdings</p><div className="grid grid-cols-6 gap-1 text-[7px] text-slate-500 border-b pb-1"><span>Symbol</span><span>Shares</span><span>Avg cost</span><span>Price</span><span>Value</span><span>P&L</span></div>{["AAPL","NVDA"].map((s)=><div key={s} className="grid grid-cols-6 gap-1 text-[8px] py-1 border-b border-slate-100"><b>{s}</b><span>3</span><span>$180</span><span>$190</span><span>$570</span><span className="text-emerald-600">+$30</span></div>)}</div>
+      <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-1">Current holdings</p><div className="grid grid-cols-6 gap-1 text-[7px] text-slate-500 border-b pb-1"><span>Symbol</span><span>Shares</span><span>Avg cost</span><span>Price</span><span>Value</span><span>P&L</span></div>{["AAPL", "NVDA"].map((s) => <div key={s} className="grid grid-cols-6 gap-1 text-[8px] py-1 border-b border-slate-100"><b>{s}</b><span>3</span><span>$180</span><span>$190</span><span>$570</span><span className="text-emerald-600">+$30</span></div>)}</div>
     </InvestorPageShellPreview>
   );
 }
@@ -756,10 +832,10 @@ function QuantRatingPagePreview({ heading, description }) {
   return (
     <InvestorPageShellPreview heading={heading} description={description}>
       <div className="flex gap-2 mb-2"><div className="flex-1 rounded-lg bg-white border border-blue-100 px-2 py-1.5 text-[8px] text-slate-400">Enter ticker (e.g. AAPL)</div><span className="rounded-lg bg-cyan-400 px-3 py-1.5 text-[8px] font-bold text-cyan-950">Rate</span></div>
-      <div className="flex flex-wrap gap-1 mb-3">{["Technology","Financials","Energy","Real Estate"].map(s=><span key={s} className="rounded-full bg-white border border-blue-100 px-2 py-1 text-[7px] text-slate-600">{s}</span>)}</div>
+      <div className="flex flex-wrap gap-1 mb-3">{["Technology", "Financials", "Energy", "Real Estate"].map(s => <span key={s} className="rounded-full bg-white border border-blue-100 px-2 py-1 text-[7px] text-slate-600">{s}</span>)}</div>
       <div className="grid grid-cols-[1fr_1.6fr] gap-2">
-        <div className="rounded-xl bg-white border border-emerald-200 p-3 text-center"><p className="text-left text-[12px] font-bold text-slate-900">AAPL</p><div className="mx-auto my-2 w-24 h-12 rounded-t-full border-[10px] border-b-0 border-emerald-500" /><span className="rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-bold px-2 py-1">Buy</span><div className="grid grid-cols-2 gap-1 mt-3 text-[7px]"><span>Buy probability<br/><b>64%</b></span><span>Price<br/><b>$190.00</b></span></div></div>
-        <div className="space-y-2"><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Factor Grades</p><div className="grid grid-cols-5 gap-1">{["A","B","C","B","A"].map((g,i)=><div key={i} className="rounded-lg bg-slate-50 text-center py-2"><b className="text-emerald-600">{g}</b><p className="text-[6px] text-slate-500 m-0">Factor</p></div>)}</div></div><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Sector Leaderboard</p>{["NVDA","MSFT","AAPL"].map((s,i)=><div key={s} className="grid grid-cols-4 text-[8px] py-1 border-b border-slate-100"><span>#{i+1}</span><b>{s}</b><span>{85-i*4}</span><span>Buy</span></div>)}</div></div>
+        <div className="rounded-xl bg-white border border-emerald-200 p-3 text-center"><p className="text-left text-[12px] font-bold text-slate-900">AAPL</p><div className="mx-auto my-2 w-24 h-12 rounded-t-full border-[10px] border-b-0 border-emerald-500" /><span className="rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-bold px-2 py-1">Buy</span><div className="grid grid-cols-2 gap-1 mt-3 text-[7px]"><span>Buy probability<br /><b>64%</b></span><span>Price<br /><b>$190.00</b></span></div></div>
+        <div className="space-y-2"><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Factor Grades</p><div className="grid grid-cols-5 gap-1">{["A", "B", "C", "B", "A"].map((g, i) => <div key={i} className="rounded-lg bg-slate-50 text-center py-2"><b className="text-emerald-600">{g}</b><p className="text-[6px] text-slate-500 m-0">Factor</p></div>)}</div></div><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Sector Leaderboard</p>{["NVDA", "MSFT", "AAPL"].map((s, i) => <div key={s} className="grid grid-cols-4 text-[8px] py-1 border-b border-slate-100"><span>#{i + 1}</span><b>{s}</b><span>{85 - i * 4}</span><span>Buy</span></div>)}</div></div>
       </div>
     </InvestorPageShellPreview>
   );
@@ -770,8 +846,8 @@ function TransactionPortalPagePreview({ heading, description, items }) {
   return (
     <InvestorPageShellPreview heading={heading} description={description}>
       <div className="flex justify-end mb-2"><span className="rounded-lg bg-white border border-blue-100 px-2 py-1 text-[8px] text-slate-800">{historyCta}</span></div>
-      <div className="grid grid-cols-5 gap-1.5 mb-2">{["Total Trades","Total Invested","Total Proceeds","Realised P&L","Most Traded"].map((label,i)=><div key={label} className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[6px] uppercase text-slate-500 m-0">{label}</p><b className="text-[9px] text-slate-900">{i===4?"AAPL":"$1,200"}</b></div>)}</div>
-      <div className="rounded-lg bg-white border border-blue-100 p-2"><div className="flex gap-1 mb-2"><span className="flex-1 rounded bg-slate-100 px-2 py-1 text-[7px] text-slate-400">Search ticker…</span>{["all","buy","sell"].map(x=><span key={x} className="rounded bg-slate-100 px-2 py-1 text-[7px] text-slate-500">{x}</span>)}</div><div className="grid grid-cols-6 text-[7px] text-slate-500 bg-slate-100 p-1 rounded"><span>Date</span><span>Symbol</span><span>Type</span><span>Qty</span><span>Price</span><span>Total</span></div>{["AAPL","NVDA"].map((s)=><div key={s} className="grid grid-cols-6 text-[8px] py-1 border-b border-slate-100"><span>23 Jul</span><b>{s}</b><span>buy</span><span>2</span><span>$190</span><span>$380</span></div>)}</div>
+      <div className="grid grid-cols-5 gap-1.5 mb-2">{["Total Trades", "Total Invested", "Total Proceeds", "Realised P&L", "Most Traded"].map((label, i) => <div key={label} className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[6px] uppercase text-slate-500 m-0">{label}</p><b className="text-[9px] text-slate-900">{i === 4 ? "AAPL" : "$1,200"}</b></div>)}</div>
+      <div className="rounded-lg bg-white border border-blue-100 p-2"><div className="flex gap-1 mb-2"><span className="flex-1 rounded bg-slate-100 px-2 py-1 text-[7px] text-slate-400">Search ticker…</span>{["all", "buy", "sell"].map(x => <span key={x} className="rounded bg-slate-100 px-2 py-1 text-[7px] text-slate-500">{x}</span>)}</div><div className="grid grid-cols-6 text-[7px] text-slate-500 bg-slate-100 p-1 rounded"><span>Date</span><span>Symbol</span><span>Type</span><span>Qty</span><span>Price</span><span>Total</span></div>{["AAPL", "NVDA"].map((s) => <div key={s} className="grid grid-cols-6 text-[8px] py-1 border-b border-slate-100"><span>23 Jul</span><b>{s}</b><span>buy</span><span>2</span><span>$190</span><span>$380</span></div>)}</div>
     </InvestorPageShellPreview>
   );
 }
@@ -782,8 +858,8 @@ function TransactionHistoryPagePreview({ heading, description, items }) {
   const emptyCta = cmItem(items, "transaction_history_empty_cta", "Go to Markets").title;
   return (
     <InvestorPageShellPreview heading={heading} description={description}>
-      <div className="grid grid-cols-4 gap-1.5 mb-2">{["Showing","Buy volume","Sell volume","Net P&L"].map((label,i)=><div key={label} className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[7px] text-slate-500 m-0">{label}</p><b className="text-[9px] text-slate-900">{i===0?"0 trades":"$0.00"}</b></div>)}</div>
-      <div className="rounded-lg bg-white border border-blue-100 p-3 text-center"><FileText size={22} className="mx-auto text-cyan-500/40 mb-2"/><p className="text-[10px] font-bold text-slate-700">{emptyHeading}</p><p className="text-[8px] text-slate-500 mb-2">{emptyDesc}</p><span className="rounded-lg bg-cyan-100 text-cyan-800 px-3 py-1 text-[8px] font-bold">{emptyCta}</span></div>
+      <div className="grid grid-cols-4 gap-1.5 mb-2">{["Showing", "Buy volume", "Sell volume", "Net P&L"].map((label, i) => <div key={label} className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[7px] text-slate-500 m-0">{label}</p><b className="text-[9px] text-slate-900">{i === 0 ? "0 trades" : "$0.00"}</b></div>)}</div>
+      <div className="rounded-lg bg-white border border-blue-100 p-3 text-center"><FileText size={22} className="mx-auto text-cyan-500/40 mb-2" /><p className="text-[10px] font-bold text-slate-700">{emptyHeading}</p><p className="text-[8px] text-slate-500 mb-2">{emptyDesc}</p><span className="rounded-lg bg-cyan-100 text-cyan-800 px-3 py-1 text-[8px] font-bold">{emptyCta}</span></div>
     </InvestorPageShellPreview>
   );
 }
@@ -794,8 +870,8 @@ function InvestorProfilePagePreview({ items }) {
   return (
     <div className="p-3" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 74px, #FFFFFF 100%)" }}>
       <div className="grid grid-cols-[100px_1fr] gap-2">
-        <div className="rounded-xl bg-white border border-blue-100 overflow-hidden"><div className="h-12 bg-linear-to-br from-slate-950 via-blue-900 to-cyan-600"/><div className="p-3 -mt-5"><div className="w-9 h-9 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-4 border-white text-white text-xs font-bold flex items-center justify-center">QA</div><p className="text-[10px] font-bold text-slate-900 mt-2">QA Investor</p><p className="text-[7px] text-slate-500">@qa_basic</p>{["Personal Information","Account Settings","Security","Paper Money","Subscription"].map((x,i)=><div key={x} className={`rounded-md px-2 py-1 text-[7px] mt-1 ${i===0?"bg-cyan-50 text-cyan-700 border border-cyan-200":"text-slate-500"}`}>{x}</div>)}</div></div>
-        <div className="space-y-2"><div className="rounded-xl bg-white border border-blue-100 p-3"><div className="flex justify-between"><p className="text-[11px] font-bold text-slate-900">{personal}</p><span className="text-[8px] text-cyan-600">Edit</span></div><p className="text-[8px] text-slate-500 mb-2">Your name, contact details and bio</p><div className="grid grid-cols-2 gap-2 text-[8px]"><span>Full Name<br/><b>QA Investor</b></span><span>Email<br/><b>qa@example.com</b></span><span>Location<br/><b>Singapore</b></span><span>Phone<br/><b>+65 9123 4567</b></span></div></div><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[11px] font-bold text-slate-900">{settings}</p><p className="text-[8px] text-slate-500">Stock interests and account type</p><div className="flex gap-1 mt-2"><span className="rounded-full bg-cyan-50 text-cyan-700 px-2 py-1 text-[7px]">Technology</span><span className="rounded-full bg-cyan-50 text-cyan-700 px-2 py-1 text-[7px]">Moderate</span></div></div></div>
+        <div className="rounded-xl bg-white border border-blue-100 overflow-hidden"><div className="h-12 bg-linear-to-br from-slate-950 via-blue-900 to-cyan-600" /><div className="p-3 -mt-5"><div className="w-9 h-9 rounded-full bg-linear-to-br from-cyan-500 to-blue-600 border-4 border-white text-white text-xs font-bold flex items-center justify-center">QA</div><p className="text-[10px] font-bold text-slate-900 mt-2">QA Investor</p><p className="text-[7px] text-slate-500">@qa_basic</p>{["Personal Information", "Account Settings", "Security", "Paper Money", "Subscription"].map((x, i) => <div key={x} className={`rounded-md px-2 py-1 text-[7px] mt-1 ${i === 0 ? "bg-cyan-50 text-cyan-700 border border-cyan-200" : "text-slate-500"}`}>{x}</div>)}</div></div>
+        <div className="space-y-2"><div className="rounded-xl bg-white border border-blue-100 p-3"><div className="flex justify-between"><p className="text-[11px] font-bold text-slate-900">{personal}</p><span className="text-[8px] text-cyan-600">Edit</span></div><p className="text-[8px] text-slate-500 mb-2">Your name, contact details and bio</p><div className="grid grid-cols-2 gap-2 text-[8px]"><span>Full Name<br /><b>QA Investor</b></span><span>Email<br /><b>qa@example.com</b></span><span>Location<br /><b>Singapore</b></span><span>Phone<br /><b>+65 9123 4567</b></span></div></div><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[11px] font-bold text-slate-900">{settings}</p><p className="text-[8px] text-slate-500">Stock interests and account type</p><div className="flex gap-1 mt-2"><span className="rounded-full bg-cyan-50 text-cyan-700 px-2 py-1 text-[7px]">Technology</span><span className="rounded-full bg-cyan-50 text-cyan-700 px-2 py-1 text-[7px]">Moderate</span></div></div></div>
       </div>
     </div>
   );
@@ -807,7 +883,7 @@ function BecomeExpertPagePreview({ heading, description, items }) {
   const eligibleCta = cmItem(items, "become_expert_eligible_cta", "Apply to Become an Expert →").title;
   return (
     <InvestorPageShellPreview heading={heading} description={description}>
-      <div className="grid grid-cols-2 gap-2 mb-2"><div className="rounded-lg bg-white border border-blue-100 p-3"><BarChart3 size={14} className="text-cyan-700 mb-1"/><p className="text-[8px] font-bold text-slate-900">Different Stocks Traded</p><p className="text-[13px] font-bold text-slate-900">30 <span className="text-[8px] text-slate-500">/ 30</span></p><div className="h-1.5 bg-emerald-500 rounded"/></div><div className="rounded-lg bg-white border border-blue-100 p-3"><TrendingUp size={14} className="text-cyan-700 mb-1"/><p className="text-[8px] font-bold text-slate-900">Profit Margin</p><p className="text-[13px] font-bold text-slate-900">200% <span className="text-[8px] text-slate-500">/ 200%</span></p><div className="h-1.5 bg-emerald-500 rounded"/></div></div>
+      <div className="grid grid-cols-2 gap-2 mb-2"><div className="rounded-lg bg-white border border-blue-100 p-3"><BarChart3 size={14} className="text-cyan-700 mb-1" /><p className="text-[8px] font-bold text-slate-900">Different Stocks Traded</p><p className="text-[13px] font-bold text-slate-900">30 <span className="text-[8px] text-slate-500">/ 30</span></p><div className="h-1.5 bg-emerald-500 rounded" /></div><div className="rounded-lg bg-white border border-blue-100 p-3"><TrendingUp size={14} className="text-cyan-700 mb-1" /><p className="text-[8px] font-bold text-slate-900">Profit Margin</p><p className="text-[13px] font-bold text-slate-900">200% <span className="text-[8px] text-slate-500">/ 200%</span></p><div className="h-1.5 bg-emerald-500 rounded" /></div></div>
       <div className="rounded-lg bg-white border border-blue-100 p-4 text-center"><p className="text-[11px] font-bold text-slate-900">{eligibleHeading}</p><p className="text-[8px] text-slate-500 mt-1">{eligibleDesc}</p><span className="inline-block mt-2 rounded-lg bg-cyan-400 px-3 py-1.5 text-[8px] font-bold text-cyan-950">{eligibleCta}</span></div>
     </InvestorPageShellPreview>
   );
@@ -820,7 +896,7 @@ function UpdateParticularPagePreview({ items }) {
   const skip = cmItem(items, "update_particular_skip_cta", "Skip for now").title;
   return (
     <div className="p-5 flex items-center justify-center" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 74px, #FFFFFF 100%)" }}>
-      <div className="w-full max-w-[250px] rounded-2xl bg-white border border-blue-100 shadow p-4 text-center"><p className="text-[14px] font-bold text-slate-900 font-mono">{heading}</p><p className="text-[8px] text-slate-500 mb-3">{subtitle}</p>{["Full Name", "Phone Number", "Location"].map(x=><div key={x} className="text-left mb-2"><p className="text-[7px] font-bold text-slate-500 mb-1">{x}</p><div className="h-7 rounded-lg bg-white border border-slate-200"/></div>)}<p className="text-left text-[7px] font-bold text-slate-500 mb-1">Stock Interests</p><div className="grid grid-cols-2 gap-1 mb-2">{["Technology","Financials","Energy","Real Estate"].map(x=><span key={x} className="rounded-lg bg-slate-100 px-2 py-1 text-[7px] text-slate-500 text-left">{x}</span>)}</div><div className="rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 text-white py-2 text-[9px] font-bold">{submit}</div><p className="text-[8px] text-slate-400 mt-2">{skip}</p></div>
+      <div className="w-full max-w-[250px] rounded-2xl bg-white border border-blue-100 shadow p-4 text-center"><p className="text-[14px] font-bold text-slate-900 font-mono">{heading}</p><p className="text-[8px] text-slate-500 mb-3">{subtitle}</p>{["Full Name", "Phone Number", "Location"].map(x => <div key={x} className="text-left mb-2"><p className="text-[7px] font-bold text-slate-500 mb-1">{x}</p><div className="h-7 rounded-lg bg-white border border-slate-200" /></div>)}<p className="text-left text-[7px] font-bold text-slate-500 mb-1">Stock Interests</p><div className="grid grid-cols-2 gap-1 mb-2">{["Technology", "Financials", "Energy", "Real Estate"].map(x => <span key={x} className="rounded-lg bg-slate-100 px-2 py-1 text-[7px] text-slate-500 text-left">{x}</span>)}</div><div className="rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 text-white py-2 text-[9px] font-bold">{submit}</div><p className="text-[8px] text-slate-400 mt-2">{skip}</p></div>
     </div>
   );
 }
@@ -833,8 +909,8 @@ function PaymentResultPagePreview({ items }) {
   return (
     <div className="p-5" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 74px, #FFFFFF 100%)" }}>
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-white border border-blue-100 p-4 text-center"><CheckCircle2 size={24} className="mx-auto text-emerald-600 mb-2"/><p className="text-[12px] font-bold text-emerald-600 font-mono">{successHeading}</p><p className="text-[8px] text-slate-500">{successDesc}</p></div>
-        <div className="rounded-xl bg-white border border-blue-100 p-4 text-center"><X size={24} className="mx-auto text-red-600 mb-2"/><p className="text-[12px] font-bold text-red-600 font-mono">{failHeading}</p><p className="text-[8px] text-slate-500">{failDesc}</p></div>
+        <div className="rounded-xl bg-white border border-blue-100 p-4 text-center"><CheckCircle2 size={24} className="mx-auto text-emerald-600 mb-2" /><p className="text-[12px] font-bold text-emerald-600 font-mono">{successHeading}</p><p className="text-[8px] text-slate-500">{successDesc}</p></div>
+        <div className="rounded-xl bg-white border border-blue-100 p-4 text-center"><X size={24} className="mx-auto text-red-600 mb-2" /><p className="text-[12px] font-bold text-red-600 font-mono">{failHeading}</p><p className="text-[8px] text-slate-500">{failDesc}</p></div>
       </div>
     </div>
   );
@@ -1218,7 +1294,7 @@ function FooterCol({ label, items }) {
       <p className="text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1.5">{label}</p>
       <ul className="space-y-1">
         {items.length ? items.map(i => <li key={i.content_id} className="text-[10px] text-white/70">{i.title}</li>)
-                      : <li className="text-[10px] text-white/30 italic">No links yet</li>}
+          : <li className="text-[10px] text-white/30 italic">No links yet</li>}
       </ul>
     </div>
   );
@@ -1329,15 +1405,15 @@ function ContentManagementPage() {
   const byId = (id) => content.find((c) => c.content_id === id);
   const bySection = (section) => content.filter((c) => c.section === section);
 
-  const freePlanInfo    = bySection("free_plan");
+  const freePlanInfo = bySection("free_plan");
   const premiumPlanInfo = bySection("premium_plan");
-  const freeItems       = bySection("free_investor");
-  const premiumItems    = bySection("premium_investor");
-  const footerBrand     = bySection("footer_brand");
-  const footerProduct   = bySection("footer_product");
-  const footerCompany   = bySection("footer_company");
+  const freeItems = bySection("free_investor");
+  const premiumItems = bySection("premium_investor");
+  const footerBrand = bySection("footer_brand");
+  const footerProduct = bySection("footer_product");
+  const footerCompany = bySection("footer_company");
   const footerResources = bySection("footer_resources");
-  const footerContact   = bySection("footer_contact");
+  const footerContact = bySection("footer_contact");
 
   const currentMainTab = MAIN_TABS.find((t) => t.key === activeMainTab);
   const activeTabInfo = currentMainTab?.subtabs
@@ -1357,9 +1433,8 @@ function ContentManagementPage() {
         onDragEnd={() => { setDragId(null); setDragOverId(null); }}
         onDragOver={(e) => { if (orderable) { e.preventDefault(); setDragOverId(item.content_id); } }}
         onDrop={(e) => { e.preventDefault(); if (orderable) handleDrop(list, item.content_id); }}
-        className={`bg-white rounded-lg p-5 border transition-colors ${
-          isDragOver ? "border-blue-400 border-dashed bg-blue-50/50" : "border-gray-100 hover:border-blue-200"
-        } ${dragId === item.content_id ? "opacity-40" : ""}`}
+        className={`bg-white rounded-lg p-5 border transition-colors ${isDragOver ? "border-blue-400 border-dashed bg-blue-50/50" : "border-gray-100 hover:border-blue-200"
+          } ${dragId === item.content_id ? "opacity-40" : ""}`}
       >
         {isEditing ? (
           <div className="space-y-3">
@@ -1376,7 +1451,7 @@ function ContentManagementPage() {
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
                   {["hero", "page_headers"].includes(item.section) ? "SUBTITLE"
                     : ["footer_product", "footer_company", "footer_resources", "footer_contact"].includes(item.section) ? "URL"
-                    : item.section === "faq" ? "ANSWER" : "DESCRIPTION"}
+                      : item.section === "faq" ? "ANSWER" : "DESCRIPTION"}
                 </label>
                 <input
                   value={form.description}
@@ -1607,18 +1682,6 @@ function ContentManagementPage() {
       if (tab.preview === "empty_portfolio") {
         return <PreviewFrame label={tab.label}><EmptyPortfolioMessagePreview title={heading} imageUrl={header?.image_url} /></PreviewFrame>;
       }
-      if (tab.extraIds) {
-        const extras = Object.fromEntries(tab.extraIds.map(({ id }) => [id, liveItem(byId(id))]));
-        if (tab.preview === "model_portfolio") {
-          return <PreviewFrame label={tab.label}><ModelPortfolioPreview heading={heading} description={description} extras={extras} /></PreviewFrame>;
-        }
-        if (tab.preview === "expert_profile") {
-          return <PreviewFrame label={tab.label}><ExpertProfilePreview heading={heading} extras={extras} /></PreviewFrame>;
-        }
-        if (tab.preview === "documents") {
-          return <PreviewFrame label={tab.label}><DocumentsPreview heading={heading} extras={extras} /></PreviewFrame>;
-        }
-      }
       const itemsWithCta = (tab.perCardCtaSection || tab.perCardBadgeSection)
         ? items.map((it, i) => ({
           ...it,
@@ -1687,278 +1750,278 @@ function ContentManagementPage() {
       {loading ? (
         <div className="bg-white rounded-lg p-10 text-center text-gray-400">Loading content…</div>
       ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
-      <div>
-
-      {/* Hero */}
-      {activeMainTab === "landing" && activeSubTab === "hero" && (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
-            {byId("content_hero") ? renderRow(byId("content_hero"), [byId("content_hero")])
-              : <p className="text-slate-400 text-sm">No content found for this section.</p>}
-          </div>
-          {byId("hero_cta_primary") && byId("hero_cta_secondary") && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Buttons</p>
-              <div className="space-y-3">
-                {renderRow(byId("hero_cta_primary"), [byId("hero_cta_primary")])}
-                {renderRow(byId("hero_cta_secondary"), [byId("hero_cta_secondary")])}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Generic header + items tabs */}
-      {activeTabInfo?.kind === "generic" && (
-        <div className="space-y-6">
-          {activeTabInfo.headerId && byId(activeTabInfo.headerId) && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
-              {renderRow(byId(activeTabInfo.headerId), [byId(activeTabInfo.headerId)])}
-            </div>
-          )}
-          {activeTabInfo.ctaId && byId(activeTabInfo.ctaId) && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Button Text</p>
-              {renderRow(byId(activeTabInfo.ctaId), [byId(activeTabInfo.ctaId)])}
-            </div>
-          )}
-          {activeTabInfo.extraIds && activeTabInfo.extraIds.map(({ id, label }) => byId(id) && (
-            <div key={id}>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{label}</p>
-              {renderRow(byId(id), [byId(id)])}
-            </div>
-          ))}
-          {activeTabInfo.itemsSection && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Cards</p>
-              <div className="space-y-3">
-                {bySection(activeTabInfo.itemsSection).length === 0
-                  ? <p className="text-slate-400 text-sm">No content found for this section.</p>
-                  : bySection(activeTabInfo.itemsSection).map((item, idx) => (
-                    <div key={item.content_id}>
-                      {renderRow(item, bySection(activeTabInfo.itemsSection))}
-                      {activeTabInfo.perCardBadgeSection && bySection(activeTabInfo.perCardBadgeSection)[idx] && (
-                        <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge for this card</p>
-                          {renderRow(
-                            bySection(activeTabInfo.perCardBadgeSection)[idx],
-                            [bySection(activeTabInfo.perCardBadgeSection)[idx]]
+            {/* Hero */}
+            {activeMainTab === "landing" && activeSubTab === "hero" && (
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
+                  {byId("content_hero") ? renderRow(byId("content_hero"), [byId("content_hero")])
+                    : <p className="text-slate-400 text-sm">No content found for this section.</p>}
+                </div>
+                {byId("hero_cta_primary") && byId("hero_cta_secondary") && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Buttons</p>
+                    <div className="space-y-3">
+                      {renderRow(byId("hero_cta_primary"), [byId("hero_cta_primary")])}
+                      {renderRow(byId("hero_cta_secondary"), [byId("hero_cta_secondary")])}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Generic header + items tabs */}
+            {activeTabInfo?.kind === "generic" && (
+              <div className="space-y-6">
+                {activeTabInfo.headerId && byId(activeTabInfo.headerId) && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
+                    {renderRow(byId(activeTabInfo.headerId), [byId(activeTabInfo.headerId)])}
+                  </div>
+                )}
+                {activeTabInfo.ctaId && byId(activeTabInfo.ctaId) && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Button Text</p>
+                    {renderRow(byId(activeTabInfo.ctaId), [byId(activeTabInfo.ctaId)])}
+                  </div>
+                )}
+                {activeTabInfo.extraIds && activeTabInfo.extraIds.map(({ id, label }) => byId(id) && (
+                  <div key={id}>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{label}</p>
+                    {renderRow(byId(id), [byId(id)])}
+                  </div>
+                ))}
+                {activeTabInfo.itemsSection && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Cards</p>
+                    <div className="space-y-3">
+                      {bySection(activeTabInfo.itemsSection).length === 0
+                        ? <p className="text-slate-400 text-sm">No content found for this section.</p>
+                        : bySection(activeTabInfo.itemsSection).map((item, idx) => (
+                          <div key={item.content_id}>
+                            {renderRow(item, bySection(activeTabInfo.itemsSection))}
+                            {activeTabInfo.perCardBadgeSection && bySection(activeTabInfo.perCardBadgeSection)[idx] && (
+                              <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge for this card</p>
+                                {renderRow(
+                                  bySection(activeTabInfo.perCardBadgeSection)[idx],
+                                  [bySection(activeTabInfo.perCardBadgeSection)[idx]]
+                                )}
+                              </div>
+                            )}
+                            {activeTabInfo.perCardCtaSection && bySection(activeTabInfo.perCardCtaSection)[idx] && (
+                              <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Button text for this card</p>
+                                {renderRow(
+                                  bySection(activeTabInfo.perCardCtaSection)[idx],
+                                  [bySection(activeTabInfo.perCardCtaSection)[idx]]
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Membership & Payment — Plans & Pricing subtab */}
+            {activeMainTab === "membership" && activeSubTab === "membership_plans" && (
+              <div className="space-y-6">
+                {byId("header_pricing") && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
+                    {renderRow(byId("header_pricing"), [byId("header_pricing")])}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Free Plan */}
+                  <div>
+                    <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Free Plan</p>
+                    <div className="space-y-3 mb-5">
+                      <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
+                      {freePlanInfo.map((item) => (
+                        <div key={item.content_id} className="bg-white rounded-lg p-4 border border-blue-100">
+                          {editing === item.content_id ? (
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-bold text-slate-400 mb-1 block">
+                                  {item.content_id === "free_plan_name" ? "PLAN NAME" : item.content_id === "free_plan_cta" ? "BUTTON TEXT" : "PRICE"}
+                                </label>
+                                <input
+                                  value={form.title}
+                                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                                />
+                              </div>
+                              {item.content_id === "free_plan_price" && (
+                                <div>
+                                  <label className="text-xs font-bold text-slate-400 mb-1 block">PRICE SUBTITLE</label>
+                                  <input
+                                    value={form.description}
+                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex gap-2 pt-1">
+                                <button onClick={() => saveEdit(item.content_id)} disabled={saving}
+                                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
+                                  <Check size={13} /> Save
+                                </button>
+                                <button onClick={cancelEdit}
+                                  className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
+                                  <X size={13} /> Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs text-slate-400 mb-0.5">
+                                  {item.content_id === "free_plan_name" ? "Plan Name" : item.content_id === "free_plan_cta" ? "Button Text" : "Price"}
+                                </p>
+                                <p className="font-semibold text-slate-800">{item.title}</p>
+                                {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
+                              </div>
+                              <button onClick={() => startEdit(item)}
+                                className="flex items-center gap-1 border border-blue-500 text-blue-600 px-2 py-1 rounded text-xs shrink-0">
+                                <Edit size={12} /> Edit
+                              </button>
+                            </div>
                           )}
                         </div>
-                      )}
-                      {activeTabInfo.perCardCtaSection && bySection(activeTabInfo.perCardCtaSection)[idx] && (
-                        <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Button text for this card</p>
-                          {renderRow(
-                            bySection(activeTabInfo.perCardCtaSection)[idx],
-                            [bySection(activeTabInfo.perCardCtaSection)[idx]]
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
+                    <div className="space-y-3">
+                      {freeItems.length === 0
+                        ? <p className="text-slate-400 text-sm">No free features found.</p>
+                        : freeItems.map((item) => renderRow(item, freeItems))
+                      }
+                    </div>
+                  </div>
+
+                  {/* Premium Plan */}
+                  <div>
+                    <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-3">Premium Plan</p>
+                    <div className="space-y-3 mb-5">
+                      <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
+                      {premiumPlanInfo.map((item) => (
+                        <div key={item.content_id} className="bg-white rounded-lg p-4 border border-yellow-100">
+                          {editing === item.content_id ? (
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs font-bold text-slate-400 mb-1 block">
+                                  {item.content_id === "premium_plan_name" ? "PLAN NAME" : item.content_id === "premium_plan_cta" ? "BUTTON TEXT" : "PRICE"}
+                                </label>
+                                <input
+                                  value={form.title}
+                                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                                />
+                              </div>
+                              {item.content_id === "premium_plan_price" && (
+                                <div>
+                                  <label className="text-xs font-bold text-slate-400 mb-1 block">PRICE SUBTITLE</label>
+                                  <input
+                                    value={form.description}
+                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex gap-2 pt-1">
+                                <button onClick={() => saveEdit(item.content_id)} disabled={saving}
+                                  className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
+                                  <Check size={13} /> Save
+                                </button>
+                                <button onClick={cancelEdit}
+                                  className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
+                                  <X size={13} /> Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs text-slate-400 mb-0.5">
+                                  {item.content_id === "premium_plan_name" ? "Plan Name" : item.content_id === "premium_plan_cta" ? "Button Text" : "Price"}
+                                </p>
+                                <p className="font-semibold text-slate-800">{item.title}</p>
+                                {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
+                              </div>
+                              <button onClick={() => startEdit(item)}
+                                className="flex items-center gap-1 border border-yellow-500 text-yellow-600 px-2 py-1 rounded text-xs shrink-0">
+                                <Edit size={12} /> Edit
+                              </button>
+                            </div>
                           )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))
-                }
+                    <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
+                    <div className="space-y-3">
+                      {premiumItems.length === 0
+                        ? <p className="text-slate-400 text-sm">No premium features found.</p>
+                        : premiumItems.map((item) => renderRow(item, premiumItems))
+                      }
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
 
-      {/* Membership & Payment — Plans & Pricing subtab */}
-      {activeMainTab === "membership" && activeSubTab === "membership_plans" && (
-        <div className="space-y-6">
-          {byId("header_pricing") && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Section Heading</p>
-              {renderRow(byId("header_pricing"), [byId("header_pricing")])}
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Free Plan */}
-          <div>
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Free Plan</p>
-            <div className="space-y-3 mb-5">
-              <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
-              {freePlanInfo.map((item) => (
-                <div key={item.content_id} className="bg-white rounded-lg p-4 border border-blue-100">
-                  {editing === item.content_id ? (
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 mb-1 block">
-                          {item.content_id === "free_plan_name" ? "PLAN NAME" : item.content_id === "free_plan_cta" ? "BUTTON TEXT" : "PRICE"}
-                        </label>
-                        <input
-                          value={form.title}
-                          onChange={(e) => setForm({ ...form, title: e.target.value })}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      {item.content_id === "free_plan_price" && (
-                        <div>
-                          <label className="text-xs font-bold text-slate-400 mb-1 block">PRICE SUBTITLE</label>
-                          <input
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
-                          />
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-1">
-                        <button onClick={() => saveEdit(item.content_id)} disabled={saving}
-                          className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
-                          <Check size={13} /> Save
-                        </button>
-                        <button onClick={cancelEdit}
-                          className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
-                          <X size={13} /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-slate-400 mb-0.5">
-                          {item.content_id === "free_plan_name" ? "Plan Name" : item.content_id === "free_plan_cta" ? "Button Text" : "Price"}
-                        </p>
-                        <p className="font-semibold text-slate-800">{item.title}</p>
-                        {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
-                      </div>
-                      <button onClick={() => startEdit(item)}
-                        className="flex items-center gap-1 border border-blue-500 text-blue-600 px-2 py-1 rounded text-xs shrink-0">
-                        <Edit size={12} /> Edit
-                      </button>
-                    </div>
-                  )}
+            {/* Footer */}
+            {activeMainTab === "footer" && (
+              <div className="space-y-8">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Brand</p>
+                  <div className="space-y-3">{footerBrand.map((item) => renderRow(item, footerBrand))}</div>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
-            <div className="space-y-3">
-              {freeItems.length === 0
-                ? <p className="text-slate-400 text-sm">No free features found.</p>
-                : freeItems.map((item) => renderRow(item, freeItems))
-              }
-            </div>
-          </div>
-
-          {/* Premium Plan */}
-          <div>
-            <p className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-3">Premium Plan</p>
-            <div className="space-y-3 mb-5">
-              <p className="text-xs text-slate-400 font-semibold">Plan Details</p>
-              {premiumPlanInfo.map((item) => (
-                <div key={item.content_id} className="bg-white rounded-lg p-4 border border-yellow-100">
-                  {editing === item.content_id ? (
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 mb-1 block">
-                          {item.content_id === "premium_plan_name" ? "PLAN NAME" : item.content_id === "premium_plan_cta" ? "BUTTON TEXT" : "PRICE"}
-                        </label>
-                        <input
-                          value={form.title}
-                          onChange={(e) => setForm({ ...form, title: e.target.value })}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      {item.content_id === "premium_plan_price" && (
-                        <div>
-                          <label className="text-xs font-bold text-slate-400 mb-1 block">PRICE SUBTITLE</label>
-                          <input
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
-                          />
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-1">
-                        <button onClick={() => saveEdit(item.content_id)} disabled={saving}
-                          className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-semibold">
-                          <Check size={13} /> Save
-                        </button>
-                        <button onClick={cancelEdit}
-                          className="flex items-center gap-1 border border-gray-300 text-slate-600 px-3 py-1.5 rounded text-sm">
-                          <X size={13} /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-slate-400 mb-0.5">
-                          {item.content_id === "premium_plan_name" ? "Plan Name" : item.content_id === "premium_plan_cta" ? "Button Text" : "Price"}
-                        </p>
-                        <p className="font-semibold text-slate-800">{item.title}</p>
-                        {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
-                      </div>
-                      <button onClick={() => startEdit(item)}
-                        className="flex items-center gap-1 border border-yellow-500 text-yellow-600 px-2 py-1 rounded text-xs shrink-0">
-                        <Edit size={12} /> Edit
-                      </button>
-                    </div>
-                  )}
+                {byId("footer_version") && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Version Badge</p>
+                    <p className="text-xs text-slate-400 mb-2">The small pill shown next to the brand name (e.g. "v1.0.0")</p>
+                    <div className="space-y-3">{renderRow(byId("footer_version"), [byId("footer_version")])}</div>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
+                  <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
+                  <div className="space-y-3">{footerProduct.map((item) => renderRow(item, footerProduct))}</div>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-slate-400 font-semibold mb-3">Features</p>
-            <div className="space-y-3">
-              {premiumItems.length === 0
-                ? <p className="text-slate-400 text-sm">No premium features found.</p>
-                : premiumItems.map((item) => renderRow(item, premiumItems))
-              }
-            </div>
-          </div>
-          </div>
-        </div>
-      )}
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
+                  <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
+                  <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Resources Links</p>
+                  <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
+                  <div className="space-y-3">
+                    {footerResources.length === 0
+                      ? <p className="text-slate-400 text-sm">No content found for this section.</p>
+                      : footerResources.map((item) => renderRow(item, footerResources))
+                    }
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
+                  <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
+                  <div className="space-y-3">{footerContact.map((item) => renderRow(item, footerContact))}</div>
+                </div>
+              </div>
+            )}
 
-      {/* Footer */}
-      {activeMainTab === "footer" && (
-        <div className="space-y-8">
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Brand</p>
-            <div className="space-y-3">{footerBrand.map((item) => renderRow(item, footerBrand))}</div>
           </div>
-          {byId("footer_version") && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Version Badge</p>
-              <p className="text-xs text-slate-400 mb-2">The small pill shown next to the brand name (e.g. "v1.0.0")</p>
-              <div className="space-y-3">{renderRow(byId("footer_version"), [byId("footer_version")])}</div>
-            </div>
-          )}
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
-            <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-            <div className="space-y-3">{footerProduct.map((item) => renderRow(item, footerProduct))}</div>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
-            <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-            <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Resources Links</p>
-            <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-            <div className="space-y-3">
-              {footerResources.length === 0
-                ? <p className="text-slate-400 text-sm">No content found for this section.</p>
-                : footerResources.map((item) => renderRow(item, footerResources))
-              }
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
-            <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
-            <div className="space-y-3">{footerContact.map((item) => renderRow(item, footerContact))}</div>
-          </div>
+          <div>{renderPreview()}</div>
         </div>
-      )}
-
-      </div>
-      <div>{renderPreview()}</div>
-      </div>
       )}
     </AdminLayout>
   );

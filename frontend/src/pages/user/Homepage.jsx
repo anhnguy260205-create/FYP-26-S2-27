@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
 import { fetchStockSnapshot } from "../../api/stockApi.js";
 import { getReviewStats, getReviews } from "../../api/reviewApi.js";
+import { useLandingContent, usePlanContent } from "../../api/contentApi.js";
 import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
 import { SectionHeader } from "../../components/dashboard/DashboardKit.jsx";
 import aboutUsImg from "../../images/about_us.jpg";
@@ -96,14 +97,7 @@ function getFeatureIcon(title = "") {
 // position. Only actual text (headings, subtitles, card copy, FAQ
 // answers, step text) comes from the CMS.
 function useLandingContentExtras() {
-  const [content, setContent] = useState(null);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => { if (data.success) setContent(data.content); })
-      .catch(() => { });
-  }, []);
+  const content = useLandingContent();
 
   const header = (id, fallbackTitle, fallbackDescription) => {
     const item = content?.find((c) => c.content_id === id);
@@ -129,24 +123,12 @@ function useLandingContentExtras() {
 
 function Hero() {
   const navigate = useNavigate();
-  const [hero, setHero] = useState({ title: "Discover the Future of Smart Investing", description: "Explore powerful tools floating around your financial universe." });
-  const [ctaPrimary, setCtaPrimary] = useState("Get Started");
-  const [ctaSecondary, setCtaSecondary] = useState("Login");
+  const content = useLandingContent();
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) return;
-        const heroItem = data.content.find((c) => c.section === "hero");
-        if (heroItem) setHero(heroItem);
-        const primary = data.content.find((c) => c.content_id === "hero_cta_primary");
-        if (primary?.title) setCtaPrimary(primary.title);
-        const secondary = data.content.find((c) => c.content_id === "hero_cta_secondary");
-        if (secondary?.title) setCtaSecondary(secondary.title);
-      })
-      .catch(() => { });
-  }, []);
+  const heroItem = content?.find((c) => c.section === "hero");
+  const hero = heroItem ?? { title: "Discover the Future of Smart Investing", description: "Explore powerful tools floating around your financial universe." };
+  const ctaPrimary = content?.find((c) => c.content_id === "hero_cta_primary")?.title ?? "Get Started";
+  const ctaSecondary = content?.find((c) => c.content_id === "hero_cta_secondary")?.title ?? "Login";
 
   return (
     <div className="hero-section relative w-full h-200 text-white flex items-center justify-center overflow-hidden">
@@ -237,47 +219,6 @@ function FeatureCards({ heading, subtitle, items, theme = "cyan" }) {
   );
 }
 
-
-function usePlanContent() {
-  const [freeFeatures, setFreeFeatures] = useState([]);
-  const [premiumFeatures, setPremiumFeatures] = useState([]);
-  const [freePlan, setFreePlan] = useState({ name: "Starter", price: "$0.00", priceSubtitle: "forever, no card needed", cta: "Get Started Free" });
-  const [premiumPlan, setPremiumPlan] = useState({ name: "Pro", price: "$20.99", priceSubtitle: "per month, billed annually", cta: "Upgrade to Premium" });
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) return;
-        const c = data.content;
-        setFreeFeatures(c.filter((x) => x.section === "free_investor").map((x) => x.title));
-        setPremiumFeatures(c.filter((x) => x.section === "premium_investor").map((x) => x.title));
-
-        const freeName = c.find((x) => x.content_id === "free_plan_name");
-        const freePrice = c.find((x) => x.content_id === "free_plan_price");
-        const freeCta = c.find((x) => x.content_id === "free_plan_cta");
-        if (freeName || freePrice || freeCta) setFreePlan({
-          name: freeName?.title ?? "Starter",
-          price: freePrice?.title ?? "$0.00",
-          priceSubtitle: freePrice?.description ?? "forever, no card needed",
-          cta: freeCta?.title ?? "Get Started Free",
-        });
-
-        const premName = c.find((x) => x.content_id === "premium_plan_name");
-        const premPrice = c.find((x) => x.content_id === "premium_plan_price");
-        const premCta = c.find((x) => x.content_id === "premium_plan_cta");
-        if (premName || premPrice || premCta) setPremiumPlan({
-          name: premName?.title ?? "Pro",
-          price: premPrice?.title ?? "$20.99",
-          priceSubtitle: premPrice?.description ?? "per month, billed annually",
-          cta: premCta?.title ?? "Upgrade to Premium",
-        });
-      })
-      .catch(() => { });
-  }, []);
-
-  return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
-}
 
 function PlanCard({ badge, badgeClass, plan, features, highlighted }) {
   const navigate = useNavigate();

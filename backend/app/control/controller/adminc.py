@@ -158,13 +158,13 @@ class AdminUserAccountController:
             ).first()
 
             if not user:
-                return False
+                return None
 
             user.account_status = "suspended"
             user.is_active = False
 
             session.commit()
-            return True
+            return user.email_address
 
     def activateUserAccount(self, user_id):
         with get_session() as session:
@@ -173,13 +173,13 @@ class AdminUserAccountController:
             ).first()
 
             if not user:
-                return False
+                return None
 
             user.account_status = "active"
             user.is_active = True
 
             session.commit()
-            return True
+            return user.email_address
 
     def getDashboardStats(self):
         with get_session() as session:

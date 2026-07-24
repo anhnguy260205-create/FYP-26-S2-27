@@ -17,7 +17,11 @@ function LoginPage() {
   // see goToRole() below.
   const from = location.state?.from;
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).get("suspended") === "1"
+      ? "Your account has been suspended. Please contact support."
+      : ""
+  );
   const [loading, setLoading] = useState(false);
   // Email OTP (2nd factor) — backend sends a code for non-admin logins
   const [stage, setStage] = useState("login");   // "login" | "otp"
@@ -101,7 +105,7 @@ function LoginPage() {
       // 2. Load user profile (token set by Firebase; authFetch picks it up automatically)
       const result = await firebaseLogin();
       if (!result.success) {
-        setError(result.message || "Failed to load user profile");
+        setError(result.message || result.detail?.message || "Failed to load user profile");
         return;
       }
       // Non-admin logins need an email OTP — backend has already sent it

@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Depends
 from app.control.controller.contentc import (
     GetAllContentController,
-    GetContentBySectionController,
     UpdateContentController,
     ReorderContentController,
 )

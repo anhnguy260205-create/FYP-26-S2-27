@@ -1,4 +1,4 @@
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 
 // Resolves once Firebase has confirmed the auth state (handles page-refresh timing).
@@ -31,13 +31,25 @@ async function getAuthHeader() {
   return headers;
 }
 
+let kickingOut = false;
+
+/** An admin suspended this account mid-session — force a clean logout instead
+ * of leaving the page silently failing every subsequent request. */
+async function kickOutSuspendedUser() {
+  if (kickingOut) return;
+  kickingOut = true;
+  sessionStorage.removeItem("currentUser");
+  try { await signOut(auth); } catch { /* ignore */ }
+  window.location.href = "/login?suspended=1";
+}
+
 /**
  * fetch() wrapper that automatically adds the Firebase Bearer token.
  * Use this for any request to a protected backend endpoint.
  */
 export async function authFetch(url, options = {}) {
   const authHeader = await getAuthHeader();
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -45,4 +57,16 @@ export async function authFetch(url, options = {}) {
       ...(options.headers || {}),
     },
   });
+
+  if (response.status === 403) {
+    response
+      .clone()
+      .json()
+      .then((body) => {
+        if (body?.detail?.code === "account_suspended") kickOutSuspendedUser();
+      })
+      .catch(() => { });
+  }
+
+  return response;
 }

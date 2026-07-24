@@ -518,7 +518,7 @@ export default function BecomeExpertPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
 
-      <main style={{ flex: 1, maxWidth: 900, margin: "0 auto", width: "100%", padding: "32px 24px 48px" }}>
+      <main style={{ flex: 1, maxWidth: 900, margin: "0 auto", width: "100%", padding: "88px 24px 60px" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(0,211,242,0.12)", border: "1px solid rgba(0,211,242,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
             <Award size={26} color={C.cyan} />

@@ -349,16 +349,6 @@ def _promote_seed_expert(email_address: str):
             ExpertVerification.set_status(expert_id, "approved")
 
 
-def seed_expert_account():
-    Expert.createAccount(
-        username="Anh",
-        email_address="kimhi@gmail.com",
-        experience_year=3,
-        linked_in_url="@anh"
-    )
-    _promote_seed_expert("kimhi@gmail.com")
-
-
 def seed_jordan_account():
     Expert.createAccount(
         username="jordan",

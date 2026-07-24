@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -20,7 +20,6 @@ class ContentManagement(Base):
     # or a compressed data:image/... base64 string for Railway/no-storage setup.
     image_url = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
-    is_active = Column(Boolean, default=True)
 
     @staticmethod
     def get_all():
@@ -28,15 +27,6 @@ class ContentManagement(Base):
             rows = session.query(ContentManagement).order_by(
                 ContentManagement.section, ContentManagement.order_index
             ).all()
-            return [_serialize(r) for r in rows]
-
-    @staticmethod
-    def get_by_section(section: str):
-        with get_session() as session:
-            rows = session.query(ContentManagement).filter(
-                ContentManagement.section == section,
-                ContentManagement.is_active == True
-            ).order_by(ContentManagement.order_index).all()
             return [_serialize(r) for r in rows]
 
     @staticmethod
@@ -82,7 +72,6 @@ def _serialize(row: ContentManagement) -> dict:
         "description": row.description,
         "image_url": row.image_url,
         "order_index": row.order_index,
-        "is_active": row.is_active,
     }
 
 
@@ -457,6 +446,17 @@ def seed_landing_content():
         dead_sections = ("feature", "expert", "forum_room")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)
+        ).delete(synchronize_session=False)
+
+        # These four expert-home page headers lived in the shared
+        # "page_headers" section (so they aren't caught by dead_sections),
+        # but nothing reads these specific ids anymore either.
+        dead_header_ids = (
+            "header_expert_tools", "header_model_portfolio",
+            "header_expert_profile", "header_documents",
+        )
+        session.query(ContentManagement).filter(
+            ContentManagement.content_id.in_(dead_header_ids)
         ).delete(synchronize_session=False)
 
         to_add = [e for e in entries if e.content_id not in existing_ids]

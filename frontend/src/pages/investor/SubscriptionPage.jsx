@@ -4,47 +4,11 @@ import Footer from "../../layout/Footer.jsx";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { getSubscriptionStatus, updateSubscriptionStatus } from "../../api/userApi.js";
+import { usePlanContent } from "../../api/contentApi.js";
 import { CARD_HOVER } from "../../components/dashboard/DashboardKit.jsx";
 
 const ACCENT = "#00D3F2";
 const ACCENT_TEXT = "#004450";
-
-function usePlanContent() {
-  const [freeFeatures, setFreeFeatures] = useState([]);
-  const [premiumFeatures, setPremiumFeatures] = useState([]);
-  const [freePlan, setFreePlan] = useState({ name: "Starter", price: "$0.00", priceSubtitle: "forever, no card needed" });
-  const [premiumPlan, setPremiumPlan] = useState({ name: "Pro", price: "$20.99", priceSubtitle: "per month, billed annually" });
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/content/landing`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) return;
-        const c = data.content;
-        setFreeFeatures(c.filter((x) => x.section === "free_investor").map((x) => x.title));
-        setPremiumFeatures(c.filter((x) => x.section === "premium_investor").map((x) => x.title));
-
-        const freeName = c.find((x) => x.content_id === "free_plan_name");
-        const freePrice = c.find((x) => x.content_id === "free_plan_price");
-        if (freeName || freePrice) setFreePlan({
-          name: freeName?.title ?? "Starter",
-          price: freePrice?.title ?? "$0.00",
-          priceSubtitle: freePrice?.description ?? "forever, no card needed",
-        });
-
-        const premName = c.find((x) => x.content_id === "premium_plan_name");
-        const premPrice = c.find((x) => x.content_id === "premium_plan_price");
-        if (premName || premPrice) setPremiumPlan({
-          name: premName?.title ?? "Pro",
-          price: premPrice?.title ?? "$20.99",
-          priceSubtitle: premPrice?.description ?? "per month, billed annually",
-        });
-      })
-      .catch(() => { });
-  }, []);
-
-  return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
-}
 
 function Badge({ children, accent }) {
   return (
