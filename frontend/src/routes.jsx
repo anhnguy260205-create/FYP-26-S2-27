@@ -147,5 +147,4 @@ export const router = createBrowserRouter([
     { path: "/finance-admin/payments", element: protect(["finance admin"], PaymentTransactionsPage) },
     { path: "/finance-admin/reports", element: protect(["finance admin"], FinancialReportsPage) },
 
-
 ]);

@@ -6,6 +6,7 @@ import ExpertHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { getMyArticles, createArticle, updateArticle, deleteArticle } from "../../api/knowledgeHubApi.js";
 import { getPageBackground } from "../../utils/userRole.js";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const mono = "'DM Mono', monospace";
 const sans = "'DM Sans', sans-serif";
@@ -41,7 +42,7 @@ const inputStyle = {
   color: "#0f172a", fontFamily: mono, fontSize: 13,
 };
 
-function ArticleForm({ initial, onSave, onCancel, saving }) {
+function ArticleForm({ initial, onSave, onCancel, saving, labels = {} }) {
   const [form, setForm] = useState({
     title: initial?.title ?? "",
     summary: initial?.summary ?? "",
@@ -58,7 +59,7 @@ function ArticleForm({ initial, onSave, onCancel, saving }) {
       style={{ background: "linear-gradient(145deg,#ffffff,#f8fafc)", border: "1px solid rgba(178,115,255,0.2)", borderRadius: 14, padding: "28px 30px" }}>
 
       <h2 style={{ fontFamily: mono, fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 22px" }}>
-        {initial ? "Edit Article" : "Write New Article"}
+        {initial ? (labels.editTitle || "Edit Article") : (labels.newTitle || "Write New Article")}
       </h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -104,7 +105,7 @@ function ArticleForm({ initial, onSave, onCancel, saving }) {
             border: "1px solid rgba(178,115,255,0.5)", background: "rgba(178,115,255,0.15)",
             color: "#B273FF", fontFamily: mono, fontSize: 12, fontWeight: 700,
             opacity: saving || !valid ? 0.5 : 1,
-          }}>{saving ? "Saving…" : "Submit for Review"}</button>
+          }}>{saving ? "Saving…" : (labels.submit || "Submit for Review")}</button>
         </div>
       </div>
     </motion.div>
@@ -149,9 +150,13 @@ function ArticleRow({ article, onEdit, onDelete }) {
   );
 }
 
-function VerificationWall({ status }) {
+function VerificationWall({ status, cms }) {
   const navigate = useNavigate();
   const isPending = status === "pending";
+  const required = cms.text("expert_knowledge_verification_required_title", "Verification Required", "Only verified experts can create and publish educational content. Please submit your verification documents to get started.");
+  const pending = cms.text("expert_knowledge_verification_pending_title", "Verification Pending", "Your verification request is under review by the admin. You will be able to create and submit articles once approved.");
+  const applyCta = cms.text("expert_knowledge_apply_cta", "Apply for Verification").title;
+  const underReview = cms.text("expert_knowledge_under_review", "⏳ Under Review").title;
 
   return (
     <motion.div className="min-h-screen flex flex-col"
@@ -167,13 +172,11 @@ function VerificationWall({ status }) {
           </div>
 
           <h2 style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 700, color: "#0f172a", margin: "0 0 12px", letterSpacing: "0.03em" }}>
-            {isPending ? "Verification Pending" : "Verification Required"}
+            {isPending ? pending.title : required.title}
           </h2>
 
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#64748b", lineHeight: 1.7, margin: "0 0 28px" }}>
-            {isPending
-              ? "Your verification request is under review by the admin. You will be able to create and submit articles once approved."
-              : "Only verified experts can create and publish educational content. Please submit your verification documents to get started."}
+{isPending ? pending.description : required.description}
           </p>
 
           {!isPending && (
@@ -183,7 +186,7 @@ function VerificationWall({ status }) {
                 fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
                 border: "1px solid rgba(178,115,255,0.5)", background: "rgba(178,115,255,0.15)", color: "#B273FF",
               }}>
-              Apply for Verification
+              {applyCta}
             </button>
           )}
 
@@ -193,7 +196,7 @@ function VerificationWall({ status }) {
               border: "1px solid rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.08)", color: "#fbbf24",
               fontFamily: "'DM Mono', monospace", fontSize: 12, fontWeight: 700
             }}>
-              ⏳ Under Review
+              {underReview}
             </div>
           )}
         </motion.div>
@@ -208,6 +211,16 @@ function ExpertKnowledgeHub() {
   const location = useLocation();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const isVerified = currentUser?.verification_status === "approved";
+  const cms = useContentManagement();
+  const pageHeader = cms.text("expert_knowledge_header", "My Articles", "Write and publish educational content for investors");
+  const writeCta = cms.text("expert_knowledge_write_cta", "+ Write Article").title;
+  const emptyAll = cms.text("expert_knowledge_empty_all", "You haven't written any articles yet.").title;
+  const emptyFilteredTemplate = cms.text("expert_knowledge_empty_filtered", "No {tab} articles.").title;
+  const formLabels = {
+    newTitle: cms.text("expert_knowledge_form_new", "Write New Article").title,
+    editTitle: cms.text("expert_knowledge_form_edit", "Edit Article").title,
+    submit: cms.text("expert_knowledge_form_submit", "Submit for Review").title,
+  };
 
   // Which page linked here — passed as router state by the caller (Educational
   // Content's "Write Article" button, currently the only entry point).
@@ -272,7 +285,7 @@ function ExpertKnowledgeHub() {
   };
 
   if (!isVerified) {
-    return <VerificationWall status={currentUser?.verification_status} />;
+    return <VerificationWall status={currentUser?.verification_status} cms={cms} />;
   }
 
   return (
@@ -303,23 +316,14 @@ function ExpertKnowledgeHub() {
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{ paddingBottom: 20, borderBottom: "1px solid rgba(178,115,255,0.15)", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h1 style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: 28,
-                fontWeight: 700,
-                color: PAGE.heading,
-                letterSpacing: "0.04em",
-                lineHeight: 1,
-              }}>My Articles</h1>
-              <p style={{ fontFamily: sans, fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>Write and publish educational content for investors</p>
-            </div>
+              <h1 style={{ fontFamily: mono, fontSize: 28, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: "0.04em" }}>{pageHeader.title}</h1>
+              <p style={{ fontFamily: sans, fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>{pageHeader.description}</p>            </div>
             {mode === "list" && (
               <button onClick={() => { setEditing(null); setMode("create"); }} style={{
                 padding: "10px 22px", borderRadius: 8, cursor: "pointer",
                 border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.1)",
                 color: "#34d399", fontFamily: mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
-              }}>Write Article</button>
-            )}
+              }}>{writeCta}</button>            )}
           </motion.div>
 
           {mode === "list" && (
@@ -345,6 +349,7 @@ function ExpertKnowledgeHub() {
                   onSave={handleSave}
                   onCancel={() => { setMode("list"); setEditing(null); }}
                   saving={saving}
+                  labels={formLabels}
                 />
               </motion.div>
             )}
@@ -358,14 +363,14 @@ function ExpertKnowledgeHub() {
                 ) : filtered.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "80px 0" }}>
                     <p style={{ fontFamily: mono, fontSize: 13, color: "#64748b", marginBottom: 20 }}>
-                      {articles.length === 0 ? "You haven't written any articles yet." : `No ${activeTab.toLowerCase()} articles.`}
+                      {articles.length === 0 ? emptyAll : emptyFilteredTemplate.replace("{tab}", activeTab.toLowerCase())}
                     </p>
                     {articles.length === 0 && (
                       <button onClick={() => setMode("create")} style={{
                         padding: "10px 24px", borderRadius: 8, cursor: "pointer",
                         border: "1px solid rgba(178,115,255,0.4)", background: "rgba(178,115,255,0.1)",
                         color: "#B273FF", fontFamily: mono, fontSize: 12, fontWeight: 700,
-                      }}>Write your first article</button>
+                      }}>{writeCta.replace(/^\+\s*/, "")}</button>
                     )}
                   </div>
                 ) : (

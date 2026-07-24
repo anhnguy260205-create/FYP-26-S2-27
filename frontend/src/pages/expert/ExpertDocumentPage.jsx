@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { authFetch } from "../../api/apiClient.js";
 import { FileText, Plus, Trash2, Clock, CheckCircle2 } from "lucide-react";
+import { useContentManagement } from "../../utils/contentManagement.js";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
@@ -32,6 +33,12 @@ function ExpertDocumentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("not_submitted");
+  const cms = useContentManagement();
+  const pageHeader = cms.text("expert_documents_page_header", "Submit Your Documents", "Add links to your certificates, degrees, or employment letters for admin verification.");
+  const addLabel = cms.text("expert_documents_add_label", "Add Document").title;
+  const submitCta = cms.text("expert_documents_submit_cta", "Submit Documents →").title;
+  const skipCta = cms.text("expert_documents_skip_cta", "Skip for now").title;
+  const emptyError = cms.text("expert_documents_error_empty", "Please add at least one document.").title;
 
   useEffect(() => {
     if (!currentUser.user_id) return;
@@ -59,7 +66,7 @@ function ExpertDocumentPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (docs.length === 0) { setError("Please add at least one document."); return; }
+    if (docs.length === 0) { setError(emptyError); return; }
     setSaving(true);
     setError("");
     try {
@@ -97,9 +104,9 @@ function ExpertDocumentPage() {
           <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(0,146,184,0.1)", border: "1px solid rgba(0,146,184,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <FileText size={22} color="#0092b8" />
           </div>
-          <h1 className="leading-tight mb-2" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>Submit Your Documents</h1>
+          <h1 className="leading-tight mb-2" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>{pageHeader.title}</h1>
           <p className="text-gray-500 text-[14px]">
-            Add links to your certificates, degrees, or employment letters for admin verification.
+{pageHeader.description}
           </p>
           {(() => {
             const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.not_submitted;
@@ -147,7 +154,7 @@ function ExpertDocumentPage() {
 
           {/* Add document form */}
           <div style={{ padding: "16px", borderRadius: 12, background: "#f0f9ff", border: "1px solid #bae6fd" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Add Document</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>{addLabel}</p>
 
             <div className="grid grid-cols-2 gap-2 mb-2">
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Document name"
@@ -174,13 +181,13 @@ function ExpertDocumentPage() {
           <button type="submit" disabled={saving}
             className="w-full text-white font-semibold text-[15px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-60"
             style={{ height: 52, background: "linear-gradient(90deg, #0092b8, #155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)", marginTop: 4 }}>
-            {saving ? "Submitting…" : "Submit Documents →"}
+            {saving ? "Submitting…" : submitCta}
           </button>
 
           {/* Skip */}
           <button type="button" onClick={() => navigate("/investor")}
             className="w-full text-gray-400 text-[14px] hover:text-gray-600 transition-colors">
-            Skip for now
+            {skipCta}
           </button>
         </form>
       </div>

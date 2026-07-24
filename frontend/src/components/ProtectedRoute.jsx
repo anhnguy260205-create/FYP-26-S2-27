@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { logoutOnUnload, refreshSessionUser, getPinStatus, getInvestorInformation } from "../api/userApi";
 import ForceAccountSetupModal from "./ForceAccountSetupModal.jsx";
 import { splitAddress } from "../utils/countryCodes";
+import { isExpertUser } from "../utils/userRole.js";
 
 function getCurrentUser() {
   try {
-    return JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    return JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
   } catch {
     sessionStorage.removeItem("currentUser");
     return null;
@@ -15,8 +16,8 @@ function getCurrentUser() {
 
 function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
   const [currentUser, setCurrentUser] = useState(getCurrentUser);
-  // null = not yet checked. Once checked: needsInfo / needsPin drive the gate.
   const [gate, setGate] = useState(null); // { needsInfo, needsPin, user } | { done:true }
+  const location = useLocation();
 
   useEffect(() => {
     if (!currentUser) return;
@@ -25,26 +26,28 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
     return () => window.removeEventListener("pagehide", logoutOnUnload);
   }, [currentUser?.user_id]);
 
-  // Every investor must have complete personal info (full name, phone, country)
-  // and a 6-digit transaction PIN. Legacy accounts missing either are forced
-  // through a mandatory setup gate before they can use the platform. The
-  // first-login setup page already collects both, so it's exempt.
-  const onSetupPage =
-    typeof window !== "undefined" && window.location.pathname === "/investor/setup";
+  // Every investor must have complete personal info and a 6-digit transaction PIN.
+  // The first-login setup page is exempt because it collects those details.
+  const onSetupPage = location.pathname === "/investor/setup";
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "investor" || onSetupPage) {
       setGate({ done: true });
       return;
     }
+
     let cancelled = false;
     Promise.all([
       getPinStatus().catch(() => null),
       getInvestorInformation(currentUser.user_id).catch(() => null),
     ]).then(([pinRes, infoRes]) => {
       if (cancelled) return;
-      // Fail open if either check errored (don't lock users out on a hiccup).
-      if (!pinRes && !infoRes) { setGate({ done: true }); return; }
+      // Fail open if either check errored, so a temporary API issue does not lock users out.
+      if (!pinRes && !infoRes) {
+        setGate({ done: true });
+        return;
+      }
+
       const info = infoRes?.investor_information || {};
       const user = { ...currentUser, ...info };
       const { country } = splitAddress(user.address || "");
@@ -52,14 +55,13 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
       const needsPin = pinRes ? pinRes.has_pin !== true : false;
       setGate({ needsInfo, needsPin, user });
     });
+
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.user_id, onSetupPage]);
+  }, [currentUser?.user_id, currentUser?.role, onSetupPage]);
 
-  // Re-validate against the backend on every protected navigation —
-  // sessionStorage is otherwise only refreshed at login, so an admin-side
-  // change (e.g. cancelling an expert's verification) wouldn't be reflected
-  // until the user logged out and back in.
+  // Re-validate against the backend on protected navigation so role/subscription
+  // changes made by admins are reflected without requiring a full logout/login.
   useEffect(() => {
     if (!currentUser) return;
     let cancelled = false;
@@ -71,21 +73,18 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
   }, [currentUser?.user_id]);
 
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   if (!allowedRoles.includes(currentUser.role)) {
     return <Navigate to="/" replace />;
   }
 
-  // Expert-only pages (merged roles). is_expert means VERIFIED expert, so an
-  // in-progress applicant (Expert row exists, not yet approved) also needs
-  // through here — that's what verification_status being set indicates —
-  // to reach the document-upload/knowledge-hub pages during review.
+  // Expert-only pages support both the merged-role flow and old expert-role accounts.
   if (
     requireExpert &&
     !(
-      currentUser.is_expert === true ||
+      isExpertUser(currentUser) ||
       currentUser.role === "expert" ||
       currentUser.verification_status != null
     )

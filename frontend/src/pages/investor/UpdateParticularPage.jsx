@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
+import { useContentManagement, fillTemplate } from "../../utils/contentManagement.js";
 
 const SPECIALTIES = [
   "Information Technology",
@@ -18,6 +19,11 @@ const SPECIALTIES = [
 ];
 
 function UpdateParticularPage() {
+  const { text } = useContentManagement();
+  const headingTemplate = text("update_particular_heading", "Welcome, {username}! 👋").title;
+  const subtitle = text("update_particular_desc", "Let's set up your profile before you start trading.").title;
+  const submitCta = text("update_particular_submit_cta", "Get Started →").title;
+  const skipCta = text("update_particular_skip_cta", "Skip for now").title;
   const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
 
@@ -102,10 +108,10 @@ function UpdateParticularPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-bold leading-tight mb-2" style={{ fontSize: "clamp(22px, 6vw, 30px)", color: "#0B1D4F", fontFamily: "'DM Mono', monospace" }}>
-            Welcome, {currentUser.username}! 👋
+            {fillTemplate(headingTemplate, { username: currentUser.username })}
           </h1>
           <p className="text-[14px]" style={{ color: "#5B6C88" }}>
-            Let's set up your profile before you start trading.
+            {subtitle}
           </p>
         </div>
 
@@ -226,7 +232,7 @@ function UpdateParticularPage() {
               boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
             }}
           >
-            {saving ? "Saving…" : "Get Started →"}
+            {saving ? "Saving…" : submitCta}
           </button>
 
           <button
@@ -234,7 +240,7 @@ function UpdateParticularPage() {
             onClick={handleSkip}
             className="w-full text-gray-400 text-[14px] hover:text-gray-600 transition-colors"
           >
-            Skip for now
+            {skipCta}
           </button>
 
           <label className="flex items-center justify-center gap-2 text-[12px] text-gray-400 cursor-pointer select-none">

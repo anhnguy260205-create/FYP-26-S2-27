@@ -8,8 +8,8 @@ import useLiveStocks from "../../api/useLiveStocks.js";
 import { getPageBackground } from "../../utils/userRole.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import RiskAssessmentModal, { riskDismissedKey } from "../../components/RiskAssessmentModal.jsx";
-import { getWatchlist } from "../../api/userApi.js";
-import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
+import { getWatchlist, refreshSessionUser, getSubscriptionStatus, getSubscriptionDetails } from "../../api/userApi.js";
+import { isExpertUser } from "../../utils/userRole.js"; import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
 import { getPortfolio, getPortalSummary } from "../../api/tradingApi.js";
 import { fetchRating } from "../../api/ratingApi.js";
 import { useLandingContent } from "../../api/contentApi.js";
@@ -32,6 +32,14 @@ import {
 const CARD_LIGHT = "rounded-2xl bg-white shadow-md shadow-slate-900/5 ring-1 ring-slate-200";
 const CARD_COMPACT_LIGHT = "rounded-xl bg-white shadow-sm shadow-slate-900/5 ring-1 ring-slate-200";
 const CARD_DOMINANT_LIGHT = "rounded-2xl bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-200";
+
+function readStoredUser() {
+  try {
+    return JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "{}");
+  } catch {
+    return {};
+  }
+}
 
 function SkeletonLight({ className, style }) {
   return <div className={`animate-pulse rounded-lg bg-slate-200/70 ${className ?? ""}`} style={style} />;
@@ -328,12 +336,14 @@ function Hero({ name, portfolioData, header }) {
   const hasHoldings = !loading && holdings.length > 0;
   const up = todaysPnL >= 0;
   const TrendIcon = up ? TrendingUp : TrendingDown;
-  const emptyStateMessage = header("hero_empty_state", "Start building your portfolio with your first trade.").title;
+  const emptyState = header("hero_empty_state", "Start building your portfolio with your first trade.");
+  const emptyStateMessage = emptyState.title;
+  const heroImage = emptyState.image_url || investorLoggedInImg;
 
   return (
     <section className="flex flex-col gap-5 -mt-6 md:-mt-8">
       <div className="relative overflow-hidden w-screen ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] min-h-[220px] md:min-h-[280px]">
-        <img alt="" src={investorLoggedInImg} className="absolute inset-0 w-full h-full object-cover" />
+        <img alt="" src={heroImage} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/15" />
 
         <div className="relative z-10 flex flex-col justify-center h-full p-16 md:p-20">
@@ -823,7 +833,7 @@ function useLandingContentExtras() {
 
   const header = (id, fallbackTitle, fallbackDescription) => {
     const item = content?.find((c) => c.content_id === id);
-    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription };
+    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription, image_url: item?.image_url || "" };
   };
 
   // Matches fetched title/description onto the fallback list by position,
@@ -844,17 +854,46 @@ function useLandingContentExtras() {
 }
 
 function useSubscriptionInfo(userId) {
-  const [info, setInfo] = useState({ status: "inactive", renewalDate: null, loading: true });
+  const [info, setInfo] = useState({ status: "unknown", renewalDate: null, latest: null, loading: !!userId });
 
   useEffect(() => {
-    if (!userId) { setInfo((prev) => ({ ...prev, loading: false })); return; }
-    fetch(`${import.meta.env.VITE_API_URL}/user/subscription-status/${userId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.success) { setInfo((prev) => ({ ...prev, loading: false })); return; }
-        setInfo({ status: data.subscription_status, renewalDate: data.renewal_date, loading: false });
+    let cancelled = false;
+    if (!userId) {
+      setInfo({ status: "inactive", renewalDate: null, latest: null, loading: false });
+      return () => { cancelled = true; };
+    }
+
+    Promise.all([
+      getSubscriptionStatus(userId).catch(() => null),
+      getSubscriptionDetails(userId).catch(() => null),
+    ])
+      .then(([statusRes, detailsRes]) => {
+        if (cancelled) return;
+
+        const latest = detailsRes?.latest || null;
+        const latestPlan = latest?.plan_type || latest?.subscription_type || latest?.sub_plan_type || "";
+        const latestStatus = latest?.status || latest?.sub_status || latest?.subscription_status || "";
+        const hasPremiumPlan = String(latestPlan).toLowerCase().includes("premium");
+        const isCancelled = String(latestStatus).toLowerCase().includes("cancel");
+
+        const status = (
+          statusRes?.subscription_status ||
+          latest?.investor_subscription_status ||
+          (hasPremiumPlan && !isCancelled ? "premium" : "inactive")
+        );
+
+        setInfo({
+          status,
+          renewalDate: statusRes?.renewal_date || latest?.sub_renewal_date || latest?.renewal_date || latest?.end_date || latest?.expiry_date || null,
+          latest,
+          loading: false,
+        });
       })
-      .catch(() => setInfo((prev) => ({ ...prev, loading: false })));
+      .catch(() => {
+        if (!cancelled) setInfo({ status: "unknown", renewalDate: null, latest: null, loading: false });
+      });
+
+    return () => { cancelled = true; };
   }, [userId]);
 
   return info;
@@ -864,6 +903,36 @@ function daysUntil(dateString) {
   if (!dateString) return null;
   const diffMs = new Date(dateString).getTime() - Date.now();
   return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+function normaliseRole(user) {
+  return String(
+    user?.role ||
+    user?.user_role ||
+    user?.account_type ||
+    user?.user_type ||
+    user?.userType ||
+    ""
+  ).trim().toLowerCase();
+}
+
+function isPremiumStatus(status) {
+  const value = String(status || "").trim().toLowerCase();
+  return ["premium", "active", "paid", "subscribed", "premium_investor"].includes(value) || value.includes("premium");
+}
+
+function getAccountSubscriptionStatus(user) {
+  return (
+    user?.subscription_status ||
+    user?.investor_subscription_status ||
+    user?.plan_type ||
+    user?.plan ||
+    user?.subscription_type ||
+    user?.membership ||
+    user?.account_status ||
+    user?.role ||
+    ""
+  );
 }
 
 function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary, accent }) {
@@ -1084,9 +1153,13 @@ function ExpertPortfoliosSection() {
 
 function PremiumRenewalBanner({ header, renewalDate }) {
   const navigate = useNavigate();
-  const h = header("investor_banner_premium", "You're a Premium Member", "Enjoy unlimited AI predictions, expert access, and advanced analytics. {days} days left until your subscription renews.");
+  const h = header("investor_banner_premium", "You're a Premium Member", "Your Premium plan is active. You have {days} days left before your subscription ends.");
   const days = daysUntil(renewalDate);
-  const description = days !== null ? h.description.replace("{days}", days) : h.description.replace(/\s*\{days\}.*$/, "");
+  const description = days !== null
+    ? h.description.replace("{days}", days)
+    : h.description.includes("{days}")
+      ? "Your Premium plan is active. You can manage your subscription at any time."
+      : h.description;
   return (
     <section className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#00D3F2]/25 shadow-lg shadow-slate-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
       <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
@@ -1114,13 +1187,31 @@ function PremiumRenewalBanner({ header, renewalDate }) {
 }
 
 function LoggedInHomePage() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "{}");
+  const [currentUser, setCurrentUser] = useState(() => readStoredUser());
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    refreshSessionUser()
+      .then((freshUser) => {
+        if (!cancelled && freshUser) setCurrentUser((prev) => ({ ...prev, ...freshUser }));
+      })
+      .finally(() => {
+        if (!cancelled) setSessionChecked(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const userId = currentUser?.user_id;
-  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || "Investor";
+  const role = normaliseRole(currentUser);
+  const isExpert = isExpertUser(currentUser) || role.includes("expert") || role.includes("consultant");
+  const name = currentUser?.full_name || currentUser?.username || currentUser?.user_name || (isExpert ? "Expert" : "Investor");
   const { stocks } = useLiveStocks();
   const portfolioData = usePortfolioData(userId, stocks);
   const { header, items } = useLandingContentExtras();
   const subscription = useSubscriptionInfo(userId);
+  const premiumFromAccount = getAccountSubscriptionStatus(currentUser);
+  const isPremiumInvestor = !isExpert && (isPremiumStatus(subscription.status) || isPremiumStatus(premiumFromAccount));
 
   // Preferences / risk-assessment prompt: shown on login when the user has no
   // risk tolerance set and hasn't ticked "Don't show me again".
