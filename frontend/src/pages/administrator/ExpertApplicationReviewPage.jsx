@@ -363,16 +363,6 @@ function ExpertApplicationReviewPage() {
                           <button onClick={() => setSelected(app)} className="flex items-center gap-1.5 text-blue-600 text-sm font-medium hover:text-blue-700 hover:underline underline-offset-2">
                             <Eye size={14} /> Review
                           </button>
-                          <span className="h-4 w-px bg-gray-200" />
-                          {app.verification_status === "approved" ? (
-                            <button onClick={() => handleCancel(app.expert_id)} className="flex items-center gap-1.5 text-orange-600 text-sm font-medium hover:text-orange-700 hover:underline underline-offset-2">
-                              <Ban size={14} /> Cancel
-                            </button>
-                          ) : (
-                            <button disabled title="Only approved experts can have their verification cancelled" className="flex items-center gap-1.5 text-gray-300 text-sm font-medium cursor-not-allowed">
-                              <Ban size={14} /> Cancel
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

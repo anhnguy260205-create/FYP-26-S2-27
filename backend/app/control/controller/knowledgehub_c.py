@@ -83,6 +83,13 @@ class AdminCreateArticleController:
 
 class AdminUpdateArticleController:
     def update(self, article_id, **kwargs):
+        article = Article.getById(article_id)
+        if not article:
+            return {"success": False, "message": "Article not found"}
+        if article["author_type"] != "admin":
+            content_fields = ("title", "summary", "content", "category", "tags")
+            if any(kwargs.get(f) is not None for f in content_fields):
+                return {"success": False, "message": "Articles written by experts can only be edited by their author"}
         ok = Article.admin_update(article_id, **kwargs)
         if not ok:
             return {"success": False, "message": "Article not found"}

@@ -214,8 +214,7 @@ function canDeletePost(post, user) {
     const name = safeText(user.full_name || user.name || user.username);
     if (uid && uid === safeText(post.user_id)) return true;
     if (name && name === safeText(post.author)) return true;
-    const id = String(post.id || "");
-    return id.startsWith("post_") && !id.startsWith("post_demo") && !id.startsWith("post_seed");
+    return false;
 }
 
 function canModifyReply(reply, user) {
@@ -1547,4 +1546,3 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
         </div>
     );
 }
-s
