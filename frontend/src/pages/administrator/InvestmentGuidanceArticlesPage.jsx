@@ -309,8 +309,11 @@ function InvestmentGuidanceArticlesPage() {
     if (!window.confirm("Delete this article?")) return;
     const res = await authFetch(`${API_URL}/${articleId}`, { method: "DELETE" });
     const data = await res.json();
-    if (data.success) fetchArticles();
-    else alert(data.message || "Failed to delete");
+    if (data.success) {
+      await fetchArticles();
+      setSelected(null);
+      setMode("list");
+    } else alert(data.message || "Failed to delete");
   };
 
   const handleApprove = async (articleId) => {
@@ -367,10 +370,18 @@ function InvestmentGuidanceArticlesPage() {
                   </button>
                 </>
               )}
-              <button onClick={() => setMode("edit")}
-                className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-xs font-semibold">
-                <Pencil size={13} /> Edit
-              </button>
+              {selectedArticle.author_type === "admin" && (
+                <button onClick={() => setMode("edit")}
+                  className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-xs font-semibold">
+                  <Pencil size={13} /> Edit
+                </button>
+              )}
+              {selectedArticle.status === "published" && (
+                <button onClick={() => handleDelete(selectedArticle.article_id)}
+                  className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold">
+                  <Trash2 size={13} /> Delete
+                </button>
+              )}
             </div>
           </div>
           <p className="text-slate-500 mb-6">{selectedArticle.summary}</p>
@@ -471,26 +482,6 @@ function InvestmentGuidanceArticlesPage() {
                     <button onClick={() => openView(article.article_id)} className="flex items-center gap-1 border px-3 py-1.5 rounded text-xs">
                       <Eye size={13} /> View
                     </button>
-                    <button onClick={() => { setSelected(article); setMode("edit"); }} className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-xs">
-                      <Pencil size={13} /> Edit
-                    </button>
-                    {article.status === "pending" && (
-                      <>
-                        <button onClick={() => handleApprove(article.article_id)} disabled={actioning === article.article_id}
-                          className="flex items-center gap-1 bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold">
-                          <Check size={13} /> Approve
-                        </button>
-                        <button onClick={() => handleReject(article.article_id)} disabled={actioning === article.article_id}
-                          className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs font-semibold">
-                          <X size={13} /> Reject
-                        </button>
-                      </>
-                    )}
-                    {article.status === "published" && (
-                      <button onClick={() => handleDelete(article.article_id)} className="flex items-center gap-1 bg-red-600 text-white px-3 py-1.5 rounded text-xs">
-                        <Trash2 size={13} /> Delete
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>
