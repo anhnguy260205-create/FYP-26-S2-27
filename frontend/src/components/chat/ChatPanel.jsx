@@ -5,6 +5,7 @@ import {
 } from "../../api/chatApi.js";
 import { getConversationGifts } from "../../api/walletApi.js";
 import GiftDialog from "./GiftDialog.jsx";
+import { stickerFor } from "./giftStickers.js";
 import { isPremiumUser } from "../../utils/userRole.js";
 
 /*
@@ -275,6 +276,7 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
                                     if (item.kind === "gift") {
                                         const g = item.data;
                                         const mine = g.sender_user_id === me.user_id;
+                                        const sticker = stickerFor(g.amount);
                                         return (
                                             <div key={g.gift_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
                                                 <div style={{
@@ -283,8 +285,8 @@ export default function ChatPanel({ height = 560, onUnreadChange }) {
                                                     color: "#fff",
                                                 }}>
                                                     <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, fontSize: 14 }}>
-                                                        <Gift size={15} />
-                                                        {mine ? "You sent" : "Gift received"} ${g.amount.toFixed(2)}
+                                                        <span style={{ fontSize: 17, lineHeight: 1 }}>{sticker.emoji}</span>
+                                                        {mine ? "You sent" : "Gift received"} {sticker.name} (${g.amount.toFixed(2)})
                                                     </div>
                                                     {g.message && (
                                                         <div style={{ fontSize: 12.5, marginTop: 5, opacity: 0.95 }}>

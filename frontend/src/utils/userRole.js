@@ -33,7 +33,8 @@ export function isPremiumUser(user) {
 }
 
 export function getPageBackground(fadeAt = 130) {
-  const top = isExpertUser(getStoredUser()) ? "#B273FF" : "#73ADFF";
+  const user = getStoredUser();
+  const top = isExpertUser(user) ? "#B273FF" : isPremiumUser(user) ? "#FFD500" : "#73ADFF";
   return `linear-gradient(to bottom, ${top} 0px, #FFFFFF ${fadeAt}px, #FFFFFF 100%)`;
 }
 

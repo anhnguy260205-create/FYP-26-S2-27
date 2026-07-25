@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { authFetch } from "../../api/apiClient.js";
-import { Award, TrendingUp, BarChart3, FileText, CheckCircle2, Clock, Plus, Trash2, Sparkles, Users, Star } from "lucide-react";
+import { Award, TrendingUp, BarChart3, FileText, CheckCircle2, Clock, Plus, Trash2, Sparkles, Users, Star, AlertTriangle } from "lucide-react";
 import { useContentManagement, fillTemplate } from "../../utils/contentManagement.js";
+import { COUNTRIES, joinAddress, splitAddress } from "../../utils/countryCodes.js";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
@@ -107,9 +108,11 @@ function BenefitsCard() {
 // Step 1 of the application — personal + professional particulars. Must be
 // completed (all fields filled) before the document-submission step unlocks.
 function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continue to Documents →" }) {
+  const initialAddress = splitAddress(initial.address ?? "");
   const [fullName, setFullName] = useState(initial.full_name ?? "");
   const [phoneNumber, setPhoneNumber] = useState(initial.phone_number ?? "");
-  const [address, setAddress] = useState(initial.address ?? "");
+  const [city, setCity] = useState(initialAddress.city);
+  const [country, setCountry] = useState(initialAddress.country);
   const [experienceYears, setExperienceYears] = useState(initial.experience_years ?? "");
   const [linkedInUrl, setLinkedInUrl] = useState(initial.linked_in_url ?? "");
   const [riskTolerance, setRiskTolerance] = useState(initial.risk_tolerance ?? "");
@@ -122,7 +125,7 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
   const toggleInterest = (s) =>
     setInterests((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
-  const complete = fullName.trim() && phoneNumber.trim() && address.trim() &&
+  const complete = fullName.trim() && phoneNumber.trim() && country &&
     experienceYears !== "" && linkedInUrl.trim() && riskTolerance && interests.length > 0;
 
   const handleSubmit = async (e) => {
@@ -130,11 +133,12 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
     if (!complete) return;
     setSaving(true);
     setError("");
+    const address = joinAddress(city, country);
     try {
       const infoRes = await authFetch(`${API_BASE}/user/update-information/${initial.user_id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: fullName.trim(), phone_number: phoneNumber.trim(), address: address.trim() }),
+        body: JSON.stringify({ full_name: fullName.trim(), phone_number: phoneNumber.trim(), address }),
       });
       const infoData = await infoRes.json();
       if (!infoData.success) { setError(infoData.message || "Failed to save your details."); return; }
@@ -167,7 +171,7 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
       if (!riskData.success) { setError(riskData.message || "Failed to save your risk tolerance."); return; }
 
       onContinue({
-        full_name: fullName.trim(), phone_number: phoneNumber.trim(), address: address.trim(),
+        full_name: fullName.trim(), phone_number: phoneNumber.trim(), address,
         experience_years: Number(experienceYears), linked_in_url: linkedInUrl.trim(),
         risk_tolerance: riskTolerance, interests: interests.join(","),
       });
@@ -186,8 +190,15 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
           className={inputCls} style={inputStyle} />
         <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Phone number"
           className={inputCls} style={inputStyle} />
-        <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address"
+        <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City (optional)"
           className={inputCls} style={inputStyle} />
+        <select value={country} onChange={(e) => setCountry(e.target.value)}
+          className={inputCls} style={{ ...inputStyle, color: country ? "#1f2937" : "#9ca3af" }}>
+          <option value="">Select your country…</option>
+          {COUNTRIES.map((c) => (
+            <option key={c.iso + c.name} value={c.name}>{c.name}</option>
+          ))}
+        </select>
         <input type="number" min="0" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} placeholder="Years of experience"
           className={inputCls} style={inputStyle} />
         <input value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} placeholder="LinkedIn URL"
@@ -450,6 +461,63 @@ function UpdateParticularsPanel({ userId, onClose }) {
   );
 }
 
+// Lets an already-verified expert view their previously submitted documents
+// and add new ones. Submitting changes moves verification_status back to
+// "pending" (see ExpertVerification.update_documents) — surfaced here as an
+// explicit warning since it suspends their verified/premium privileges until
+// an admin re-reviews.
+function ManageDocumentsPanel({ userId, onClose }) {
+  const [docs, setDocs] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await authFetch(`${API_BASE}/user/expert-information/${userId}`);
+        const data = await res.json();
+        setDocs(data.success ? (data.expert_information?.documents || []) : []);
+      } catch {
+        setDocs([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [userId]);
+
+  if (loading || docs === null) {
+    return <p style={{ fontFamily: mono, fontSize: 13, color: C.muted, textAlign: "center", padding: "20px 0" }}>Loading…</p>;
+  }
+
+  if (saved) {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <Clock size={22} color="#B45309" style={{ margin: "0 auto 6px" }} />
+        <p style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#B45309", margin: 0 }}>Documents submitted — back under review.</p>
+        <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "6px 0 0" }}>
+          You will be notified once an admin makes a decision.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, border: "1px solid rgba(180,131,9,0.25)", background: "rgba(180,131,9,0.08)", padding: "12px 16px" }}>
+        <AlertTriangle size={14} color="#B45309" style={{ marginTop: 2, flexShrink: 0 }} />
+        <p style={{ fontFamily: sans, fontSize: 12, color: "#8a5a08", margin: 0 }}>
+          Adding or changing documents moves your account back to <strong>Pending Review</strong> until an admin re-approves it — your verified badge and premium perks pause until then.
+        </p>
+      </div>
+      <DocumentsForm userId={userId} initialDocs={docs} onSubmitted={() => setSaved(true)} />
+      <button type="button" onClick={onClose}
+        style={{ padding: "9px 18px", borderRadius: 10, border: "none", background: "transparent", color: C.muted, fontFamily: mono, fontSize: 13, fontWeight: 600, cursor: "pointer", alignSelf: "flex-start" }}>
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 export default function BecomeExpertPage() {
   const { text } = useContentManagement();
   const header = text("header_become_expert_page", "Become an Expert", "Prove your trading skill to unlock expert privileges — publish educational articles, share your portfolio with premium users, and enjoy complimentary premium benefits.");
@@ -470,6 +538,7 @@ export default function BecomeExpertPage() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState("");
   const [editingParticulars, setEditingParticulars] = useState(false);
+  const [managingDocuments, setManagingDocuments] = useState(false);
 
   const load = async () => {
     try {
@@ -546,7 +615,7 @@ export default function BecomeExpertPage() {
             )}
 
             {/* Status / action */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px 26px", textAlign: ((isVerified || status === "pending") && editingParticulars) || (!isVerified && status !== "pending" && info?.has_applied) ? "left" : "center" }}>
+            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px 26px", textAlign: ((isVerified || status === "pending") && (editingParticulars || managingDocuments)) || (!isVerified && status !== "pending" && info?.has_applied) ? "left" : "center" }}>
               {isVerified ? (
                 editingParticulars ? (
                   <>
@@ -555,6 +624,14 @@ export default function BecomeExpertPage() {
                       Keep your professional details up to date — investors and admins see this information on your expert profile.
                     </p>
                     <UpdateParticularsPanel userId={currentUser.user_id} onClose={() => setEditingParticulars(false)} />
+                  </>
+                ) : managingDocuments ? (
+                  <>
+                    <p style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, color: C.heading, margin: "0 0 4px" }}>Manage Documents</p>
+                    <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "0 0 16px" }}>
+                      View your submitted credentials or add new supporting documents.
+                    </p>
+                    <ManageDocumentsPanel userId={currentUser.user_id} onClose={() => setManagingDocuments(false)} />
                   </>
                 ) : (
                   <>
@@ -566,10 +643,16 @@ export default function BecomeExpertPage() {
                     <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: "16px 0 0" }}>
                       Keep your professional details up to date — investors and admins see this information on your expert profile.
                     </p>
-                    <button onClick={() => setEditingParticulars(true)}
-                      style={{ marginTop: 10, padding: "10px 22px", borderRadius: 12, border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: mono, fontSize: 12, fontWeight: 700, background: "transparent", color: C.cyan }}>
-                      Update Your Details
-                    </button>
+                    <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                      <button onClick={() => setEditingParticulars(true)}
+                        style={{ marginTop: 10, padding: "10px 22px", borderRadius: 12, border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: mono, fontSize: 12, fontWeight: 700, background: "transparent", color: C.cyan }}>
+                        Update Your Details
+                      </button>
+                      <button onClick={() => setManagingDocuments(true)}
+                        style={{ marginTop: 10, padding: "10px 22px", borderRadius: 12, border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: mono, fontSize: 12, fontWeight: 700, background: "transparent", color: C.cyan }}>
+                        Manage Documents
+                      </button>
+                    </div>
                   </>
                 )
               ) : status === "pending" ? (

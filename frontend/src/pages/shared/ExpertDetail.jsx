@@ -14,7 +14,7 @@ import {
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
-    Mail, Link2, MapPin, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
+    Mail, Link2, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
     Users, UserPlus, UserCheck, X, Trash2,
 } from "lucide-react";
 
@@ -365,7 +365,7 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
                         What other investors and experts think of this portfolio
                     </p>
                 </div>
-                {!isSelf && (
+                {!isSelf && !myReview && (
                     <button onClick={onRate}
                         className="flex items-center gap-2"
                         style={{
@@ -375,7 +375,7 @@ function PortfolioReviewsSection({ stats, reviews, loading, isSelf, myReview, on
                             border: "1px solid rgba(0,146,184,0.3)",
                         }}>
                         <Star size={16} />
-                        {myReview ? "Edit Your Review" : "Write a Review"}
+                        Write a Review
                     </button>
                 )}
             </div>
@@ -487,8 +487,6 @@ function ExpertDetails() {
     const followCta = cms.text("expert_detail_follow_cta", "Follow").title;
     const followingCta = cms.text("expert_detail_following_cta", "Following").title;
     const rateCta = cms.text("expert_detail_rate_cta", "Rate").title;
-    const editRatingCta = cms.text("expert_detail_edit_rating_cta", "Edit Rating").title;
-    const coreTitle = cms.text("expert_detail_core_title", "Core Information").title;
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState(null);
@@ -715,7 +713,6 @@ function ExpertDetails() {
     // only the panel below switches.
     const [tab, setTab] = useState("portfolio");
     const TABS = [
-        { key: "overview", label: "Overview" },
         { key: "portfolio", label: cms.text("expert_detail_portfolio_tab", "Portfolio").title },
         { key: "reviews", label: cms.text("expert_detail_reviews_tab", "Reviews").title },
         ...(isSelf ? [{ key: "settings", label: "Settings" }] : []),    ];
@@ -860,19 +857,41 @@ function ExpertDetails() {
                                         {following ? <UserCheck size={16} /> : <UserPlus size={16} />}
                                         {following ? followingCta : followCta}
                                     </button>
-                                    <button onClick={openRateModal}
-                                        className="flex items-center gap-2"
-                                        style={{
+                                    {myReview ? (
+                                        <span className="flex items-center gap-2" style={{
                                             padding: "10px 18px", borderRadius: 12,
-                                            cursor: "pointer",
                                             fontWeight: 600, fontSize: 14,
-                                            color: "#0B1D4F",
+                                            color: "#5B6C88",
                                             background: "#F1F5F9",
-                                            border: "1px solid rgba(11,29,79,0.2)",
+                                            border: "1px solid rgba(11,29,79,0.12)",
                                         }}>
-                                        <Star size={16} />
-                                        {myReview ? editRatingCta : rateCta}
-                                    </button>
+                                            <Star size={16} fill="#B45309" color="#B45309" />
+                                            You rated {myReview.rating}/5
+                                            <button onClick={handleDeleteReview} disabled={rateBusy}
+                                                title="Delete your rating"
+                                                style={{
+                                                    background: "transparent", border: "none",
+                                                    cursor: rateBusy ? "not-allowed" : "pointer",
+                                                    color: "#DC2626", display: "flex", padding: 0, marginLeft: 4,
+                                                }}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </span>
+                                    ) : (
+                                        <button onClick={openRateModal}
+                                            className="flex items-center gap-2"
+                                            style={{
+                                                padding: "10px 18px", borderRadius: 12,
+                                                cursor: "pointer",
+                                                fontWeight: 600, fontSize: 14,
+                                                color: "#0B1D4F",
+                                                background: "#F1F5F9",
+                                                border: "1px solid rgba(11,29,79,0.2)",
+                                            }}>
+                                            <Star size={16} />
+                                            {rateCta}
+                                        </button>
+                                    )}
                                 </div>
                             )}
 
@@ -908,32 +927,6 @@ function ExpertDetails() {
                                 </button>
                             ))}
                         </div>
-
-                        {tab === "overview" && (
-                            <div style={{ ...CARD, padding: 30 }}>
-                                <h2 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>{coreTitle}</h2>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <InfoCard icon={Mail} label="Email">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.email_address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Link2} label="LinkedIn">
-                                        {profile.linked_in_url ? (
-                                            <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
-                                                target="_blank" rel="noreferrer"
-                                                style={{ fontSize: 14, color: "#0092b8", wordBreak: "break-all" }}>
-                                                {profile.linked_in_url}
-                                            </a>
-                                        ) : <div style={{ fontSize: 14, color: "#0F172A" }}>—</div>}
-                                    </InfoCard>
-                                    <InfoCard icon={MapPin} label="Location">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Shield} label="Username">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>@{profile.username || "—"}</div>
-                                    </InfoCard>
-                                </div>
-                            </div>
-                        )}
 
                         {tab === "portfolio" && (
                             <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />
@@ -1079,29 +1072,15 @@ function ExpertDetails() {
                             }}
                         />
 
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSubmitReview} disabled={rateBusy}
-                                className="flex-1"
-                                style={{
-                                    padding: "10px 18px", borderRadius: 10, border: "none",
-                                    cursor: rateBusy ? "not-allowed" : "pointer", opacity: rateBusy ? 0.7 : 1,
-                                    fontWeight: 600, fontSize: 14, color: "#004450", background: "#00D3F2",
-                                }}>
-                                {myReview ? "Update Review" : "Submit Review"}
-                            </button>
-                            {myReview && (
-                                <button onClick={handleDeleteReview} disabled={rateBusy}
-                                    title="Delete your review"
-                                    style={{
-                                        padding: "10px 14px", borderRadius: 10,
-                                        cursor: rateBusy ? "not-allowed" : "pointer",
-                                        background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)",
-                                        color: "#DC2626",
-                                    }}>
-                                    <Trash2 size={16} />
-                                </button>
-                            )}
-                        </div>
+                        <button onClick={handleSubmitReview} disabled={rateBusy}
+                            className="w-full"
+                            style={{
+                                padding: "10px 18px", borderRadius: 10, border: "none",
+                                cursor: rateBusy ? "not-allowed" : "pointer", opacity: rateBusy ? 0.7 : 1,
+                                fontWeight: 600, fontSize: 14, color: "#004450", background: "#00D3F2",
+                            }}>
+                            Submit Review
+                        </button>
                     </div>
                 </div>
             )}

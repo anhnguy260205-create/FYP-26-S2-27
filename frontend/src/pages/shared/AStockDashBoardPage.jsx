@@ -105,6 +105,7 @@ function WatchlistButton({ stock_symbol, currentUser }) {
   const navigate = useNavigate();
   const user_id = currentUser?.user_id;
   const [feedback, setFeedback] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const showFeedback = (type, text) => {
     setFeedback({ type, text });
@@ -113,6 +114,8 @@ function WatchlistButton({ stock_symbol, currentUser }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     try {
       const result = await addStockToWatchlist(user_id, stock_symbol);
       if (result.success) {
@@ -125,6 +128,8 @@ function WatchlistButton({ stock_symbol, currentUser }) {
     } catch (error) {
       console.error(error);
       showFeedback("error", "Failed to add to watchlist");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -136,14 +141,14 @@ function WatchlistButton({ stock_symbol, currentUser }) {
 
   return (
     <div style={{ position: "relative", marginTop: "16px" }}>
-      <button onClick={handleSubmit}
+      <button onClick={handleSubmit} disabled={submitting}
         style={{
           width: "200px", padding: "11px", borderRadius: "8px",
-          background: "linear-gradient(90deg, #0F9D58, #16a34a)", color: "#fff",
+          background: submitting ? "#94a3b8" : "linear-gradient(90deg, #0F9D58, #16a34a)", color: "#fff",
           fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", border: "none",
-          cursor: "pointer", boxShadow: "0 4px 16px rgba(15,157,88,0.3)", transition: "all 0.2s",
+          cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(15,157,88,0.3)", transition: "all 0.2s",
         }}>
-        + Add to Watchlist
+        {submitting ? "Adding..." : "+ Add to Watchlist"}
       </button>
 
       {feedback && (

@@ -17,9 +17,8 @@ const QUICK_PROMPT_ICONS = [
 ];
 
 
-// Basic (free) tier is limited to this many chatbot questions per session;
-// premium users are unlimited. Resets when the session/chat storage resets.
-const BASIC_QUESTION_LIMIT = 5;
+// Basic (free) tier chatbot question limit is enforced server-side (see
+// ChatUsage / chatbotb.py) — lifetime cap, shared with the floating widget.
 
 // Platform "how do I…" help prompts — shown in their own sidebar section so
 // users can quickly get unstuck on using RocketTrade itself, not just markets.
@@ -122,22 +121,10 @@ function AIChatbot() {
     const header = text("header_ai_chatbot_page", "RocketTrade AI Assistant", "Ask about stocks, market trends, technical analysis, and more");
     const {
         messages, input, setInput, loading, error,
-        sendMessage: rawSendMessage, endChat, handleScroll, showScroll,
-        bottomRef,
+        sendMessage, endChat, handleScroll, showScroll,
+        bottomRef, chatUsage, chatLimitReached,
     } = useAIChatSession();
     const inputRef = useRef(null);
-
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
-    const isPremium = currentUser?.subscription_status === "premium"
-        || currentUser?.investor_subscription_status === "premium"
-        || currentUser?.subscription_status === "active";
-
-    const [basicQuestionCount, setBasicQuestionCount] = useState(() => {
-        try {
-            const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
-            return parseInt(sessionStorage.getItem(key) || "0", 10);
-        } catch { return 0; }
-    });
 
     // Rotate a fresh set of 3 platform-help prompts each time the page loads,
     // so the sidebar doesn't always show the same 3 out of 8 options.
@@ -145,25 +132,6 @@ function AIChatbot() {
         const shuffled = [...PLATFORM_HELP_PROMPTS].sort(() => Math.random() - 0.5);
         return shuffled.slice(0, 3);
     });
-
-    // Gate free-tier usage, then delegate to the shared session hook for the
-    // actual send/API logic (kept in one place so the floating ChatWidget and
-    // this page never drift out of sync).
-    const sendMessage = (text) => {
-        const trimmed = (text ?? input).trim();
-        if (!trimmed || loading) return;
-        if (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT) return;
-
-        if (!isPremium) {
-            const newCount = basicQuestionCount + 1;
-            setBasicQuestionCount(newCount);
-            try {
-                const key = "rtBasicCount_" + (currentUser?.user_id || currentUser?.id || "guest");
-                sessionStorage.setItem(key, String(newCount));
-            } catch { /* sessionStorage unavailable — ignore */ }
-        }
-        rawSendMessage(text);
-    };
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -218,6 +186,17 @@ function AIChatbot() {
                             </div>
                         </div>
 
+                        {chatUsage?.premium === false && (
+                            <div style={{
+                                fontSize: "11px", fontWeight: 600, color: "#fde68a",
+                                background: "rgba(251,191,36,0.1)", border: "1px solid rgba(253,230,138,0.3)",
+                                borderRadius: "10px", padding: "8px 10px", flexShrink: 0,
+                            }}>
+                                {chatUsage.questions_used} of {chatUsage.limit} free questions used
+                                {chatLimitReached && " — upgrade to Premium for unlimited AI chat"}
+                            </div>
+                        )}
+
                         {/* Scrollable middle: quick prompts + topics */}
                         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px" }}>
                             {/* Quick prompts */}
@@ -253,7 +232,7 @@ function AIChatbot() {
                                     {platformPrompts.map(({ label, icon }) => (
                                         <button key={label}
                                             onClick={() => sendMessage(label)}
-                                            disabled={loading || (!isPremium && basicQuestionCount >= BASIC_QUESTION_LIMIT)}
+                                            disabled={loading}
                                             style={{
                                                 padding: "9px 10px", borderRadius: "10px", textAlign: "left",
                                                 background: "rgba(255,255,255,0.03)",

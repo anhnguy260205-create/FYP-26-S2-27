@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import useLiveStocks from "../api/useLiveStocks.js";
 import { SYMBOLS, COMPANY_NAMES, getLatestStockSnapshot } from "../utils/stockSnapshot.js";
+import { authFetch } from "../api/apiClient.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -509,6 +510,22 @@ export function useAIChatSession() {
     const [error, setError] = useState(null);
     const [showScroll, setShowScroll] = useState(false);
 
+    // Basic-plan chatbot quota (lifetime limit of 3 questions), enforced
+    // server-side (see chatbotb.py). Fetched once on mount and refreshed
+    // from each chat response so the page and the floating widget — both
+    // built on this hook — stay in sync without duplicating the check.
+    const [chatUsage, setChatUsage] = useState(null);
+    useEffect(() => {
+        let cancelled = false;
+        authFetch(`${import.meta.env.VITE_API_URL}/chatbot/usage`)
+            .then(r => r.json())
+            .then(res => { if (!cancelled && res?.success) setChatUsage(res); })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, []);
+    const chatLimitReached = chatUsage?.premium === false
+        && chatUsage.questions_used >= chatUsage.limit;
+
     // Save the chat for the current logged-in browser session so users can leave the page,
     // refresh, or visit the dashboard and still come back to the same chat.
     // It resets when they click End chat, type "end", switch account, log out,
@@ -550,6 +567,18 @@ export function useAIChatSession() {
         setMessages(nextMessages);
         setLoading(true);
 
+        if (chatLimitReached) {
+            const limitMsg = toAssistantMessage({
+                content: `You've used your ${chatUsage.limit} free chatbot questions. Upgrade to Premium for unlimited AI chat.`,
+                cta: { route: "/investor/subscription", label: "Upgrade to Premium" },
+            });
+            window.setTimeout(() => {
+                setMessages(prev => [...prev, limitMsg]);
+                setLoading(false);
+            }, 200);
+            return;
+        }
+
         const localReply = isInvestmentPickQuestion(trimmed)
             ? buildInvestmentFrameworkReply()
             : isStockSpecificQuestion(trimmed)
@@ -573,9 +602,8 @@ export function useAIChatSession() {
         abortRef.current = new AbortController();
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/chatbot/chat", {
+            const res = await authFetch(`${import.meta.env.VITE_API_URL}/chatbot/chat`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 signal: abortRef.current.signal,
                 body: JSON.stringify({
                     system: systemPrompt,
@@ -583,15 +611,29 @@ export function useAIChatSession() {
                 }),
             });
 
+            const data = await res.json().catch(() => ({}));
+
+            if (data?.limit_reached) {
+                setChatUsage({ premium: false, questions_used: data.questions_used, limit: data.questions_limit });
+                const limitMsg = toAssistantMessage({
+                    content: data.message || "You've used your free chatbot questions. Upgrade to Premium for unlimited AI chat.",
+                    cta: { route: "/investor/subscription", label: "Upgrade to Premium" },
+                });
+                setMessages(prev => [...prev, limitMsg]);
+                return;
+            }
+
             if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                const apiError = new Error(err?.message || err?.detail || `API error ${res.status}`);
+                const apiError = new Error(data?.message || data?.detail || `API error ${res.status}`);
                 apiError.status = res.status;
-                apiError.payload = err;
+                apiError.payload = data;
                 throw apiError;
             }
 
-            const data = await res.json();
+            if (data.questions_used != null) {
+                setChatUsage({ premium: false, questions_used: data.questions_used, limit: data.questions_limit });
+            }
+
             const reply = cleanAssistantReply(data.reply || "Hmm, I could not generate a proper reply. Try asking it in a shorter way?");
 
             setMessages(prev => [...prev, { role: "assistant", content: reply }]);
@@ -609,7 +651,7 @@ export function useAIChatSession() {
         } finally {
             setLoading(false);
         }
-    }, [input, loading, messages, liveStocks, liveCandles, currentUser]);
+    }, [input, loading, messages, liveStocks, liveCandles, currentUser, chatLimitReached, chatUsage]);
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -632,5 +674,6 @@ export function useAIChatSession() {
         messages, input, setInput, loading, error,
         sendMessage, endChat, handleKeyDown, handleScroll, showScroll,
         bottomRef, liveStocks, liveCandles,
+        chatUsage, chatLimitReached,
     };
 }

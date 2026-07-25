@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   DollarSign, Wallet, Clock3, Users, Star, Lock,
-  CheckCircle2, Hourglass, Info,
+  CheckCircle2, Hourglass, Info, Banknote,
 } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -85,10 +85,12 @@ function LockedView({ reason, verified, locked, lockedCta }) {
               ? (reason || locked?.description || "You do not meet the compensation requirements yet.")
               : (locked?.description || "Only accessible for qualified, verified experts. Apply and get approved to unlock this page.")}
           </p>
-          <button onClick={() => navigate("/investor/become-expert")}
-            style={{ marginTop: 22, padding: "12px 26px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: mono, fontSize: 13, fontWeight: 700, background: C.accent, color: C.accentText, boxShadow: "0 6px 16px rgba(0,211,242,0.35)" }}>
-            {verified ? (lockedCta || "View Expert Application") : (lockedCta || "Become an Expert →")}
-          </button>
+          {!verified && (
+            <button onClick={() => navigate("/investor/become-expert")}
+              style={{ marginTop: 22, padding: "12px 26px", borderRadius: 12, border: "none", cursor: "pointer", fontFamily: mono, fontSize: 13, fontWeight: 700, background: C.accent, color: C.accentText, boxShadow: "0 6px 16px rgba(0,211,242,0.35)" }}>
+              {lockedCta || "Become an Expert →"}
+            </button>
+          )}
         </div>
       </main>
       <Footer />
@@ -97,6 +99,7 @@ function LockedView({ reason, verified, locked, lockedCta }) {
 }
 
 export default function ExpertCompensationPage() {
+  const navigate = useNavigate();
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(!!currentUser?.user_id);
@@ -149,9 +152,20 @@ export default function ExpertCompensationPage() {
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <GeneralHeader />
       <main style={{ flex: 1, maxWidth: 1000, margin: "0 auto", width: "100%", padding: "88px 24px 48px" }}>
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={{ fontFamily: mono, fontSize: 26, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>{pageHeader.title}</h1>
-          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "4px 0 0" }}>{pageHeader.description}</p>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+          <div>
+            <h1 style={{ fontFamily: mono, fontSize: 26, fontWeight: 700, color: C.heading, margin: 0, letterSpacing: "0.04em" }}>{pageHeader.title}</h1>
+            <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: "4px 0 0" }}>{pageHeader.description}</p>
+          </div>
+          <button
+            onClick={() => navigate("/investor/cash", { state: { mode: "cash_out" } })}
+            style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 12,
+              border: `1px solid ${C.border}`, cursor: "pointer", fontFamily: mono, fontSize: 13, fontWeight: 700,
+              background: "#FFFFFF", color: C.cyan, whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+            <Banknote size={15} /> Refund
+          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, borderRadius: 12, border: "1px solid rgba(180,131,9,0.25)", background: "rgba(180,131,9,0.08)", padding: "12px 16px", marginBottom: 20 }}>
