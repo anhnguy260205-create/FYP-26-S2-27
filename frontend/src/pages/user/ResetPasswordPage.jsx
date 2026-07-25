@@ -1,4 +1,3 @@
-import Footer from "../../layout/Footer.jsx";
 import Header from "../../layout/Header.jsx";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -12,8 +11,8 @@ const inputStyle = {
 };
 
 function focusStyle(e) {
-  e.target.style.borderColor = "#0092b8";
-  e.target.style.boxShadow = "0 0 0 3px rgba(0,146,184,0.15)";
+  e.target.style.borderColor = "#00A9C4";
+  e.target.style.boxShadow = "0 0 0 3px rgba(0,211,242,0.18)";
 }
 
 function blurStyle(e) {
@@ -37,9 +36,10 @@ function Stepper({ current }) {
           <div className="flex flex-col items-center">
             <div
               className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${i + 1 <= current
-                  ? "bg-orange-500 border-orange-500 text-white"
+                  ? "border-[#00D3F2] text-[#004450]"
                   : "bg-white border-gray-300 text-gray-400"
                 }`}
+              style={i + 1 <= current ? { background: "#00D3F2" } : undefined}
             >
               {i + 1}
             </div>
@@ -47,7 +47,7 @@ function Stepper({ current }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`flex-1 border-t-2 border-dashed mb-4 mx-1 transition-all ${current > i + 1 ? "border-orange-500" : "border-white"
+              className={`flex-1 border-t-2 border-dashed mb-4 mx-1 transition-all ${current > i + 1 ? "border-[#00D3F2]" : "border-gray-300"
                 }`}
             />
           )}
@@ -179,211 +179,213 @@ function ResetPasswordPage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
+      className="min-h-screen flex flex-col bg-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
       <Header />
-      <main className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-24 py-10">
-        <div className="w-full max-w-115">
-          <div
-            className="bg-[rgba(255,255,255,0.82)] w-full flex flex-col justify-center"
-            style={{ borderRadius: "30px", minHeight: "500px", padding: "30px 20px" }}
-          >
-            <div className="text-center">
-              <h1 className="font-bold text-black leading-[1.1]" style={{ fontSize: "36px" }}>
-                {titles[step]}
-              </h1>
-              <p className="text-black mt-2 mb-6" style={{ fontSize: "16px", marginTop: "8px", marginBottom: "24px" }}>
-                {subtitles[step]}
-              </p>
-            </div>
-
-            <Stepper current={stepIndex[step]} />
-
-            {/* Step 1 — Email */}
-            {step === "email" && (
-              <form onSubmit={handleLookup} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="Enter your registered email"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-                    required
-                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                    style={{ ...inputStyle, borderColor: emailError ? "#ef4444" : "rgba(0,0,0,0.15)" }}
-                    onFocus={focusStyle}
-                    onBlur={blurStyle}
-                  />
-                  {emailError && (
-                    <p className="text-red-500 text-[13px] pl-1 mt-1">{emailError}</p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
-                  style={{ height: "54px", background: "linear-gradient(90deg,#0092b8,#155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
-                >
-                  {loading ? "Checking..." : "Continue"}
-                </button>
-              </form>
-            )}
-
-            {/* Step 2 — Profile preview */}
-            {step === "preview" && (
-              <div className="flex flex-col gap-5">
-                {/* Profile card */}
-                <div
-                  className="flex items-center gap-4 p-4 rounded-2xl"
-                  style={{ background: "rgba(0,146,184,0.08)", border: "1px solid rgba(0,146,184,0.25)" }}
-                >
-                  <div
-                    className="flex items-center justify-center shrink-0"
-                    style={{
-                      width: "56px", height: "56px", borderRadius: "50%",
-                      background: "linear-gradient(135deg,#0092b8,#155dfc)",
-                    }}
-                  >
-                    <User size={26} color="#fff" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800 text-[17px]">{displayName}</p>
-                    <p className="text-gray-500 text-[13px] mt-0.5">{maskEmail(email)}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleConfirmProfile}
-                  disabled={loading}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
-                  style={{ height: "54px", background: "linear-gradient(90deg,#0092b8,#155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
-                >
-                  {loading ? "Sending code..." : "This is my account — Send Code"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setStep("email"); setProfile({ username: null, full_name: null }); }}
-                  className="text-blue-700 text-[14px] hover:underline cursor-pointer text-center"
-                >
-                  Not my account — try a different email
-                </button>
-              </div>
-            )}
-
-            {/* Step 3 — OTP */}
-            {step === "otp" && (
-              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Verification Code</label>
-                  <input
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    required
-                    maxLength={6}
-                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition tracking-widest"
-                    style={inputStyle}
-                    onFocus={focusStyle}
-                    onBlur={blurStyle}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
-                  style={{ height: "54px", background: "linear-gradient(90deg,#0092b8,#155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
-                >
-                  {loading ? "Verifying..." : "Verify Code"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmProfile}
-                  className="text-blue-700 text-[14px] hover:underline cursor-pointer text-center"
-                >
-                  Resend code
-                </button>
-              </form>
-            )}
-
-            {/* Step 4 — New password */}
-            {step === "password" && (
-              <form onSubmit={handleResetPassword} className="flex flex-col gap-5">
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">New Password</label>
-                  <input
-                    type="password"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                    style={inputStyle}
-                    onFocus={focusStyle}
-                    onBlur={blurStyle}
-                  />
-                  {newPassword.length > 0 && (
-                    <div className="mt-1 flex flex-col gap-1 pl-1">
-                      {[
-                        { key: "length", label: "8–24 characters" },
-                        { key: "letter", label: "At least one letter" },
-                        { key: "number", label: "At least one number" },
-                      ].map(({ key, label }) => {
-                        const passed = passwordRules[key](newPassword);
-                        return (
-                          <span key={key} className="flex items-center gap-1.5 text-[12px]" style={{ color: passed ? "#16a34a" : "#dc2626" }}>
-                            <span>{passed ? "✓" : "✗"}</span>{label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    placeholder="Re-enter new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                    style={inputStyle}
-                    onFocus={focusStyle}
-                    onBlur={blurStyle}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
-                  style={{ height: "54px", background: "linear-gradient(90deg,#0092b8,#155dfc)", boxShadow: "0px 10px 20px rgba(0,184,219,0.25)" }}
-                >
-                  {loading ? "Saving..." : "Reset Password"}
-                </button>
-              </form>
-            )}
-
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="w-full font-semibold text-white text-[16px] leading-6 cursor-pointer"
-              style={{
-                height: "52px", borderRadius: "12px",
-                backgroundImage: "linear-gradient(174.015deg, rgb(2,6,24) 0%, rgb(22,36,86) 50%, rgb(15,23,43) 100%)",
-                boxShadow: "0px 10px 10px rgba(0,184,219,0.3)",
-                marginTop: "12px",
-              }}
-            >
-              Back to Login
-            </button>
+      <main
+        className="flex-1 flex items-center justify-center px-4 md:px-12 lg:px-16 py-10"
+        style={{ background: "linear-gradient(to bottom, rgba(0,211,242,0.10) 0%, #F8FAFC 45%, #F8FAFC 100%)" }}
+      >
+        <div
+          className="w-full max-w-115 flex flex-col justify-center"
+          style={{
+            borderRadius: "28px", minHeight: "500px", padding: "36px 32px",
+            background: "#FFFFFF", border: "1px solid rgba(15,23,42,0.08)",
+            boxShadow: "0 20px 50px rgba(15,23,42,0.10)",
+          }}
+        >
+          <div className="text-center">
+            <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">
+              {titles[step]}
+            </h1>
+            <p className="text-black mt-2 mb-8 text-base md:text-[18px]" style={{ marginTop: "8px", marginBottom: "36px" }}>
+              {subtitles[step]}
+            </p>
           </div>
+
+          <Stepper current={stepIndex[step]} />
+
+          {/* Step 1 — Email */}
+          {step === "email" && (
+            <form onSubmit={handleLookup} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-[14px] text-gray-700 pl-1">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="Enter your registered email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+                  required
+                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                  style={{ ...inputStyle, borderColor: emailError ? "#ef4444" : "rgba(0,0,0,0.15)" }}
+                  onFocus={focusStyle}
+                  onBlur={blurStyle}
+                />
+                {emailError && (
+                  <p className="text-[13px] pl-1 mt-1" style={{ color: "#ef4444" }}>{emailError}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                style={{ height: "54px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}
+              >
+                {loading ? "Checking..." : "Continue"}
+              </button>
+            </form>
+          )}
+
+          {/* Step 2 — Profile preview */}
+          {step === "preview" && (
+            <div className="flex flex-col gap-5">
+              {/* Profile card */}
+              <div
+                className="flex items-center gap-4 p-4 rounded-2xl"
+                style={{ background: "rgba(0,211,242,0.08)", border: "1px solid rgba(0,211,242,0.25)" }}
+              >
+                <div
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    width: "56px", height: "56px", borderRadius: "50%",
+                    background: "#00D3F2",
+                  }}
+                >
+                  <User size={26} color="#004450" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800 text-[17px]">{displayName}</p>
+                  <p className="text-gray-500 text-[13px] mt-0.5">{maskEmail(email)}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleConfirmProfile}
+                disabled={loading}
+                className="w-full font-semibold text-[16px] rounded-[14px] hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                style={{ height: "54px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}
+              >
+                {loading ? "Sending code..." : "This is my account — Send Code"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setStep("email"); setProfile({ username: null, full_name: null }); }}
+                className="text-[14px] hover:underline cursor-pointer text-center"
+                style={{ color: "#00A9C4" }}
+              >
+                Not my account — try a different email
+              </button>
+            </div>
+          )}
+
+          {/* Step 3 — OTP */}
+          {step === "otp" && (
+            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-[14px] text-gray-700 pl-1">Verification Code</label>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  required
+                  maxLength={6}
+                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition tracking-widest"
+                  style={inputStyle}
+                  onFocus={focusStyle}
+                  onBlur={blurStyle}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                style={{ height: "54px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}
+              >
+                {loading ? "Verifying..." : "Verify Code"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmProfile}
+                className="text-[14px] hover:underline cursor-pointer text-center"
+                style={{ color: "#00A9C4" }}
+              >
+                Resend code
+              </button>
+            </form>
+          )}
+
+          {/* Step 4 — New password */}
+          {step === "password" && (
+            <form onSubmit={handleResetPassword} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-[14px] text-gray-700 pl-1">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                  style={inputStyle}
+                  onFocus={focusStyle}
+                  onBlur={blurStyle}
+                />
+                {newPassword.length > 0 && (
+                  <div className="mt-1 flex flex-col gap-1 pl-1">
+                    {[
+                      { key: "length", label: "8–24 characters" },
+                      { key: "letter", label: "At least one letter" },
+                      { key: "number", label: "At least one number" },
+                    ].map(({ key, label }) => {
+                      const passed = passwordRules[key](newPassword);
+                      return (
+                        <span key={key} className="flex items-center gap-1.5 text-[12px]" style={{ color: passed ? "#16a34a" : "#dc2626" }}>
+                          <span>{passed ? "✓" : "✗"}</span>{label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-[14px] text-gray-700 pl-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                  style={inputStyle}
+                  onFocus={focusStyle}
+                  onBlur={blurStyle}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                style={{ height: "54px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}
+              >
+                {loading ? "Saving..." : "Reset Password"}
+              </button>
+            </form>
+          )}
+
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="text-center text-sm text-gray-700 mt-3 cursor-pointer"
+          >
+            Back to{" "}
+            <span className="font-semibold" style={{ color: "#00A9C4" }}>Login</span>
+          </button>
         </div>
       </main>
     </motion.div>

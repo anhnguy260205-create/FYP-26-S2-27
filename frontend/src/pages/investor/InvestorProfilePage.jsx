@@ -6,8 +6,8 @@ import { getPageBackground, getAvatarGradient, isExpertUser } from "../../utils/
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { updateUserInformation, updateInvestorInterests, updateRiskTolerance } from "../../api/userApi.js";
-import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank, Lock } from "lucide-react";
-import { addAssets, getPortfolio } from "../../api/tradingApi.js";
+import { HandCoins, CircleDollarSign, Shield, User, ChartNoAxesColumn, SquarePen, PiggyBank } from "lucide-react";
+import { getPortfolio } from "../../api/tradingApi.js";
 import { COUNTRIES, splitAddress, joinAddress } from "../../utils/countryCodes.js";
 import { useContentManagement } from "../../utils/contentManagement.js";
 /* ─── Light theme tokens ──────────────────────────────────── */
@@ -24,8 +24,6 @@ const DIVIDER = "rgba(15,23,42,0.1)";
 const SUCCESS = "#0F9D58";
 const DANGER = "#DC2626";
 const GOLD = "#92400E";
-const AMBER = "#B45309";
-const BLUE = "#1D4ED8";
 const CARD_SHADOW = "0 4px 20px rgba(15,23,42,0.06)";
 const MODAL_SHADOW = "0 20px 60px rgba(15,23,42,0.25)";
 
@@ -1027,223 +1025,56 @@ function SecurityCard({ investorInfo }) {
 
 }
 
-function AssetsCard({ investorInfo, onUpdate }) {
-    const navigate = useNavigate();
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
-    const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
-
+function AssetsCard({ investorInfo }) {
     const MAX_BALANCE = 10000;
     const assets = investorInfo?.assets ?? 0;
     const usedAmount = investorInfo?.used_amount ?? 0;
     const progressPct = Math.min(100, (assets / MAX_BALANCE) * 100);
-    const maxAddable = Math.max(0, MAX_BALANCE - assets);
-
-    const [showModal, setShowModal] = useState(false);
-    const [selectedAmount, setSelectedAmount] = useState(1000);
-    const [adding, setAdding] = useState(false);
-
-    const presets = [500, 1000, 2000, 5000];
-
-    const handleAddClick = () => {
-        if (!isPremium) {
-            setShowModal("upgrade");
-        } else if (maxAddable <= 0) {
-            setShowModal("capped");
-        } else {
-            setSelectedAmount(Math.min(1000, maxAddable));
-            setShowModal("add");
-        }
-    };
-
-    const handleConfirmAdd = async () => {
-        setAdding(true);
-        try {
-            const result = await addAssets(currentUser.user_id, selectedAmount);
-            if (result.success) {
-                setShowModal(false);
-                onUpdate();
-            } else {
-                // result.message = our custom message
-                // result.detail  = FastAPI validation / 404 / 500 format
-                const msg = result.message
-                    || (Array.isArray(result.detail) ? result.detail[0]?.msg : result.detail)
-                    || "Failed to add money";
-                alert(msg);
-            }
-        } catch {
-            alert("Could not reach backend");
-        } finally {
-            setAdding(false);
-        }
-    };
 
     return (
-        <>
-            <GlassCard>
-                <div className="flex items-center justify-between">
+        <GlassCard>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-xl font-bold" style={{ color: HEADING }}>Assets</h1>
+                    <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
+                        Manage your virtual trading funds
+                    </p>
+                </div>
+            </div>
+
+            <div style={{ height: "1px", background: DIVIDER, margin: "32px 0" }} />
+
+            <div style={{ marginTop: "32px" }}>
+                <div className="flex items-center gap-4">
+                    <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <PiggyBank size={18} color={SUCCESS} />
+                    </div>
                     <div>
-                        <h1 className="text-xl font-bold" style={{ color: HEADING }}>Assets</h1>
-                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginTop: "4px" }}>
-                            Manage your virtual trading funds
-                        </p>
-                    </div>
-                </div>
-
-                <div style={{ height: "1px", background: DIVIDER, margin: "32px 0" }} />
-
-                <div style={{ marginTop: "32px" }}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <PiggyBank size={18} color={SUCCESS} />
-                            </div>
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: "16px", color: HEADING }}>
-                                    Available Balance: ${assets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
-                                <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
-                                    Use your assets to practice stock trading without risking real capital.
-                                </div>
-                            </div>
+                        <div style={{ fontWeight: 700, fontSize: "16px", color: HEADING }}>
+                            Available Balance: ${assets.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-
-                        <button
-                            onClick={handleAddClick}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "6px",
-                                padding: "6px 14px", borderRadius: "999px",
-                                background: isPremium ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED,
-                                border: isPremium ? "1px solid rgba(34,197,94,0.25)" : "1px solid rgba(15,23,42,0.15)",
-                                color: isPremium ? SUCCESS : "rgba(15,23,42,0.4)",
-                                fontSize: "13px", fontWeight: 600, cursor: "pointer",
-                            }}
-                        >
-                            {!isPremium && <Lock size={12} />}
-                            Add Money
-                        </button>
-                    </div>
-
-                    {/* Non-premium hint */}
-                    {!isPremium && (
-                        <div style={{ marginTop: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-                            <p style={{ fontSize: "12px", color: AMBER, margin: 0 }}>
-                                Adding assets is a <strong>Premium</strong> feature.
-                            </p>
-                            <button
-                                onClick={() => navigate("/investor/subscription")}
-                                style={{ padding: "4px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: AMBER, fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                            >
-                                Upgrade →
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Progress bar */}
-                    <div style={{ marginTop: "24px" }}>
-                        <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
-                            <span>Assets</span>
-                            <span>${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
-                        </div>
-                        <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
-                            <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
-                        </div>
-                        <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
-                            <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                            <span>Cash: ${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
+                            Use your assets to practice stock trading without risking real capital.
                         </div>
                     </div>
                 </div>
-            </GlassCard>
 
-            {/* ── Add Money Modal ── */}
-            {showModal === "add" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: `1px solid ${CARD_BORDER}`, borderRadius: "16px", padding: "32px", maxWidth: "400px", width: "90%", boxShadow: MODAL_SHADOW }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "6px" }}>Add Assets</h2>
-                        <p style={{ fontSize: "13px", color: TEXT_MUTED, marginBottom: "24px" }}>
-                            Max you can add: <strong style={{ color: SUCCESS }}>${maxAddable.toLocaleString()}</strong>
-                        </p>
-
-                        <p style={{ fontSize: "11px", color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Select amount</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "20px" }}>
-                            {presets.map(p => {
-                                const disabled = p > maxAddable;
-                                return (
-                                    <button key={p} disabled={disabled} onClick={() => setSelectedAmount(p)}
-                                        style={{
-                                            padding: "10px 0", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
-                                            border: selectedAmount === p ? "1px solid rgba(34,197,94,0.6)" : "1px solid rgba(15,23,42,0.15)",
-                                            background: selectedAmount === p ? "rgba(34,197,94,0.15)" : CARD_BG_MUTED,
-                                            color: disabled ? "rgba(15,23,42,0.3)" : selectedAmount === p ? SUCCESS : "rgba(15,23,42,0.7)",
-                                        }}>
-                                        ${p.toLocaleString()}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)", marginBottom: "20px" }}>
-                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, margin: "0 0 4px" }}>New balance after top-up</p>
-                            <p style={{ fontSize: "20px", fontWeight: 700, color: SUCCESS, margin: 0 }}>
-                                ${(assets + selectedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button onClick={() => setShowModal(false)} disabled={adding}
-                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
-                                Cancel
-                            </button>
-                            <button onClick={handleConfirmAdd} disabled={adding || selectedAmount > maxAddable}
-                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "linear-gradient(90deg,rgba(34,197,94,0.3),rgba(0,211,242,0.2))", border: "1px solid rgba(34,197,94,0.4)", color: SUCCESS, fontSize: "14px", fontWeight: 700, cursor: adding ? "not-allowed" : "pointer", opacity: adding ? 0.6 : 1 }}>
-                                {adding ? "Adding…" : `Add $${selectedAmount.toLocaleString()}`}
-                            </button>
-                        </div>
+                {/* Progress bar */}
+                <div style={{ marginTop: "24px" }}>
+                    <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
+                        <span>Assets</span>
+                        <span>${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
+                    </div>
+                    <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
+                        <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
+                    </div>
+                    <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
+                        <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        <span>Cash: ${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
-            )}
-
-            {/* ── Upgrade Prompt Modal ── */}
-            {showModal === "upgrade" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: "1px solid rgba(251,191,36,0.35)", borderRadius: "16px", padding: "32px", maxWidth: "380px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
-                        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                            <Lock size={20} color={AMBER} />
-                        </div>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Premium Feature</h2>
-                        <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Adding assets is only available to <strong style={{ color: AMBER }}>Premium</strong> subscribers. Upgrade your plan to top up your virtual trading balance.
-                        </p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setShowModal(false)}
-                                style={{ flex: 1, padding: "10px", borderRadius: "8px", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.15)", color: TEXT_MUTED, fontSize: "14px", cursor: "pointer" }}>
-                                Cancel
-                            </button>
-                            <button onClick={() => navigate("/investor/subscription")}
-                                style={{ flex: 2, padding: "10px", borderRadius: "8px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", color: AMBER, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
-                                Upgrade to Premium
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Balance Capped Modal ── */}
-            {showModal === "capped" && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-                    <div style={{ background: CARD_BG, border: "1px solid rgba(29,78,216,0.25)", borderRadius: "16px", padding: "32px", maxWidth: "360px", width: "90%", textAlign: "center", boxShadow: MODAL_SHADOW }}>
-                        <h2 style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>Balance at Maximum</h2>
-                        <p style={{ fontSize: "13px", color: TEXT_MUTED, lineHeight: 1.6, marginBottom: "24px" }}>
-                            Your assets balance has reached the <strong style={{ color: BLUE }}>${MAX_BALANCE.toLocaleString()}</strong> cap. Sell some holdings to free up cash.
-                        </p>
-                        <button onClick={() => setShowModal(false)}
-                            style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(29,78,216,0.1)", border: "1px solid rgba(29,78,216,0.3)", color: BLUE, fontSize: "14px", fontWeight: 700, cursor: "pointer" }}>
-                            OK
-                        </button>
-                    </div>
-                </div>
-            )}
-        </>
+            </div>
+        </GlassCard>
     );
 }
 function SubscriptionCard({ investorInfo, onUpdate }) {
@@ -1658,7 +1489,7 @@ function InvestorProfilePage() {
                     {activeTab === "personal" && <PersonalInformationCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "account" && <AccountSettingsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                     {activeTab === "security" && <SecurityCard investorInfo={investorInfo} />}
-                    {activeTab === "assets" && <AssetsCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
+                    {activeTab === "assets" && <AssetsCard investorInfo={investorInfo} />}
                     {activeTab === "subscription" && <SubscriptionCard investorInfo={investorInfo} onUpdate={fetchInvestorInfo} />}
                 </div>
             </main>

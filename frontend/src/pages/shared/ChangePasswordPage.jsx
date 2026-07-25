@@ -5,43 +5,56 @@ import { Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import { changePassword } from "../../api/userApi.js";
+import { getPageBackground, getAvatarGradient } from "../../utils/userRole.js";
 
-const inputStyle = {
-  height: "44px",
-  borderColor: "rgba(0,0,0,0.15)",
-};
+/* ─── Design tokens (match InvestorProfilePage) ──────────────── */
+const HEADING = "#0B1D4F";
+const TEXT_BODY = "#0F172A";
+const TEXT_MUTED = "#33477A";
+const TEXT_MUTED2 = "#5B6C88";
+const CARD_BG = "#FFFFFF";
+const CARD_BORDER = "rgba(11,29,79,0.25)";
+const CARD_SHADOW = "0 4px 20px rgba(15,23,42,0.06)";
 
 function focusStyle(e) {
-  e.target.style.borderColor = "#0092b8";
-  e.target.style.boxShadow = "0 0 0 3px rgba(0,146,184,0.15)";
+  e.target.style.border = "1px solid rgba(0,211,243,0.6)";
+  e.target.style.boxShadow = "0 0 0 3px rgba(0,211,243,0.15)";
 }
 
 function blurStyle(e) {
-  e.target.style.borderColor = "rgba(0,0,0,0.15)";
+  e.target.style.border = "1px solid rgba(15,23,42,0.15)";
   e.target.style.boxShadow = "none";
 }
 
 function PasswordField({ label, value, onChange, placeholder }) {
   const [show, setShow] = useState(false);
   return (
-    <div className="flex flex-col gap-1">
-      <label className="font-semibold text-[14px] text-gray-700 pl-1">{label}</label>
-      <div className="relative">
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <label style={{ fontSize: "12px", fontWeight: 600, color: TEXT_MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {label}
+      </label>
+      <div style={{ position: "relative" }}>
         <input
           type={show ? "text" : "password"}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required
-          className="w-full rounded-[14px] border border-gray-300 bg-white px-4 pr-11 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-          style={inputStyle}
+          style={{
+            height: "44px", borderRadius: "10px",
+            border: "1px solid rgba(15,23,42,0.15)",
+            padding: "0 44px 0 14px",
+            fontSize: "14px", color: TEXT_BODY,
+            background: "#F8FAFC",
+            width: "100%", outline: "none", transition: "all 0.15s",
+          }}
           onFocus={focusStyle}
           onBlur={blurStyle}
         />
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", color: TEXT_MUTED2, cursor: "pointer" }}
           tabIndex={-1}
         >
           {show ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -106,21 +119,24 @@ function ChangePasswordPage() {
     <motion.div
       className="min-h-screen flex flex-col"
       style={{
-        background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 600px, #FFFFFF 100%)",
+        fontFamily: "'DM Sans', sans-serif",
+        background: getPageBackground(),
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.3 }}
     >
       <GeneralHeader />
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[460px]">
           <div
-            className="bg-white w-full flex flex-col justify-center"
             style={{
-              borderRadius: "30px",
+              width: "100%",
+              background: CARD_BG,
+              border: `1px solid ${CARD_BORDER}`,
+              borderRadius: "24px",
               padding: "36px 28px",
-              boxShadow: "0 20px 45px rgba(15,23,42,0.12)",
+              boxShadow: CARD_SHADOW,
             }}
           >
             {/* Icon + title */}
@@ -129,15 +145,15 @@ function ChangePasswordPage() {
                 className="flex items-center justify-center mb-4"
                 style={{
                   width: "56px", height: "56px", borderRadius: "16px",
-                  background: "linear-gradient(135deg,#0092b8,#155dfc)",
+                  background: getAvatarGradient(),
                 }}
               >
                 <Lock size={26} color="#fff" />
               </div>
-              <h1 className="leading-tight text-center" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>
+              <h1 className="leading-tight text-center" style={{ fontSize: 24, fontWeight: 700, color: HEADING }}>
                 Change Password
               </h1>
-              <p className="text-gray-500 text-[14px] mt-1 text-center">
+              <p style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "4px" }} className="text-center">
                 Enter your current password to set a new one
               </p>
             </div>
@@ -153,23 +169,23 @@ function ChangePasswordPage() {
                 >
                   <span style={{ fontSize: "24px" }}>✓</span>
                 </div>
-                <p className="text-green-600 font-semibold text-[16px] text-center">
+                <p className="font-semibold text-[16px] text-center" style={{ color: "#0F9D58" }}>
                   Password changed successfully!
                 </p>
                 <button
                   onClick={() => navigate(-1)}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-2 hover:opacity-90 transition-all cursor-pointer"
+                  className="w-full text-white font-semibold text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
                   style={{
-                    height: "52px",
-                    background: "linear-gradient(90deg,#0092b8,#155dfc)",
-                    boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
+                    height: "44px", borderRadius: "10px", marginTop: "8px",
+                    backgroundImage: "linear-gradient(90deg,#0092b8,#155dfc)",
+                    boxShadow: "0 8px 18px rgba(0,146,184,0.25)",
                   }}
                 >
                   Go Back
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <PasswordField
                   label="Current Password"
                   value={currentPassword}
@@ -184,7 +200,7 @@ function ChangePasswordPage() {
                     placeholder="Enter new password"
                   />
                   {newPassword.length > 0 && (
-                    <div className="mt-1 flex flex-col gap-1 pl-1">
+                    <div className="mt-1 flex flex-col gap-1">
                       {[
                         { key: "length", label: "8–24 characters" },
                         { key: "letter", label: "At least one letter" },
@@ -192,7 +208,7 @@ function ChangePasswordPage() {
                       ].map(({ key, label }) => {
                         const passed = passwordRules[key](newPassword);
                         return (
-                          <span key={key} className="flex items-center gap-1.5 text-[12px]" style={{ color: passed ? "#16a34a" : "#dc2626" }}>
+                          <span key={key} className="flex items-center gap-1.5 text-[12px]" style={{ color: passed ? "#0F9D58" : "#DC2626" }}>
                             <span>{passed ? "✓" : "✗"}</span>{label}
                           </span>
                         );
@@ -208,17 +224,17 @@ function ChangePasswordPage() {
                 />
 
                 {error && (
-                  <p className="text-red-500 text-[13px] text-center -mt-1">{error}</p>
+                  <p className="text-[13px] text-center -mt-2" style={{ color: "#DC2626" }}>{error}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full text-white font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                  className="w-full text-white font-semibold text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
                   style={{
-                    height: "52px",
-                    background: "linear-gradient(90deg,#0092b8,#155dfc)",
-                    boxShadow: "0px 10px 20px rgba(0,184,219,0.25)",
+                    height: "44px", borderRadius: "10px",
+                    backgroundImage: "linear-gradient(90deg,#0092b8,#155dfc)",
+                    boxShadow: "0 8px 18px rgba(0,146,184,0.25)",
                   }}
                 >
                   {loading ? "Updating..." : "Change Password"}
@@ -227,7 +243,8 @@ function ChangePasswordPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="w-full flex items-center justify-center gap-2 font-semibold text-gray-500 text-[14px] hover:text-gray-700 transition cursor-pointer mt-1"
+                  className="w-full flex items-center justify-center gap-2 font-medium text-[13px] hover:opacity-70 transition-opacity cursor-pointer"
+                  style={{ color: TEXT_MUTED2 }}
                 >
                   <ArrowLeft size={15} /> Back
                 </button>
