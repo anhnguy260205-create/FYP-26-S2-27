@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, X, Send, Search, ChevronDown, Bot } from "lucide-react";
+import { MessageCircle, X, Send, Search, ChevronDown, Bot, Gift } from "lucide-react";
 import {
     sendChatMessage, getConversations, getChatMessages,
     getUnreadCount, searchChatUsers,
 } from "../../api/chatApi.js";
+import { getConversationGifts } from "../../api/walletApi.js";
+import GiftDialog from "./GiftDialog.jsx";
+import { stickerFor } from "./giftStickers.js";
 import { useAIChatSession } from "../../hooks/useAIChatSession.js";
 
 /*
@@ -276,11 +279,28 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
     const [sending, setSending] = useState(false);
     const [lockedThread, setLockedThread] = useState(false);
     const [chatUnavailableMsg, setChatUnavailableMsg] = useState("");
+    const [gifts, setGifts] = useState([]);
+    const [giftOpen, setGiftOpen] = useState(false);
 
     const bottomRef = useRef(null);
     const threadRef = useRef(null);
     threadRef.current = thread;
     const panelRef = useRef(null);
+
+    // Gifting is premium-only and expert-only, mirroring the backend rule.
+    const canGift =
+        !!thread && !thread.isAI &&
+        thread.other.role === "expert" &&
+        thread.other.user_id !== me.user_id &&
+        isPremium;
+
+    const loadGifts = useCallback(async (otherUserId) => {
+        if (!otherUserId) { setGifts([]); return; }
+        try {
+            const res = await getConversationGifts(otherUserId);
+            if (res.success) setGifts(res.gifts || []);
+        } catch { /* ignore */ }
+    }, []);
 
     const refreshConvs = useCallback(async () => {
         try {
@@ -302,6 +322,7 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
         setOpen(false);
         setMinimized(false);
         setMessages([]);
+        setGifts([]);
         setLockedThread(Boolean(conv.locked) || !isPremium);
         // Applies to new AND existing conversations — an expert who's turned
         // chat off can't be messaged at all until they turn it back on.
@@ -310,6 +331,7 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
                 ? `${conv.other.full_name || conv.other.username} isn't accepting chat messages right now.`
                 : ""
         );
+        loadGifts(conv.other?.user_id);
         if (conv.conv_id) {
             try {
                 const res = await getChatMessages(conv.conv_id);
@@ -318,7 +340,7 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
             refreshUnread();
             refreshConvs();
         }
-    }, [isPremium, refreshUnread, refreshConvs]);
+    }, [isPremium, refreshUnread, refreshConvs, loadGifts]);
 
     const openAIThread = () => {
         setThread({ isAI: true });
@@ -499,20 +521,51 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
                         <>
                             {/* messages */}
                             <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", display: "flex", flexDirection: "column", gap: 6 }}>
-                                {messages.map(m => {
-                                    const mine = m.sender_id === me.user_id;
-                                    return (
-                                        <div key={m.message_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
-                                            <div style={{
-                                                maxWidth: "78%", padding: "8px 12px", fontSize: 13, lineHeight: 1.45,
-                                                color: mine ? "#fff" : TEXT_PRIMARY, whiteSpace: "pre-wrap", wordBreak: "break-word",
-                                                borderRadius: mine ? "13px 13px 4px 13px" : "13px 13px 13px 4px",
-                                                background: mine ? ACCENT : HOVER_BG,
-                                            }}>{m.content}</div>
-                                        </div>
-                                    );
-                                })}
-                                {messages.length === 0 && !lockedThread && (
+                                {[
+                                    ...messages.map(m => ({ kind: "message", at: m.created_at, data: m })),
+                                    ...gifts.map(g => ({ kind: "gift", at: g.created_at, data: g })),
+                                ]
+                                    .sort((a, b) => new Date(a.at) - new Date(b.at))
+                                    .map(item => {
+                                        if (item.kind === "gift") {
+                                            const g = item.data;
+                                            const mine = g.sender_user_id === me.user_id;
+                                            const sticker = stickerFor(g.amount);
+                                            return (
+                                                <div key={g.gift_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
+                                                    <div style={{
+                                                        maxWidth: "78%", padding: "8px 12px", borderRadius: 13,
+                                                        background: "linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)",
+                                                        color: "#fff",
+                                                    }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12.5 }}>
+                                                            <span style={{ fontSize: 15, lineHeight: 1 }}>{sticker.emoji}</span>
+                                                            {mine ? "You sent" : "Gift received"} {sticker.name} (${g.amount.toFixed(2)})
+                                                        </div>
+                                                        <div style={{ fontSize: 10, marginTop: 4, opacity: 0.85 }}>
+                                                            {mine
+                                                                ? `$${g.expert_share.toFixed(2)} to expert after fee`
+                                                                : `+$${g.expert_share.toFixed(2)} credited`}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        const m = item.data;
+                                        const mine = m.sender_id === me.user_id;
+                                        return (
+                                            <div key={m.message_id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
+                                                <div style={{
+                                                    maxWidth: "78%", padding: "8px 12px", fontSize: 13, lineHeight: 1.45,
+                                                    color: mine ? "#fff" : TEXT_PRIMARY, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                                                    borderRadius: mine ? "13px 13px 4px 13px" : "13px 13px 13px 4px",
+                                                    background: mine ? ACCENT : HOVER_BG,
+                                                }}>{m.content}</div>
+                                            </div>
+                                        );
+                                    })}
+                                {messages.length === 0 && gifts.length === 0 && !lockedThread && (
                                     <div style={{ textAlign: "center", color: TEXT_SECONDARY, fontSize: 12.5, marginTop: 70 }}>
                                         Ask {otherName} your first question 👋
                                     </div>
@@ -549,6 +602,17 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
                                 </div>
                             ) : (
                                 <div style={{ padding: 10, borderTop: BORDER, display: "flex", gap: 8 }}>
+                                    {canGift && (
+                                        <button onClick={() => setGiftOpen(true)} title="Send a gift"
+                                            style={{
+                                                width: 36, height: 36, borderRadius: "50%", border: "none",
+                                                cursor: "pointer", color: "#fff", flexShrink: 0,
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                                background: "linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)",
+                                            }}>
+                                            <Gift size={15} />
+                                        </button>
+                                    )}
                                     <input value={text} onChange={e => setText(e.target.value)}
                                         onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
                                         placeholder="Type a message…"
@@ -722,6 +786,14 @@ const ChatDock = forwardRef(function ChatDock({ hideBubble = false, onUnreadChan
                 </button>
             )}
             </div>
+
+            {giftOpen && thread && !thread.isAI && (
+                <GiftDialog
+                    expert={thread.other}
+                    onClose={() => setGiftOpen(false)}
+                    onSent={() => loadGifts(thread.other.user_id)}
+                />
+            )}
         </>
     );
 });

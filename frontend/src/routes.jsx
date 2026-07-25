@@ -120,6 +120,7 @@ export const router = createBrowserRouter([
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
     { path: "/watchlist", element: protectWithStocks(["investor"], Watchlist) },
+    { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
     { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },

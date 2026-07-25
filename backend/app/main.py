@@ -264,6 +264,36 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist investor_id/user_id backfill: {e}")
 
+        # Dedupe existing (user_id, stock_symbol) rows created by the old
+        # check-then-insert race, then enforce uniqueness at the DB level so
+        # the race can't recur.
+        try:
+            result = conn.execute(text(
+                "DELETE w1 FROM watchlist w1 "
+                "JOIN watchlist w2 "
+                "  ON w1.user_id = w2.user_id "
+                "  AND w1.stock_symbol = w2.stock_symbol "
+                "  AND w1.watchlist_id > w2.watchlist_id"
+            ))
+            conn.commit()
+            if result.rowcount:
+                print(f"[SCHEMA] Removed {result.rowcount} duplicate watchlist row(s)")
+
+            index_exists = conn.execute(text(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'watchlist' "
+                "AND INDEX_NAME = 'uq_watchlist_user_symbol'"
+            )).scalar()
+            if not index_exists:
+                conn.execute(text(
+                    "ALTER TABLE watchlist ADD CONSTRAINT uq_watchlist_user_symbol "
+                    "UNIQUE (user_id, stock_symbol)"
+                ))
+                conn.commit()
+                print("[SCHEMA] Added unique index watchlist(user_id, stock_symbol)")
+        except Exception as e:
+            print(f"[SCHEMA] Skipped watchlist uniqueness patch: {e}")
+
 
         try:
             conn.execute(text("ALTER TABLE expert_follow MODIFY investor_id VARCHAR(50) NULL"))

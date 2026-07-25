@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Gift, X } from "lucide-react";
 import { sendGift, getConversationGifts } from "../../api/walletApi.js";
 
+import { stickerFor } from "./giftStickers.js";
+
 const GRADIENT = "linear-gradient(135deg, #F59E0B 0%, #DC2626 100%)";
 
 const formatCurrency = (value) =>
@@ -111,34 +113,46 @@ export default function GiftDialog({ expert, onClose, onSent }) {
         </div>
 
         <div style={{ padding: 20 }}>
-          {/* Presets */}
+          {/* Stickers */}
+          <label style={{
+            display: "block", color: "#94a3b8", fontSize: 12, marginBottom: 8,
+          }}>
+            Stickers
+          </label>
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
             gap: 8, marginBottom: 16,
           }}>
-            {presets.map((preset) => (
-              <button
-                key={preset}
-                onClick={() => setAmount(String(preset))}
-                style={{
-                  padding: "10px 0", borderRadius: 10, cursor: "pointer",
-                  fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 13,
-                  color: Number(amount) === preset ? "#fff" : "#cbd5e1",
-                  background: Number(amount) === preset
-                    ? GRADIENT : "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                }}
-              >
-                ${preset}
-              </button>
-            ))}
+            {presets.map((preset) => {
+              const sticker = stickerFor(preset);
+              const active = Number(amount) === preset;
+              return (
+                <button
+                  key={preset}
+                  onClick={() => setAmount(String(preset))}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                    padding: "10px 0", borderRadius: 10, cursor: "pointer",
+                    color: active ? "#fff" : "#cbd5e1",
+                    background: active ? GRADIENT : "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                  }}
+                >
+                  <span style={{ fontSize: 22, lineHeight: 1 }}>{sticker.emoji}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>{sticker.name}</span>
+                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11.5, opacity: 0.85 }}>
+                    ${preset}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Custom amount */}
           <label style={{
             display: "block", color: "#94a3b8", fontSize: 12, marginBottom: 6,
           }}>
-            Amount (USD)
+            Or enter a custom amount (USD)
           </label>
           <input
             type="number"

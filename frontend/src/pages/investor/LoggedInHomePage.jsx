@@ -31,6 +31,7 @@ import {
 // stay untouched.
 const CARD_LIGHT = "rounded-2xl bg-white shadow-md shadow-slate-900/5 ring-1 ring-slate-200";
 const CARD_COMPACT_LIGHT = "rounded-xl bg-white shadow-sm shadow-slate-900/5 ring-1 ring-slate-200";
+const CARD_PURPLE = "rounded-2xl bg-[#F5F0FF] shadow-md shadow-slate-900/5 ring-1 ring-[#7C3AED]/20";
 const CARD_DOMINANT_LIGHT = "rounded-2xl bg-white shadow-lg shadow-slate-900/8 ring-1 ring-slate-200";
 
 function readStoredUser() {
@@ -331,7 +332,7 @@ function ProfileAvatar({ name, size = 48 }) {
   );
 }
 
-function Hero({ name, portfolioData, header }) {
+function Hero({ name, nameColor, portfolioData, header }) {
   const { loading, holdings, todaysPnL } = portfolioData;
   const hasHoldings = !loading && holdings.length > 0;
   const up = todaysPnL >= 0;
@@ -349,7 +350,7 @@ function Hero({ name, portfolioData, header }) {
         <div className="relative z-10 flex flex-col justify-center h-full p-16 md:p-20">
           <h1 className="text-white font-extrabold text-[32px] sm:text-[40px] md:text-[44px] leading-[1.1] tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">
             Welcome back,{" "}
-            <span className="text-[#00D3F2]">{name}</span>
+            <span style={{ color: nameColor }}>{name}</span>
           </h1>
 
           {loading ? (
@@ -899,12 +900,6 @@ function useSubscriptionInfo(userId) {
   return info;
 }
 
-function daysUntil(dateString) {
-  if (!dateString) return null;
-  const diffMs = new Date(dateString).getTime() - Date.now();
-  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-}
-
 function normaliseRole(user) {
   return String(
     user?.role ||
@@ -1072,13 +1067,55 @@ function BasicUpgradeBanner({ header }) {
   );
 }
 
-// ── Published expert portfolios (premium perk) ──────────────────────────────
-// Verified experts can publish their portfolio; premium users see them here
-// as reference portfolios. Hidden for basic users and when nothing is published.
-function ExpertPortfoliosSection() {
+// ── Expert-only quick links ──────────────────────────────────────────────
+// Jump cards to the expert-specific tools that live on their own pages.
+const EXPERT_FEATURE_CARDS = [
+  {
+    key: "education",
+    icon: GraduationCap,
+    title: "My Education Content",
+    description: "Write and manage the articles you've published to the knowledge hub.",
+    path: "/expert/knowledge-hub",
+  },
+  {
+    key: "compensation",
+    icon: Wallet,
+    title: "Compensation",
+    description: "Track your earnings and payout history as a verified expert.",
+    path: "/investor/compensation",
+  },
+];
+
+function ExpertFeatureCard({ icon: Icon, title, description, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
+      className={`group cursor-pointer ${CARD_PURPLE} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#7C3AED]/30 p-6 flex flex-col gap-4`}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7C3AED]/10 text-[#6D28D9] shrink-0">
+          <Icon size={19} />
+        </div>
+        <h3 className="text-slate-900 font-bold text-[15px]">{title}</h3>
+      </div>
+      <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#7C3AED] group-hover:gap-2 transition-all mt-auto">
+        Open <ArrowRight size={12} />
+      </span>
+    </div>
+  );
+}
+
+// ── Expert features ────────────────────────────────────────────────────
+// Quick links to the expert's own tools, plus published portfolios from
+// other verified experts as reference material. Hidden entirely for
+// non-experts (gated at the call site).
+function ExpertFeaturesSection() {
   const navigate = useNavigate();
   const [portfolios, setPortfolios] = useState([]);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1088,23 +1125,30 @@ function ExpertPortfoliosSection() {
         if (cancelled) return;
         if (res.success && (res.portfolios || []).length > 0) {
           setPortfolios(res.portfolios);
-          setVisible(true);
         }
       })
       .catch(() => { });
     return () => { cancelled = true; };
   }, []);
 
-  if (!visible) return null;
-
   return (
     <section>
       <SectionHeader
-        title="Expert Portfolios"
-        subtitle="Reference portfolios published by our verified experts — a Premium perk"
+        title="Expert Features"
+        subtitle="Your expert tools, plus reference portfolios from other verified experts"
         dark={false}
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {EXPERT_FEATURE_CARDS.map((card) => (
+          <ExpertFeatureCard
+            key={card.key}
+            icon={card.icon}
+            title={card.title}
+            description={card.description}
+            onClick={() => navigate(card.path)}
+          />
+        ))}
+
         {portfolios.map((p) => {
           const up = (p.return_pct ?? 0) >= 0;
           return (
@@ -1120,16 +1164,16 @@ function ExpertPortfoliosSection() {
                   state: { from: "/investor", fromLabel: "Home" },
                 });
               }}
-              className={`group cursor-pointer ${CARD_LIGHT} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#00D3F2]/30 p-6 flex flex-col gap-4`}
+              className={`group cursor-pointer ${CARD_PURPLE} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#7C3AED]/30 p-6 flex flex-col gap-4`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#00D3F2]/10 text-[#0092b8] shrink-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7C3AED]/10 text-[#6D28D9] shrink-0">
                     <Briefcase size={19} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
-                    <p className="text-xs text-slate-500 truncate">by {p.expert_name}</p>
+                    <p className="text-xs text-[#7C3AED] truncate">by {p.expert_name}</p>
                   </div>
                 </div>
                 <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
@@ -1141,47 +1185,12 @@ function ExpertPortfoliosSection() {
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
                 <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
                 <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
-                <span className="inline-flex items-center gap-1 text-[#00A9C4] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
+                <span className="inline-flex items-center gap-1 text-[#7C3AED] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
               </div>
             </div>
           );
         })}
       </div>
-    </section>
-  );
-}
-
-function PremiumRenewalBanner({ header, renewalDate }) {
-  const navigate = useNavigate();
-  const h = header("investor_banner_premium", "You're a Premium Member", "Your Premium plan is active. You have {days} days left before your subscription ends.");
-  const days = daysUntil(renewalDate);
-  const description = days !== null
-    ? h.description.replace("{days}", days)
-    : h.description.includes("{days}")
-      ? "Your Premium plan is active. You can manage your subscription at any time."
-      : h.description;
-  return (
-    <section className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-[#00D3F2]/25 shadow-lg shadow-slate-900/8 p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-      <div className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#00D3F2]/10 blur-3xl" />
-
-      <div className="relative max-w-xl">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#00D3F2]/10 text-[#0092b8]">
-          <Sparkles size={11} /> RocketTrade Premium
-        </span>
-        <h2 className="text-slate-900 font-bold text-[19px] md:text-[22px] tracking-tight leading-snug mt-2">
-          {h.title}
-        </h2>
-        <p className="text-slate-600 text-sm leading-relaxed mt-1.5">
-          {description}
-        </p>
-      </div>
-
-      <button
-        onClick={() => navigate("/investor/subscription")}
-        className="relative shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-[#00D3F2] px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-[#00D3F2]/20 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-      >
-        {header("investor_banner_premium_cta", "Manage Subscription").title} <ArrowRight size={16} />
-      </button>
     </section>
   );
 }
@@ -1236,18 +1245,16 @@ function LoggedInHomePage() {
 
       <GeneralHeader />
       <main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col gap-8">
-        <Hero name={name} portfolioData={portfolioData} header={header} />
+        <Hero name={name} nameColor={isExpert ? "#7C3AED" : isPremiumInvestor ? "#FFD500" : "#73ADFF"} portfolioData={portfolioData} header={header} />
 
         <div className="flex flex-col gap-8 mt-16">
           <AIInsightsSection portfolioData={portfolioData} header={header} />
           <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
           <WatchlistSection header={header} />
-          <ExpertPortfoliosSection />
+          {isExpert && <ExpertFeaturesSection />}
 
-          {!subscription.loading && (
-            subscription.status === "premium"
-              ? <PremiumRenewalBanner header={header} renewalDate={subscription.renewalDate} />
-              : <BasicUpgradeBanner header={header} />
+          {!subscription.loading && !(subscription.status === "premium" || isPremiumInvestor) && (
+            <BasicUpgradeBanner header={header} />
           )}
           <PlatformFeaturesSection header={header} items={items} />
           <RealtimeDashboardSection header={header} items={items} />

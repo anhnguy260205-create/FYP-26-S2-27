@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, UniqueConstraint
+from sqlalchemy.exc import IntegrityError
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
 from datetime import datetime
@@ -10,6 +11,9 @@ from app.entity.models.expert import Expert
 
 class Watchlist(Base):
     __tablename__ = "watchlist"
+    __table_args__ = (
+        UniqueConstraint("user_id", "stock_symbol", name="uq_watchlist_user_symbol"),
+    )
 
     watchlist_id = Column(String(50), primary_key=True,
                           default=lambda: f"watchlist_{uuid4()}")
@@ -57,7 +61,14 @@ class Watchlist(Base):
                 stock_symbol=stock_symbol.upper()
             )
             session.add(entry)
-            session.flush()
+            try:
+                session.flush()
+            except IntegrityError:
+                # Two concurrent adds raced past the "existing" check above —
+                # the unique constraint caught it, so treat it the same as
+                # finding an existing row.
+                session.rollback()
+                return {"success": False, "message": "Stock is already in your watchlist"}
             return {"success": True, "message": "Stock added to watchlist"}
 
     @staticmethod
