@@ -1,9 +1,13 @@
 import os
 from groq import AsyncGroq
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
+
+from app.control.services.auth import get_current_user
+from app.control.services.rate_limit import limiter
+from app.entity.models.chatusage import ChatUsage
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
@@ -59,7 +63,24 @@ def sanitize_reply(reply: str) -> str:
     return "\n".join(compact).strip()
 
 @router.post("/chat")
-async def chat(data: ChatRequest):
+@limiter.limit("15/minute")
+async def chat(
+    request: Request,
+    data: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    # Basic investors: lifetime limit of 3 chatbot questions. Premium
+    # investors and non-investors (experts/admins) are never limited.
+    quota = ChatUsage.check(current_user["user_id"])
+    if not quota["allowed"]:
+        return JSONResponse(status_code=403, content={
+            "success": False,
+            "limit_reached": True,
+            "questions_used": quota["questions_used"],
+            "questions_limit": quota["limit"],
+            "message": "Free chatbot limit reached. Upgrade to Premium for unlimited AI chat.",
+        })
+
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
         return JSONResponse(status_code=500, content={"detail": "GROQ_API_KEY not configured."})
@@ -79,7 +100,13 @@ async def chat(data: ChatRequest):
             top_p=0.9,
             messages=msgs,
         )
-        return {"reply": sanitize_reply(response.choices[0].message.content)}
+
+        usage = ChatUsage.record_question(current_user["user_id"])
+        return {
+            "reply": sanitize_reply(response.choices[0].message.content),
+            "questions_used": usage["questions_used"],
+            "questions_limit": usage["limit"],
+        }
 
     except Exception as e:
         message = str(e)
@@ -102,3 +129,9 @@ async def chat(data: ChatRequest):
                 "message": "The AI assistant is temporarily unavailable. Please try again shortly.",
             },
         )
+
+
+@router.get("/usage")
+def chat_usage(current_user: dict = Depends(get_current_user)):
+    """How many free chatbot questions the current user has used (basic plan)."""
+    return {"success": True, **ChatUsage.get_usage(current_user["user_id"])}

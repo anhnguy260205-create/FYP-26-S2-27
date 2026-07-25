@@ -18,3 +18,10 @@ export const checkDashboardAccess = async (symbol) => {
   const res = await authFetch(`${BASE}/stocks/dashboard-access/${encodeURIComponent(symbol)}`);
   return res.json();
 };
+
+// Read-only quota summary — does NOT consume/unlock a stock, unlike
+// checkDashboardAccess. Used to render locked/unlocked state in lists.
+export const fetchDashboardUsage = async () => {
+  const res = await authFetch(`${BASE}/stocks/dashboard-usage`);
+  return res.json();
+};

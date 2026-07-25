@@ -7,8 +7,8 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { authFetch } from "../../api/apiClient.js";
 import MiniChart from "../../components/MiniChart.jsx";
 import { useNavigate } from "react-router-dom";
-import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
-import { Activity, TrendingUp, TrendingDown, Database } from "lucide-react";
+import { fetchStockSnapshot, fetchStockCandles, fetchDashboardUsage } from "../../api/stockApi.js";
+import { Activity, TrendingUp, TrendingDown, Database, Lock } from "lucide-react";
 
 // The 11 GICS primary sectors — every pool stock carries a matching
 // `sector` field in its snapshot (set by the backend), used for filtering.
@@ -118,7 +118,7 @@ function companyName(symbol) {
   return names[symbol] ?? "";
 }
 
-const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommended, isTopPick, isLive }) {
+const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommended, isTopPick, isLive, locked }) {
   const chg = stock.price && stock.previousClose
     ? (stock.price - stock.previousClose).toFixed(3)
     : null;
@@ -144,12 +144,23 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
             : isRecommended ? "3px solid rgba(0,211,243,0.5)" : "3px solid transparent",
         cursor: "pointer",
       }}
+      title={locked ? "Upgrade to Premium to unlock this stock's real-time dashboard" : undefined}
     >
       {/* Symbol */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className="text-slate-900 font-semibold text-sm">{stock.symbol}</span>
-          {isLive && (
+          {locked && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 3,
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "2px 7px", borderRadius: 20,
+              color: "#92700C", background: "rgba(255,215,0,0.14)", border: "1px solid rgba(255,215,0,0.4)",
+            }}>
+              <Lock size={9} strokeWidth={2.5} /> Premium
+            </span>
+          )}
+          {!locked && isLive && (
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
               padding: "2px 7px", borderRadius: 20,
@@ -158,7 +169,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
               Live Search
             </span>
           )}
-          {!isLive && isTopPick && (
+          {!locked && !isLive && isTopPick && (
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
               padding: "2px 7px", borderRadius: 20,
@@ -167,7 +178,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
               Top Pick
             </span>
           )}
-          {!isLive && !isTopPick && isRecommended && (
+          {!locked && !isLive && !isTopPick && isRecommended && (
             <span style={{
               fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
               padding: "2px 7px", borderRadius: 20,
@@ -181,25 +192,27 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
       </div>
 
       {/* Price */}
-      <span className={`text-right font-medium text-sm ${color}`}>
+      <span className={`text-right font-medium text-sm ${color}`} style={locked ? { filter: "blur(4px)", userSelect: "none" } : undefined}>
         {stock.price?.toFixed(3) ?? "—"}
       </span>
 
       {/* Chg */}
-      <span className={`text-right font-medium text-sm ${color}`}>
+      <span className={`text-right font-medium text-sm ${color}`} style={locked ? { filter: "blur(4px)", userSelect: "none" } : undefined}>
         {chg !== null ? (isUp ? "+" : "") + chg : "—"}
       </span>
 
       {/* % Chg */}
-      <span className={`text-right font-medium text-sm ${color}`}>
+      <span className={`text-right font-medium text-sm ${color}`} style={locked ? { filter: "blur(4px)", userSelect: "none" } : undefined}>
         {pctChg !== null ? (isUp ? "+" : "") + pctChg + "%" : "—"}
       </span>
 
       {/* Trend sparkline */}
       <span className="flex justify-center items-center">
-        {candles?.length > 0
-          ? <MiniChart candles={candles} width={100} height={40} />
-          : <span className="text-slate-400 text-xs">—</span>
+        {locked
+          ? <Lock size={16} className="text-amber-500" strokeWidth={2} />
+          : candles?.length > 0
+            ? <MiniChart candles={candles} width={100} height={40} />
+            : <span className="text-slate-400 text-xs">—</span>
         }
       </span>
     </div>
@@ -207,7 +220,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
 });
 
 /* ── Recommended stock card (grid layout) ───────────────────── */
-const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick }) {
+const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick, locked }) {
   const chg = stock.price && stock.previousClose
     ? (stock.price - stock.previousClose).toFixed(2) : null;
   const pctChg = stock.price && stock.previousClose
@@ -225,24 +238,26 @@ const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick 
         border: isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.22)",
         minWidth: 0,
       }}
+      title={locked ? "Upgrade to Premium to unlock this stock's real-time dashboard" : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
             <span style={{ fontWeight: 700, fontSize: 14, color: "#0F172A" }}>{stock.symbol}</span>
             <span style={{
+              display: "inline-flex", alignItems: "center", gap: 3,
               fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
               padding: "2px 6px", borderRadius: 20,
-              color: isTopPick ? "#B45309" : "#00D3F2",
-              background: isTopPick ? "rgba(180,83,9,0.12)" : "rgba(0,211,243,0.12)",
-              border: isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.25)",
+              color: locked ? "#92700C" : isTopPick ? "#B45309" : "#00D3F2",
+              background: locked ? "rgba(255,215,0,0.14)" : isTopPick ? "rgba(180,83,9,0.12)" : "rgba(0,211,243,0.12)",
+              border: locked ? "1px solid rgba(255,215,0,0.4)" : isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.25)",
             }}>
-              {isTopPick ? "Top Pick" : "For You"}
+              {locked ? <><Lock size={9} strokeWidth={2.5} /> Premium</> : isTopPick ? "Top Pick" : "For You"}
             </span>
           </div>
           <span style={{ fontSize: 12, color: "#5B6C88", marginTop: 2, display: "block" }}>{stock.name ?? companyName(stock.symbol)}</span>
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0" style={locked ? { filter: "blur(4px)", userSelect: "none" } : undefined}>
           <div style={{ fontWeight: 600, fontSize: 14, color: isUp ? "#0F9D58" : "#DC2626" }}>
             ${stock.price?.toFixed(2) ?? "—"}
           </div>
@@ -251,15 +266,21 @@ const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick 
           </div>
         </div>
       </div>
-      {candles?.length > 0 && (
-        <MiniChart candles={candles} width={120} height={36} />
-      )}
+      {locked
+        ? (
+          <div className="flex items-center justify-center" style={{ height: 36, gap: 6, color: "#92700C", fontSize: 11, fontWeight: 600 }}>
+            <Lock size={13} strokeWidth={2} /> Unlock with Premium
+          </div>
+        )
+        : candles?.length > 0 && (
+          <MiniChart candles={candles} width={120} height={36} />
+        )}
     </div>
   );
 });
 
 /* ── Browse stock table row ─────────────────────────────────── */
-function StockTableSection({ stocks, candles, categoryFilter, searchedStock, searchedCandles }) {
+function StockTableSection({ stocks, candles, categoryFilter, searchedStock, searchedCandles, isLocked }) {
   const stockList = Array.isArray(stocks) ? stocks : Object.values(stocks ?? {});
   const navigate = useNavigate();
   const handleSelect = useCallback((symbol) => {
@@ -289,13 +310,13 @@ function StockTableSection({ stocks, candles, categoryFilter, searchedStock, sea
           <span className="text-center">Trend (1D)</span>
         </div>
         {searchedStock && (
-          <StockRow stock={searchedStock} candles={searchedCandles} onSelect={handleSelect} isLive={true} />
+          <StockRow stock={searchedStock} candles={searchedCandles} onSelect={handleSelect} isLive={true} locked={isLocked?.(searchedStock.symbol)} />
         )}
         {filtered.length === 0 && !searchedStock ? (
           <div className="px-6 py-8 text-center text-slate-500 text-sm">Waiting for data…</div>
         ) : (
           filtered.map(stock => (
-            <StockRow key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]} onSelect={handleSelect} />
+            <StockRow key={stock.symbol} stock={stock} candles={candles?.[stock.symbol]} onSelect={handleSelect} locked={isLocked?.(stock.symbol)} />
           ))
         )}
       </div>
@@ -326,20 +347,36 @@ function RealTimeDashBoardPage() {
   // via the investor profile page — /expert/edit-profile is no longer routed.
   const editProfilePath = "/investor/edit-profile";
 
+  // Basic-plan dashboard quota (lifetime limit of 3 distinct stocks). This
+  // mirrors what AStockDashBoardPage enforces, so the browse/recommend lists
+  // don't leak full live data for stocks the user hasn't unlocked.
+  const [dashboardUsage, setDashboardUsage] = useState(null);
+  useEffect(() => {
+    fetchDashboardUsage().then(res => {
+      if (res?.success) setDashboardUsage(res);
+    }).catch(() => {});
+  }, []);
+  const unlockedSymbols = useMemo(
+    () => new Set(dashboardUsage?.unlocked_symbols ?? []),
+    [dashboardUsage]
+  );
+  const isBasicLimited = dashboardUsage != null && dashboardUsage.premium === false;
+  const isLocked = useCallback(
+    (symbol) => isBasicLimited && !unlockedSymbols.has(symbol),
+    [isBasicLimited, unlockedSymbols]
+  );
+
   useEffect(() => {
     const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
     const userId = stored.user_id;
     if (!userId) return;
-    // This dashboard is shared between investors and experts — each role's
-    // interests/risk tolerance live on a different record, so fetch the
-    // right one instead of always assuming investor.
-    const isExpert = isExpertUser(stored);
-    const endpoint = isExpert ? "expert-information" : "investor-information";
-    const infoKey = isExpert ? "expert_information" : "investor_information";
-    authFetch(`${import.meta.env.VITE_API_URL}/user/${endpoint}/${userId}`)
+    // Merged-roles model: every account (investor or expert) keeps its
+    // interests/risk tolerance on the Investor record — the Expert record
+    // has no such fields, so always fetch investor-information here.
+    authFetch(`${import.meta.env.VITE_API_URL}/user/investor-information/${userId}`)
       .then(r => r.json())
       .then(data => {
-        const info = data?.[infoKey];
+        const info = data?.investor_information;
         if (!info) return;
         const freshInterests = info.interests
           ? info.interests.split(",").map(s => s.trim()).filter(Boolean)
@@ -471,6 +508,24 @@ function RealTimeDashBoardPage() {
             <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
           {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
+          {isBasicLimited && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap" style={{
+              padding: "8px 14px", borderRadius: 999, width: "fit-content",
+              background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.4)",
+            }}>
+              <Lock size={13} className="text-amber-600" strokeWidth={2.5} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#92700C" }}>
+                {unlockedSymbols.size} of {dashboardUsage.limit} free stock dashboards unlocked — upgrade to Premium for unlimited access.
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate("/investor/subscription")}
+                style={{ fontSize: 12.5, fontWeight: 700, color: "#0092b8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Upgrade
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Stat highlight row ─────────────────────────────── */}
@@ -545,7 +600,7 @@ function RealTimeDashBoardPage() {
                         onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
                           state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
                         })}
-                        isTopPick={true} />
+                        isTopPick={true} locked={isLocked(stock.symbol)} />
                     ))}
                   </div>
                 </div>
@@ -564,7 +619,7 @@ function RealTimeDashBoardPage() {
                         onSelect={s => navigate(`/realtimedashboard/astockdashboard/${s}`, {
                           state: { from: "/realtimedashboard", fromLabel: "Real-time Dashboard" },
                         })}
-                        isTopPick={false} />
+                        isTopPick={false} locked={isLocked(stock.symbol)} />
                     ))}
                   </div>
                 </div>
@@ -615,6 +670,7 @@ function RealTimeDashBoardPage() {
               categoryFilter={browseCategory}
               searchedStock={searchedStock}
               searchedCandles={searchedCandles}
+              isLocked={isLocked}
             />
           </div>
         </section>

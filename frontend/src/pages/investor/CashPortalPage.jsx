@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -40,7 +41,11 @@ const BANKS = [
 ];
 
 export default function CashPortalPage() {
-  const [mode, setMode] = useState("cash_in");
+  const location = useLocation();
+  // Callers (e.g. the "Refund" button on the Expert Compensation page) can
+  // land directly on Cash Out via router state instead of always defaulting
+  // to Cash In.
+  const [mode, setMode] = useState(location.state?.mode === "cash_out" ? "cash_out" : "cash_in");
   const [amount, setAmount] = useState("");
   const [bankName, setBankName] = useState(BANKS[0]);
   const [accountNumber, setAccountNumber] = useState("");

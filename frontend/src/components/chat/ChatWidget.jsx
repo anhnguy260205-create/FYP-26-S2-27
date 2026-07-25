@@ -12,7 +12,7 @@ function ChatWidget() {
     const location = useLocation();
     const {
         messages, input, setInput, loading, error,
-        sendMessage, endChat, handleKeyDown, bottomRef,
+        sendMessage, endChat, handleKeyDown, bottomRef, chatUsage,
     } = useAIChatSession();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -50,6 +50,11 @@ function ChatWidget() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online
                                 </p>
                             </div>
+                            {chatUsage?.premium === false && (
+                                <p className="text-[10px] font-semibold text-amber-300 shrink-0">
+                                    {chatUsage.questions_used}/{chatUsage.limit} free
+                                </p>
+                            )}
                             <button
                                 onClick={endChat}
                                 title="New chat"

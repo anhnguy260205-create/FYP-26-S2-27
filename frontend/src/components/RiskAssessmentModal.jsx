@@ -42,7 +42,11 @@ export default function RiskAssessmentModal({ open, userId, onDone }) {
     setSaving(true);
     setError("");
     try {
-      await updateRiskTolerance(userId, risk);
+      const result = await updateRiskTolerance(userId, risk);
+      if (!result?.success) {
+        setError(result?.message || "Could not save your preference. Please try again.");
+        return;
+      }
       const stored = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
       sessionStorage.setItem(
         "currentUser",

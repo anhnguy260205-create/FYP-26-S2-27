@@ -14,7 +14,7 @@ import {
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
-    Mail, Link2, MapPin, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
+    Mail, Link2, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
     Users, UserPlus, UserCheck, X, Trash2,
 } from "lucide-react";
 
@@ -488,7 +488,6 @@ function ExpertDetails() {
     const followingCta = cms.text("expert_detail_following_cta", "Following").title;
     const rateCta = cms.text("expert_detail_rate_cta", "Rate").title;
     const editRatingCta = cms.text("expert_detail_edit_rating_cta", "Edit Rating").title;
-    const coreTitle = cms.text("expert_detail_core_title", "Core Information").title;
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState(null);
@@ -715,7 +714,6 @@ function ExpertDetails() {
     // only the panel below switches.
     const [tab, setTab] = useState("portfolio");
     const TABS = [
-        { key: "overview", label: "Overview" },
         { key: "portfolio", label: cms.text("expert_detail_portfolio_tab", "Portfolio").title },
         { key: "reviews", label: cms.text("expert_detail_reviews_tab", "Reviews").title },
         ...(isSelf ? [{ key: "settings", label: "Settings" }] : []),    ];
@@ -908,32 +906,6 @@ function ExpertDetails() {
                                 </button>
                             ))}
                         </div>
-
-                        {tab === "overview" && (
-                            <div style={{ ...CARD, padding: 30 }}>
-                                <h2 className="text-lg font-bold mb-3" style={{ color: "#0B1D4F" }}>{coreTitle}</h2>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <InfoCard icon={Mail} label="Email">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.email_address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Link2} label="LinkedIn">
-                                        {profile.linked_in_url ? (
-                                            <a href={profile.linked_in_url.startsWith("http") ? profile.linked_in_url : `https://${profile.linked_in_url}`}
-                                                target="_blank" rel="noreferrer"
-                                                style={{ fontSize: 14, color: "#0092b8", wordBreak: "break-all" }}>
-                                                {profile.linked_in_url}
-                                            </a>
-                                        ) : <div style={{ fontSize: 14, color: "#0F172A" }}>—</div>}
-                                    </InfoCard>
-                                    <InfoCard icon={MapPin} label="Location">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>{profile.address || "—"}</div>
-                                    </InfoCard>
-                                    <InfoCard icon={Shield} label="Username">
-                                        <div style={{ fontSize: 14, color: "#0F172A" }}>@{profile.username || "—"}</div>
-                                    </InfoCard>
-                                </div>
-                            </div>
-                        )}
 
                         {tab === "portfolio" && (
                             <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />
