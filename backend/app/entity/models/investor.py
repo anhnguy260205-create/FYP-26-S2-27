@@ -279,6 +279,7 @@ class Investor(Base):
         from app.entity.models.holding import Holding
         from app.entity.models.order_book import OrderBook
         from app.entity.models.predictionusage import PredictionUsage
+        from app.entity.models.dashboardusage import DashboardUsage
         from app.entity.models.emailalert import StockAlert
         from app.entity.models.notification import Notification
         from app.entity.models.expertfollow import ExpertFollow
@@ -310,6 +311,9 @@ class Investor(Base):
             ).delete()
             session.query(PredictionUsage).filter(
                 PredictionUsage.investor_id == investor.investor_id
+            ).delete()
+            session.query(DashboardUsage).filter(
+                DashboardUsage.investor_id == investor.investor_id
             ).delete()
             session.query(Subscription).filter(
                 Subscription.investor_id == investor.investor_id

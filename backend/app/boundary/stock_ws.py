@@ -1,5 +1,7 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.control.controller.alertc import CheckAndTriggerAlertsController
+from app.control.services.auth import get_current_user
+from app.entity.models.dashboardusage import DashboardUsage
 import websockets
 import json
 import asyncio
@@ -1086,6 +1088,36 @@ def rest_stock_candles(symbol: str, range: str = "1D"):
         return {"success": True, "candles": bars}
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+@router.get("/stocks/dashboard-access/{symbol}")
+def check_dashboard_access(symbol: str, current_user: dict = Depends(get_current_user)):
+    """Gate + consume quota for a basic investor opening a stock's real-time
+    dashboard. Basic plan: lifetime limit of 3 distinct stocks; re-opening an
+    already-unlocked stock is free. Premium/expert/admin are never limited."""
+    symbol = symbol.upper()
+    quota = DashboardUsage.check(current_user["user_id"], symbol)
+    if not quota["allowed"]:
+        return {
+            "success": False,
+            "limit_reached": True,
+            "views_used": quota["views_used"],
+            "views_limit": quota["limit"],
+            "message": "Free dashboard limit reached. Upgrade to Premium for unlimited stock dashboards.",
+        }
+    usage = DashboardUsage.record_view(current_user["user_id"], symbol)
+    return {
+        "success": True,
+        "limit_reached": False,
+        "views_used": usage["views_used"],
+        "views_limit": usage["limit"],
+    }
+
+
+@router.get("/stocks/dashboard-usage")
+def dashboard_usage(current_user: dict = Depends(get_current_user)):
+    """How many free stock dashboards the current user has opened (basic plan)."""
+    return {"success": True, **DashboardUsage.get_usage(current_user["user_id"])}
 
 
 @router.websocket("/ws/stocks")

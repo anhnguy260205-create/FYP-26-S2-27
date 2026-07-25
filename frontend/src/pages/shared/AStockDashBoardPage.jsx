@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, memo } from "react";
 import { createAlert } from "../../api/alertApi.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
-import { fetchStockSnapshot, fetchStockCandles } from "../../api/stockApi.js";
+import { fetchStockSnapshot, fetchStockCandles, checkDashboardAccess } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
 import PinModal from "../../components/PinModal.jsx";
 
@@ -531,6 +531,59 @@ function PremiumLockCard() {
   );
 }
 
+/* ─── Dashboard Lock Card (basic plan: 3-stock lifetime limit) ─ */
+function DashboardLockCard({ symbol, viewsUsed, viewsLimit }) {
+  const navigate = useNavigate();
+  return (
+    <div
+      style={{
+        width: "100%", maxWidth: 480, margin: "48px auto",
+        background: "#FFFFFF",
+        border: "1px solid rgba(255,215,0,0.2)", borderRadius: "12px",
+        padding: "48px 24px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "14px", textAlign: "center",
+      }}
+    >
+      <div style={{
+        width: "60px", height: "60px", borderRadius: "50%",
+        background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.3)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px",
+      }}>
+        🔒
+      </div>
+      <h2 style={{
+        fontFamily: "'DM Mono', monospace", fontSize: "14px", color: "#92700C",
+        fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0,
+      }}>
+        Free Limit Reached
+      </h2>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
+        color: "#5B6C88", lineHeight: 1.6, margin: 0, maxWidth: "360px",
+      }}>
+        Basic plan includes real-time dashboards for {viewsLimit ?? 3} stocks. You've already unlocked{" "}
+        {viewsUsed ?? viewsLimit ?? 3} of {viewsLimit ?? 3}, and <span style={{ color: "#92700C" }}>{symbol}</span> isn't one of them.
+        Upgrade to Premium for unlimited real-time dashboards on every stock.
+      </p>
+      <button
+        onClick={() => navigate("/investor/subscription")}
+        style={{
+          marginTop: "6px", padding: "11px 28px", borderRadius: "8px",
+          background: "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))",
+          border: "1px solid rgba(255,215,0,0.4)", color: "#92700C",
+          fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: "12px",
+          letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = "linear-gradient(90deg, rgba(255,215,0,0.35), rgba(255,165,0,0.35))"}
+        onMouseLeave={e => e.currentTarget.style.background = "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2))"}
+      >
+        ★ Upgrade to Premium
+      </button>
+    </div>
+  );
+}
+
 /* ─── Second + Third Level (two-column layout) ─────────────── */
 const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium, showAlerts = true }) {
   if (!stock) return null;
@@ -998,6 +1051,20 @@ function AStockDashBoardPage() {
   const fromPath = location.state?.from || "/realtimedashboard";
   const fromLabel = location.state?.fromLabel || "Real-time Dashboard";
 
+  // Basic investors: lifetime limit of 3 distinct stocks' real-time
+  // dashboards. Re-opening an already-unlocked stock is free; premium and
+  // non-investor accounts are never limited (checked server-side).
+  const [dashboardAccess, setDashboardAccess] = useState(null);
+  useEffect(() => {
+    if (!selectedStock) return;
+    let cancelled = false;
+    setDashboardAccess(null);
+    checkDashboardAccess(selectedStock)
+      .then((res) => { if (!cancelled) setDashboardAccess(res); })
+      .catch(() => { if (!cancelled) setDashboardAccess({ success: true, limit_reached: false }); });
+    return () => { cancelled = true; };
+  }, [selectedStock]);
+
   // Pool membership is dynamic: any symbol present in the live snapshot
   // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
   // to a one-off REST fetch.
@@ -1069,6 +1136,14 @@ function AStockDashBoardPage() {
             <span style={{ color: "#0B1D4F" }}>{selectedStock}</span>
           </button>
 
+          {dashboardAccess?.limit_reached ? (
+            <DashboardLockCard
+              symbol={selectedStock}
+              viewsUsed={dashboardAccess.views_used}
+              viewsLimit={dashboardAccess.views_limit}
+            />
+          ) : (
+          <>
           <FirstLevel
             symbol={symbol}
             selectedStock={selectedStock}
@@ -1147,6 +1222,8 @@ function AStockDashBoardPage() {
             <div className="max-w mx-auto">
               {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
             </div>
+          )}
+          </>
           )}
 
         </main>
