@@ -111,7 +111,7 @@ def seed_landing_content():
             ContentManagement(content_id="footer_product_0",     section="footer_product", title="Features",            description="#", order_index=0),
             ContentManagement(content_id="footer_product_1",     section="footer_product", title="Pricing",             description="#", order_index=1),
             # Footer — company links
-            ContentManagement(content_id="footer_company_0",     section="footer_company", title="About Us",            description="#", order_index=0),
+            ContentManagement(content_id="footer_company_0",     section="footer_company", title="About Us",            description="/about-us", order_index=0),
             ContentManagement(content_id="footer_company_1",     section="footer_company", title="Careers",             description="#", order_index=1),
             ContentManagement(content_id="footer_company_2",     section="footer_company", title="Blog",                description="#", order_index=2),
             ContentManagement(content_id="footer_company_3",     section="footer_company", title="Press",               description="#", order_index=3),
@@ -122,7 +122,7 @@ def seed_landing_content():
             ContentManagement(content_id="footer_resources_2",   section="footer_resources", title="API Status",        description="#", order_index=2),
             # Footer — contact
             ContentManagement(content_id="footer_contact_email", section="footer_contact", title="support@deskstock.ai", description="", order_index=0),
-            ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="#", order_index=1),
+            ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="/support", order_index=1),
             ContentManagement(content_id="footer_contact_1",     section="footer_contact", title="Terms of Service",     description="#", order_index=2),
             ContentManagement(content_id="footer_contact_2",     section="footer_contact", title="Privacy Policy",       description="#", order_index=3),
             # Premium investor subscription features
@@ -438,26 +438,136 @@ def seed_landing_content():
             ContentManagement(content_id="payment_fail_retry_cta", section="payment_result_page", title="Try Again", order_index=9),
             ContentManagement(content_id="payment_fail_home_cta", section="payment_result_page", title="Go Home", order_index=10),
 
+            # AboutUsPage.jsx — "\n" in the title marks a line break for the
+            # hero heading, matching how the page splits it into two lines.
+            ContentManagement(content_id="about_hero", section="page_headers",
+                title="Smarter Investing.\nBetter Future.",
+                description="Our mission is to make intelligent investing more accessible through AI-driven analytics, real-time market information, and intuitive financial tools.",
+                order_index=19),
+            ContentManagement(content_id="about_hero_para2", section="page_headers",
+                title="Rocket Trade is committed to providing a secure, reliable, and transparent platform that enables investors to evaluate market opportunities and make data-informed decisions with greater confidence.",
+                order_index=20),
+            ContentManagement(content_id="about_values_header", section="page_headers", title="Our Values", order_index=21),
+            ContentManagement(content_id="about_value_0", section="about_values", title="Trust & Security", description="We prioritize the security of user data and investment information through reliable protection and responsible data practices.", order_index=0),
+            ContentManagement(content_id="about_value_1", section="about_values", title="AI Innovation", description="We apply artificial intelligence and predictive analytics to deliver meaningful market insights and smarter investment tools.", order_index=1),
+            ContentManagement(content_id="about_value_2", section="about_values", title="Transparency", description="We provide clear and accessible information to support informed and responsible financial decision-making.", order_index=2),
+            ContentManagement(content_id="about_value_3", section="about_values", title="User First", description="We design every feature around the needs of investors, focusing on accessibility, usability, and long-term value.", order_index=3),
+            ContentManagement(content_id="about_people_header", section="page_headers",
+                title="Meet the Team Behind Rocket Trade",
+                description="A collaborative team bringing together technology, data, and innovation to build a smarter and more accessible investment platform.",
+                order_index=22),
+            ContentManagement(content_id="about_people_badge", section="about_page",
+                title="OUR PEOPLE", order_index=0),
+            ContentManagement(content_id="about_team_role", section="about_page",
+                title="ROCKET TRADE TEAM", order_index=1),
+            # Team member cards — title = name, description = avatar initials
+            ContentManagement(content_id="about_team_0", section="about_team", title="Nguy Kim Anh",          description="NKA", order_index=0),
+            ContentManagement(content_id="about_team_1", section="about_team", title="Jordan Lim Jun Hong",   description="JL",  order_index=1),
+            ContentManagement(content_id="about_team_2", section="about_team", title="Kim Bogyeong",          description="KB",  order_index=2),
+            ContentManagement(content_id="about_team_3", section="about_team", title="Lanice Lam Wen Xin",    description="LL",  order_index=3),
+            ContentManagement(content_id="about_team_4", section="about_team", title="Lim Ying Xin",          description="LY",  order_index=4),
+
+            # SupportPage.jsx (Help Center) — "|" in the title marks where
+            # the gradient-accent span starts in the hero heading.
+            ContentManagement(content_id="help_hero", section="page_headers",
+                title="How can we|help you?",
+                description="Find answers, explore support topics, or contact our team for further assistance.",
+                order_index=23),
+            ContentManagement(content_id="help_search_placeholder", section="help_page",
+                title="Search for help...", order_index=0),
+            ContentManagement(content_id="help_faq_header", section="help_page",
+                title="Frequently Asked Questions",
+                description="Browse frequently asked questions across all support topics.",
+                order_index=1),
+            ContentManagement(content_id="help_faq_category_desc", section="help_page",
+                title="Showing questions related to {category}.", order_index=2),
+            ContentManagement(content_id="help_empty_heading", section="help_page",
+                title="No matching questions found", order_index=3),
+            ContentManagement(content_id="help_empty_desc", section="help_page",
+                title="Try using a different search term or select another category.", order_index=4),
+            ContentManagement(content_id="help_contact_heading", section="help_contact",
+                title="Didn't find an answer to your questions?", order_index=0),
+            ContentManagement(content_id="help_contact_desc", section="help_contact",
+                title="Get in touch with us for more details", order_index=1),
+            ContentManagement(content_id="help_contact_cta", section="help_contact",
+                title="Contact Support", order_index=2),
+            ContentManagement(content_id="help_contact_email", section="help_contact",
+                title="kim@gmail.com", order_index=3),
+            ContentManagement(content_id="help_category_0", section="help_categories", title="Account & Login",          order_index=0),
+            ContentManagement(content_id="help_category_1", section="help_categories", title="Subscription & Payments",  order_index=1),
+            ContentManagement(content_id="help_category_2", section="help_categories", title="Stock Trading",            order_index=2),
+            ContentManagement(content_id="help_category_3", section="help_categories", title="AI Predictions",           order_index=3),
+            ContentManagement(content_id="help_category_4", section="help_categories", title="Community Forum",          order_index=4),
+            ContentManagement(content_id="help_category_5", section="help_categories", title="Privacy & Security",       order_index=5),
+            # FAQ question/answer pairs. SupportPage.jsx groups each block of
+            # three FAQs under the category at the same positional index, so
+            # admins can rename category labels without breaking filtering.
+            ContentManagement(content_id="help_faq_0",  section="help_faqs", title="How do I create an account?", description="Select Get Started or Register from the homepage. Enter the required personal information, choose the appropriate account type, and submit the registration form. You may also be required to verify your email address before logging in.", order_index=0),
+            ContentManagement(content_id="help_faq_1",  section="help_faqs", title="How can I reset my password?", description="Open the login page and select Forgot Password. Enter the email address associated with your account and follow the password reset instructions sent to your email.", order_index=1),
+            ContentManagement(content_id="help_faq_2",  section="help_faqs", title="Why can\u2019t I log in?", description="Confirm that your email address and password are correct. Check whether your account has been verified or suspended. If the issue continues, reset your password or contact the Rocket Trade support team.", order_index=2),
+            ContentManagement(content_id="help_faq_3",  section="help_faqs", title="How do I subscribe to a premium plan?", description="Log in to your investor account, open the Subscription page from your profile menu, select an available plan, and complete the payment process.", order_index=3),
+            ContentManagement(content_id="help_faq_4",  section="help_faqs", title="Can I cancel my subscription?", description="Yes. Open the Subscription page, review your active plan, and select the cancellation option. Your access may remain available until the end of the current billing period.", order_index=4),
+            ContentManagement(content_id="help_faq_5",  section="help_faqs", title="What should I do if my payment fails?", description="Check that your payment information is correct and that sufficient funds are available. Try the payment again. If the issue continues, contact your payment provider or Rocket Trade support.", order_index=5),
+            ContentManagement(content_id="help_faq_6",  section="help_faqs", title="How do I buy a stock?", description="Open the real-time stock dashboard, select a stock, and choose Buy. Enter the quantity, review the estimated transaction amount, and confirm the order.", order_index=6),
+            ContentManagement(content_id="help_faq_7",  section="help_faqs", title="How do I sell a stock?", description="Open your portfolio or the relevant stock page, select Sell, enter the quantity you want to sell, review the transaction details, and confirm the sale.", order_index=7),
+            ContentManagement(content_id="help_faq_8",  section="help_faqs", title="Where can I view my transaction history?", description="Open Transactions from the investor navigation menu and select Transaction History. This page displays your previous buy and sell activities.", order_index=8),
+            ContentManagement(content_id="help_faq_9",  section="help_faqs", title="How are AI stock predictions generated?", description="Rocket Trade uses machine-learning models to analyse historical market data, current market information, and identifiable patterns. These models generate analytical estimates that may support investment research.", order_index=9),
+            ContentManagement(content_id="help_faq_10", section="help_faqs", title="Are AI predictions guaranteed to be accurate?", description="No. AI predictions are analytical estimates and cannot guarantee future market performance. They should not be treated as professional financial advice or as guaranteed investment outcomes.", order_index=10),
+            ContentManagement(content_id="help_faq_11", section="help_faqs", title="Where can I view prediction results?", description="Prediction results and analytical insights are available through the supported stock dashboard and relevant analysis tools within Rocket Trade.", order_index=11),
+            ContentManagement(content_id="help_faq_12", section="help_faqs", title="How do I create a forum post?", description="Open the Community Forum, select the option to create a new post, enter the title and content, choose an appropriate category, and publish the post.", order_index=12),
+            ContentManagement(content_id="help_faq_13", section="help_faqs", title="How do I reply to another user?", description="Open the relevant forum post, enter your response in the reply section, and submit the comment. Your reply will appear within the discussion.", order_index=13),
+            ContentManagement(content_id="help_faq_14", section="help_faqs", title="How do forum notifications work?", description="You may receive a notification when another user likes your post or replies to one of your discussions. Notifications can be viewed from your account notification page.", order_index=14),
+            ContentManagement(content_id="help_faq_15", section="help_faqs", title="How is my personal information protected?", description="Rocket Trade applies authentication, controlled access, secure data-handling practices, and account protection measures to reduce unauthorised access to user information.", order_index=15),
+            ContentManagement(content_id="help_faq_16", section="help_faqs", title="Is my payment information stored?", description="Payment transactions are processed through the connected payment provider. Rocket Trade should not directly display or store complete payment card credentials.", order_index=16),
+            ContentManagement(content_id="help_faq_17", section="help_faqs", title="What should I do if I notice suspicious activity?", description="Change your password immediately and log out of your account. Record any unusual activity and contact the Rocket Trade support team with the relevant details.", order_index=17),
+
         ]
 
         # Old unused sections from earlier content-management experiments.
         # The current Community Forum uses the "forum_page" and "forum_topics"
         # sections above; the legacy "forum_room" rows are safe to remove.
-        dead_sections = ("feature", "expert", "forum_room")
+        # "expert_tools"/"expert_tools_cta" belonged to the old standalone
+        # Expert Home page (ExpertLoggedInPage.jsx), removed in the
+        # investor/expert merge — nothing reads them anymore either.
+        dead_sections = ("feature", "expert", "forum_room", "expert_tools", "expert_tools_cta")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)
         ).delete(synchronize_session=False)
 
-        # These four expert-home page headers lived in the shared
-        # "page_headers" section (so they aren't caught by dead_sections),
-        # but nothing reads these specific ids anymore either.
+        # These expert-home page fields lived in shared sections (so they
+        # aren't caught by dead_sections above), but nothing reads these
+        # specific ids anymore either — same removed page as above.
         dead_header_ids = (
             "header_expert_tools", "header_model_portfolio",
             "header_expert_profile", "header_documents",
+            "expert_hero_subtitle",
+            "model_portfolio_empty_msg", "model_portfolio_cta_create", "model_portfolio_cta_manage",
+            "expert_profile_edit_cta", "expert_profile_not_rated",
+            "compensation_pending_label", "compensation_need_followers",
+            "compensation_locked_label", "compensation_locked_msg",
+            "documents_desc_verified", "documents_desc_unverified",
+            "documents_cta_verified", "documents_cta_unverified",
         )
         session.query(ContentManagement).filter(
             ContentManagement.content_id.in_(dead_header_ids)
         ).delete(synchronize_session=False)
+
+        # footer_company_0 (About Us) and footer_contact_0 (Help Center) were
+        # originally seeded with "#" as a placeholder URL instead of the real
+        # route, so the footer links never actually went anywhere. Only
+        # overwrite if it's still the untouched placeholder — never clobber
+        # a URL an admin has since customized on purpose.
+        placeholder_fixes = {
+            "footer_company_0": "/about-us",
+            "footer_contact_0": "/support",
+        }
+        for content_id, real_url in placeholder_fixes.items():
+            row = session.query(ContentManagement).filter(
+                ContentManagement.content_id == content_id,
+                ContentManagement.description == "#",
+            ).first()
+            if row:
+                row.description = real_url
 
         to_add = [e for e in entries if e.content_id not in existing_ids]
         if to_add:

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2, Search, Star, X, AlertTriangle, Flag } from "lucide-react";
+import { Trash2, Search, Star, X, AlertTriangle, Flag, Eye, ArrowLeft } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { adminGetAllReviews, adminDeleteReview, adminGetFlaggedReviews } from "../../api/reviewApi.js";
 
@@ -107,6 +107,7 @@ function ReviewManagementPage() {
     const [keyword,      setKeyword]     = useState("");
     const [ratingFilter, setRatingFilter] = useState("all");
     const [toDelete,     setToDelete]    = useState(null);
+    const [selectedReview, setSelectedReview] = useState(null);
     const [deleting,     setDeleting]    = useState(false);
     const [toast,        setToast]       = useState(null);
 
@@ -140,6 +141,7 @@ function ReviewManagementPage() {
                 setReviews(prev => prev.filter(r => r.review_id !== toDelete.review_id));
                 setFlagged(prev => prev.filter(r => r.review_id !== toDelete.review_id));
                 setToDelete(null);
+                if (selectedReview?.review_id === toDelete.review_id) setSelectedReview(null);
                 showToast(`Review removed. ${toDelete.author} has been notified.`);
             } else {
                 showToast(data?.message || "Failed to delete review.", "error");
@@ -157,11 +159,97 @@ function ReviewManagementPage() {
 
     const filtered = (tab === "flagged" ? flagged : reviews).filter((r) => {
         const matchRating  = ratingFilter === "all" || r.rating === Number(ratingFilter);
-        const matchKeyword = !keyword || [r.author, r.title, r.comment].some(
+        const matchKeyword = !keyword || [r.title, r.comment].some(
             v => String(v || "").toLowerCase().includes(keyword.toLowerCase())
         );
         return matchRating && matchKeyword;
     });
+
+    if (selectedReview) {
+        return (
+            <AdminLayout title="Review Details" subtitle="View the complete review before taking moderation action">
+                <button
+                    onClick={() => setSelectedReview(null)}
+                    className="mb-5 flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+                >
+                    <ArrowLeft size={16} /> Back to Review Management
+                </button>
+
+                <div className="bg-white rounded-xl shadow overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <div className="flex flex-wrap items-center gap-3 mb-3">
+                                <StarRow value={selectedReview.rating} />
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadge(selectedReview.author_role)}`}>
+                                    {selectedReview.author_role || "member"}
+                                </span>
+                                {selectedReview.is_edited && (
+                                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">Edited</span>
+                                )}
+                                {(selectedReview.flag_count || 0) > 0 && (
+                                    <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                                        {selectedReview.flag_count} report{selectedReview.flag_count !== 1 ? "s" : ""}
+                                    </span>
+                                )}
+                            </div>
+                            <h1 className="text-2xl font-bold text-slate-900">{selectedReview.title || "Untitled Review"}</h1>
+                            <p className="text-sm text-slate-500 mt-2">Submitted by {selectedReview.author || "Unknown user"}</p>
+                        </div>
+                        <button
+                            onClick={() => setToDelete(selectedReview)}
+                            className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                        >
+                            <Trash2 size={15} /> Remove Review
+                        </button>
+                    </div>
+
+                    <div className="p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-7">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Review Date</p>
+                                <p className="text-sm text-slate-800">{formatDate(selectedReview.created_at)}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Helpful Votes</p>
+                                <p className="text-sm text-slate-800">{selectedReview.helpful_count || 0}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Reviewer ID</p>
+                                <p className="text-sm text-slate-800 break-all">{selectedReview.user_id || "—"}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Full Review</p>
+                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-5 text-sm leading-7 text-slate-700 whitespace-pre-wrap break-words">
+                                {selectedReview.comment || "No review content provided."}
+                            </div>
+                        </div>
+
+                        {(selectedReview.flags || []).length > 0 && (
+                            <div className="mt-7">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Reports</p>
+                                <div className="space-y-2">
+                                    {selectedReview.flags.map((flag, index) => (
+                                        <div key={`${flag.user_id || "flag"}-${index}`} className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
+                                            <p className="text-sm font-semibold text-red-700">{flag.reason || "No reason provided"}</p>
+                                            <p className="text-xs text-red-500 mt-1">Reported {formatDate(flag.flagged_at)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {toDelete && (
+                    <DeleteModal review={toDelete} deleting={deleting}
+                        onCancel={() => setToDelete(null)}
+                        onConfirm={handleConfirmDelete} />
+                )}
+            </AdminLayout>
+        );
+    }
 
     return (
         <AdminLayout title="Review Management" subtitle="View, search and moderate platform reviews">
@@ -214,7 +302,7 @@ function ReviewManagementPage() {
                     <div className="relative flex-1 min-w-48">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input value={keyword} onChange={e => setKeyword(e.target.value)}
-                            placeholder="Search by name, title or content…"
+                            placeholder="Search by review title or content…"
                             className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm outline-none" />
                     </div>
                     <div className="flex gap-2 flex-wrap">
@@ -286,10 +374,16 @@ function ReviewManagementPage() {
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{formatDate(review.created_at)}</td>
                                     <td className="px-6 py-4">
-                                        <button onClick={() => setToDelete(review)}
-                                            className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors">
-                                            <Trash2 size={12} /> Remove
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => setSelectedReview(review)}
+                                                className="flex items-center gap-1.5 border border-gray-200 hover:bg-gray-100 text-slate-700 px-3 py-1.5 rounded text-xs font-semibold transition-colors">
+                                                <Eye size={12} /> View
+                                            </button>
+                                            <button onClick={() => setToDelete(review)}
+                                                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors">
+                                                <Trash2 size={12} /> Remove
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

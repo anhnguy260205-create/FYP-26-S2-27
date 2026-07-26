@@ -25,6 +25,12 @@ class ReviewController:
         review = ReviewRepository.get_my_review(user_id)
         return {"success": True, "review": review}
 
+    def get_review_by_id(self, review_id, user_id=None):
+        review = ReviewRepository.get_review_by_id(review_id, user_id=user_id)
+        if not review:
+            return {"success": False, "message": "Review not found"}
+        return {"success": True, "review": review}
+
     def create_review(self, user_id, role, rating, title, comment):
         if role == "admin":
             return {"success": False, "message": "Admin accounts cannot post platform reviews."}

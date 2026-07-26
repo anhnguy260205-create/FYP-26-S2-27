@@ -827,6 +827,7 @@ function TestimonialsSection() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 18, marginBottom: 48 }}>
           {reviews.slice(0, 3).map((review) => {
             const pill = rolePill(review.author_role);
+            const isTruncated = review.comment.length > 200;
             return (
               <div key={review.review_id} style={{
                 background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)",
@@ -840,8 +841,19 @@ function TestimonialsSection() {
                   </h3>
                 )}
                 <p style={{ fontSize: 13.5, color: "#dbeafe", lineHeight: 1.75, margin: 0, flex: 1 }}>
-                  {review.comment.length > 200 ? review.comment.slice(0, 200) + "…" : review.comment}
+                  {isTruncated ? review.comment.slice(0, 200) + "…" : review.comment}
                 </p>
+                {isTruncated && (
+                  <button
+                    onClick={() => navigate("/login", { state: { from: `/reviews/${review.review_id}` } })}
+                    style={{
+                      alignSelf: "flex-start", background: "none", border: "none", padding: 0,
+                      fontSize: 12.5, fontWeight: 700, color: "#67e8f9", cursor: "pointer",
+                    }}
+                  >
+                    Read full review →
+                  </button>
+                )}
                 <div style={{
                   display: "flex", alignItems: "center", gap: 10, marginTop: "auto", paddingTop: 10,
                   borderTop: "1px solid rgba(255,255,255,0.13)"
