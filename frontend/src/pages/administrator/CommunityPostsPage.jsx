@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Flag, Eye, MessageCircle, Heart, Trash2, AlertTriangle, X } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
-import { adminGetAllPosts, adminGetFlaggedPosts, adminDeleteForumPost } from "../../api/expertApi.js";
+import { adminGetAllPosts, adminGetFlaggedPosts, adminDeleteForumPost, adminDeleteForumReply } from "../../api/expertApi.js";
 
 function formatDate(value) {
     const d = new Date(value);
@@ -26,7 +26,8 @@ const PRESET_REASONS = [
     "Other",
 ];
 
-function DeletePostModal({ post, onConfirm, onCancel, deleting }) {
+function DeletePostModal({ item, onConfirm, onCancel, deleting }) {
+    const isComment = item.type === "comment";
     const [reason, setReason] = useState(PRESET_REASONS[0]);
     const [custom, setCustom] = useState("");
     const finalReason = reason === "Other" ? custom.trim() : reason;
@@ -40,16 +41,16 @@ function DeletePostModal({ post, onConfirm, onCancel, deleting }) {
                             <AlertTriangle size={20} className="text-red-600" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900">Remove Post</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">by <span className="font-semibold">{post.author}</span></p>
+                            <h3 className="font-bold text-slate-900">Remove {isComment ? "Comment" : "Post"}</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">by <span className="font-semibold">{item.author}</span></p>
                         </div>
                     </div>
                     <button onClick={onCancel}><X size={18} className="text-slate-400 hover:text-slate-600" /></button>
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-4 mb-5 text-sm">
-                    <p className="font-semibold text-slate-800 mb-1">{post.title || "Untitled Post"}</p>
-                    <p className="text-slate-600 leading-relaxed line-clamp-3">{post.content}</p>
+                    <p className="font-semibold text-slate-800 mb-1">{item.title || item.post_title || "Untitled Post"}</p>
+                    <p className="text-slate-600 leading-relaxed line-clamp-3">{item.content}</p>
                 </div>
 
                 <div className="mb-5">
@@ -114,6 +115,7 @@ function CommunityPostsPage() {
     const [keyword, setKeyword] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const [typeFilter, setTypeFilter] = useState("all");
     const [toast, setToast] = useState(null);
     const [toDelete, setToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
@@ -127,7 +129,7 @@ function CommunityPostsPage() {
         ]).then(([allData, flaggedData]) => {
             if (cancelled) return;
             if (allData?.success) setPosts(allData.posts || []);
-            if (flaggedData?.success) setFlagged(flaggedData.posts || []);
+            if (flaggedData?.success) setFlagged(flaggedData.reports || flaggedData.posts || []);
         }).finally(() => {
             if (!cancelled) setLoading(false);
         });
@@ -146,11 +148,20 @@ function CommunityPostsPage() {
         if (!toDelete) return;
         setDeleting(true);
         try {
-            const data = await adminDeleteForumPost(toDelete.post_id, reason);
+            const isComment = toDelete.type === "comment";
+            const data = isComment
+                ? await adminDeleteForumReply(toDelete.post_id, toDelete.reply_id || toDelete.id, reason)
+                : await adminDeleteForumPost(toDelete.post_id, reason);
             if (data?.success) {
-                setPosts((current) => current.filter((post) => post.post_id !== toDelete.post_id));
-                setFlagged((current) => current.filter((post) => post.post_id !== toDelete.post_id));
-                showToast(`Post removed. ${toDelete.author || "The author"} has been notified.`);
+                if (!isComment) {
+                    setPosts((current) => current.filter((post) => post.post_id !== toDelete.post_id));
+                }
+                setFlagged((current) => current.filter((item) =>
+                    isComment
+                        ? (item.reply_id || item.id) !== (toDelete.reply_id || toDelete.id)
+                        : !(item.type !== "comment" && item.post_id === toDelete.post_id)
+                ));
+                showToast(`${isComment ? "Comment" : "Post"} removed. ${toDelete.author || "The author"} has been notified.`);
                 setToDelete(null);
             } else {
                 showToast(data?.message || "Failed to remove post.", "error");
@@ -164,14 +175,15 @@ function CommunityPostsPage() {
 
     const availableCategories = [...new Set(posts.map((post) => post.category).filter(Boolean))].sort();
 
-    const filtered = (tab === "flagged" ? flagged : posts).filter((post) => {
+    const filtered = (tab === "flagged" ? flagged : posts).filter((item) => {
         const query = keyword.trim().toLowerCase();
-        const matchesKeyword = !query || [post.author, post.title, post.content, post.category]
+        const matchesKeyword = !query || [item.author, item.title, item.post_title, item.content, item.category]
             .some((value) => String(value || "").toLowerCase().includes(query));
         const matchesRole = roleFilter === "all"
-            || String(post.author_role || "member").toLowerCase() === roleFilter;
-        const matchesCategory = categoryFilter === "all" || post.category === categoryFilter;
-        return matchesKeyword && matchesRole && matchesCategory;
+            || String(item.author_role || "member").toLowerCase() === roleFilter;
+        const matchesCategory = tab === "flagged" || categoryFilter === "all" || item.category === categoryFilter;
+        const matchesType = tab !== "flagged" || typeFilter === "all" || (item.type || "post") === typeFilter;
+        return matchesKeyword && matchesRole && matchesCategory && matchesType;
     });
 
     return (
@@ -190,7 +202,7 @@ function CommunityPostsPage() {
                 {[
                     { label: "Total Posts", value: posts.length },
                     { label: "Total Replies", value: posts.reduce((sum, post) => sum + (post.reply_count || 0), 0) },
-                    { label: "Flagged Posts", value: flagged.length, highlight: flagged.length > 0 },
+                    { label: "Flagged Reports", value: flagged.length, highlight: flagged.length > 0 },
                 ].map((stat) => (
                     <div
                         key={stat.label}
@@ -240,7 +252,7 @@ function CommunityPostsPage() {
                         <input
                             value={keyword}
                             onChange={(event) => setKeyword(event.target.value)}
-                            placeholder="Search by author, title, category or content…"
+                            placeholder={tab === "flagged" ? "Search reported posts or comments…" : "Search by author, title, category or content…"}
                             className="w-full h-10 pl-8 pr-4 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -254,6 +266,18 @@ function CommunityPostsPage() {
                         <option value="premium">Premium investors</option>
                         <option value="expert">Experts</option>
                     </select>
+                    {tab === "flagged" && (
+                        <select
+                            value={typeFilter}
+                            onChange={(event) => setTypeFilter(event.target.value)}
+                            className="h-10 min-w-40 border border-gray-200 rounded-lg px-3 text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="all">All report types</option>
+                            <option value="post">Posts</option>
+                            <option value="comment">Comments</option>
+                        </select>
+                    )}
+                    {tab !== "flagged" && (
                     <select
                         value={categoryFilter}
                         onChange={(event) => setCategoryFilter(event.target.value)}
@@ -264,16 +288,17 @@ function CommunityPostsPage() {
                             <option key={category} value={category}>{category}</option>
                         ))}
                     </select>
-                    {(keyword || roleFilter !== "all" || categoryFilter !== "all") && (
+                    )}
+                    {(keyword || roleFilter !== "all" || categoryFilter !== "all" || typeFilter !== "all") && (
                         <button
-                            onClick={() => { setKeyword(""); setRoleFilter("all"); setCategoryFilter("all"); }}
+                            onClick={() => { setKeyword(""); setRoleFilter("all"); setCategoryFilter("all"); setTypeFilter("all"); }}
                             className="h-10 px-4 border border-gray-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-gray-50"
                         >
                             Clear
                         </button>
                     )}
                     <span className="text-sm text-slate-500 whitespace-nowrap">
-                        {loading ? "Loading…" : `${filtered.length} post${filtered.length !== 1 ? "s" : ""}`}
+                        {loading ? "Loading…" : `${filtered.length} ${tab === "flagged" ? "report" : "post"}${filtered.length !== 1 ? "s" : ""}`}
                     </span>
                 </div>
             </div>
@@ -285,6 +310,7 @@ function CommunityPostsPage() {
                             <th className="px-6 py-4">Author</th>
                             <th className="px-6 py-4">Role</th>
                             {tab !== "flagged" && <th className="px-6 py-4">Category</th>}
+                            {tab === "flagged" && <th className="px-6 py-4">Type</th>}
                             <th className="px-6 py-4">Title</th>
                             <th className="px-6 py-4">Content</th>
                             {tab === "flagged" && <th className="px-6 py-4">Reported For</th>}
@@ -303,7 +329,7 @@ function CommunityPostsPage() {
                         ) : filtered.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
-                                    {tab === "flagged" ? "No flagged posts — all clear!" : "No posts match your search."}
+                                    {tab === "flagged" ? "No flagged posts or comments — all clear!" : "No posts match your search."}
                                 </td>
                             </tr>
                         ) : (
@@ -327,8 +353,15 @@ function CommunityPostsPage() {
                                             </span>
                                         </td>
                                     )}
+                                    {tab === "flagged" && (
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${post.type === "comment" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                                                {post.type || "post"}
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 text-slate-700 max-w-44">
-                                        <div className="truncate font-medium">{post.title || "Untitled Post"}</div>
+                                        <div className="truncate font-medium">{post.title || post.post_title || "Untitled Post"}</div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 max-w-72">
                                         <div className="line-clamp-2 text-xs leading-relaxed">{post.content || "—"}</div>
@@ -364,7 +397,7 @@ function CommunityPostsPage() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <button
-                                                onClick={() => navigate(`/adminpanel/posts/${post.post_id}`)}
+                                                onClick={() => navigate(`/adminpanel/posts/${post.post_id}${post.type === "comment" ? `?reply=${post.reply_id || post.id}` : ""}`)}
                                                 className="flex items-center gap-1.5 border border-gray-200 hover:bg-gray-100 text-slate-700 px-3 py-1.5 rounded text-xs font-semibold transition-colors"
                                             >
                                                 <Eye size={12} /> View
@@ -388,7 +421,7 @@ function CommunityPostsPage() {
 
             {toDelete && (
                 <DeletePostModal
-                    post={toDelete}
+                    item={toDelete}
                     deleting={deleting}
                     onCancel={() => setToDelete(null)}
                     onConfirm={handleConfirmDelete}
