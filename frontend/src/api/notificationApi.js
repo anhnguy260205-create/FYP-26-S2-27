@@ -42,9 +42,44 @@ export async function getBroadcastHistory(search) {
   return res.json();
 }
 
+export async function updateBroadcast(broadcastId, { title, message }) {
+  const res = await authFetch(`${BASE}/notification/broadcast/${broadcastId}`, {
+    method: "PUT",
+    body: JSON.stringify({ title, message }),
+  });
+  return res.json();
+}
+
 export async function deleteBroadcast(broadcastId) {
   const res = await authFetch(`${BASE}/notification/broadcast/${broadcastId}`, {
     method: "DELETE",
+  });
+  return res.json();
+}
+
+export async function getAdminNotifications(search) {
+  const qs = search ? `?q=${encodeURIComponent(search)}` : "";
+  const res = await authFetch(`${BASE}/notification/admin/all${qs}`);
+  return res.json();
+}
+
+export async function updateAdminNotification(notificationId, { title, message }) {
+  const res = await authFetch(`${BASE}/notification/admin/${notificationId}`, {
+    method: "PUT",
+    body: JSON.stringify({ title, message }),
+  });
+  return res.json();
+}
+
+export async function getNotificationTemplates() {
+  const res = await authFetch(`${BASE}/notification/templates`);
+  return res.json();
+}
+
+export async function updateNotificationTemplate(templateId, { title, message }) {
+  const res = await authFetch(`${BASE}/notification/templates/${templateId}`, {
+    method: "PUT",
+    body: JSON.stringify({ title, message }),
   });
   return res.json();
 }

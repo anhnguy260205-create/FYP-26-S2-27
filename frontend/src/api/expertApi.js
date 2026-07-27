@@ -154,6 +154,11 @@ export const adminGetFlaggedPosts = () =>
 export const adminGetAllPosts = () =>
   requestJson(`${FORUM_BASE_URL}/admin/all`);
 
+export const adminClearForumFlags = (postId) =>
+  requestJson(`${FORUM_BASE_URL}/admin/${postId}/flags`, {
+    method: "DELETE",
+  });
+
 export const adminDeleteForumPost = (postId, reason) =>
   requestJson(`${FORUM_BASE_URL}/admin/${postId}`, {
     method: "DELETE",

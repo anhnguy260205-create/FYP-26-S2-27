@@ -1,7 +1,7 @@
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
 from app.entity.models.useraccount import UserAccount
-from app.control.controller.notificationc import create_notification
+from app.control.controller.notificationc import create_notification, get_welcome_notification
 from app.control.services.firebase_admin_service import delete_firebase_user_by_email
 
 
@@ -51,23 +51,19 @@ class DeleteExpertController:
         return deleted
 
 
-WELCOME_MESSAGE = {
-    "investor": "👋 Welcome to RocketTrade! Explore the latest market trends, manage your portfolio, and discover new investment opportunities with AI-powered insights.",
-    "expert": "👋 Welcome to RocketTrade! Share your market expertise, connect with investors, and help the community make informed investment decisions.",
-
-}
-
 
 class FirebaseLoginController:
     def login(self, email: str):
         profile = UserAccount.getProfileByEmail(email)
         if not profile:
             return None
-        if profile.get("first_login") and profile["role"] in WELCOME_MESSAGE:
+        if profile.get("first_login") and profile["role"] in ("investor", "expert"):
+            welcome_role = "expert" if profile.get("is_expert") else profile["role"]
+            title, message = get_welcome_notification(welcome_role)
             create_notification(
                 profile["user_id"],
                 "welcome",
-                "Welcome to RocketTrade!",
-                WELCOME_MESSAGE[profile["role"]],
+                title,
+                message,
             )
         return profile

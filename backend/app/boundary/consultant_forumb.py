@@ -159,6 +159,11 @@ def admin_list_posts(current_user: dict = Depends(require_admin)):
     return ForumController().admin_list_posts()
 
 
+@router.delete("/admin/{post_id}/flags")
+def admin_clear_post_flags(post_id: str, current_user: dict = Depends(require_admin)):
+    return ForumController().admin_clear_flags(post_id)
+
+
 class AdminDeletePostRequest(BaseModel):
     reason: str = "Violated community guidelines"
 

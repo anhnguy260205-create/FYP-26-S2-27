@@ -52,6 +52,7 @@ const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
 const ReviewDetailPage = lazy(() => import("./pages/shared/ReviewDetailPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
+const SendNotificationPage = lazy(() => import("./pages/administrator/SendNotificationPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 
@@ -143,6 +144,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
+    { path: "/adminpanel/notifications/send", element: protect(["admin"], SendNotificationPage) },
 
     { path: "/finance-admin", element: protect(["finance admin"], FinanceAdminDashboardPage) },
     { path: "/finance-admin/revenue", element: protect(["finance admin"], RevenueAnalysisPage) },

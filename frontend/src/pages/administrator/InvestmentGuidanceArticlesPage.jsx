@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Eye, Trash2, ArrowLeft, Check, X, Plus, Pencil, Upload, Download } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Eye, Trash2, ArrowLeft, Check, X, Pencil } from "lucide-react";
 import AdminPage from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
-import { approveArticle, rejectArticle, adminCreateArticle, adminUpdateArticle } from "../../api/knowledgeHubApi.js";
+import { approveArticle, rejectArticle, adminUpdateArticle } from "../../api/knowledgeHubApi.js";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/admin/articles`;
 const STATUS_FILTERS = ["All", "Pending Review", "Published", "Rejected"];
@@ -15,56 +15,6 @@ const STATUS_STYLE = {
   draft:     { bg: "bg-slate-100", text: "text-slate-600",  label: "Draft"     },
 };
 
-// Small CSV parser, handles quoted fields with commas/newlines/escaped
-// quotes inside them. Good enough for the import template — didn't seem
-// worth pulling in a whole library just for this.
-function parseCsv(text) {
-  const rows = [];
-  let row = [], field = "", inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field); field = "";
-      if (row.some(v => v !== "")) rows.push(row);
-      row = [];
-    } else {
-      field += c;
-    }
-  }
-  if (field !== "" || row.length) { row.push(field); rows.push(row); }
-  if (rows.length === 0) return [];
-  const headers = rows[0].map(h => h.trim().toLowerCase());
-  return rows.slice(1).map(r => {
-    const obj = {};
-    headers.forEach((h, idx) => { obj[h] = (r[idx] ?? "").trim(); });
-    return obj;
-  });
-}
-
-const CSV_TEMPLATE =
-  'title,category,summary,tags,status,content\n' +
-  '"How to Read a Candlestick Chart","Technical Analysis","A quick primer on candlestick patterns.","charts,beginner","published","Full article body goes here. Wrap any field containing a comma in double quotes."\n';
-
-function downloadCsvTemplate() {
-  const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "article_import_template.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 function StatusBadge({ status }) {
   const s = STATUS_STYLE[status] ?? STATUS_STYLE.draft;
   return (
@@ -72,9 +22,8 @@ function StatusBadge({ status }) {
   );
 }
 
-// ── Create / Edit form (used for both "Add New Article" and row "Edit") ─────
+// ── Edit form ───────────────────────────────────────────────────────────────
 function ArticleForm({ initial, onCancel, onSaved }) {
-  const isEdit = !!initial;
   const [form, setForm] = useState({
     title: initial?.title || "",
     category: initial?.category || CATEGORIES[0],
@@ -96,9 +45,7 @@ function ArticleForm({ initial, onCancel, onSaved }) {
     setSaving(status);
     try {
       const payload = { ...form, status };
-      const res = isEdit
-        ? await adminUpdateArticle(initial.article_id, payload)
-        : await adminCreateArticle(payload);
+      const res = await adminUpdateArticle(initial.article_id, payload);
       if (res.success) onSaved();
       else setError(res.message || "Failed to save article");
     } catch {
@@ -109,7 +56,7 @@ function ArticleForm({ initial, onCancel, onSaved }) {
   };
 
   return (
-    <AdminPage title={isEdit ? "Edit Article" : "Create New Article"} subtitle="Fields marked with an asterisk are required.">
+    <AdminPage title="Edit Article" subtitle="Update the selected educational article.">
       <button onClick={onCancel} className="mb-6 bg-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
         <ArrowLeft size={16} /> Back
       </button>
@@ -161,113 +108,6 @@ function ArticleForm({ initial, onCancel, onSaved }) {
   );
 }
 
-// ── Bulk CSV import ──────────────────────────────────────────────────────────
-function CsvImportModal({ onClose, onDone }) {
-  const fileRef = useRef(null);
-  const [rows, setRows] = useState([]);
-  const [fileName, setFileName] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [results, setResults] = useState(null); // [{title, success, message}]
-  const [parseError, setParseError] = useState("");
-
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFileName(file.name);
-    setResults(null);
-    setParseError("");
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = parseCsv(String(reader.result));
-        if (parsed.length === 0) { setParseError("No rows found in this file."); return; }
-        const missingTitle = parsed.findIndex(r => !r.title);
-        if (missingTitle !== -1) { setParseError(`Row ${missingTitle + 2} is missing a title.`); return; }
-        setRows(parsed);
-      } catch {
-        setParseError("Couldn't parse this file — check it's a valid CSV.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const runImport = async () => {
-    setImporting(true);
-    const out = [];
-    for (const r of rows) {
-      try {
-        const res = await adminCreateArticle({
-          title: r.title,
-          category: CATEGORIES.includes(r.category) ? r.category : CATEGORIES[0],
-          summary: r.summary || "",
-          content: r.content || "",
-          tags: r.tags || "",
-          status: ["draft", "published", "pending"].includes(r.status) ? r.status : "published",
-        });
-        out.push({ title: r.title, success: !!res.success, message: res.message || "" });
-      } catch {
-        out.push({ title: r.title, success: false, message: "Request failed" });
-      }
-    }
-    setResults(out);
-    setImporting(false);
-    if (out.every(r => r.success)) onDone();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-bold">Import Articles from CSV</h2>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700 mb-4">
-          <p className="font-semibold mb-1">CSV format</p>
-          <p>Columns: <code>title, category, summary, tags, status, content</code>. Only <code>title</code> is required.
-             Category must match an existing category (falls back to "{CATEGORIES[0]}"); status defaults to "published"
-             if omitted or unrecognised. Wrap any field containing a comma in double quotes.</p>
-          <button onClick={downloadCsvTemplate} className="mt-2 flex items-center gap-1 text-blue-700 font-semibold underline">
-            <Download size={13} /> Download template
-          </button>
-        </div>
-
-        <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="text-sm mb-3" />
-        {fileName && <p className="text-xs text-slate-400 mb-2">{fileName}</p>}
-        {parseError && <p className="text-sm text-red-600 mb-2">{parseError}</p>}
-
-        {rows.length > 0 && !results && (
-          <>
-            <p className="text-sm text-slate-600 mb-2">{rows.length} article{rows.length !== 1 ? "s" : ""} ready to import:</p>
-            <ul className="text-sm text-slate-500 list-disc pl-5 mb-4 max-h-40 overflow-y-auto">
-              {rows.map((r, i) => <li key={i}>{r.title}</li>)}
-            </ul>
-            <button onClick={runImport} disabled={importing}
-              className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60">
-              <Upload size={14} /> {importing ? "Importing…" : `Import ${rows.length} article${rows.length !== 1 ? "s" : ""}`}
-            </button>
-          </>
-        )}
-
-        {results && (
-          <div className="mt-2">
-            <ul className="text-sm space-y-1 mb-4">
-              {results.map((r, i) => (
-                <li key={i} className={r.success ? "text-green-700" : "text-red-600"}>
-                  {r.success ? "✓" : "✗"} {r.title} {r.message && `— ${r.message}`}
-                </li>
-              ))}
-            </ul>
-            <button onClick={onClose} className="border border-gray-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold">
-              Close
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function InvestmentGuidanceArticlesPage() {
   const [articles, setArticles] = useState([]);
   const [mode, setMode] = useState("list");
@@ -275,7 +115,6 @@ function InvestmentGuidanceArticlesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [actioning, setActioning] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showImport, setShowImport] = useState(false);
 
   const fetchArticles = async () => {
     const res = await authFetch(API_URL);
@@ -284,8 +123,16 @@ function InvestmentGuidanceArticlesPage() {
   };
 
   useEffect(() => {
-    setLoading(true);
-    fetchArticles().finally(() => setLoading(false));
+    let cancelled = false;
+    authFetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success) setArticles(data.articles);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = articles.filter(a => {
@@ -398,12 +245,12 @@ function InvestmentGuidanceArticlesPage() {
     );
   }
 
-  // ── Create / Edit ──
-  if (mode === "create" || (mode === "edit" && selectedArticle)) {
+  // ── Edit ──
+  if (mode === "edit" && selectedArticle) {
     return (
       <ArticleForm
-        initial={mode === "edit" ? selectedArticle : null}
-        onCancel={() => setMode(mode === "edit" ? "view" : "list")}
+        initial={selectedArticle}
+        onCancel={() => setMode("view")}
         onSaved={async () => {
           await fetchArticles();
           setSelected(null);
@@ -416,17 +263,6 @@ function InvestmentGuidanceArticlesPage() {
   // ── List ──
   return (
     <AdminPage title="Article Management" subtitle="Review and manage articles written by experts.">
-
-      <div className="flex justify-end gap-2 mb-5">
-        <button onClick={() => setShowImport(true)}
-          className="flex items-center gap-1 border border-gray-300 bg-white text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold">
-          <Upload size={14} /> Import CSV
-        </button>
-        <button onClick={() => { setSelected(null); setMode("create"); }}
-          className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-          <Plus size={14} /> Add New Article
-        </button>
-      </div>
 
       {pendingCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-3 mb-5 text-sm text-amber-700 font-medium">
@@ -490,12 +326,6 @@ function InvestmentGuidanceArticlesPage() {
         </table>
       </div>
 
-      {showImport && (
-        <CsvImportModal
-          onClose={() => setShowImport(false)}
-          onDone={async () => { await fetchArticles(); setShowImport(false); }}
-        />
-      )}
     </AdminPage>
   );
 }

@@ -119,6 +119,17 @@ class ForumController:
         posts = ForumRepository.admin_flagged_posts()
         return {"success": True, "posts": posts, "total": len(posts)}
 
+    def admin_clear_flags(self, post_id):
+        cleared = ForumRepository.clear_post_flags(post_id)
+        if cleared is None:
+            return {"success": False, "message": "Post not found."}
+        return {
+            "success": True,
+            "message": "Reports dismissed.",
+            "cleared_count": cleared,
+            "post_id": post_id,
+        }
+
     def admin_delete_post(self, post_id, admin_user_id=None, reason="Violated community guidelines"):
         # Get post owner + title before deleting so we can notify them and log a removal record
         owner_info = ForumRepository.get_post_owner_info(post_id)

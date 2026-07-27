@@ -866,3 +866,17 @@ class ForumRepository:
                     result.append(data)
             result.sort(key=lambda p: p["flag_count"], reverse=True)
             return result
+
+    @staticmethod
+    def clear_post_flags(post_id):
+        """Dismiss every report for a post without deleting the post itself."""
+        with get_session() as session:
+            post_exists = session.query(ForumPost).filter(
+                ForumPost.post_id == post_id
+            ).first() is not None
+            if not post_exists:
+                return None
+            cleared = session.query(ForumPostFlag).filter(
+                ForumPostFlag.post_id == post_id
+            ).delete(synchronize_session=False)
+            return int(cleared or 0)
