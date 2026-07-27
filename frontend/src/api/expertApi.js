@@ -137,6 +137,12 @@ export const flagForumPost = (postId, reason) =>
     body: JSON.stringify({ reason: reason || "Inappropriate content" }),
   });
 
+export const flagForumReply = (replyId, reason) =>
+  requestJson(`${FORUM_BASE_URL}/replies/${replyId}/flag`, {
+    method: "POST",
+    body: JSON.stringify({ reason: reason || "Inappropriate content" }),
+  });
+
 export const getForumRemovalNotice = () =>
   requestJson(`${FORUM_BASE_URL}/removal-notice`);
 
@@ -154,8 +160,23 @@ export const adminGetFlaggedPosts = () =>
 export const adminGetAllPosts = () =>
   requestJson(`${FORUM_BASE_URL}/admin/all`);
 
+export const adminClearForumFlags = (postId) =>
+  requestJson(`${FORUM_BASE_URL}/admin/${postId}/flags`, {
+    method: "DELETE",
+  });
+
 export const adminDeleteForumPost = (postId, reason) =>
   requestJson(`${FORUM_BASE_URL}/admin/${postId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason: reason || "Violated community guidelines" }),
+  });
+
+
+export const adminClearForumReplyFlags = (replyId) =>
+  requestJson(`${FORUM_BASE_URL}/admin/replies/${replyId}/flags`, { method: "DELETE" });
+
+export const adminDeleteForumReply = (postId, replyId, reason) =>
+  requestJson(`${FORUM_BASE_URL}/admin/posts/${postId}/replies/${replyId}`, {
     method: "DELETE",
     body: JSON.stringify({ reason: reason || "Violated community guidelines" }),
   });

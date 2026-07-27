@@ -25,6 +25,9 @@ export const getReviews = ({ sort = "latest", page = 1, pageSize = 10, rating } 
   return requestJson(`${REVIEW_BASE_URL}?${params.toString()}`);
 };
 
+export const getReviewById = (reviewId) =>
+  requestJson(`${REVIEW_BASE_URL}/${reviewId}`);
+
 // ── Authenticated user actions ─────────────────────────────────────────────────
 
 export const getMyReview = () =>

@@ -101,6 +101,19 @@ class ForumController:
             return {"success": True, "unflagged": True, "message": "Report removed."}
         return {"success": True, "flagged": True, "message": "Post reported. Our moderation team will look into it."}
 
+    def flag_reply(self, reply_id, user_id, reason):
+        if not user_id:
+            return {"success": False, "message": "Must be logged in to report a comment."}
+        owner = ForumRepository.get_reply_owner_info(reply_id)
+        if not owner:
+            return {"success": False, "message": "Comment not found."}
+        if str(owner.get("user_id")) == str(user_id):
+            return {"success": False, "message": "You can't report your own comment."}
+        result = ForumRepository.flag_reply(reply_id, user_id, reason)
+        if result.get("unflagged"):
+            return {"success": True, "unflagged": True, "message": "Report removed."}
+        return {"success": True, "flagged": True, "message": "Comment reported. Our moderation team will look into it."}
+
     def get_removal_notice(self, user_id):
         notice = ForumRepository.get_unacknowledged_removal(user_id)
         return {"success": True, "notice": notice}
@@ -117,7 +130,50 @@ class ForumController:
 
     def admin_flagged_posts(self):
         posts = ForumRepository.admin_flagged_posts()
-        return {"success": True, "posts": posts, "total": len(posts)}
+        for post in posts:
+            post["type"] = "post"
+        comments = ForumRepository.admin_flagged_replies()
+        reports = posts + comments
+        reports.sort(key=lambda item: item.get("flag_count", 0), reverse=True)
+        return {
+            "success": True, "posts": posts, "comments": comments,
+            "reports": reports, "total": len(reports),
+        }
+
+    def admin_clear_flags(self, post_id):
+        cleared = ForumRepository.clear_post_flags(post_id)
+        if cleared is None:
+            return {"success": False, "message": "Post not found."}
+        return {
+            "success": True,
+            "message": "Reports dismissed.",
+            "cleared_count": cleared,
+            "post_id": post_id,
+        }
+
+    def admin_clear_reply_flags(self, reply_id):
+        cleared = ForumRepository.clear_reply_flags(reply_id)
+        if cleared is None:
+            return {"success": False, "message": "Comment not found."}
+        return {"success": True, "message": "Reports dismissed.", "cleared_count": cleared, "reply_id": reply_id}
+
+    def admin_delete_reply(self, post_id, reply_id, reason="Violated community guidelines"):
+        owner = ForumRepository.get_reply_owner_info(reply_id)
+        if not owner or str(owner.get("post_id")) != str(post_id):
+            return {"success": False, "message": "Comment not found."}
+        deleted = ForumRepository.delete_reply(post_id, reply_id, is_admin=True)
+        if not deleted:
+            return {"success": False, "message": "Failed to delete comment."}
+        if owner.get("user_id"):
+            try:
+                create_notification(
+                    user_id=owner["user_id"], type="moderation",
+                    title="Your comment has been removed",
+                    message=f"Your community forum comment was removed. Reason: {reason}.",
+                )
+            except Exception as e:
+                print(f"[FORUM COMMENT DELETE] Notification FAILED: {e}")
+        return {"success": True, "message": "Comment removed. User has been notified.", "reply_id": reply_id}
 
     def admin_delete_post(self, post_id, admin_user_id=None, reason="Violated community guidelines"):
         # Get post owner + title before deleting so we can notify them and log a removal record

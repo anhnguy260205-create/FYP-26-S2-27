@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
     Bookmark, Eye, Hash, Heart, MessageCircle,
     Search, Send, X, ArrowLeft, Trash2, Pencil,
-    Check, Plus, MoreHorizontal, ChevronDown,
+    Check, Plus, ChevronDown,
     Flame, Users, BookOpen, Clock, Star, FileText,
     MessageSquare, Pin, Inbox, Flag, AlertCircle,
 } from "lucide-react";
@@ -16,7 +16,7 @@ import {
     createForumPost, updateForumPost, deleteForumPost, deleteForumReply,
     updateForumReply, getForumPost, getForumPosts,
     replyForumPost, toggleForumLike, toggleForumSave,
-    flagForumPost, getForumRemovalNotice, acknowledgeForumRemoval,
+    flagForumPost, flagForumReply, getForumRemovalNotice, acknowledgeForumRemoval,
 } from "../../api/expertApi.js";
 
 // ── Category images ────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ const REPORT_REASONS = [
     "Other",
 ];
 
-function ReportModal({ post, onConfirm, onCancel, reporting }) {
+function ReportModal({ target, onConfirm, onCancel, reporting }) {
     const [reason, setReason] = useState(REPORT_REASONS[0]);
     const [custom, setCustom] = useState("");
     const finalReason = reason === "Other" ? custom.trim() : reason;
@@ -320,13 +320,13 @@ function ReportModal({ post, onConfirm, onCancel, reporting }) {
                 padding: 24, width: "100%", maxWidth: 420, boxShadow: "0 20px 50px rgba(15,23,42,0.2)"
             }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: PAGE.heading }}>Report Post</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: PAGE.heading }}>Report {target.type === "comment" ? "Comment" : "Post"}</h3>
                     <button onClick={onCancel} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted }}>
                         <X size={18} />
                     </button>
                 </div>
                 <p style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>
-                    Why are you reporting this post by <strong style={{ color: C.text }}>{post.author}</strong>?
+                    Why are you reporting this {target.type === "comment" ? "comment" : "post"} by <strong style={{ color: C.text }}>{target.item.author}</strong>?
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                     {REPORT_REASONS.map(r => (
@@ -450,13 +450,24 @@ export default function ForumPage() {
         try { await acknowledgeForumRemoval(removalNotice.id); } catch { }
     }
 
-    async function handleReport(post, reason) {
+    async function handleReport(target, reason) {
         setReporting(true);
         try {
-            const data = await flagForumPost(post.id, reason);
+            const isComment = target.type === "comment";
+            const data = isComment
+                ? await flagForumReply(target.item.id, reason)
+                : await flagForumPost(target.item.id, reason);
             if (data?.success) {
-                const optimistic = normalisePost({ ...post, flagged_by_me: !post.flagged_by_me });
-                mutatePost(optimistic);
+                if (isComment && selectedPost) {
+                    const replies = (selectedPost.replies || []).map((reply) =>
+                        reply.id === target.item.id
+                            ? { ...reply, flagged_by_me: !reply.flagged_by_me }
+                            : reply
+                    );
+                    mutatePost(normalisePost({ ...selectedPost, replies }));
+                } else {
+                    mutatePost(normalisePost({ ...target.item, flagged_by_me: !target.item.flagged_by_me }));
+                }
                 setToReport(null);
             }
         } catch { } finally {
@@ -666,7 +677,8 @@ export default function ForumPage() {
                         onLike={e => handleLike(selectedPost, e)}
                         onSave={e => handleSave(selectedPost, e)}
                         onDelete={e => handleDelete(selectedPost, e)}
-                        onReport={() => setToReport(selectedPost)}
+                        onReport={() => setToReport({ type: "post", item: selectedPost })}
+                        onReportReply={(reply) => setToReport({ type: "comment", item: reply })}
                         onDeleteReply={(reply) => handleDeleteReply(selectedPost, reply)}
                         onEditReply={(reply, content) => handleEditReply(selectedPost, reply, content)}
                         onEditPost={(data) => handleEditPost(selectedPost, data)}
@@ -697,7 +709,7 @@ export default function ForumPage() {
                         onLike={handleLike}
                         onSave={handleSave}
                         onDelete={handleDelete}
-                        onReport={(post) => setToReport(post)}
+                        onReport={(post) => setToReport({ type: "post", item: post })}
                         canDelete={canDeletePost}
                         forumCopy={forumCopy}
                         forumTopics={forumTopics}
@@ -718,7 +730,7 @@ export default function ForumPage() {
 
             {toReport && (
                 <ReportModal
-                    post={toReport}
+                    target={toReport}
                     reporting={reporting}
                     onCancel={() => setToReport(null)}
                     onConfirm={(reason) => handleReport(toReport, reason)}
@@ -1190,16 +1202,7 @@ function PostRow({ post, onClick, onLike, onSave, onDelete, canDelete }) {
 //  PostCard — Instagram-style
 // ─────────────────────────────────────────────────────────────────────────────
 function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, onReport, canDelete }) {
-    const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useRef(null);
     const isOwner = post.user_id && currentUser && String(post.user_id) === String(currentUser.user_id || currentUser.id);
-    const showMenu = canDelete || (currentUser?.user_id || currentUser?.id);
-
-    useEffect(() => {
-        function handleClick(e) { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); }
-        document.addEventListener("mousedown", handleClick);
-        return () => document.removeEventListener("mousedown", handleClick);
-    }, []);
 
     return (
         <article style={{
@@ -1228,28 +1231,28 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, onRepor
                         )}
                     </div>
                 </div>
-                {/* More menu */}
-                {showMenu && (
-                    <div ref={menuRef} style={{ position: "relative" }}>
-                        <button onClick={e => { e.stopPropagation(); setMenuOpen(o => !o); }} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 4 }}>
-                            <MoreHorizontal size={18} />
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {canDelete && (
+                        <button
+                            onClick={(event) => { event.stopPropagation(); onDelete(event); }}
+                            title="Delete post"
+                            aria-label="Delete post"
+                            style={{ background: "none", border: "none", cursor: "pointer", color: C.danger, padding: 4 }}
+                        >
+                            <Trash2 size={17} />
                         </button>
-                        {menuOpen && (
-                            <div style={{ position: "absolute", right: 0, top: "100%", background: C.card2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 0", minWidth: 150, zIndex: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-                                {canDelete && (
-                                    <button onClick={e => { setMenuOpen(false); onDelete(e); }} style={{ width: "100%", padding: "8px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: C.danger, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-                                        <Trash2 size={14} /> Delete post
-                                    </button>
-                                )}
-                                {!isOwner && (
-                                    <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onReport?.(); }} style={{ width: "100%", padding: "8px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: post.flagged_by_me ? C.danger : C.muted, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-                                        <Flag size={14} fill={post.flagged_by_me ? "currentColor" : "none"} /> {post.flagged_by_me ? "Reported" : "Report post"}
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
+                    )}
+                    {!isOwner && (
+                        <button
+                            onClick={(event) => { event.stopPropagation(); onReport?.(); }}
+                            title={post.flagged_by_me ? "Reported" : "Report post"}
+                            aria-label={post.flagged_by_me ? "Reported" : "Report post"}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: post.flagged_by_me ? C.danger : C.muted, padding: 4 }}
+                        >
+                            <Flag size={18} fill={post.flagged_by_me ? "currentColor" : "none"} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Content — clickable */}
@@ -1295,7 +1298,7 @@ function PostCard({ post, currentUser, onOpen, onLike, onSave, onDelete, onRepor
 // ─────────────────────────────────────────────────────────────────────────────
 //  PostDetail
 // ─────────────────────────────────────────────────────────────────────────────
-function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onReport, onDeleteReply, onEditReply, onEditPost, canDelete, canEdit, replyText, setReplyText, onReply, loadingReplies }) {
+function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onReport, onReportReply, onDeleteReply, onEditReply, onEditPost, canDelete, canEdit, replyText, setReplyText, onReply, loadingReplies }) {
     const replies = Array.isArray(post.replies) ? post.replies.map(normaliseReply) : [];
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState("");
@@ -1441,14 +1444,21 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onRep
                                                     {reply.is_edited && <span style={{ fontSize: 10, color: C.muted }}>(edited)</span>}
                                                     <span style={{ fontSize: 11, color: C.muted }}>{formatDate(reply.time)}</span>
                                                 </div>
-                                                {canEdit && !isEditing && (
+                                                {!isEditing && (
                                                     <div style={{ display: "flex", gap: 4 }}>
+                                                        {!canEdit && (
+                                                            <button onClick={() => onReportReply(reply)} title={reply.flagged_by_me ? "Reported" : "Report comment"} style={{ padding: "3px 8px", borderRadius: 6, background: "none", border: "none", cursor: "pointer", color: reply.flagged_by_me ? C.danger : C.muted, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                                                                <Flag size={12} fill={reply.flagged_by_me ? "currentColor" : "none"} /> {reply.flagged_by_me ? "Reported" : "Report"}
+                                                            </button>
+                                                        )}
+                                                        {canEdit && (<>
                                                         <button onClick={() => { setEditingId(reply.id); setEditingText(reply.content); }} style={{ padding: "3px 8px", borderRadius: 6, background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                                                             <Pencil size={11} /> Edit
                                                         </button>
                                                         <button onClick={() => onDeleteReply(reply)} style={{ padding: "3px 8px", borderRadius: 6, background: "none", border: "none", cursor: "pointer", color: C.danger, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                                                             <Trash2 size={11} /> Delete
                                                         </button>
+                                                        </>)}
                                                     </div>
                                                 )}
                                             </div>

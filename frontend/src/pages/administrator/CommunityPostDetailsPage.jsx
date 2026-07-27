@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Trash2, AlertTriangle, X, Flag } from "lucide-react";
+import { Trash2, AlertTriangle, X, Flag, CheckCircle2 } from "lucide-react";
 import AdminPage from "../../layout/AdminPage.jsx";
-import { getForumPost, deleteForumReply, adminDeleteForumPost, adminGetFlaggedPosts } from "../../api/expertApi.js";
+import { getForumPost, deleteForumReply, adminDeleteForumPost, adminGetFlaggedPosts, adminClearForumFlags } from "../../api/expertApi.js";
 
 function formatDate(value) {
     const d = new Date(value);
@@ -82,18 +82,19 @@ function CommunityPostDetailsPage() {
     const [toDeletePost, setToDeletePost] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deletingReplyId, setDeletingReplyId] = useState(null);
+    const [dismissingFlags, setDismissingFlags] = useState(false);
 
-    const fetchPost = async () => {
-        setLoading(true);
-        try {
-            const data = await getForumPost(postId);
-            if (data?.success && data.post) setPost(data.post);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchPost(); }, [postId]);
+    useEffect(() => {
+        let cancelled = false;
+        getForumPost(postId)
+            .then((data) => {
+                if (!cancelled && data?.success && data.post) setPost(data.post);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [postId]);
 
     useEffect(() => {
         adminGetFlaggedPosts().then((data) => {
@@ -127,6 +128,18 @@ function CommunityPostDetailsPage() {
             }
         } finally {
             setDeleting(false);
+        }
+    };
+
+    const handleDismissReports = async () => {
+        if (!window.confirm("Dismiss all reports for this post and keep it visible?")) return;
+        setDismissingFlags(true);
+        try {
+            const data = await adminClearForumFlags(postId);
+            if (data?.success) setFlagInfo(null);
+            else alert(data?.message || "Failed to dismiss reports");
+        } finally {
+            setDismissingFlags(false);
         }
     };
 
@@ -174,6 +187,13 @@ function CommunityPostDetailsPage() {
                                 <p key={i} className="text-xs text-red-600 font-medium">{f.reason}</p>
                             ))}
                         </div>
+                        <button
+                            onClick={handleDismissReports}
+                            disabled={dismissingFlags}
+                            className="mt-4 flex items-center gap-1.5 border border-green-300 bg-white text-green-700 px-3 py-1.5 rounded text-xs font-semibold disabled:opacity-50"
+                        >
+                            <CheckCircle2 size={13} /> {dismissingFlags ? "Dismissing…" : "Dismiss Reports"}
+                        </button>
                     </div>
                 )}
 

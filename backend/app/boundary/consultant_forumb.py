@@ -133,6 +133,11 @@ def flag_post(post_id: str, data: FlagPostRequest, current_user: dict = Depends(
     return ForumController().flag_post(post_id, current_user["user_id"], data.reason)
 
 
+@router.post("/replies/{reply_id}/flag")
+def flag_reply(reply_id: str, data: FlagPostRequest, current_user: dict = Depends(get_current_user)):
+    return ForumController().flag_reply(reply_id, current_user["user_id"], data.reason)
+
+
 @router.get("/removal-notice")
 def get_removal_notice(current_user: dict = Depends(get_current_user)):
     return ForumController().get_removal_notice(current_user["user_id"])
@@ -159,6 +164,16 @@ def admin_list_posts(current_user: dict = Depends(require_admin)):
     return ForumController().admin_list_posts()
 
 
+@router.delete("/admin/{post_id}/flags")
+def admin_clear_post_flags(post_id: str, current_user: dict = Depends(require_admin)):
+    return ForumController().admin_clear_flags(post_id)
+
+
+@router.delete("/admin/replies/{reply_id}/flags")
+def admin_clear_reply_flags(reply_id: str, current_user: dict = Depends(require_admin)):
+    return ForumController().admin_clear_reply_flags(reply_id)
+
+
 class AdminDeletePostRequest(BaseModel):
     reason: str = "Violated community guidelines"
 
@@ -166,3 +181,8 @@ class AdminDeletePostRequest(BaseModel):
 @router.delete("/admin/{post_id}")
 def admin_delete_post(post_id: str, data: AdminDeletePostRequest, current_user: dict = Depends(require_admin)):
     return ForumController().admin_delete_post(post_id, admin_user_id=current_user["user_id"], reason=data.reason)
+
+
+@router.delete("/admin/posts/{post_id}/replies/{reply_id}")
+def admin_delete_reply(post_id: str, reply_id: str, data: AdminDeletePostRequest, current_user: dict = Depends(require_admin)):
+    return ForumController().admin_delete_reply(post_id, reply_id, reason=data.reason)

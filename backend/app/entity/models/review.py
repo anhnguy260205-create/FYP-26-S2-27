@@ -208,6 +208,14 @@ class ReviewRepository:
             }
 
     @staticmethod
+    def get_review_by_id(review_id, user_id=None):
+        with get_session() as session:
+            review = session.query(Review).filter(Review.review_id == review_id).first()
+            if not review:
+                return None
+            return _serialise_review(review, user_id=user_id, session=session)
+
+    @staticmethod
     def get_my_review(user_id):
         if not user_id:
             return None

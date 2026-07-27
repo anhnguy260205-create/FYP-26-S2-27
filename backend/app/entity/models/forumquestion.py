@@ -131,6 +131,18 @@ class ForumPostFlag(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class ForumReplyFlag(Base):
+    """Tracks user reports on forum comments — one flag per user per comment."""
+    __tablename__ = "forum_reply_flag"
+    __table_args__ = (UniqueConstraint("reply_id", "user_id", name="uq_forum_reply_flag"),)
+
+    id         = Column(String(50), primary_key=True, default=lambda: f"rf_{uuid4()}")
+    reply_id   = Column(String(50), ForeignKey("forum_reply.reply_id"), nullable=False)
+    user_id    = Column(String(50), nullable=False)
+    reason     = Column(String(200), default="Inappropriate content")
+    created_at = Column(DateTime, default=_now)
+
+
 class ForumPostRemoval(Base):
     """
     Records an admin-removed post so the original author can still see why
@@ -188,6 +200,17 @@ def _serialise_reply(reply, user_id=None, session=None):
             ForumReplyLike.reply_id == reply.reply_id,
             ForumReplyLike.user_id == user_id,
         ).first() is not None
+    flagged_by_me = False
+    flag_count = 0
+    if session:
+        flag_count = session.query(ForumReplyFlag).filter(
+            ForumReplyFlag.reply_id == reply.reply_id
+        ).count()
+        if user_id:
+            flagged_by_me = session.query(ForumReplyFlag).filter(
+                ForumReplyFlag.reply_id == reply.reply_id,
+                ForumReplyFlag.user_id == str(user_id),
+            ).first() is not None
     return {
         "id":          reply.reply_id,
         "reply_id":    reply.reply_id,
@@ -198,6 +221,8 @@ def _serialise_reply(reply, user_id=None, session=None):
         "content":     reply.content,
         "likes":       reply.likes_count,
         "liked_by_me": liked_by_me,
+        "flagged_by_me": flagged_by_me,
+        "flag_count": flag_count,
         "is_edited":   bool(reply.is_edited),
         "created_at":  _safe_dt(reply.created_at),
         "time":        _safe_dt(reply.created_at),
@@ -629,6 +654,7 @@ class ForumRepository:
             reply_ids = [r.reply_id for r in session.query(ForumReply).filter(ForumReply.post_id == post_id).all()]
             if reply_ids:
                 session.query(ForumReplyLike).filter(ForumReplyLike.reply_id.in_(reply_ids)).delete(synchronize_session=False)
+                session.query(ForumReplyFlag).filter(ForumReplyFlag.reply_id.in_(reply_ids)).delete(synchronize_session=False)
             session.query(ForumReply).filter(ForumReply.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostLike).filter(ForumPostLike.post_id == post_id).delete(synchronize_session=False)
             session.query(ForumPostSave).filter(ForumPostSave.post_id == post_id).delete(synchronize_session=False)
@@ -672,6 +698,9 @@ class ForumRepository:
                 return None
             session.query(ForumReplyLike).filter(
                 ForumReplyLike.reply_id == reply_id
+            ).delete(synchronize_session=False)
+            session.query(ForumReplyFlag).filter(
+                ForumReplyFlag.reply_id == reply_id
             ).delete(synchronize_session=False)
             session.delete(reply)
             post.updated_at = _now()
@@ -781,6 +810,30 @@ class ForumRepository:
             session.flush()
             return {"flagged": True, "post_id": post_id, "reason": reason}
 
+    @staticmethod
+    def flag_reply(reply_id, user_id, reason):
+        """Toggle a report on a forum comment."""
+        if not user_id:
+            return None
+        with get_session() as session:
+            reply = session.query(ForumReply).filter(ForumReply.reply_id == reply_id).first()
+            if not reply:
+                return None
+            existing = session.query(ForumReplyFlag).filter(
+                ForumReplyFlag.reply_id == reply_id,
+                ForumReplyFlag.user_id == str(user_id),
+            ).first()
+            if existing:
+                session.delete(existing)
+                session.flush()
+                return {"unflagged": True, "reply_id": reply_id}
+            session.add(ForumReplyFlag(
+                reply_id=reply_id, user_id=str(user_id),
+                reason=reason or "Inappropriate content",
+            ))
+            session.flush()
+            return {"flagged": True, "reply_id": reply_id, "reason": reason}
+
     # ── Admin moderation ────────────────────────────────────────────────────
 
     @staticmethod
@@ -866,3 +919,70 @@ class ForumRepository:
                     result.append(data)
             result.sort(key=lambda p: p["flag_count"], reverse=True)
             return result
+
+    @staticmethod
+    def admin_flagged_replies():
+        """Comments reported by at least one user, including their parent post."""
+        with get_session() as session:
+            flags = session.query(ForumReplyFlag).order_by(ForumReplyFlag.created_at.desc()).all()
+            by_reply = {}
+            for flag in flags:
+                by_reply.setdefault(flag.reply_id, []).append({
+                    "user_id": flag.user_id, "reason": flag.reason,
+                    "flagged_at": _safe_dt(flag.created_at),
+                })
+            result = []
+            for reply_id, flag_list in by_reply.items():
+                reply = session.query(ForumReply).filter(ForumReply.reply_id == reply_id).first()
+                if not reply:
+                    continue
+                post = session.query(ForumPost).filter(ForumPost.post_id == reply.post_id).first()
+                data = _serialise_reply(reply, session=session)
+                data.update({
+                    "type": "comment",
+                    "post_id": reply.post_id,
+                    "post_title": post.title if post else "Deleted post",
+                    "title": post.title if post else "Deleted post",
+                    "flags": flag_list,
+                    "flag_count": len(flag_list),
+                })
+                result.append(data)
+            result.sort(key=lambda item: item["flag_count"], reverse=True)
+            return result
+
+    @staticmethod
+    def clear_reply_flags(reply_id):
+        with get_session() as session:
+            exists = session.query(ForumReply).filter(ForumReply.reply_id == reply_id).first() is not None
+            if not exists:
+                return None
+            cleared = session.query(ForumReplyFlag).filter(
+                ForumReplyFlag.reply_id == reply_id
+            ).delete(synchronize_session=False)
+            return int(cleared or 0)
+
+    @staticmethod
+    def get_reply_owner_info(reply_id):
+        with get_session() as session:
+            reply = session.query(ForumReply).filter(ForumReply.reply_id == reply_id).first()
+            if not reply:
+                return None
+            post = session.query(ForumPost).filter(ForumPost.post_id == reply.post_id).first()
+            return {
+                "user_id": reply.user_id, "content": reply.content,
+                "post_id": reply.post_id, "post_title": post.title if post else "",
+            }
+
+    @staticmethod
+    def clear_post_flags(post_id):
+        """Dismiss every report for a post without deleting the post itself."""
+        with get_session() as session:
+            post_exists = session.query(ForumPost).filter(
+                ForumPost.post_id == post_id
+            ).first() is not None
+            if not post_exists:
+                return None
+            cleared = session.query(ForumPostFlag).filter(
+                ForumPostFlag.post_id == post_id
+            ).delete(synchronize_session=False)
+            return int(cleared or 0)

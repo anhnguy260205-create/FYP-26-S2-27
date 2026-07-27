@@ -34,6 +34,8 @@ export default function GiftDialog({ expert, onClose, onSent }) {
   const presets = config?.presets ?? [5, 10, 20, 50, 100, 200];
   const expertPercent = config?.expert_share_percent ?? 70;
   const platformPercent = config?.platform_share_percent ?? 30;
+  const minAmount = Number(config?.min_amount ?? 1);
+  const maxAmount = Number(config?.max_amount ?? 5000);
 
   const numeric = Number(amount) || 0;
   const expertGets = Math.round(numeric * (expertPercent / 100) * 100) / 100;
@@ -41,8 +43,12 @@ export default function GiftDialog({ expert, onClose, onSent }) {
 
   const handleSend = async () => {
     setError(null);
-    if (numeric <= 0) {
-      setError("Enter an amount greater than zero.");
+    if (numeric < minAmount) {
+      setError(`Minimum gift is ${formatCurrency(minAmount)}.`);
+      return;
+    }
+    if (numeric > maxAmount) {
+      setError(`Premium users can send a maximum of ${formatCurrency(maxAmount)} per gift.`);
       return;
     }
 
@@ -152,11 +158,12 @@ export default function GiftDialog({ expert, onClose, onSent }) {
           <label style={{
             display: "block", color: "#94a3b8", fontSize: 12, marginBottom: 6,
           }}>
-            Or enter a custom amount (USD)
+            Or enter a custom amount (USD, max {formatCurrency(maxAmount)})
           </label>
           <input
             type="number"
-            min="0"
+            min={minAmount}
+            max={maxAmount}
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -230,12 +237,12 @@ export default function GiftDialog({ expert, onClose, onSent }) {
 
           <button
             onClick={handleSend}
-            disabled={sending || numeric <= 0}
+            disabled={sending || numeric < minAmount || numeric > maxAmount}
             style={{
               width: "100%", height: 46, borderRadius: 12, border: "none",
               background: GRADIENT, color: "#fff", fontWeight: 700, fontSize: 14,
-              cursor: sending || numeric <= 0 ? "default" : "pointer",
-              opacity: sending || numeric <= 0 ? 0.5 : 1,
+              cursor: sending || numeric < minAmount || numeric > maxAmount ? "default" : "pointer",
+              opacity: sending || numeric < minAmount || numeric > maxAmount ? 0.5 : 1,
             }}
           >
             {sending ? "Sending…" : `Send ${formatCurrency(numeric)}`}
@@ -244,7 +251,7 @@ export default function GiftDialog({ expert, onClose, onSent }) {
           <p style={{
             color: "#64748b", fontSize: 11, textAlign: "center", marginTop: 12,
           }}>
-            Deducted from your assets. Appears in Transaction History.
+            Premium gift limit: {formatCurrency(maxAmount)} per gift. Deducted from your assets and shown in Transaction History.
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   UserRound,
@@ -16,8 +16,9 @@ import {
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
 import helpCenterImg from "../../images/help_center.jpg";
+import { fillTemplate, useContentManagement } from "../../utils/contentManagement.js";
 
-const categories = [
+const CATEGORIES_FALLBACK = [
   {
     title: "Account & Login",
 
@@ -47,7 +48,7 @@ const categories = [
   },
 ];
 
-const faqs = [
+const FAQS_FALLBACK = [
   {
     category: "Account & Login",
     question: "How do I create an account?",
@@ -164,42 +165,83 @@ const faqs = [
 ];
 
 function SupportPage() {
+  const cms = useContentManagement();
+  const hero = cms.text("help_hero", "How can we|help you?", "Find answers, explore support topics, or contact our team for further assistance.");
+  const searchPlaceholder = cms.text("help_search_placeholder", "Search for help...").title;
+  const faqHeader = cms.text(
+    "help_faq_header",
+    "Frequently Asked Questions",
+    "Browse frequently asked questions across all support topics."
+  );
+  const faqCategoryDescription = cms.text(
+    "help_faq_category_desc",
+    "Showing questions related to {category}."
+  ).title;
+  const emptyHeading = cms.text("help_empty_heading", "No matching questions found").title;
+  const emptyDescription = cms.text(
+    "help_empty_desc",
+    "Try using a different search term or select another category."
+  ).title;
+  const contactHeading = cms.text(
+    "help_contact_heading",
+    "Didn't find an answer to your questions?"
+  ).title;
+  const contactDescription = cms.text(
+    "help_contact_desc",
+    "Get in touch with us for more details"
+  ).title;
+  const contactCta = cms.text("help_contact_cta", "Contact Support").title;
+  const contactEmail = cms.text("help_contact_email", "kim@gmail.com").title;
+  const [heroPlain, heroAccent] = hero.title.includes("|") ? hero.title.split("|") : ["", hero.title];
+
+  const categoryItems = cms.section("help_categories");
+  const categories = CATEGORIES_FALLBACK.map((fallback, i) => ({
+    ...fallback,
+    title: categoryItems[i]?.title ?? fallback.title,
+  }));
+
+  // Each category owns three FAQ rows by position. This keeps the internal
+  // relationship stable while allowing admins to rename category labels
+  // without breaking filtering or search.
+  const faqItems = cms.section("help_faqs");
+  const faqs = FAQS_FALLBACK.map((fallback, i) => ({
+    category: categories[Math.floor(i / 3)]?.title ?? fallback.category,
+    question: faqItems[i]?.title ?? fallback.question,
+    answer: faqItems[i]?.description ?? fallback.answer,
+  }));
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [openFaq, setOpenFaq] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const faqSectionRef = useRef(null);
 
-  const filteredFaqs = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return faqs.filter((faq) => {
-      const matchesCategory =
-        selectedCategory === "All" ||
-        faq.category === selectedCategory;
+  const filteredFaqs = faqs.filter((faq) => {
+    const matchesCategory =
+      selectedCategory === "All" ||
+      faq.category === selectedCategory;
 
-      const matchesSearch =
-        !normalizedSearch ||
-        faq.question.toLowerCase().includes(normalizedSearch) ||
-        faq.answer.toLowerCase().includes(normalizedSearch) ||
-        faq.category.toLowerCase().includes(normalizedSearch);
+    const matchesSearch =
+      !normalizedSearch ||
+      faq.question.toLowerCase().includes(normalizedSearch) ||
+      faq.answer.toLowerCase().includes(normalizedSearch) ||
+      faq.category.toLowerCase().includes(normalizedSearch);
 
-      return matchesCategory && matchesSearch;
-    });
-  }, [selectedCategory, searchTerm]);
+    return matchesCategory && matchesSearch;
+  });
 
-  const searchSuggestions = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return [];
-    return faqs
+  const searchSuggestions = normalizedSearch
+    ? faqs
       .filter(
         (faq) =>
           faq.question.toLowerCase().includes(normalizedSearch) ||
           faq.answer.toLowerCase().includes(normalizedSearch) ||
           faq.category.toLowerCase().includes(normalizedSearch)
       )
-      .slice(0, 5);
-  }, [searchTerm]);
+      .slice(0, 5)
+    : [];
 
   const selectCategory = (category) => {
     setSelectedCategory(category);
@@ -234,7 +276,7 @@ function SupportPage() {
       <section className="relative w-full h-250 overflow-hidden border-b border-blue-500/20 shadow-2xl shadow-black/30">
         <img
           alt=""
-          src={helpCenterImg}
+          src={hero.image_url || helpCenterImg}
           className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
         />
         <div className="absolute inset-0 bg-blue-950/80" />
@@ -243,15 +285,14 @@ function SupportPage() {
           <div className="max-w-3xl text-center" style={{ marginTop: 80 }}>
 
             <h1 className="text-4xl font-bold tracking-tight [text-shadow:0_2px_12px_rgba(0,0,0,0.6)] md:text-6xl">
-              How can we{" "}
+              {heroPlain}{heroPlain && " "}
               <span className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                help you?
+                {heroAccent}
               </span>
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] md:text-lg">
-              Find answers, explore support topics, or contact our team for
-              further assistance.
+              {hero.description}
             </p>
 
             <div className="relative mt-8 max-w-2xl">
@@ -270,7 +311,7 @@ function SupportPage() {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setShowSuggestions(false)}
-                placeholder="Search for help..."
+                placeholder={searchPlaceholder}
                 className="h-14 w-full rounded-3xl border border-blue-500/40 bg-slate-950/85 shadow-lg shadow-black/40 pl-14 pr-5 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-cyan-400/70 focus:shadow-[0_0_25px_rgba(34,211,238,0.2)]"
               />
 
@@ -338,13 +379,13 @@ function SupportPage() {
         <section className="mt-20 flex justify-center">
           <div ref={faqSectionRef} className="w-full max-w-3xl">
             <h2 className="text-center text-3xl font-bold text-slate-900">
-              Frequently Asked Questions
+              {faqHeader.title}
             </h2>
 
             <p className="mt-3 text-center text-sm leading-7 text-slate-600 md:text-base">
               {selectedCategory === "All"
-                ? "Browse frequently asked questions across all support topics."
-                : `Showing questions related to ${selectedCategory}.`}
+                ? faqHeader.description
+                : fillTemplate(faqCategoryDescription, { category: selectedCategory })}
             </p>
 
             <div className="mt-8 space-y-3">
@@ -409,12 +450,11 @@ function SupportPage() {
                   />
 
                   <h3 className="mt-4 text-lg font-semibold text-slate-800">
-                    No matching questions found
+                    {emptyHeading}
                   </h3>
 
                   <p className="mt-2 text-sm text-slate-600">
-                    Try using a different search term or select another
-                    category.
+                    {emptyDescription}
                   </p>
                 </div>
               )}
@@ -427,18 +467,18 @@ function SupportPage() {
         {/* Contact CTA */}
         <section className="mt-12 text-center">
           <h2 className="text-3xl font-bold text-slate-900">
-            Didn't find an answer to your questions?
+            {contactHeading}
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
-            Get in touch with us for more details
+            {contactDescription}
           </p>
 
           <a
-            href="mailto:kim@gmail.com"
+            href={`mailto:${contactEmail}`}
             className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-400 to-blue-500 px-8 text-sm font-bold text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.2)] transition hover:brightness-110"
           >
-            Contact Support
+            {contactCta}
           </a>
         </section>
       </main>

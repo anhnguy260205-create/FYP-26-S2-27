@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban, DollarSign, Users, Star, Lock, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Eye, FileText, User, Briefcase, ExternalLink, Ban, DollarSign, Users, Star, Lock, Calendar, Search } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import LoginActivityChart from "../../components/admin/LoginActivityChart.jsx";
@@ -37,6 +37,7 @@ function DetailView({ application, onBack, onApprove, onReject, onCancel }) {
   const [loginActivityLoading, setLoginActivityLoading] = useState(true);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoginActivityLoading(true);
     authFetch(`${API}/${application.expert_id}/login-activity?days=7`)
       .then((r) => r.json())
@@ -202,6 +203,8 @@ function ExpertApplicationReviewPage() {
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [keyword, setKeyword] = useState("");
+  const [documentFilter, setDocumentFilter] = useState("all");
 
   // `silent` skips the loading spinner — used for background polling so the
   // table doesn't flicker while an admin is actively reviewing it.
@@ -219,11 +222,15 @@ function ExpertApplicationReviewPage() {
           return data.experts.find(e => e.expert_id === prev.expert_id) || prev;
         });
       }
-    } catch { }
+    } catch {
+      // Keep the existing list when a background refresh fails.
+    }
     finally { if (!silent) setLoading(false); }
   };
 
   useEffect(() => {
+    // Initial data load; later refreshes run silently to avoid table flicker.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchExperts();
     const interval = setInterval(() => fetchExperts({ silent: true }), 15000);
     return () => clearInterval(interval);
@@ -277,7 +284,17 @@ function ExpertApplicationReviewPage() {
     }
   };
 
-  const filtered = filter === "all" ? experts : experts.filter(e => e.verification_status === filter);
+  const filtered = experts.filter((expert) => {
+    const matchesStatus = filter === "all" || expert.verification_status === filter;
+    const q = keyword.trim().toLowerCase();
+    const matchesKeyword = !q || [expert.full_name, expert.email_address, expert.phone_number]
+      .some((value) => String(value || "").toLowerCase().includes(q));
+    const documentCount = expert.documents?.length || 0;
+    const matchesDocuments = documentFilter === "all"
+      || (documentFilter === "with" && documentCount > 0)
+      || (documentFilter === "without" && documentCount === 0);
+    return matchesStatus && matchesKeyword && matchesDocuments;
+  });
   const counts = {
     all: experts.length,
     pending: experts.filter(e => e.verification_status === "pending").length,
@@ -296,25 +313,58 @@ function ExpertApplicationReviewPage() {
   return (
     <AdminLayout title="Expert Application Review" subtitle="Review and verify documents submitted by expert applicants">
       <div className="space-y-5">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Status subtabs */}
+        <div className="flex gap-2 flex-wrap">
           {[
-            { key: "all", label: "Total", color: "border-blue-200 bg-blue-50 text-blue-700" },
-            { key: "pending", label: "Pending", color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
-            { key: "approved", label: "Approved", color: "border-green-200 bg-green-50 text-green-700" },
-            { key: "rejected", label: "Rejected", color: "border-red-200 bg-red-50 text-red-700" },
-          ].map(({ key, label, color }) => (
-            <button key={key} onClick={() => setFilter(key)}
-              className={`border-2 rounded-lg px-5 py-4 text-left transition-all ${color} ${filter === key ? "ring-2 ring-offset-1 ring-blue-400" : "opacity-80 hover:opacity-100"}`}>
-              <p className="text-3xl font-black">{counts[key]}</p>
-              <p className="text-xs font-semibold mt-1">{label}</p>
+            { key: "all", label: "All Applications" },
+            { key: "pending", label: "Pending" },
+            { key: "approved", label: "Approved" },
+            { key: "rejected", label: "Rejected" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold ${filter === key
+                ? key === "pending" ? "bg-amber-500 text-white"
+                  : key === "approved" ? "bg-green-600 text-white"
+                    : key === "rejected" ? "bg-red-600 text-white"
+                      : "bg-blue-600 text-white"
+                : "bg-white border border-gray-200 text-slate-600 hover:bg-gray-50"}`}
+            >
+              {label} ({counts[key]})
             </button>
           ))}
         </div>
 
+        {/* Search and filters */}
+        <div className="bg-white rounded-lg p-5">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-64">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="Search by expert name, email or phone…"
+                className="w-full h-10 pl-9 pr-4 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <select
+              value={documentFilter}
+              onChange={(event) => setDocumentFilter(event.target.value)}
+              className="h-10 min-w-48 border border-gray-200 rounded-lg px-3 text-sm text-slate-700 bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All document statuses</option>
+              <option value="with">Documents submitted</option>
+              <option value="without">No documents submitted</option>
+            </select>
+            <span className="text-sm text-slate-500 whitespace-nowrap">
+              {loading ? "Loading…" : `${filtered.length} application${filtered.length !== 1 ? "s" : ""}`}
+            </span>
+          </div>
+        </div>
+
         {/* Table */}
         <div className="bg-white rounded-lg overflow-x-auto">
-          <div className="px-6 py-4 border-b"><p className="text-sm font-semibold text-slate-700">{filtered.length} application{filtered.length !== 1 ? "s" : ""}</p></div>
           {loading ? (
             <div className="p-12 text-center text-slate-400">Loading...</div>
           ) : (

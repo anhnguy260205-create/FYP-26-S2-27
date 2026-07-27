@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import {
   Edit, Check, X, GripVertical, Eye, ChevronDown,
-  Rocket, Compass, ShieldCheck, Sparkles, Award, Layers,
+  Rocket, ShieldCheck, Sparkles, Award,
   PlayCircle, ListChecks, HelpCircle, CreditCard, Link2,
-  LayoutDashboard, Wallet, Crown, GraduationCap,
+  LayoutDashboard, Wallet, GraduationCap,
   BrainCircuit, MessagesSquare, Bot, MessageCircleQuestion,
   DollarSign, Zap, Users, UserPlus, Mail, Activity, Briefcase, MessageSquare, BookOpen,
   TrendingUp, AlertTriangle, Gauge, BadgeCheck, FileText,
-  Search, Plus, Hash, Flame, Star, Clock, Heart, Bookmark,
-  BarChart3, CheckCircle2,
+  Search, Plus, Hash, Flame, Star, Clock, Heart,
+  BarChart3, CheckCircle2, Cpu, ChartNoAxesCombined, UserRound, ChartCandlestick,
 } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import professorPageImg from "../../images/professorpage.jpg";
 import aboutUsImg from "../../images/about_us.jpg";
+import helpCenterImg from "../../images/help_center.jpg";
 
 // Real per-card icons, copied straight from the source arrays in
 // Homepage.jsx / LoggedInHomePage.jsx / ExpertLoggedInPage.jsx — icons
@@ -31,6 +32,16 @@ const CARD_ICONS = {
   forum_topics: [Gauge, BrainCircuit, Briefcase, TrendingUp, GraduationCap, Sparkles, Activity, DollarSign, Wallet, MessageSquare, Zap, LayoutDashboard],
 };
 
+const ABOUT_VALUE_ICONS = [ShieldCheck, Cpu, ChartNoAxesCombined, Users];
+const HELP_CATEGORY_ICONS = [
+  UserRound,
+  CreditCard,
+  ChartCandlestick,
+  BrainCircuit,
+  MessagesSquare,
+  ShieldCheck,
+];
+
 const API = `${import.meta.env.VITE_API_URL}/admin/content`;
 
 const IMAGE_CONTENT_IDS = new Set([
@@ -42,6 +53,8 @@ const IMAGE_CONTENT_IDS = new Set([
   "expert_knowledge_header",
   "expert_portfolio_list_header",
   "expert_portfolio_list_expert_header",
+  "about_hero",
+  "help_hero",
   "forum_topic_technical",
   "forum_topic_ai",
   "forum_topic_strategy",
@@ -175,26 +188,6 @@ const INVESTOR_SHARED_BOTTOM = [
   },
 ];
 
-const BASIC_INVESTOR_SUBTABS = [
-  ...INVESTOR_SHARED_TOP,
-  {
-    key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
-    headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner."
-  },
-  ...INVESTOR_SHARED_BOTTOM,
-];
-
-const PREMIUM_INVESTOR_SUBTABS = [
-  ...INVESTOR_SHARED_TOP,
-  {
-    key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
-    headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner."
-  },
-  ...INVESTOR_SHARED_BOTTOM,
-];
-
 const COMMUNITY_FORUM_SUBTABS = [
   {
     key: "forum_overview", label: "Overview", icon: MessagesSquare, kind: "generic", preview: "forum_overview",
@@ -229,74 +222,9 @@ const INVESTOR_EXPERT_HOME_SUBTABS = [
   ...COMMUNITY_FORUM_SUBTABS,
 ];
 
-const BASIC_INVESTOR_ONLY_SUBTABS = [
-  {
-    key: "basic_banner", label: "Upgrade to Premium Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
-    headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription-status banner instead, while Expert accounts do not see this investor banner."
-  },
-];
-
-const PREMIUM_INVESTOR_ONLY_SUBTABS = [
-  {
-    key: "premium_banner", label: "Premium Renewal Banner", icon: Crown, kind: "generic", preview: "banner_premium",
-    headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends. Basic investors and Expert accounts will not see this banner."
-  },
-];
-
 // Expert Home subtabs (ExpertLoggedInPage.jsx), in the order they actually
 // appear scrolling down the page: hero, model portfolio, profile, tools,
 // then the verification documents banner at the very bottom.
-const EXPERT_SUBTABS = [
-  {
-    key: "expert_hero", label: "Header", icon: GraduationCap, kind: "generic", preview: "expert_hero",
-    headerId: "expert_hero_subtitle", itemsSection: null,
-    hint: "Controls the subtitle shown under the “Welcome back” heading on the Expert home page."
-  },
-  {
-    key: "model_portfolio", label: "Model Portfolio", icon: LayoutDashboard, kind: "generic", preview: "model_portfolio",
-    headerId: "header_model_portfolio", itemsSection: null,
-    extraIds: [
-      { id: "model_portfolio_empty_msg", label: "Message shown before they've set one up" },
-      { id: "model_portfolio_cta_create", label: "Button text (no portfolio yet)" },
-      { id: "model_portfolio_cta_manage", label: "Button text (already has one)" },
-    ],
-    hint: "Controls the Model Portfolio card on the Expert home page. Live data values such as holdings, invested amount, cash balance, and risk level remain system-generated."
-  },
-  {
-    key: "expert_profile", label: "Your Profile", icon: Award, kind: "generic", preview: "expert_profile",
-    headerId: "header_expert_profile", itemsSection: null,
-    extraIds: [
-      { id: "expert_profile_edit_cta", label: "\u201cEdit Profile\u201d link text" },
-      { id: "expert_profile_not_rated", label: "Message shown before they've been rated" },
-      { id: "compensation_pending_label", label: "Compensation: label when a payout is pending" },
-      { id: "compensation_need_followers", label: "Compensation: message before they qualify (keep the word {followers} in there \u2014 it's swapped for the real number)" },
-      { id: "compensation_locked_label", label: "Compensation: label before they're verified" },
-      { id: "compensation_locked_msg", label: "Compensation: message before they're verified" },
-    ],
-    hint: "Controls the Expert Profile and Compensation summary cards shown on the Expert home page. Ratings, follower counts, and payout figures remain system-generated."
-  },
-  {
-    key: "expert_tools", label: "Your Tools", icon: Layers, kind: "generic", preview: "cards",
-    headerId: "header_expert_tools", ctaId: "expert_tools_cta", itemsSection: "expert_tools",
-    hint: "Controls the Expert tool cards that link to dashboard features such as market data, Knowledge Hub, Community Forum, Model Portfolio, and Messages."
-  },
-  {
-    key: "expert_documents", label: "Verification Documents", icon: HelpCircle, kind: "generic", preview: "documents",
-    headerId: "header_documents", itemsSection: null,
-    extraIds: [
-      { id: "documents_desc_verified", label: "Description (already verified)" },
-      { id: "documents_desc_unverified", label: "Description (not verified yet)" },
-      { id: "documents_cta_verified", label: "Button text (already verified)" },
-      { id: "documents_cta_unverified", label: "Button text (not verified yet)" },
-    ],
-    hint: "Controls the Verification Documents banner shown on the Expert home page."
-  },
-];
-
-
-
 const EXPERT_PAGES_SUBTABS = [
   { key: "expert_compensation_page", label: "Compensation Page", icon: DollarSign, kind: "generic", preview: "expert_compensation_page", headerId: "expert_compensation_header", itemsSection: "expert_compensation_page", hint: "Controls the main headings, notices, locked-state copy, and empty-state messages on the Expert Compensation page. Numerical values and table column labels remain system-generated." },
   { key: "expert_documents_page", label: "Documents Page", icon: FileText, kind: "generic", preview: "expert_documents_page", headerId: "expert_documents_page_header", itemsSection: "expert_documents_page", hint: "Controls the headings, instructions, and action text on the Expert document submission page." },
@@ -366,33 +294,123 @@ const MEMBERSHIP_PAYMENT_SUBTABS = [
   },
 ];
 
-const INVESTOR_BANNER_SUBTABS = [
-  {
-    key: "basic_banner", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
-    headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors see the subscription banner instead, and Expert accounts do not see either investor banner."
-  },
-  {
-    key: "premium_banner", label: "Premium Subscription Banner", icon: Crown, kind: "generic", preview: "banner_premium",
-    headerId: "investor_banner_premium", ctaId: "investor_banner_premium_cta", itemsSection: null,
-    hint: "Controls the subscription-status banner shown only to Premium investors. Use “{days}” in the description to display the number of days remaining before the subscription ends."
-  },
-];
-
+// Only Basic gets an upgrade banner — the Premium equivalent
+// (PremiumRenewalBanner) was removed from LoggedInHomePage.jsx in the
+// investor/expert merge, so there's nothing left for a "Premium Banner"
+// tab to control. Removed rather than left pointing at nothing.
 // "Landing Page" bundles every section that only lives on Homepage.jsx into
 // its subtabs above. Membership & Payment gets its own top-level tab
 // because pricing and payment-result screens belong to subscription flow,
 // not investor profile setup. The footer stays separate because it appears
 // across the whole platform.
+const ABOUT_US_SUBTABS = [
+  {
+    key: "about_hero",
+    label: "Page Header",
+    icon: Sparkles,
+    kind: "generic",
+    preview: "about_hero",
+    headerId: "about_hero",
+    itemsSection: null,
+    extraIds: [{ id: "about_hero_para2", label: "Second introduction paragraph" }],
+    hint: "Controls the About Us hero image, heading and both introduction paragraphs. Use a line break in the heading to control where it wraps.",
+  },
+  {
+    key: "about_values",
+    label: "Values Section",
+    icon: ShieldCheck,
+    kind: "generic",
+    preview: "about_values",
+    headerId: "about_values_header",
+    itemsSection: "about_values",
+    itemsLabel: "Value cards",
+    hint: "Controls the Our Values badge and all four value-card titles and descriptions.",
+  },
+  {
+    key: "about_people",
+    label: "Team Section",
+    icon: Users,
+    kind: "generic",
+    preview: "about_people",
+    headerId: "about_people_header",
+    itemsSection: "about_team",
+    itemsLabel: "Team members",
+    extraIds: [
+      { id: "about_people_badge", label: "Section badge" },
+      { id: "about_team_role", label: "Role label shown on every team card" },
+    ],
+    hint: "Controls the team section heading, description, badge, member names, initials and shared role label.",
+  },
+];
+
+const HELP_CENTER_SUBTABS = [
+  {
+    key: "help_hero",
+    label: "Header & Search",
+    icon: HelpCircle,
+    kind: "generic",
+    preview: "help_hero",
+    headerId: "help_hero",
+    itemsSection: null,
+    extraIds: [{ id: "help_search_placeholder", label: "Search field placeholder" }],
+    hint: "Controls the Help Center hero image, heading, subtitle and search placeholder. Use “|” to mark where the gradient-coloured part of the heading begins.",
+  },
+  {
+    key: "help_categories",
+    label: "Support Categories",
+    icon: BookOpen,
+    kind: "generic",
+    preview: "help_categories",
+    headerId: null,
+    itemsSection: "help_categories",
+    itemsLabel: "Category filters",
+    hint: "Controls the six category names shown below the search field. Each category remains linked to its three FAQ entries by position, so labels can be renamed safely.",
+  },
+  {
+    key: "help_faqs",
+    label: "FAQ Section",
+    icon: MessageCircleQuestion,
+    kind: "generic",
+    preview: "help_faqs",
+    headerId: "help_faq_header",
+    itemsSection: "help_faqs",
+    itemsLabel: "Questions and answers",
+    extraIds: [
+      { id: "help_faq_category_desc", label: "Description shown after selecting a category — keep {category}" },
+      { id: "help_empty_heading", label: "No-results heading" },
+      { id: "help_empty_desc", label: "No-results description" },
+    ],
+    hint: "Controls the FAQ heading, descriptions, all 18 questions and answers, and the no-results state.",
+  },
+  {
+    key: "help_contact",
+    label: "Contact Support",
+    icon: Mail,
+    kind: "generic",
+    preview: "help_contact",
+    headerId: "help_contact_heading",
+    itemsSection: null,
+    extraIds: [
+      { id: "help_contact_desc", label: "Supporting text" },
+      { id: "help_contact_cta", label: "Button text" },
+      { id: "help_contact_email", label: "Support email address" },
+    ],
+    hint: "Controls the contact call-to-action shown at the bottom of the Help Center, including the email address used by the button.",
+  },
+];
+
 const MAIN_TABS = [
   { key: "landing", label: "Landing Page", icon: Rocket, subtabs: LANDING_SUBTABS },
   { key: "membership", label: "Membership & Payment", icon: CreditCard, subtabs: MEMBERSHIP_PAYMENT_SUBTABS },
   { key: "investor_expert_home", label: "Shared Investor + Expert", icon: Wallet, subtabs: INVESTOR_EXPERT_HOME_SUBTABS },
-  { key: "investor_banners", label: "Investor Banners", icon: Crown, subtabs: INVESTOR_BANNER_SUBTABS },
+  { key: "investor_banners", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
+    headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
+    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors and Expert accounts do not see this banner." },
   { key: "investor_pages", label: "Investor Pages", icon: Wallet, subtabs: INVESTOR_PAGES_SUBTABS },
   { key: "investor_setup", label: "Investor Setup & Applications", icon: UserPlus, subtabs: INVESTOR_SETUP_SUBTABS },
-  { key: "expert_home", label: "Expert Home", icon: GraduationCap, subtabs: EXPERT_SUBTABS },
   { key: "expert_pages", label: "Expert Pages", icon: Briefcase, subtabs: EXPERT_PAGES_SUBTABS },
+  { key: "about_us", label: "About Us", icon: Sparkles, subtabs: ABOUT_US_SUBTABS },
+  { key: "help_center", label: "Help Center", icon: HelpCircle, subtabs: HELP_CENTER_SUBTABS },
   {
     key: "footer", label: "Footer", icon: Link2, kind: "footer",
     hint: "Controls the footer brand text, supporting tagline, and footer links displayed across the platform."
@@ -420,6 +438,18 @@ const DESCRIPTION_SECTIONS = new Set([
   "investor_home_features", "investor_home_dashboard", "expert_tools", "forum_page", "forum_topics",
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "investor_banner_basic", "investor_banner_premium",
+  "about_values", "about_team", "help_faqs",
+]);
+
+const DESCRIPTION_CONTENT_IDS = new Set([
+  "help_faq_header",
+]);
+
+const LONG_TITLE_CONTENT_IDS = new Set([
+  "about_hero_para2",
+  "help_faq_category_desc",
+  "help_empty_desc",
+  "help_contact_desc",
 ]);
 
 // Live preview mockups. These are hand-built approximations of how each
@@ -457,72 +487,6 @@ function HeroPreview({ title, description, ctaPrimary, ctaSecondary, imageUrl })
           <span className="px-4 py-1.5 rounded-lg bg-cyan-500 text-white text-[10px] font-semibold">{ctaPrimary || "Get Started"}</span>
           <span className="px-4 py-1.5 rounded-lg border border-slate-500 text-white text-[10px] font-semibold">{ctaSecondary || "Login"}</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ModelPortfolioPreview({ heading, description, extras }) {
-  const emptyMsg = extras?.model_portfolio_empty_msg?.title || "Empty-state message";
-  return (
-    <div className="p-6 bg-white">
-      <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading || "Model Portfolio"}</p>
-      <p className="text-slate-500 text-[10px] mt-0.5 mb-3">{description}</p>
-      <div className="rounded-xl bg-cyan-50 ring-1 ring-cyan-200 p-4">
-        <p className="text-slate-400 text-[9px] italic">{emptyMsg}</p>
-        <div className="mt-3 pt-3 border-t border-cyan-200 flex justify-end">
-          <span className="px-3 py-1 rounded-lg bg-cyan-500 text-white text-[9px] font-semibold">
-            {extras?.model_portfolio_cta_create?.title || "Create Portfolio"}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ExpertProfilePreview({ heading, extras }) {
-  const editCta = extras?.expert_profile_edit_cta?.title || "Edit Profile";
-  const notRated = extras?.expert_profile_not_rated?.title || "Not-yet-rated message";
-  const lockedLabel = extras?.compensation_locked_label?.title || "Locked";
-  const lockedMsg = extras?.compensation_locked_msg?.title || "Compensation locked message";
-  return (
-    <div className="p-6 bg-white">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading || "Your Profile"}</p>
-        <span className="text-cyan-600 text-[9px] font-semibold">{editCta}</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #0f172a, #1e293b)" }}>
-          <p className="text-slate-400 text-[9px] mb-1">Your Rating</p>
-          <p className="text-white text-2xl font-bold font-mono leading-none">—</p>
-          <p className="text-slate-500 text-[8px] mt-2">{notRated}</p>
-        </div>
-        <div className="rounded-xl p-4 bg-slate-100">
-          <p className="text-slate-400 text-[9px] mb-1">Compensation</p>
-          <p className="text-slate-500 text-base font-bold leading-none">{lockedLabel}</p>
-          <p className="text-slate-400 text-[8px] mt-2">{lockedMsg}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DocumentsPreview({ heading, extras }) {
-  const desc = extras?.documents_desc_unverified?.title || "Description goes here";
-  const cta = extras?.documents_cta_unverified?.title || "Submit Documents";
-  return (
-    <div className="p-6" style={{ background: "linear-gradient(135deg, #451a03, #0f172a, #020617)" }}>
-      <div className="flex items-start gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-amber-400/10 ring-1 ring-amber-400/20 flex items-center justify-center shrink-0">
-          <HelpCircle size={14} className="text-amber-300" />
-        </div>
-        <div>
-          <p className="text-white text-xs font-bold leading-tight">{heading || "Verification Documents"}</p>
-          <p className="text-slate-300 text-[9px] mt-1 leading-relaxed">{desc}</p>
-        </div>
-      </div>
-      <div className="mt-3 flex justify-end">
-        <span className="px-3 py-1 rounded-lg bg-amber-400 text-slate-900 text-[9px] font-bold">{cta}</span>
       </div>
     </div>
   );
@@ -916,6 +880,256 @@ function PaymentResultPagePreview({ items }) {
   );
 }
 
+function AboutHeroPreview({ title, description, para2, imageUrl }) {
+  const lines = (title || "").split("\n");
+  return (
+    <div className="relative overflow-hidden px-5 py-12 text-center text-white">
+      <img
+        src={imageUrl || aboutUsImg}
+        alt=""
+        className="absolute inset-0 h-full w-full scale-110 object-cover"
+        style={{ filter: "blur(3px)" }}
+      />
+      <div className="absolute inset-0 bg-blue-950/80" />
+      <div className="relative mx-auto max-w-xl">
+        <p className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
+          {lines.map((line, i) => (
+            <span key={`${line}-${i}`} className="block">{line}</span>
+          ))}
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <span className="h-0.5 w-10 rounded-full bg-cyan-400" />
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+        </div>
+        <p className="mx-auto mt-5 max-w-lg text-[10px] leading-5 text-slate-300">{description}</p>
+        <p className="mx-auto mt-3 max-w-lg text-[10px] leading-5 text-slate-300">{para2}</p>
+      </div>
+    </div>
+  );
+}
+
+function AboutValuesPreview({ heading, items, imageUrl }) {
+  const shown = items.length
+    ? items
+    : [{ content_id: "ph", title: "Value", description: "Value description" }];
+
+  return (
+    <div className="relative overflow-hidden p-5 text-white">
+      <img src={imageUrl || aboutUsImg} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover" style={{ filter: "blur(3px)" }} />
+      <div className="absolute inset-0 bg-blue-950/80" />
+      <div className="relative">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
+        <Sparkles size={10} />
+        {(heading || "Our Values").toUpperCase()}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {shown.slice(0, 4).map((item, i) => {
+          const Icon = ABOUT_VALUE_ICONS[i] || ShieldCheck;
+          return (
+            <article key={item.content_id} className="min-h-32 rounded-2xl border border-slate-200 bg-white p-3 shadow-md">
+              <div className="mb-2 grid h-8 w-8 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
+                <Icon size={15} strokeWidth={1.8} />
+              </div>
+              <p className="text-[10px] font-semibold text-slate-800">{item.title}</p>
+              <p className="mt-1 text-[8px] leading-4 text-slate-600">{item.description}</p>
+            </article>
+          );
+        })}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutPeoplePreview({ badge, heading, description, roleLabel, items, imageUrl }) {
+  const shown = items.length
+    ? items
+    : [{ content_id: "ph", title: "Team Member", description: "TM" }];
+
+  return (
+    <div className="relative overflow-hidden p-5 text-white">
+      <img src={imageUrl || aboutUsImg} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover" style={{ filter: "blur(3px)" }} />
+      <div className="absolute inset-0 bg-blue-950/80" />
+      <div className="relative">
+      <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
+        <Users size={10} />
+        {badge || "OUR PEOPLE"}
+      </div>
+      <p className="mt-4 text-lg font-bold">{heading}</p>
+      <p className="mt-2 text-[9px] leading-4 text-slate-400">{description}</p>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {shown.map((item) => (
+          <article key={item.content_id} className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-md">
+            <div className="relative mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-[10px] font-bold text-cyan-700">
+              {item.description}
+              <span className="absolute inset-1 rounded-full border border-cyan-400/10" />
+            </div>
+            <p className="text-[9px] font-semibold leading-4 text-slate-800">{item.title}</p>
+            <p className="mt-1 text-[6px] font-medium tracking-wider text-cyan-600">
+              {roleLabel || "ROCKET TRADE TEAM"}
+            </p>
+          </article>
+        ))}
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpCategoryRow({ items }) {
+  const shown = items.length
+    ? items
+    : [{ content_id: "ph", title: "Support Category" }];
+
+  return (
+    <div className="flex flex-wrap justify-center gap-1.5">
+      {shown.slice(0, 6).map((item, i) => {
+        const Icon = HELP_CATEGORY_ICONS[i] || HelpCircle;
+        return (
+          <div
+            key={item.content_id}
+            className={`flex shrink-0 items-center gap-1.5 rounded-xl border bg-white px-2 py-1.5 shadow-md ${
+              i === 0 ? "border-cyan-400" : "border-slate-200"
+            }`}
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
+              <Icon size={11} strokeWidth={1.8} />
+            </span>
+            <span className="whitespace-nowrap text-[7px] font-semibold text-slate-800">{item.title}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function HelpHeroPreview({ title, description, imageUrl, searchPlaceholder, categories }) {
+  const [plain, accent] = (title || "").includes("|")
+    ? title.split("|")
+    : ["", title];
+
+  return (
+    <div className="relative overflow-hidden px-4 py-10 text-center text-white">
+      <img
+        src={imageUrl || helpCenterImg}
+        alt=""
+        className="absolute inset-0 h-full w-full scale-110 object-cover"
+        style={{ filter: "blur(3px)" }}
+      />
+      <div className="absolute inset-0 bg-blue-950/80" />
+      <div className="relative mx-auto max-w-xl">
+        <p className="text-xl font-bold tracking-tight">
+          {plain}{plain && " "}
+          <span className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{accent}</span>
+        </p>
+        <p className="mx-auto mt-3 max-w-md text-[9px] leading-4 text-slate-200">{description}</p>
+        <div className="relative mx-auto mt-5 max-w-md">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400" />
+          <div className="flex h-9 items-center rounded-3xl border border-blue-500/40 bg-slate-950/85 pl-9 pr-3 text-left text-[8px] text-slate-400 shadow-lg">
+            {searchPlaceholder || "Search for help..."}
+          </div>
+        </div>
+        <div className="mt-4">
+          <HelpCategoryRow items={categories} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpCategoriesPreview({ items, imageUrl }) {
+  return (
+    <div className="relative overflow-hidden px-4 py-8">
+      <img
+        src={imageUrl || helpCenterImg}
+        alt=""
+        className="absolute inset-0 h-full w-full scale-110 object-cover"
+        style={{ filter: "blur(3px)" }}
+      />
+      <div className="absolute inset-0 bg-blue-950/80" />
+      <div className="relative">
+        <HelpCategoryRow items={items} />
+      </div>
+    </div>
+  );
+}
+
+function HelpFaqPreview({
+  heading,
+  description,
+  categoryDescription,
+  emptyHeading,
+  emptyDescription,
+  categories,
+  items,
+  showCategoryState,
+  showEmptyState,
+}) {
+  const selectedCategory = categories[0]?.title || "Account & Login";
+  const subtext = showCategoryState
+    ? (categoryDescription || "Showing questions related to {category}.").replace("{category}", selectedCategory)
+    : description;
+
+  return (
+    <div className="max-h-[560px] overflow-y-auto bg-white p-5">
+      <p className="text-center text-base font-bold text-slate-900">{heading}</p>
+      <p className="mt-2 text-center text-[9px] leading-4 text-slate-600">{subtext}</p>
+
+      {showEmptyState ? (
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-md">
+          <HelpCircle size={24} className="mx-auto text-cyan-600" />
+          <p className="mt-3 text-[11px] font-semibold text-slate-800">{emptyHeading}</p>
+          <p className="mt-1 text-[9px] leading-4 text-slate-600">{emptyDescription}</p>
+        </div>
+      ) : (
+        <div className="mt-5 space-y-2">
+          {items.map((item, index) => {
+            const isOpen = index === 0;
+            return (
+              <article
+                key={item.content_id}
+                className={`overflow-hidden rounded-xl border bg-white shadow-md ${
+                  isOpen ? "border-cyan-400" : "border-slate-200"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold text-cyan-600">Q.</span>
+                    <span className="text-[9px] font-medium text-slate-800">{item.title}</span>
+                  </div>
+                  <ChevronDown size={13} className={`shrink-0 text-cyan-600 ${isOpen ? "rotate-180" : ""}`} />
+                </div>
+                {isOpen && (
+                  <div className="border-t border-slate-100 px-3 py-3">
+                    <p className="text-[8px] leading-4 text-slate-600">{item.description}</p>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HelpContactPreview({ heading, description, cta, email }) {
+  return (
+    <div className="bg-white p-7 text-center">
+      <div className="mx-auto mb-6 max-w-xs border-t border-blue-500/20" />
+      <p className="text-base font-bold text-slate-900">{heading}</p>
+      <p className="mt-2 text-[9px] leading-4 text-slate-600">{description}</p>
+      <a
+        href={`mailto:${email}`}
+        onClick={(event) => event.preventDefault()}
+        className="mt-5 inline-flex h-9 items-center justify-center rounded-xl bg-linear-to-r from-cyan-400 to-blue-500 px-5 text-[9px] font-bold text-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+      >
+        {cta}
+      </a>
+    </div>
+  );
+}
+
 function ExpertHeroPreview({ title, imageUrl }) {
   return (
     <div className="relative overflow-hidden" style={{ height: 140 }}>
@@ -1069,32 +1283,6 @@ function CardGridPreview({ heading, description, items, ctaLabel, perCardCta, ic
               {(perCardCta ? it.cta : ctaLabel) && (
                 <p className="text-[8px] font-bold text-cyan-600 mt-1.5">{perCardCta ? it.cta : ctaLabel} →</p>
               )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function RoleTogglePreview({ heading, description, items, icons = [] }) {
-  const shown = items.length ? items : [{ content_id: "ph1", title: "Role" }, { content_id: "ph2", title: "Role" }];
-  return (
-    <div className="p-6 bg-white text-center">
-      <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
-      <p className="text-slate-500 text-[10px] mt-0.5 mb-4">{description}</p>
-      <div className="flex flex-col gap-2">
-        {shown.map((it, i) => {
-          const Icon = icons[i] || Compass;
-          return (
-            <div key={it.content_id} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left ${i === 0 ? "border-cyan-500 bg-cyan-50" : "border-slate-200 bg-white"}`}>
-              <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${i === 0 ? "bg-cyan-100 text-cyan-600" : "bg-slate-100 text-slate-500"}`}>
-                <Icon size={14} />
-              </span>
-              <span>
-                <span className="block text-[11px] font-bold text-slate-800">{it.title}</span>
-                <span className="block text-[9px] text-slate-400">{it.description}</span>
-              </span>
             </div>
           );
         })}
@@ -1336,8 +1524,20 @@ function ContentManagementPage() {
   };
 
   useEffect(() => {
-    setLoading(true);
-    fetchContent().finally(() => setLoading(false));
+    let cancelled = false;
+
+    const loadInitialContent = async () => {
+      try {
+        const res = await authFetch(API);
+        const data = await res.json();
+        if (!cancelled && data.success) setContent(data.content);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadInitialContent();
+    return () => { cancelled = true; };
   }, []);
 
   const startEdit = (item) => {
@@ -1424,7 +1624,7 @@ function ContentManagementPage() {
     const isEditing = editing === item.content_id;
     const orderable = ORDERABLE_SECTIONS.has(item.section) && list.length > 1;
     const isDragOver = orderable && dragOverId === item.content_id && dragId !== item.content_id;
-    const showDesc = DESCRIPTION_SECTIONS.has(item.section) && !item.content_id.endsWith("_cta");
+    const showDesc = (DESCRIPTION_SECTIONS.has(item.section) || DESCRIPTION_CONTENT_IDS.has(item.content_id)) && !item.content_id.endsWith("_cta");
     return (
       <div
         key={item.content_id}
@@ -1440,24 +1640,44 @@ function ContentManagementPage() {
           <div className="space-y-3">
             <div>
               <label className="text-xs font-bold text-slate-400 mb-1 block">TITLE</label>
-              <input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
+              {LONG_TITLE_CONTENT_IDS.has(item.content_id) ? (
+                <textarea
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  rows={3}
+                  className="w-full resize-y border rounded-lg px-3 py-2 text-sm"
+                />
+              ) : (
+                <input
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              )}
             </div>
             {showDesc && (
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
                   {["hero", "page_headers"].includes(item.section) ? "SUBTITLE"
                     : ["footer_product", "footer_company", "footer_resources", "footer_contact"].includes(item.section) ? "URL"
-                      : item.section === "faq" ? "ANSWER" : "DESCRIPTION"}
+                      : ["faq", "help_faqs"].includes(item.section) ? "ANSWER"
+                        : item.section === "about_team" ? "INITIALS"
+                          : "DESCRIPTION"}
                 </label>
-                <input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
+                {["help_faqs", "about_values"].includes(item.section) ? (
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    rows={4}
+                    className="w-full resize-y border rounded-lg px-3 py-2 text-sm"
+                  />
+                ) : (
+                  <input
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                  />
+                )}
               </div>
             )}
             {IMAGE_CONTENT_IDS.has(item.content_id) && (
@@ -1679,6 +1899,81 @@ function ContentManagementPage() {
       if (tab.preview === "expert_hero") {
         return <PreviewFrame label={tab.label}><ExpertHeroPreview title={heading} imageUrl={header?.image_url} /></PreviewFrame>;
       }
+      if (tab.preview === "about_hero") {
+        const para2 = liveItem(byId("about_hero_para2"))?.title;
+        return (
+          <PreviewFrame label={tab.label}>
+            <AboutHeroPreview
+              title={heading}
+              description={description}
+              para2={para2}
+              imageUrl={header?.image_url}
+            />
+          </PreviewFrame>
+        );
+      }
+      if (tab.preview === "about_values") {
+        return <PreviewFrame label={tab.label}><AboutValuesPreview heading={heading} items={items} imageUrl={liveItem(byId("about_hero"))?.image_url} /></PreviewFrame>;
+      }
+      if (tab.preview === "about_people") {
+        return (
+          <PreviewFrame label={tab.label}>
+            <AboutPeoplePreview
+              badge={liveItem(byId("about_people_badge"))?.title}
+              heading={heading}
+              description={description}
+              roleLabel={liveItem(byId("about_team_role"))?.title}
+              items={items}
+              imageUrl={liveItem(byId("about_hero"))?.image_url}
+            />
+          </PreviewFrame>
+        );
+      }
+      if (tab.preview === "help_hero") {
+        return (
+          <PreviewFrame label={tab.label}>
+            <HelpHeroPreview
+              title={heading}
+              description={description}
+              imageUrl={header?.image_url}
+              searchPlaceholder={liveItem(byId("help_search_placeholder"))?.title}
+              categories={liveList(bySection("help_categories"))}
+            />
+          </PreviewFrame>
+        );
+      }
+      if (tab.preview === "help_categories") {
+        return <PreviewFrame label={tab.label}><HelpCategoriesPreview items={items} imageUrl={liveItem(byId("help_hero"))?.image_url} /></PreviewFrame>;
+      }
+      if (tab.preview === "help_faqs") {
+        return (
+          <PreviewFrame label={tab.label}>
+            <HelpFaqPreview
+              heading={heading}
+              description={description}
+              categoryDescription={liveItem(byId("help_faq_category_desc"))?.title}
+              emptyHeading={liveItem(byId("help_empty_heading"))?.title}
+              emptyDescription={liveItem(byId("help_empty_desc"))?.title}
+              categories={liveList(bySection("help_categories"))}
+              items={items}
+              showCategoryState={editing === "help_faq_category_desc"}
+              showEmptyState={editing === "help_empty_heading" || editing === "help_empty_desc"}
+            />
+          </PreviewFrame>
+        );
+      }
+      if (tab.preview === "help_contact") {
+        return (
+          <PreviewFrame label={tab.label}>
+            <HelpContactPreview
+              heading={heading}
+              description={liveItem(byId("help_contact_desc"))?.title}
+              cta={liveItem(byId("help_contact_cta"))?.title}
+              email={liveItem(byId("help_contact_email"))?.title}
+            />
+          </PreviewFrame>
+        );
+      }
       if (tab.preview === "empty_portfolio") {
         return <PreviewFrame label={tab.label}><EmptyPortfolioMessagePreview title={heading} imageUrl={header?.image_url} /></PreviewFrame>;
       }
@@ -1796,7 +2091,7 @@ function ContentManagementPage() {
                 ))}
                 {activeTabInfo.itemsSection && (
                   <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Cards</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{activeTabInfo.itemsLabel || "Cards"}</p>
                     <div className="space-y-3">
                       {bySection(activeTabInfo.itemsSection).length === 0
                         ? <p className="text-slate-400 text-sm">No content found for this section.</p>

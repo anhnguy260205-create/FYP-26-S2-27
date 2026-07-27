@@ -49,8 +49,10 @@ const BecomeExpertPage = lazy(() => import("./pages/investor/BecomeExpertPage.js
 const SubscriptionManagementPage = lazy(() => import("./pages/financeadmin/SubscriptionManagementPage.jsx"));
 const ContentManagementPage = lazy(() => import("./pages/administrator/ContentManagementPage.jsx"));
 const ReviewsPage = lazy(() => import("./pages/shared/ReviewsPage.jsx"));
+const ReviewDetailPage = lazy(() => import("./pages/shared/ReviewDetailPage.jsx"));
 const ReviewManagementPage = lazy(() => import("./pages/administrator/ReviewManagementPage.jsx"));
 const NotificationManagementPage = lazy(() => import("./pages/administrator/NotificationManagementPage.jsx"));
+const SendNotificationPage = lazy(() => import("./pages/administrator/SendNotificationPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 
@@ -113,6 +115,7 @@ export const router = createBrowserRouter([
     { path: "/realtimedashboard/astockdashboard/:symbol", element: protectWithStocks(["investor"], AStockDashBoardPage) },
     { path: "/forum", element: protect(["investor", "expert"], ForumPage) },
     { path: "/reviews", element: protect(["investor", "expert"], ReviewsPage) },
+    { path: "/reviews/:reviewId", element: protect(["investor", "expert"], ReviewDetailPage) },
     { path: "/forum/messages", element: protect(["investor", "expert"], MessagesPage) },
     { path: "/change-password", element: protect(["investor", "expert"], ChangePasswordPage) },
     { path: "/investor/subscription", element: protect(["investor"], SubscriptionPage) },
@@ -141,6 +144,7 @@ export const router = createBrowserRouter([
     { path: "/adminpanel/contentmanagement", element: protect(["admin"], ContentManagementPage) },
     { path: "/adminpanel/reviews", element: protect(["admin"], ReviewManagementPage) },
     { path: "/adminpanel/notifications", element: protect(["admin"], NotificationManagementPage) },
+    { path: "/adminpanel/notifications/send", element: protect(["admin"], SendNotificationPage) },
 
     { path: "/finance-admin", element: protect(["finance admin"], FinanceAdminDashboardPage) },
     { path: "/finance-admin/revenue", element: protect(["finance admin"], RevenueAnalysisPage) },

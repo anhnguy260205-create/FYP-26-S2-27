@@ -26,7 +26,7 @@ assert abs((GIFT_EXPERT_SHARE + GIFT_PLATFORM_SHARE) - 1.0) < 1e-9, \
     "Gift shares must sum to 1.0"
 
 MIN_GIFT_AMOUNT = 1.00
-MAX_GIFT_AMOUNT = 10_000.00
+MAX_GIFT_AMOUNT = 5_000.00
 
 # Quick-pick amounts offered in the chat gift dialog.
 GIFT_PRESETS = [5, 10, 20, 50, 100, 200]

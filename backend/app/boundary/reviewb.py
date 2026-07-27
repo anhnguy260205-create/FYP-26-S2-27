@@ -100,6 +100,19 @@ def toggle_helpful(review_id: str, current_user: dict = Depends(get_current_user
     return ReviewController().toggle_helpful(review_id, current_user["user_id"])
 
 
+# Registered last among the single-segment GET paths on purpose — FastAPI
+# matches routes in registration order, and this wildcard would otherwise
+# shadow /stats, /mine, and /removal-notice above (a request for
+# "/reviews/mine" would match here with review_id="mine" instead of hitting
+# the dedicated handler). The two-segment /admin/* routes below are safe
+# either way since this pattern only matches a single path segment.
+@router.get("/{review_id}")
+def get_review(review_id: str,
+                current_user: Optional[dict] = Depends(get_current_user_optional)):
+    resolved_user_id = current_user["user_id"] if current_user else None
+    return ReviewController().get_review_by_id(review_id, user_id=resolved_user_id)
+
+
 # ── Admin moderation ────────────────────────────────────────────────────────────
 
 @router.get("/admin/flagged")

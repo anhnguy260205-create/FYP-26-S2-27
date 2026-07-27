@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ThumbsUp, Pencil, Trash2, Check, X, Flag, AlertCircle } from "lucide-react";
+import { Star, ThumbsUp, Pencil, Trash2, Check, X, Flag, AlertCircle, Search } from "lucide-react";
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import { isExpertUser, getPageBackground } from "../../utils/userRole.js";
 import Footer from "../../layout/Footer.jsx";
@@ -476,6 +476,7 @@ export default function ReviewsPage() {
   const [editing, setEditing] = useState(null);
   const [sort, setSort] = useState("latest");
   const [starFilter, setStarFilter] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [reporting, setReporting] = useState(false);
   const [toReport, setToReport] = useState(null);
 
@@ -581,6 +582,23 @@ export default function ReviewsPage() {
   const otherReviews = myReview
     ? reviews.filter(r => r.review_id !== myReview.review_id)
     : reviews;
+
+  const normalisedSearch = searchQuery.trim().toLowerCase();
+  const visibleReviews = normalisedSearch
+    ? otherReviews.filter((review) => {
+        const searchableText = [
+          review.author,
+          review.title,
+          review.comment,
+          roleBadge(review.author_role).label,
+          review.rating ? `${review.rating} star` : "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return searchableText.includes(normalisedSearch);
+      })
+    : otherReviews;
 
   return (
     <motion.div className="min-h-screen flex flex-col"
@@ -715,19 +733,56 @@ export default function ReviewsPage() {
 
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          flexWrap: "wrap", gap: 10, marginBottom: 20
+          flexWrap: "wrap", gap: 12, marginBottom: 20
         }}>
-          <div style={{ fontSize: 13, color: C.muted }}>
-            {starFilter
-              ? <>{`Showing ${starFilter}-star reviews `}
-                <button onClick={() => setStarFilter(null)}
-                  style={{ color: "#0092b8", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                  Clear ×
-                </button>
-              </>
-              : `${otherReviews.length} review${otherReviews.length !== 1 ? "s" : ""}`
-            }
+          <div style={{
+            position: "relative", flex: "1 1 340px", maxWidth: 520, minWidth: 230,
+          }}>
+            <Search
+              size={17}
+              aria-hidden="true"
+              style={{
+                position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+                color: C.muted, pointerEvents: "none",
+              }}
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search reviews, titles, or authors..."
+              aria-label="Search reviews"
+              style={{
+                width: "100%", padding: "11px 42px 11px 42px", borderRadius: 12,
+                border: `1px solid ${C.border}`, background: C.card, color: C.text,
+                fontSize: 13, outline: "none", boxSizing: "border-box",
+                boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "rgba(0,146,184,0.65)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,211,242,0.14)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = C.border;
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(15,23,42,0.04)";
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear review search"
+                style={{
+                  position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                  width: 28, height: 28, borderRadius: 8, border: "none", cursor: "pointer",
+                  background: C.card2, color: C.muted, display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
+
           <select value={sort} onChange={e => setSort(e.target.value)} style={{
             padding: "10px 14px", borderRadius: 12,
             border: `1px solid ${C.border}`,
@@ -738,19 +793,45 @@ export default function ReviewsPage() {
           </select>
         </div>
 
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 14 }}>
+          {starFilter && <span>{`Showing ${starFilter}-star reviews`}</span>}
+          {starFilter && normalisedSearch && <span> · </span>}
+          {normalisedSearch && <span>{`Search results for “${searchQuery.trim()}”`}</span>}
+          {!starFilter && !normalisedSearch && (
+            <span>{`${visibleReviews.length} review${visibleReviews.length !== 1 ? "s" : ""}`}</span>
+          )}
+          {(starFilter || normalisedSearch) && (
+            <>
+              <span>{` · ${visibleReviews.length} result${visibleReviews.length !== 1 ? "s" : ""}`}</span>
+              <button
+                type="button"
+                onClick={() => { setStarFilter(null); setSearchQuery(""); }}
+                style={{
+                  color: "#0092b8", background: "none", border: "none", cursor: "pointer",
+                  fontSize: 12, fontWeight: 600, marginLeft: 6,
+                }}
+              >
+                Clear filters ×
+              </button>
+            </>
+          )}
+        </div>
+
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[1, 2, 3].map(i => <SkeletonReviewCard key={i} />)}
           </div>
-        ) : otherReviews.length === 0 ? (
+        ) : visibleReviews.length === 0 ? (
           <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 14 }}>
-            {starFilter
-              ? `No ${starFilter}-star reviews yet.`
-              : "No reviews yet — be the first!"}
+            {normalisedSearch
+              ? `No reviews match “${searchQuery.trim()}”.`
+              : starFilter
+                ? `No ${starFilter}-star reviews yet.`
+                : "No reviews yet — be the first!"}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {otherReviews.map(review => (
+            {visibleReviews.map(review => (
               <ReviewCard key={review.review_id} review={review}
                 onHelpful={handleHelpful}
                 onEdit={() => { setEditing(review); setShowForm(true); }}
