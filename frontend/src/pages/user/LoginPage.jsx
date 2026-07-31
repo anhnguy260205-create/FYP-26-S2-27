@@ -118,12 +118,10 @@ function LoginPage() {
 
     } catch (err) {
       console.error("[LOGIN ERROR]", err.code, err.message, err);
-      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
-        setError("Incorrect password. Please try again.");
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+        setError("Incorrect email or password. Please try again.");
       } else if (err.code === "auth/too-many-requests") {
         setError("Too many failed attempts. Please try again later.");
-      } else if (err.code === "auth/user-not-found") {
-        setError("No account found with this email address.");
       } else if (err.code === "auth/network-request-failed") {
         setError("Network error — check your internet connection and try again.");
       } else if (err.message === "Failed to fetch") {
