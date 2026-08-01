@@ -243,79 +243,15 @@ class Expert(Base):
 
     @staticmethod
     def deleteExpert(user_id):
-        from app.entity.models.article import Article
-        from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
-        from app.entity.models.emailalert import StockAlert
-        from app.entity.models.notification import Notification
-        from app.entity.models.watchlist import Watchlist
-        from app.entity.models.expertfollow import ExpertFollow
-        from app.entity.models.expertportfolioreview import ExpertPortfolioReview
-        from app.entity.models.expertcompensation import ExpertCompensationLedger
-
-        with get_session() as session:
-            expert = session.query(Expert).filter(
-                Expert.user_id == user_id
-            ).first()
-            if not expert:
-                return False
-
-            # 1. Portfolio holdings (child of portfolio)
-            portfolio_ids = [
-                p.portfolio_id for p in session.query(ExpertPortfolio).filter(
-                    ExpertPortfolio.expert_id == expert.expert_id
-                ).all()
-            ]
-            if portfolio_ids:
-                session.query(ExpertPortfolioHolding).filter(
-                    ExpertPortfolioHolding.portfolio_id.in_(portfolio_ids)
-                ).delete(synchronize_session=False)
-
-            # 2. Portfolio (child of expert)
-            session.query(ExpertPortfolio).filter(
-                ExpertPortfolio.expert_id == expert.expert_id
-            ).delete()
-
-            # 3. Articles authored (child of expert)
-            session.query(Article).filter(
-                Article.expert_id == expert.expert_id
-            ).delete()
-
-            # 4. Alerts, notifications, watchlist (keyed by user_id, not expert_id)
-            session.query(StockAlert).filter(
-                StockAlert.user_id == user_id
-            ).delete()
-            session.query(Notification).filter(
-                Notification.user_id == user_id
-            ).delete()
-            session.query(Watchlist).filter(
-                Watchlist.user_id == user_id
-            ).delete()
-            session.query(ExpertFollow).filter(
-                (ExpertFollow.expert_user_id == user_id) |
-                (ExpertFollow.follower_user_id == user_id)
-            ).delete()
-            session.query(ExpertPortfolioReview).filter(
-                (ExpertPortfolioReview.expert_user_id == user_id) |
-                (ExpertPortfolioReview.reviewer_user_id == user_id)
-            ).delete()
-            session.query(ExpertCompensationLedger).filter(
-                ExpertCompensationLedger.expert_id == expert.expert_id
-            ).delete()
-
-            # 5. Verification record (child of expert)
-            ExpertVerification.delete_for_expert(session, expert.expert_id)
-
-            # 6. Expert row (child of user_account)
-            session.delete(expert)
-            session.flush()
-
-            # 8. User account row
-            user = session.query(UserAccount).filter(
-                UserAccount.user_id == user_id
-            ).first()
-            if user:
-                session.delete(user)
-            return True
+        # Merged roles: every expert also has an Investor row (holdings,
+        # transactions, chat/dashboard/prediction usage, subscription, …).
+        # Investor.deleteInvestor already cleans up those tables *and* the
+        # expert-only ones (portfolio, articles, verification, compensation)
+        # before deleting the expert and user_account rows — deleting only
+        # the expert-side tables here left the Investor row behind, which
+        # blocked the user_account delete with a foreign-key violation.
+        from app.entity.models.investor import Investor
+        return Investor.deleteInvestor(user_id)
 
 
 def _promote_seed_expert(email_address: str):

@@ -22,7 +22,7 @@ from app.control.controller.investorc import (
     UpdateInvestorInterestsController,
     UpdateInvestorRiskToleranceController,
 )
-from app.control.services.auth import get_current_user, get_current_user_pre_mfa, mfa_satisfied
+from app.control.services.auth import get_current_user, get_current_user_pre_mfa, mfa_satisfied, invalidate_profile_cache
 from app.control.services.rate_limit import limiter
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -350,9 +350,19 @@ def delete_account(
         if not data.otp or not PasswordReset.verifyOtp(current_user["email"], data.otp.strip()):
             raise HTTPException(status_code=403, detail="Invalid or expired email verification code.")
 
+    # Grab the target's email before the row is gone, so the auth-profile
+    # cache (keyed by email, up to 60s stale — see auth._PROFILE_TTL) can be
+    # busted immediately. Without this, re-registering the same email right
+    # after deletion could keep resolving to the deleted account's stale
+    # cached profile/user_id for up to a minute.
+    from app.entity.models.useraccount import UserAccount
+    deleted_email = (UserAccount.get_user_information(user_id) or {}).get("email_address")
+
     result = DeleteInvestorController().delete_account(user_id)
     if not result:
         return {"success": False, "message": "Account not found"}
+    if deleted_email:
+        invalidate_profile_cache(deleted_email)
     return {"success": True, "message": "Account deleted successfully"}
 
 
@@ -362,9 +372,14 @@ def delete_expert_account(
 ):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
+    from app.entity.models.useraccount import UserAccount
+    deleted_email = (UserAccount.get_user_information(user_id) or {}).get("email_address")
+
     result = DeleteExpertController().delete_account(user_id)
     if not result:
         return {"success": False, "message": "Account not found"}
+    if deleted_email:
+        invalidate_profile_cache(deleted_email)
     return {"success": True, "message": "Account deleted successfully"}
 
 

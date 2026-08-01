@@ -60,7 +60,7 @@ export function MessageBubble({ msg, avatarSize = 32, maxWidth = "72%" }) {
                         onClick={() => navigate(msg.cta.route, { state: { selectedSymbol: msg.cta.symbol } })}
                         style={{
                             marginTop: "12px",
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
                             gap: "7px",
                             padding: "8px 11px",

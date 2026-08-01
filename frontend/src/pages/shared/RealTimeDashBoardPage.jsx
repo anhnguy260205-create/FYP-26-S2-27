@@ -130,8 +130,9 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
 
   return (
     <div
-      onClick={() => onSelect(stock.symbol)}
-      className="grid px-6 py-4 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors items-center"
+      onClick={locked ? undefined : () => onSelect(stock.symbol)}
+      aria-disabled={locked || undefined}
+      className={`grid px-6 py-4 border-b border-slate-100 last:border-b-0 transition-colors items-center ${locked ? "" : "hover:bg-slate-50"}`}
       style={{
         gridTemplateColumns: "2fr 1fr 1fr 1fr 2fr",
         background: isLive
@@ -142,7 +143,7 @@ const StockRow = memo(function StockRow({ stock, candles, onSelect, isRecommende
           ? "3px solid rgba(29,78,216,0.6)"
           : isTopPick ? "3px solid rgba(180,83,9,0.6)"
             : isRecommended ? "3px solid rgba(0,211,243,0.5)" : "3px solid transparent",
-        cursor: "pointer",
+        cursor: locked ? "not-allowed" : "pointer",
       }}
       title={locked ? "Upgrade to Premium to unlock this stock's real-time dashboard" : undefined}
     >
@@ -229,14 +230,16 @@ const StockCard = memo(function StockCard({ stock, candles, onSelect, isTopPick,
 
   return (
     <div
-      onClick={() => onSelect(stock.symbol)}
-      className="flex flex-col gap-2 cursor-pointer transition-all hover:scale-[1.02]"
+      onClick={locked ? undefined : () => onSelect(stock.symbol)}
+      aria-disabled={locked || undefined}
+      className={`flex flex-col gap-2 transition-all ${locked ? "" : "cursor-pointer hover:scale-[1.02]"}`}
       style={{
         padding: "16px",
         borderRadius: "16px",
         background: isTopPick ? "rgba(180,83,9,0.06)" : "rgba(0,211,243,0.06)",
         border: isTopPick ? "1px solid rgba(180,83,9,0.3)" : "1px solid rgba(0,211,243,0.22)",
         minWidth: 0,
+        cursor: locked ? "not-allowed" : "pointer",
       }}
       title={locked ? "Upgrade to Premium to unlock this stock's real-time dashboard" : undefined}
     >
@@ -347,9 +350,11 @@ function RealTimeDashBoardPage() {
   // via the investor profile page — /expert/edit-profile is no longer routed.
   const editProfilePath = "/investor/edit-profile";
 
-  // Basic-plan dashboard quota (lifetime limit of 3 distinct stocks). This
-  // mirrors what AStockDashBoardPage enforces, so the browse/recommend lists
-  // don't leak full live data for stocks the user hasn't unlocked.
+  // Basic-plan dashboard quota (lifetime limit of 3 distinct stocks, enforced
+  // server-side by checkDashboardAccess/AStockDashBoardPage). Until that
+  // quota is exhausted, every stock here is freely browsable; once all
+  // BASIC_DASHBOARD_LIMIT slots are used, only the already-unlocked symbols
+  // stay accessible and everything else shows blurred/locked.
   const [dashboardUsage, setDashboardUsage] = useState(null);
   useEffect(() => {
     fetchDashboardUsage().then(res => {
@@ -360,10 +365,14 @@ function RealTimeDashBoardPage() {
     () => new Set(dashboardUsage?.unlocked_symbols ?? []),
     [dashboardUsage]
   );
-  const isBasicLimited = dashboardUsage != null && dashboardUsage.premium === false;
+  const isBasic = dashboardUsage != null && dashboardUsage.premium === false;
+  // Only gate/blur stocks once the lifetime quota is actually used up —
+  // before that, a basic user can freely browse (and open) any stock; the
+  // real cost is deducted on open via checkDashboardAccess.
+  const hasReachedLimit = isBasic && unlockedSymbols.size >= (dashboardUsage?.limit ?? Infinity);
   const isLocked = useCallback(
-    (symbol) => isBasicLimited && !unlockedSymbols.has(symbol),
-    [isBasicLimited, unlockedSymbols]
+    (symbol) => hasReachedLimit && !unlockedSymbols.has(symbol),
+    [hasReachedLimit, unlockedSymbols]
   );
 
   useEffect(() => {
@@ -508,7 +517,7 @@ function RealTimeDashBoardPage() {
             <MarketStatus marketStatus={marketStatus} lastUpdated={lastUpdated} />
           </div>
           {error && <div className="mt-2 text-red-600 text-sm">{error}</div>}
-          {isBasicLimited && (
+          {isBasic && (
             <div className="mt-3 flex items-center gap-2 flex-wrap" style={{
               padding: "8px 14px", borderRadius: 999, width: "fit-content",
               background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.4)",

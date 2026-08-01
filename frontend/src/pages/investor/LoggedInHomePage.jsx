@@ -189,25 +189,12 @@ function buildSparklineSeries(up) {
   return series;
 }
 
-// Value-weighted average of each held symbol's server-computed volatility bucket (Conservative/Moderate/Aggressive).
-function computePortfolioRisk(holdings, stocks) {
-  if (!holdings.length) return "Low";
-  const weight = { Conservative: 1, Moderate: 2, Aggressive: 3 };
-  let totalWeight = 0;
-  let totalValue = 0;
-  holdings.forEach((h) => {
-    const live = stocks?.[h.symbol];
-    const price = live?.price ?? h.average_cost;
-    const value = price * h.quantity;
-    totalWeight += (weight[live?.risk] ?? 2) * value;
-    totalValue += value;
-  });
-  if (!totalValue) return "Low";
-  const avg = totalWeight / totalValue;
-  if (avg < 1.67) return "Low";
-  if (avg < 2.34) return "Medium";
-  return "High";
-}
+// Maps the investor's own selected risk tolerance (Conservative/Moderate/
+// Aggressive, set via the Risk Assessment prompt / profile page) onto the
+// existing Low/Medium/High tone-and-tagline tiers, so the "Portfolio Risk"
+// stat always matches what the user actually picked instead of a value
+// derived independently from current holdings.
+const RISK_TOLERANCE_TIER = { Conservative: "Low", Moderate: "Medium", Aggressive: "High" };
 
 function usePortfolioData(userId, stocks) {
   const [portfolio, setPortfolio] = useState(null);
@@ -246,56 +233,50 @@ function usePortfolioData(userId, stocks) {
   return { loading, holdings, assets, unrealisedPnL, realisedPnL, todaysPnL, totalValue };
 }
 
-// Ranks the same POPULAR_SYMBOLS pool already shown on this page by real Quant Rating buy-probability,
-// and reads the server-computed volatility "risk" bucket already broadcast for every pool symbol —
-// no new backend logic, just existing endpoints/data assembled for the summary card.
-function useAIInsights(stocks, portfolioData) {
-  const [ratings, setRatings] = useState({});
-  const [ratingsLoading, setRatingsLoading] = useState(true);
+// Reads the server-computed volatility "risk" bucket already broadcast for
+// every pool symbol — no new backend logic, just existing endpoints/data
+// assembled for the summary card.
+function useAIInsights(stocks, portfolioData, userId, riskTolerance) {
+  const [watchlistSymbols, setWatchlistSymbols] = useState([]);
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all(
-      POPULAR_SYMBOLS.map((symbol) =>
-        fetchRating(symbol)
-          .then((res) => ({ symbol, data: res?.success ? res : null }))
-          .catch(() => ({ symbol, data: null }))
-      )
-    ).then((results) => {
-      if (cancelled) return;
-      const next = {};
-      results.forEach((r) => { next[r.symbol] = r.data; });
-      setRatings(next);
-      setRatingsLoading(false);
+    if (!userId) return;
+    getWatchlist(userId)
+      .then((res) => { if (res.success) setWatchlistSymbols(res.watchlist.map((e) => e.stock_symbol)); })
+      .catch(() => { });
+  }, [userId]);
+
+  // "Top Buy" — same top-gainer computation as the real-time dashboard's
+  // "Top Gainer" stat: biggest % move up across the whole live stock pool.
+  const topGainer = useMemo(() => {
+    let best = null;
+    Object.values(stocks ?? {}).forEach((s) => {
+      if (s.price == null || !s.previousClose) return;
+      const pct = ((s.price - s.previousClose) / s.previousClose) * 100;
+      if (!best || pct > best.pct) best = { symbol: s.symbol, pct };
     });
-    return () => { cancelled = true; };
-  }, []);
+    return best;
+  }, [stocks]);
 
-  const topPick = useMemo(() => {
-    const candidates = Object.values(ratings).filter((r) => r && r.buyProbability != null);
-    if (!candidates.length) return null;
-    return candidates.reduce((best, r) => (r.buyProbability > best.buyProbability ? r : best));
-  }, [ratings]);
-
+  // "Watchlist" AI insight — biggest mover among the stocks the investor is
+  // actually watching, not the whole market pool.
   const stockToWatch = useMemo(() => {
-    const entries = Object.values(stocks ?? {}).filter((s) => s.price != null && s.previousClose);
+    if (!watchlistSymbols.length) return null;
+    const entries = watchlistSymbols
+      .map((symbol) => stocks?.[symbol])
+      .filter((s) => s && s.price != null && s.previousClose);
     if (!entries.length) return null;
     const withMove = entries.map((s) => ({ ...s, movePct: Math.abs((s.price - s.previousClose) / s.previousClose) * 100 }));
     const aggressive = withMove.filter((s) => s.risk === "Aggressive");
     const pool = aggressive.length ? aggressive : withMove;
     return pool.reduce((best, s) => (s.movePct > best.movePct ? s : best));
-  }, [stocks]);
-
-  const portfolioRisk = useMemo(
-    () => computePortfolioRisk(portfolioData.holdings, stocks),
-    [portfolioData.holdings, stocks]
-  );
+  }, [stocks, watchlistSymbols]);
 
   return {
-    loading: ratingsLoading || portfolioData.loading,
-    topPick,
+    loading: portfolioData.loading,
+    topGainer,
     stockToWatch,
-    portfolioRisk,
+    portfolioRisk: riskTolerance || null,
   };
 }
 
@@ -398,18 +379,21 @@ function AIInsightStat({ icon: Icon, label, value, sub, tone }) {
   );
 }
 
-function AIInsightsSection({ portfolioData, header }) {
+function AIInsightsSection({ portfolioData, header, userId, riskTolerance }) {
   const { stocks } = useLiveStocks();
-  const { loading, topPick, stockToWatch, portfolioRisk } = useAIInsights(stocks, portfolioData);
+  const { loading, topGainer, stockToWatch, portfolioRisk } = useAIInsights(stocks, portfolioData, userId, riskTolerance);
+  const portfolioRiskTier = RISK_TOLERANCE_TIER[portfolioRisk] ?? null;
 
-  const topPickName = topPick ? (COMPANY_NAMES[topPick.symbol] ?? topPick.name ?? topPick.symbol) : "Unavailable";
-  const watchName = stockToWatch ? (COMPANY_NAMES[stockToWatch.symbol] ?? stockToWatch.name ?? stockToWatch.symbol) : "Unavailable";
+  const topGainerName = topGainer ? (COMPANY_NAMES[topGainer.symbol] ?? topGainer.symbol) : "-";
+  const watchName = stockToWatch ? (COMPANY_NAMES[stockToWatch.symbol] ?? stockToWatch.name ?? stockToWatch.symbol) : "-";
 
   const sectionTitle = header("header_ai_insights", "Today's AI Insights").title;
   const taglineIds = { Low: "ai_tagline_low", Medium: "ai_tagline_medium", High: "ai_tagline_high" };
   const subtitle = loading
     ? header("ai_tagline_loading", "Personalized signals from RocketTrade's prediction models").title
-    : header(taglineIds[portfolioRisk], RISK_TAGLINE[portfolioRisk]).title;
+    : portfolioRiskTier
+      ? header(taglineIds[portfolioRiskTier], RISK_TAGLINE[portfolioRiskTier]).title
+      : header("ai_tagline_unset", "Set your risk tolerance to personalize this feed.").title;
 
   return (
     <section>
@@ -430,24 +414,24 @@ function AIInsightsSection({ portfolioData, header }) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-5 sm:divide-x sm:divide-slate-900/10">
             <AIInsightStat
               icon={TrendingUp}
-              label="Top Buy"
-              value={topPickName}
-              sub={topPick ? `${Math.round(topPick.buyProbability * 100)}% Confidence` : "Model data unavailable"}
+              label="Top Gainer"
+              value={topGainerName}
+              sub={topGainer ? `+${topGainer.pct.toFixed(2)}%` : "No data yet"}
               tone={RISK_TONE.Low}
             />
             <AIInsightStat
               icon={AlertTriangle}
               label="Watchlist"
               value={watchName}
-              sub={stockToWatch ? (stockToWatch.risk === "Aggressive" ? "High Volatility" : "Notable Mover") : "No data yet"}
+              sub={stockToWatch ? (stockToWatch.risk === "Aggressive" ? "High Volatility" : "Notable Mover") : "Your watchlist is empty"}
               tone={RISK_TONE.Medium}
             />
             <AIInsightStat
               icon={Gauge}
               label="Portfolio Risk"
-              value={portfolioRisk}
-              sub={portfolioData.holdings.length ? "From your holdings" : "No holdings yet"}
-              tone={RISK_TONE[portfolioRisk]}
+              value={portfolioRisk || "-"}
+              sub={portfolioRisk ? "Your selected risk profile" : "Set your risk profile"}
+              tone={RISK_TONE[portfolioRiskTier] ?? RISK_TONE.Medium}
             />
           </div>
         )}
@@ -1248,7 +1232,7 @@ function LoggedInHomePage() {
         <Hero name={name} nameColor={isExpert ? "#7C3AED" : isPremiumInvestor ? "#FFD500" : "#73ADFF"} portfolioData={portfolioData} header={header} />
 
         <div className="flex flex-col gap-8 mt-16">
-          <AIInsightsSection portfolioData={portfolioData} header={header} />
+          <AIInsightsSection portfolioData={portfolioData} header={header} userId={userId} riskTolerance={currentUser?.risk_tolerance} />
           <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
           <WatchlistSection header={header} />
           {isExpert && <ExpertFeaturesSection />}
