@@ -161,6 +161,11 @@ def public_expert_profile(user_id: str,
     if not info:
         return {"success": False, "message": "Expert not found"}
 
+    # Experts are also Investor records under the hood, so their sector
+    # interests (set on the shared profile page) live there.
+    from app.entity.models.investor import Investor
+    investor_info = Investor.getInvestorByUserId(user_id)
+
     return {
         "success": True,
         "views_used": quota["views_used"],
@@ -181,6 +186,7 @@ def public_expert_profile(user_id: str,
             "is_following": ExpertFollow.is_following(current_user["user_id"], user_id),
             "is_self": current_user["user_id"] == user_id,
             "portfolio_rating": ExpertPortfolioReview.get_stats(user_id),
+            "interests": (investor_info or {}).get("interests"),
         },
     }
 

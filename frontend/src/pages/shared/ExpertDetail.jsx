@@ -15,7 +15,7 @@ import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
     Mail, Link2, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
-    Users, UserPlus, UserCheck, X, Trash2,
+    Users, UserPlus, UserCheck, X, Trash2, Tags,
 } from "lucide-react";
 
 /*
@@ -203,7 +203,7 @@ function AllocationPie({ holdings }) {
     );
 }
 
-function PortfolioSection({ portfolio, error, notPublished }) {
+function PortfolioSection({ portfolio, error, notPublished, interests }) {
     if (notPublished) {
         return (
             <div style={{ ...CARD, padding: 28 }} className="mt-6 text-center">
@@ -284,6 +284,11 @@ function PortfolioSection({ portfolio, error, notPublished }) {
                 </InfoCard>
                 <InfoCard icon={Shield} label="Risk Level">
                     <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.risk_level || "—"}</div>
+                </InfoCard>
+                <InfoCard icon={Tags} label="Stock Interest">
+                    <div style={{ fontSize: 13, color: "#0F172A" }}>
+                        {interests ? interests.split(",").map(s => s.trim()).filter(Boolean).join(", ") : "—"}
+                    </div>
                 </InfoCard>
             </div>
 
@@ -929,7 +934,7 @@ function ExpertDetails() {
                         </div>
 
                         {tab === "portfolio" && (
-                            <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} />
+                            <PortfolioSection portfolio={portfolio} error={portfolioError} notPublished={portfolioNotPublished} interests={profile?.interests} />
                         )}
 
                         {tab === "reviews" && (

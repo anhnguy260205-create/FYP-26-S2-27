@@ -420,8 +420,8 @@ function DeleteAccountButton() {
 }
 
 function PersonalInformationCard({ investorInfo, onUpdate }) {
-  const { text } = useContentManagement();
-  const heading = text("investor_profile_personal_info_heading", "Personal Information").title;
+    const { text } = useContentManagement();
+    const heading = text("investor_profile_personal_info_heading", "Personal Information").title;
     const [draftFull, setDraftFull] = useState(investorInfo?.full_name || "");
     const [draftEmail, setDraftEmail] = useState(investorInfo?.email_address || "");
     const [draftUser, setDraftUser] = useState(investorInfo?.username || "");
@@ -650,7 +650,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                             </FormField>
 
                             <FormField
-                                label="Email Address"
+                                label="Email Address *"
 
                                 htmlFor="field-email"
                             >
@@ -666,7 +666,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                             className="grid grid-cols-2"
                             style={{ gap: "16px" }}
                         >
-                            <FormField label="Phone Number" htmlFor="field-phone">
+                            <FormField label="Phone Number *" htmlFor="field-phone">
                                 <TextInput
                                     id="field-phone"
                                     value={draftPhone}
@@ -676,7 +676,7 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
                                 />
                             </FormField>
 
-                            <FormField label="City" htmlFor="field-city">
+                            <FormField label="City *" htmlFor="field-city">
                                 <TextInput
                                     id="field-city"
                                     value={draftCity}
@@ -714,8 +714,8 @@ function PersonalInformationCard({ investorInfo, onUpdate }) {
     );
 }
 function AccountSettingsCard({ investorInfo, onUpdate }) {
-  const { text } = useContentManagement();
-  const heading = text("investor_profile_account_settings_heading", "Account Settings").title;
+    const { text } = useContentManagement();
+    const heading = text("investor_profile_account_settings_heading", "Account Settings").title;
     const [editingSection, setEditingSection] = useState(null);
     const [selectedInterests, setSelectedInterests] = useState(
         () => investorInfo?.interests ? investorInfo.interests.split(",").map(s => s.trim()).filter(Boolean) : []
@@ -1210,55 +1210,55 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
         return (
             <GlassCard>
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", padding: "16px 0", textAlign: "center" }}>
-                    <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
-                        💳
-                    </div>
-                    <div>
-                        <p style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>No Active Subscription</p>
-                        <p style={{ fontSize: "13px", color: TEXT_MUTED, maxWidth: "340px", lineHeight: 1.6 }}>
-                            Choose a plan to unlock AI stock predictions, expert portfolios, and more.
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => navigate("/investor/subscription")}
-                        style={{ padding: "10px 28px", borderRadius: "10px", background: "linear-gradient(135deg,#0092b8,#155dfc)", border: "none", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}
-                    >
-                        View Plans
-                    </button>
-                </div>
-
-                {/* Past subscription history */}
-                {!loading && history.length > 0 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
-                        <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead>
-                                    <tr style={{ background: CARD_BG_MUTED }}>
-                                        {["Plan", "Date", "Renewal", "Status"].map(h => (
-                                            <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {history.map((row, i) => (
-                                        <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
-                                            <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
-                                            <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
-                                            <td style={{ padding: "10px 14px" }}>
-                                                <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
-                                                    {row.sub_status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", padding: "16px 0", textAlign: "center" }}>
+                        <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: CARD_BG_MUTED, border: "1px solid rgba(15,23,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
+                            💳
                         </div>
+                        <div>
+                            <p style={{ fontSize: "18px", fontWeight: 700, color: HEADING, marginBottom: "8px" }}>No Active Subscription</p>
+                            <p style={{ fontSize: "13px", color: TEXT_MUTED, maxWidth: "340px", lineHeight: 1.6 }}>
+                                Choose a plan to unlock AI stock predictions, expert portfolios, and more.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => navigate("/investor/subscription")}
+                            style={{ padding: "10px 28px", borderRadius: "10px", background: "linear-gradient(135deg,#0092b8,#155dfc)", border: "none", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer" }}
+                        >
+                            View Plans
+                        </button>
                     </div>
-                )}
+
+                    {/* Past subscription history */}
+                    {!loading && history.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Past Subscriptions</p>
+                            <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(15,23,42,0.12)" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead>
+                                        <tr style={{ background: CARD_BG_MUTED }}>
+                                            {["Plan", "Date", "Renewal", "Status"].map(h => (
+                                                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: "10px", fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {history.map((row, i) => (
+                                            <tr key={i} style={{ borderTop: `1px solid ${DIVIDER}`, background: i % 2 === 0 ? "transparent" : "#F8FAFC" }}>
+                                                <td style={{ padding: "10px 14px", fontSize: "13px", color: row.plan_type === "premium" ? GOLD : "#00D3F2", fontWeight: 600, textTransform: "capitalize" }}>{row.plan_type}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_date ? new Date(row.sub_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px", fontSize: "12px", color: TEXT_MUTED }}>{row.sub_renewal_date ? new Date(row.sub_renewal_date).toLocaleDateString() : "—"}</td>
+                                                <td style={{ padding: "10px 14px" }}>
+                                                    <span style={{ padding: "2px 10px", borderRadius: "100px", fontSize: "11px", fontWeight: 600, background: row.sub_status === "active" ? "rgba(34,197,94,0.12)" : CARD_BG_MUTED, color: row.sub_status === "active" ? SUCCESS : TEXT_MUTED2, border: `1px solid ${row.sub_status === "active" ? "rgba(34,197,94,0.25)" : "rgba(15,23,42,0.12)"}` }}>
+                                                        {row.sub_status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </GlassCard>
         );
@@ -1283,58 +1283,58 @@ function SubscriptionCard({ investorInfo, onUpdate }) {
             : "—";
         return (
             <>
-            <GlassCard>
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    {/* Header */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-                        <div>
-                            <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Basic Plan</p>
-                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
-                        </div>
-                        <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", fontSize: "12px", fontWeight: 700 }}>
-                            ● Basic
-                        </div>
-                    </div>
-
-                    {/* Feature list */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
-                        {FEATURES.map(f => (
-                            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <span style={{ fontSize: "14px", color: f.included ? SUCCESS : "rgba(15,23,42,0.25)" }}>
-                                    {f.included ? "✓" : "✕"}
-                                </span>
-                                <span style={{ fontSize: "13px", color: f.included ? "#334155" : "rgba(15,23,42,0.35)" }}>
-                                    {f.label}
-                                </span>
+                <GlassCard>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                        {/* Header */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                            <div>
+                                <p style={{ fontSize: "20px", fontWeight: 700, color: HEADING }}>Basic Plan</p>
+                                <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Active since {loading ? "…" : startDate}</p>
                             </div>
-                        ))}
-                    </div>
-
-                    {/* Upgrade CTA */}
-                    <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.3)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-                        <div>
-                            <p style={{ fontSize: "14px", fontWeight: 700, color: GOLD }}>Upgrade to Premium</p>
-                            <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
+                            <div style={{ padding: "4px 14px", borderRadius: "100px", background: "rgba(0,211,243,0.1)", border: "1px solid rgba(0,211,243,0.4)", color: "#00D3F2", fontSize: "12px", fontWeight: 700 }}>
+                                ● Basic
+                            </div>
                         </div>
-                        <button
-                            onClick={handleUpgrade}
-                            style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                        >
-                            Upgrade Now
-                        </button>
-                    </div>
 
-                    {/* Cancel */}
-                    <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: "16px" }}>
-                        <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(220,38,38,0.75)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
-                            Cancel plan
-                        </button>
+                        {/* Feature list */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <p style={{ fontSize: "11px", fontWeight: 600, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Your Plan Features</p>
+                            {FEATURES.map(f => (
+                                <div key={f.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                    <span style={{ fontSize: "14px", color: f.included ? SUCCESS : "rgba(15,23,42,0.25)" }}>
+                                        {f.included ? "✓" : "✕"}
+                                    </span>
+                                    <span style={{ fontSize: "13px", color: f.included ? "#334155" : "rgba(15,23,42,0.35)" }}>
+                                        {f.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Upgrade CTA */}
+                        <div style={{ borderRadius: "14px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.3)", padding: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                            <div>
+                                <p style={{ fontSize: "14px", fontWeight: 700, color: GOLD }}>Upgrade to Premium</p>
+                                <p style={{ fontSize: "12px", color: TEXT_MUTED2, marginTop: "4px" }}>Unlock unlimited predictions, expert access & more</p>
+                            </div>
+                            <button
+                                onClick={handleUpgrade}
+                                style={{ padding: "9px 22px", borderRadius: "10px", background: "linear-gradient(135deg,#b8860b,#FFD700)", border: "none", color: "#0f1b2d", fontSize: "13px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+                            >
+                                Upgrade Now
+                            </button>
+                        </div>
+
+                        {/* Cancel */}
+                        <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: "16px" }}>
+                            <button onClick={() => setShowCancelConfirm(true)} style={{ background: "none", border: "none", color: "rgba(220,38,38,0.75)", fontSize: "13px", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                                Cancel plan
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </GlassCard>
-            {showCancelConfirm && <CancelModal />}
-        </>
+                </GlassCard>
+                {showCancelConfirm && <CancelModal />}
+            </>
         );
     }
 
