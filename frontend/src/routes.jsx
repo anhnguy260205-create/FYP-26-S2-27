@@ -35,6 +35,7 @@ const PaymentSuccess = lazy(() => import("./pages/investor/PaymentSuccess.jsx"))
 const PaymentFail = lazy(() => import("./pages/investor/PaymentFail.jsx"));
 const InvestorProfilePage = lazy(() => import("./pages/investor/InvestorProfilePage.jsx"));
 const Watchlist = lazy(() => import("./pages/shared/Watchlist.jsx"));
+const MyAlertsPage = lazy(() => import("./pages/investor/MyAlertsPage.jsx"));
 const ExpertPortfolio = lazy(() => import("./pages/shared/ExpertPortfolio.jsx"));
 const EducationContent = lazy(() => import("./pages/shared/EducationContent.jsx"));
 const AIChatbot = lazy(() => import("./pages/investor/AIChatbot.jsx"));
@@ -123,6 +124,7 @@ export const router = createBrowserRouter([
     { path: "/investor/payment-fail", element: protect(["investor"], PaymentFail) },
     { path: "/investor/edit-profile", element: protect(["investor"], InvestorProfilePage) },
     { path: "/watchlist", element: protectWithStocks(["investor"], Watchlist) },
+    { path: "/investor/alerts", element: protect(["investor"], MyAlertsPage) },
     { path: "/expert/knowledge-hub", element: protectExpert(ExpertKnowledgeHub) },
     { path: "/investor/expertportfolio", element: protect(["investor", "expert"], ExpertPortfolio) },
     { path: "/investor/educationcontent", element: protect(["investor", "expert"], EducationContent) },

@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from app.entity.models.emailalert import StockAlert
 from app.entity.database.session import get_session
 from app.control.services.email_service import send_alert_email
@@ -7,7 +8,17 @@ from app.control.controller.notificationc import create_notification
 class CreateAlertController:
     def create_alert(self, user_id, stock_symbol, price_above, price_below,
                      increase_percent, decrease_percent, custom_message, notification_email):
+        already_exists_msg = (
+            f"You already have an alert set for {stock_symbol} — "
+            "delete it before creating a new one."
+        )
         with get_session() as session:
+            existing = session.query(StockAlert).filter_by(
+                user_id=user_id, stock_symbol=stock_symbol
+            ).first()
+            if existing:
+                return {"success": False, "message": already_exists_msg}
+
             alert = StockAlert(
                 user_id=user_id,
                 stock_symbol=stock_symbol,
@@ -19,8 +30,15 @@ class CreateAlertController:
                 notification_email=notification_email,
             )
             session.add(alert)
-            session.flush()
-            return alert.alert_id
+            try:
+                session.flush()
+            except IntegrityError:
+                # Two concurrent creates raced past the "existing" check above —
+                # the unique constraint caught it, so treat it the same as
+                # finding an existing row.
+                session.rollback()
+                return {"success": False, "message": already_exists_msg}
+            return {"success": True, "alert_id": alert.alert_id}
 
 
 class GetAlertsController:
@@ -80,19 +98,45 @@ class CheckAndTriggerAlertsController:
                     if pct >= float(alert.decrease_percent):
                         condition = f"Price decreased {pct:.2f}% (threshold: {float(alert.decrease_percent):.2f}%)"
 
-                if condition:
-                    sent = send_alert_email(
-                        to_email=alert.notification_email,
-                        stock_symbol=symbol,
-                        current_price=current_price,
-                        condition=condition,
-                        custom_message=alert.custom_message,
+                if not condition:
+                    continue
+
+                # Atomically claim this alert before sending the email — if a
+                # concurrent tick for the same symbol already claimed it while
+                # its email was in flight, this affects 0 rows and we skip,
+                # preventing duplicate emails for the same crossing.
+                claimed = session.query(StockAlert).filter_by(
+                    alert_id=alert.alert_id, is_triggered=False
+                ).update({"is_triggered": True}, synchronize_session=False)
+                session.commit()
+                if not claimed:
+                    continue
+
+                sent = send_alert_email(
+                    to_email=alert.notification_email,
+                    stock_symbol=symbol,
+                    current_price=current_price,
+                    condition=condition,
+                    custom_message=alert.custom_message,
+                )
+                if sent:
+                    # Alert has done its job — remove it so it disappears from
+                    # "My Alerts" and frees up the stock for a new alert
+                    # (matches the alert email's own "this alert has been
+                    # deactivated" wording).
+                    session.query(StockAlert).filter_by(
+                        alert_id=alert.alert_id
+                    ).delete(synchronize_session=False)
+                    session.commit()
+                    create_notification(
+                        alert.user_id,
+                        "stock",
+                        f"{symbol} triggered your price alert",
+                        condition,
                     )
-                    if sent:
-                        alert.is_triggered = True
-                        create_notification(
-                            alert.user_id,
-                            "stock",
-                            f"{symbol} triggered your price alert",
-                            condition,
-                        )
+                else:
+                    # Send failed — release the claim so it can retry on a later tick.
+                    session.query(StockAlert).filter_by(
+                        alert_id=alert.alert_id
+                    ).update({"is_triggered": False}, synchronize_session=False)
+                    session.commit()

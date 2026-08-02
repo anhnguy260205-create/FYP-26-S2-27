@@ -167,10 +167,11 @@ function GeneralHeader() {
   const navLinks = [
     {
       label: "Dashboard",
-      activePaths: ["/watchlist", "/realtimedashboard"],
+      activePaths: ["/watchlist", "/realtimedashboard", "/investor/alerts"],
       submenu: [
         { title: "Watchlist", path: "/watchlist" },
         { title: "Real-time Dashboard", path: "/realtimedashboard" },
+        { title: "My Alerts", path: "/investor/alerts" },
       ],
     },
     {

@@ -1,4 +1,4 @@
-from sqlalchemy import DECIMAL, BOOLEAN, Column, Integer, String, DateTime
+from sqlalchemy import DECIMAL, BOOLEAN, Column, Integer, String, DateTime, UniqueConstraint
 from app.entity.database.base import Base
 from zoneinfo import ZoneInfo
 from datetime import datetime
@@ -6,6 +6,9 @@ from datetime import datetime
 
 class StockAlert(Base):
     __tablename__ = "stock_alert"
+    __table_args__ = (
+        UniqueConstraint("user_id", "stock_symbol", name="uq_stock_alert_user_symbol"),
+    )
 
     alert_id = Column(Integer, primary_key=True)
     user_id = Column(String(50))

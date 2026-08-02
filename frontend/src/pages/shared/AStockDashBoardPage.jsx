@@ -11,8 +11,9 @@ import StockOverview from "../../components/StockOverview.jsx";
 import StockQuantRating from "../../components/StockQuantRating.jsx";
 import StockPrediction from "../../components/StockPrediction.jsx";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo, memo } from "react";
-import { createAlert } from "../../api/alertApi.js";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { createAlert, getAlerts, deleteAlert } from "../../api/alertApi.js";
+import { conditionLabel } from "../../utils/alertFormat.js";
 import { addStockToWatchlist } from "../../api/userApi.js";
 import { fetchStockSnapshot, fetchStockCandles, checkDashboardAccess } from "../../api/stockApi.js";
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
@@ -293,13 +294,42 @@ function AlertBoard({ symbol }) {
   const userId = currentUser?.user_id;
   const userEmail = currentUser?.email || "";
 
+  const { stocks } = useLiveStocks();
+  const currentPrice = stocks[symbol]?.price ?? null;
+
   const [formData, setFormData] = useState({
     price_above: "", price_below: "", pct_increase: "", pct_decrease: "",
     notification_email: userEmail,
   });
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [existingAlerts, setExistingAlerts] = useState([]);
+  const [loadingExisting, setLoadingExisting] = useState(true);
+
+  const fetchExisting = useCallback(() => {
+    if (!userId) { setLoadingExisting(false); return; }
+    setLoadingExisting(true);
+    getAlerts(userId).then(res => {
+      if (res.success) {
+        setExistingAlerts(res.alerts.filter(a => a.stock_symbol === symbol));
+      }
+    }).finally(() => setLoadingExisting(false));
+  }, [userId, symbol]);
+
+  useEffect(() => { fetchExisting(); }, [fetchExisting]);
+
+  const handleDeleteExisting = useCallback(async (alertId) => {
+    try {
+      const res = await deleteAlert(alertId);
+      if (res.success) {
+        setExistingAlerts(prev => prev.filter(a => a.alert_id !== alertId));
+      } else {
+        window.alert(res.detail || res.message || "Failed to delete alert.");
+      }
+    } catch {
+      window.alert("Failed to delete alert. Check your connection and try again.");
+    }
+  }, []);
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -315,6 +345,14 @@ function AlertBoard({ symbol }) {
     }
     if (!notification_email) {
       setError("Email is required.");
+      return;
+    }
+    if (price_above && currentPrice != null && parseFloat(price_above) <= currentPrice) {
+      setError(`Price above must be higher than the current price ($${currentPrice.toFixed(2)}).`);
+      return;
+    }
+    if (price_below && currentPrice != null && parseFloat(price_below) >= currentPrice) {
+      setError(`Price below must be lower than the current price ($${currentPrice.toFixed(2)}).`);
       return;
     }
 
@@ -333,9 +371,9 @@ function AlertBoard({ symbol }) {
     try {
       const result = await createAlert(payload);
       if (result.success) {
-        setSubmitted(true);
+        fetchExisting();
       } else {
-        setError("Failed to create alert. Try again.");
+        setError(result.detail || "Failed to create alert. Try again.");
       }
     } catch {
       setError("Could not reach server.");
@@ -379,47 +417,67 @@ function AlertBoard({ symbol }) {
         Get notified when <span style={{ color: "#0092b8", fontWeight: 600 }}>{symbol}</span> hits your target.
       </p>
 
-      {submitted ? (
-        <div style={{ textAlign: "center", padding: "36px 0" }}>
-          <div style={{
-            width: "48px", height: "48px", borderRadius: "50%",
-            background: "linear-gradient(135deg, #0284c7, #2563eb)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 12px", boxShadow: "0 0 24px rgba(37,99,235,0.4)",
-          }}>
-            <svg width="22" height="22" fill="none" stroke="white" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <p style={{ color: "#0F9D58", fontFamily: "'DM Mono', monospace", fontSize: "13px" }}>Alert activated!</p>
-          <p style={{ color: "#5B6C88", fontFamily: "'DM Sans', sans-serif", fontSize: "11px", marginTop: "4px" }}>
-            Email will be sent to {formData.notification_email}
+      {loadingExisting ? (
+        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#5B6C88", padding: "24px 0", textAlign: "center" }}>
+          Checking existing alerts...
+        </p>
+      ) : existingAlerts.length > 0 ? (
+        <div>
+          <p style={sectionHeadStyle}>Active Alert</p>
+          {existingAlerts.map(alert => (
+            <div key={alert.alert_id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: "12px", padding: "14px 16px", borderRadius: "8px",
+              background: "#F1F5F9", border: "1px solid rgba(11,29,79,0.15)", marginBottom: "10px",
+            }}>
+              <div>
+                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "13px", color: "#0F172A", margin: 0 }}>
+                  {conditionLabel(alert)}
+                </p>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "11px", color: "#5B6C88", margin: "4px 0 0" }}>
+                  {alert.is_triggered ? "Already triggered" : `Emails ${alert.notification_email}`}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDeleteExisting(alert.alert_id)}
+                style={{
+                  padding: "7px 14px", borderRadius: "7px", whiteSpace: "nowrap",
+                  background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+                  color: "#DC2626", fontFamily: "'DM Mono', monospace", fontSize: "11px",
+                  letterSpacing: "0.04em", cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px", color: "#5B6C88", margin: "4px 0 0" }}>
+            Delete the alert above to set a new one for {symbol}.
           </p>
-          <button
-            onClick={() => { setSubmitted(false); setFormData(p => ({ ...p, price_above: "", price_below: "", pct_increase: "", pct_decrease: "" })); }}
-            style={{
-              marginTop: "16px", padding: "8px 20px", borderRadius: "7px",
-              background: "rgba(0,146,184,0.12)", border: "1px solid rgba(0,146,184,0.4)",
-              color: "#0092b8", fontFamily: "'DM Mono', monospace", fontSize: "12px", cursor: "pointer",
-            }}
-          >
-            Add Another
-          </button>
         </div>
       ) : (
         <form id="alert-form" onSubmit={handleSubmit}>
-          <p style={sectionHeadStyle}>Price Alerts</p>
+          <p style={sectionHeadStyle}>
+            Price Alerts
+            {currentPrice != null && (
+              <span style={{ color: "#5B6C88", textTransform: "none", letterSpacing: "normal", marginLeft: "8px" }}>
+                — current price ${currentPrice.toFixed(2)}
+              </span>
+            )}
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "12px" }}>
             <div>
               <p style={labelStyle}>Price above ($)</p>
-              <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_above} placeholder="e.g. 200.00"
+              <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_above}
+                placeholder={currentPrice != null ? currentPrice.toFixed(2) : "e.g. 200.00"}
                 onChange={(e) => handleChange("price_above", e.target.value)}
                 onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
                 onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
             </div>
             <div>
               <p style={labelStyle}>Price below ($)</p>
-              <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_below} placeholder="e.g. 150.00"
+              <input style={inputStyle} type="number" step="0.01" min="0" value={formData.price_below}
+                placeholder={currentPrice != null ? currentPrice.toFixed(2) : "e.g. 150.00"}
                 onChange={(e) => handleChange("price_below", e.target.value)}
                 onFocus={e => e.target.style.borderColor = "rgba(0,146,184,0.6)"}
                 onBlur={e => e.target.style.borderColor = "rgba(11,29,79,0.25)"} />
@@ -460,7 +518,7 @@ function AlertBoard({ symbol }) {
         </form>
       )}
 
-      {!submitted && (
+      {!loadingExisting && existingAlerts.length === 0 && (
         <button
           type="submit"
           form="alert-form"
