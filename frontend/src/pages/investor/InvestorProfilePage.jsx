@@ -952,7 +952,7 @@ function SecurityCard({ investorInfo }) {
                     }}
                 >
                     <SquarePen size={14} />
-                    Reset Password
+                    Change Password
                 </button>
             </div>
 
