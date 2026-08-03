@@ -30,7 +30,6 @@ class ExpertPortfolio(Base):
     time_horizon = Column(String(80), nullable=True, default="3-5 years")
     target_audience = Column(String(160), nullable=True)
     status = Column(String(20), default="Active")
-    # Published portfolios appear on the logged-in homepage for premium users.
     is_published = Column(Boolean, default=False, nullable=False)
     created_by = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=_now)

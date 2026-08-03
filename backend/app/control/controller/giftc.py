@@ -1,14 +1,6 @@
-"""
-Sending a chat gift.
+from datetime import datetime
 
-Eligibility mirrors the Messages channel rules in chat.py: the recipient must
-be an expert, and the sender must hold premium (verified experts count as
-premium, so expert-to-expert tipping works).
-
-The whole split runs in ONE session so the sender's debit, the expert's
-credit, both ledger rows and the platform's cut commit or roll back together.
-"""
-from sqlalchemy import text
+from sqlalchemy import text, func
 
 from app.entity.database.session import get_session
 from app.entity.models.investor import Investor
@@ -16,7 +8,7 @@ from app.entity.models.expert import Expert
 from app.entity.models.expertverification import ExpertVerification
 from app.entity.models.gift import (
     Gift, split_gift, MIN_GIFT_AMOUNT, MAX_GIFT_AMOUNT, GIFT_PRESETS,
-    GIFT_EXPERT_SHARE, GIFT_PLATFORM_SHARE,
+    GIFT_EXPERT_SHARE, GIFT_PLATFORM_SHARE, TZ,
 )
 from app.entity.models.wallet import (
     WalletTransaction, PlatformRevenue,
@@ -29,7 +21,7 @@ _APPROVED = {"approved", "active", "verified"}
 
 
 def _is_premium(session, user_id) -> bool:
-    """Premium subscriber, or a verified expert (who gets premium for free)."""
+    # Determine if a user is premium, either as a premium investor or a verified expert. This is used to enforce the rule that only premium users can send gifts.
     investor = session.query(Investor).filter(
         Investor.user_id == user_id).first()
     if investor and investor.investor_subscription_status == "premium":
@@ -64,14 +56,35 @@ class SendGiftController:
         expert_share, platform_share = split_gift(amount)
 
         with get_session() as session:
-            # ── recipient must be an expert ──────────────────────────────
+            # daily limit check — the platform caps how much a user can send in gifts per day, to prevent abuse and encourage moderation.
+            today_start = datetime.now(TZ).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            sent_today = session.query(
+                func.coalesce(func.sum(Gift.amount), 0.0)
+            ).filter(
+                Gift.sender_user_id == sender_user_id,
+                Gift.created_at >= today_start,
+            ).scalar()
+            sent_today = round(float(sent_today or 0), 2)
+            if sent_today + amount > MAX_GIFT_AMOUNT:
+                remaining = max(round(MAX_GIFT_AMOUNT - sent_today, 2), 0)
+                return {
+                    "success": False,
+                    "message": (
+                        f"Daily gift limit is ${MAX_GIFT_AMOUNT:,.2f} — "
+                        f"you've already sent ${sent_today:,.2f} today "
+                        f"(${remaining:,.2f} remaining)"
+                    ),
+                }
+
+            #  recipient must be an expert 
             expert = session.query(Expert).filter(
                 Expert.user_id == expert_user_id).first()
             if not expert:
                 return {"success": False,
                         "message": "Gifts can only be sent to experts"}
 
-            # ── sender must be premium ───────────────────────────────────
+            #  sender must be premium 
             if not _is_premium(session, sender_user_id):
                 return {
                     "success": False,
@@ -92,7 +105,7 @@ class SendGiftController:
                 return {"success": False,
                         "message": "Expert has no wallet to receive gifts"}
 
-            # ── funds check ──────────────────────────────────────────────
+            #  funds check 
             balance = round(float(sender_investor.assets or 0), 2)
             if balance < amount:
                 return {
@@ -108,7 +121,7 @@ class SendGiftController:
             recipient_balance = round(
                 float(recipient_investor.assets or 0), 2)
 
-            # ── move the money ───────────────────────────────────────────
+            #  move the money 
             session.execute(
                 text("UPDATE investor SET assets = assets - :a "
                      "WHERE investor_id = :iid"),

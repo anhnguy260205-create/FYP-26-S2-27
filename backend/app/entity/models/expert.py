@@ -8,7 +8,6 @@ from app.entity.database.session import get_session
 
 class Expert(Base):
     __tablename__ = 'expert'
-    # Additional fields specific to Expert can be added here
     expert_id = Column(String(50), primary_key=True,
                        default=lambda: f"expert_{uuid4()}")
     user_id = Column(String(50), ForeignKey(
@@ -16,12 +15,9 @@ class Expert(Base):
     rating = Column(Float, default=0)
     experience_years = Column(Integer, nullable=True)
     linked_in_url = Column(String(255), nullable=True)
-    # Whether this expert is currently accepting NEW chat requests from
-    # investors (existing conversations are unaffected — see chat.py).
+
     chat_available = Column(Boolean, default=True, nullable=False)
 
-    # Verification/application state (status, documents, approved_date) lives
-    # on ExpertVerification, not here — see that model.
 
     @staticmethod
     def createAccount(username, email_address, experience_year=None, linked_in_url=None) -> bool:
@@ -55,9 +51,6 @@ class Expert(Base):
 
     @staticmethod
     def create_for_existing_user(user_id, experience_years=None, linked_in_url=None):
-        """Attach an expert row (+ verification record) to an EXISTING investor
-        account — the merged-roles upgrade path. Returns the expert dict, or
-        the existing one if the user already applied."""
         with get_session() as session:
             existing = session.query(Expert).filter(
                 Expert.user_id == user_id).first()
@@ -118,12 +111,7 @@ class Expert(Base):
 
     @staticmethod
     def demote_to_investor(user_id):
-        """Cancelling a verification fully revokes expert status: the expert
-        row (+ their published portfolio, authored articles, and
-        compensation ledger) is removed, leaving a plain investor account
-        untouched. Unlike deleteExpert, the user_account/investor rows are
-        NOT touched — this is a demotion, not an account deletion. They can
-        reapply from scratch via POST /expert/apply."""
+
         from app.entity.models.article import Article
         from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
         from app.entity.models.expertcompensation import ExpertCompensationLedger

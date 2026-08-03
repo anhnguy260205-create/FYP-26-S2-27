@@ -56,45 +56,42 @@ const NotificationManagementPage = lazy(() => import("./pages/administrator/Noti
 const SendNotificationPage = lazy(() => import("./pages/administrator/SendNotificationPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
-
+// The S component is a wrapper that ensures the page scrolls to the top when the route changes. It also provides a Suspense fallback for lazy-loaded components.
 function S({ children }) {
     const { pathname, key } = useLocation();
+    //Scroll to top when route changes
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
-
-    // Keying the page on location.key forces a remount (and therefore a
-    // fresh data fetch) even when navigating to the page you're already on
-    // — clicking a header nav link always re-runs the page's mount effects,
-    // rather than being a no-op when the pathname hasn't changed.
+    // Suspense fallback is a simple div with a minimum height to prevent layout shifts while the lazy-loaded component is being fetched.
     return (
         <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
             {cloneElement(children, { key })}
         </Suspense>
     );
 }
-
+// The wrap function wraps a component with the S component, ensuring that it benefits from the scroll-to-top and Suspense fallback behavior.
 function wrap(Component) {
     return <S><Component /></S>;
 }
-
+// The wrapWithStocks function wraps a component with the StocksProvider context, allowing it to access stock-related data and functions.
 function wrapWithStocks(Component) {
     return <StocksProvider><S><Component /></S></StocksProvider>;
 }
-
+// the page for specific roles, and the component is wrapped in a ProtectedRoute that checks if the user has the required roles to access the page.
 function protect(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><S><Component /></S></ProtectedRoute>;
 }
 
-// Expert-only pages: investors with the is_expert flag (merged roles).
+// route for verified expert only
 function protectExpert(Component) {
     return <ProtectedRoute allowedRoles={["investor", "expert"]} requireExpert><S><Component /></S></ProtectedRoute>;
 }
-
+// the page for specific roles, and the component is wrapped in a ProtectedRoute that checks if the user has the required roles to access the page. Additionally, it wraps the component in a StocksProvider context.
 function protectWithStocks(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><StocksProvider><S><Component /></S></StocksProvider></ProtectedRoute>;
 }
-
+// a list of all the routes in the application, with their corresponding components and protection rules.
 export const router = createBrowserRouter([
     { path: "/", element: wrapWithStocks(HomePage) },
     { path: "/about-us", element: wrap(AboutUsPage) },
@@ -131,8 +128,7 @@ export const router = createBrowserRouter([
     { path: "/investor/aichatbot", element: protect(["investor"], AIChatbot) },
     { path: "/investor/expertdetails", element: protect(["investor", "expert"], ExpertDetails) },
     { path: "/investor/become-expert", element: protect(["investor", "expert"], BecomeExpertPage) },
-    // Reachable by any investor — the page itself shows a "verified experts
-    // only" block for anyone who isn't a qualified verified expert yet.
+
     { path: "/investor/compensation", element: protect(["investor", "expert"], ExpertCompensationPage) },
 
     { path: "/adminpanel", element: protect(["admin"], AdminPanelPage) },

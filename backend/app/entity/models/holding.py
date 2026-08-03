@@ -85,7 +85,6 @@ class Holding(Base):
 
     @staticmethod
     def removeShares(investor_id, symbol, quantity):
-        """Decrease holding quantity (used on SELL). Returns False if not enough shares."""
         with get_session() as session:
             holding = session.query(Holding).filter(
                 Holding.investor_id == investor_id,

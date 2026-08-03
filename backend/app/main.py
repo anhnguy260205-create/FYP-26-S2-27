@@ -133,8 +133,7 @@ CORS_ORIGINS = list(dict.fromkeys(
     + _env_list("FRONTEND_URL")
 ))
 
-# Allows Vite dev ports even if the port changes. Keep exact production
-# origins in CORS_ORIGINS above / the CORS_ORIGINS env var.
+
 CORS_ALLOW_ORIGIN_REGEX = os.getenv(
     "CORS_ALLOW_ORIGIN_REGEX",
     r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
@@ -142,7 +141,6 @@ CORS_ALLOW_ORIGIN_REGEX = os.getenv(
 
 
 def _col_exists(conn, table, col):
-    """Check column existence via information_schema — works on ALL MySQL versions."""
     from sqlalchemy import text
     r = conn.execute(text(
         "SELECT COUNT(*) FROM information_schema.COLUMNS "
@@ -152,11 +150,7 @@ def _col_exists(conn, table, col):
 
 
 def ensure_all_schemas(engine):
-    """
-    Patch ALL tables with new columns added by teammates.
-    Uses information_schema check — compatible with ALL MySQL versions.
-    Safe to run every startup — silently skips columns that already exist.
-    """
+
     from sqlalchemy import text
 
     patches = [
@@ -294,8 +288,7 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist uniqueness patch: {e}")
 
-        # One alert per (user, stock) — dedupe existing rows created before
-        # this limit existed, then enforce uniqueness at the DB level.
+        # One alert per (user, stock) — dedupe existing rows created before  this limit existed, then enforce uniqueness at the DB level.
         try:
             result = conn.execute(text(
                 "DELETE s1 FROM stock_alert s1 "
@@ -335,10 +328,7 @@ def ensure_all_schemas(engine):
             print(f"[SCHEMA] Skipped expert_follow investor_id/follower_user_id backfill: {e}")
 
 
-        # ── Merged roles migration ──────────────────────────────────────────
-        # Every expert account also gets an investor row (experts now use the
-        # investor UI and trade like investors); verified experts get the
-        # complimentary premium tier.
+       
         try:
             result = conn.execute(text(
                 "INSERT INTO investor "
@@ -372,8 +362,7 @@ def ensure_all_schemas(engine):
 
 
 async def yfinance_alert_poller():
-    """Check alerts using cached snapshots — avoids duplicate yfinance calls.
-    Polls every 60s when market is open, every 300s when closed."""
+
     await asyncio.sleep(int(os.getenv("STOCK_POLLER_START_DELAY_SECONDS", "90")))
     while True:
         market_open = get_market_status() == "OPEN"
@@ -399,7 +388,6 @@ async def yfinance_alert_poller():
 
 
 async def renewal_reminder_poller():
-    """Check every hour for premium subscriptions expiring within 3 days and send reminder emails."""
     await asyncio.sleep(30)  # short delay after server start
     while True:
         try:
@@ -427,12 +415,6 @@ async def renewal_reminder_poller():
 
 
 async def expert_compensation_poller():
-    """Once a day, settle the most recently completed calendar month: snapshot
-    each expert's premium follower count, credit their assets, and log the
-    payout to the wallet ledger.
-
-    Idempotent — a month already marked paid is skipped, so running daily (and
-    re-running after a restart) never double-pays."""
     await asyncio.sleep(45)  # short delay after server start
     while True:
         try:
@@ -475,14 +457,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. Create/patch/seed data only when enabled 
+#  Create/patch/seed data only when enabled 
 if RUN_SCHEMA_PATCHES:
     Base.metadata.create_all(bind=engine)
     ensure_forum_schema(engine)
     ensure_all_schemas(engine)
     ensure_forum_schema(engine)
-    # create_all() adds missing TABLES but never missing COLUMNS — the
-    # compensation rewrite added columns to an existing table.
+
     try:
         ensure_compensation_schema()
     except Exception as _e:

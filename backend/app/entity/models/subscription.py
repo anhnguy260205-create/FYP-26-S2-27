@@ -6,8 +6,6 @@ from app.entity.database.session import get_session
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
-# Revenue credited per plan, in cents — internal bookkeeping only, independent
-# of what Stripe actually charges (PLAN_CONFIG in payment_service.py).
 PLAN_REVENUE_CENTS = {"basic": 0, "premium": 2099}
 
 
@@ -68,10 +66,6 @@ class Subscription(Base):
 
             session.flush()
 
-            # Book the subscription into the platform revenue ledger so the
-            # finance dashboard reads from ONE table instead of stitching
-            # subscriptions and everything else together. Amount is stored in
-            # cents here but revenue is kept in dollars.
             from app.entity.models.wallet import PlatformRevenue, REV_SUBSCRIPTION
             PlatformRevenue.record_once(
                 session,
@@ -124,7 +118,6 @@ class Subscription(Base):
 
     @staticmethod
     def getExpiringPremium(days: int = 3):
-        """Return premium subscriptions expiring within `days` days that haven't been reminded yet."""
         from app.entity.models.useraccount import UserAccount
         now = datetime.now(ZoneInfo("Asia/Singapore")).replace(tzinfo=None)
         cutoff = now + timedelta(days=days)
@@ -161,7 +154,6 @@ class Subscription(Base):
 
     @staticmethod
     def cancelSubscription(investor_id: str):
-        """Cancel the active subscription. Premium cannot be cancelled — only basic."""
         with get_session() as session:
             sub = (
                 session.query(Subscription)

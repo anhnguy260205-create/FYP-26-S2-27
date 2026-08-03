@@ -12,12 +12,7 @@ def _now():
 
 
 class ExpertPortfolioReview(Base):
-    """A rating + written review left on a specific expert's portfolio.
 
-    Any signed-in user (investor or expert) may review another expert's
-    portfolio, except their own. One review per reviewer per expert —
-    resubmitting updates the existing row rather than creating a new one.
-    """
     __tablename__ = "expert_portfolio_review"
     __table_args__ = (UniqueConstraint(
         "reviewer_user_id", "expert_user_id", name="uq_portfolio_review"),)
@@ -33,8 +28,7 @@ class ExpertPortfolioReview(Base):
 
     @staticmethod
     def _reviewer_name(session, user_id):
-        # Portfolio reviews are anonymous — the expert (and other viewers)
-        # never see who left a review, only the rating/comment.
+        # Portfolio reviews are anonymous — the expert (and other viewers) never see who left a review, only the rating/comment.
         return "Anonymous Investor"
 
     @staticmethod

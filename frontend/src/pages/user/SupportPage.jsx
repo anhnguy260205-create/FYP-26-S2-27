@@ -231,7 +231,7 @@ function SupportPage() {
 
     return matchesCategory && matchesSearch;
   });
-
+  // Limit search suggestions to the first 5 matches for performance and usability.
   const searchSuggestions = normalizedSearch
     ? faqs
       .filter(

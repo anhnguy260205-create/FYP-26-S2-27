@@ -8,15 +8,7 @@ from app.entity.models.investor import Investor
 
 
 class DashboardUsage(Base):
-    """Tracks which stocks a basic investor has opened the real-time dashboard for.
-
-    Basic plan: lifetime limit of BASIC_DASHBOARD_LIMIT distinct stocks.
-    Re-opening an already-unlocked stock is free (one row per investor+symbol).
-    Premium investors and non-investors (experts/admins) are never limited.
-
-    Flow (see stock_ws.py): `check` gates access WITHOUT consuming, and the
-    dashboard page calls `record_view` immediately once access is granted.
-    """
+   
     __tablename__ = "dashboard_usage"
 
     usage_id = Column(String(50), primary_key=True,
@@ -31,7 +23,6 @@ class DashboardUsage(Base):
 
     @staticmethod
     def _investor_state(session, user_id):
-        """(investor, unlocked_symbols) — investor is None for experts/admins."""
         investor = session.query(Investor).filter(
             Investor.user_id == user_id).first()
         if not investor:
@@ -42,7 +33,6 @@ class DashboardUsage(Base):
 
     @staticmethod
     def check(user_id, stock_symbol):
-        """Is this user allowed to open this stock's dashboard? (no side effects)"""
         symbol = stock_symbol.upper()
         with get_session() as session:
             investor, unlocked = DashboardUsage._investor_state(session, user_id)
@@ -58,7 +48,6 @@ class DashboardUsage(Base):
 
     @staticmethod
     def record_view(user_id, stock_symbol):
-        """Consume quota after access was granted. Returns updated usage."""
         symbol = stock_symbol.upper()
         with get_session() as session:
             investor, unlocked = DashboardUsage._investor_state(session, user_id)
@@ -74,7 +63,6 @@ class DashboardUsage(Base):
 
     @staticmethod
     def get_usage(user_id):
-        """Read-only usage summary (for showing 'x of 3 used' in the UI)."""
         with get_session() as session:
             investor, unlocked = DashboardUsage._investor_state(session, user_id)
             if not investor or investor.investor_subscription_status == "premium":

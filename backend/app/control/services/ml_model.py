@@ -1,28 +1,4 @@
-"""
-ml_model.py
-===========
-Loads the trained XGBoost classifier (xgb_stock_model.json) and exposes
-helper functions to:
-  1. Compute the 26 input features from OHLCV price history + sentiment data.
-  2. Run inference to get a probability that the stock will be UP at the
-     end of the next trading session.
-  3. Translate that probability into business-facing metrics:
-       - expected profit margin (e.g. "+10.4%")
-       - statistical confidence tier (e.g. "70%" / "90%")
-       - bullish / bearish / neutral label
 
-The model itself is a binary classifier (objective: binary:logistic) trained
-to predict next-period direction (up/down). Its best_iteration achieved an
-AUC (best_score) of ~0.692 on the validation set, which we use as the model's
-baseline statistical confidence ceiling.
-
-Sentiment features: the model expects FinBERT-style features. We approximate
-them using VADER (vaderSentiment) scored against recent news headlines fetched
-via yfinance. VADER compound/pos/neg map cleanly onto FinBERT's expected
-score range; XGBoost's tree splits are robust to the distributional difference.
-Results are cached per (symbol, UTC date) so the news fetch runs at most once
-per symbol per day.
-"""
 
 import os
 import math
@@ -152,12 +128,7 @@ _NEUTRAL_SENTIMENT = {
 
 
 def _get_sentiment_features(symbol: str) -> dict:
-    """
-    Fetch recent news headlines via yfinance and score them with VADER.
-    VADER compound (-1..+1) maps onto finbert_score_mean; VADER pos/neg
-    proportions map onto finbert_pos/neg_mean. Results are cached per
-    (symbol, UTC date) so the network call runs at most once per day.
-    """
+    #  Fetch recent news for the stock symbol and compute sentiment features using VADER. Caches results per symbol per day to avoid repeated API calls.
     cache_key = (symbol, datetime.utcnow().strftime("%Y-%m-%d"))
     if cache_key in _sentiment_cache:
         return _sentiment_cache[cache_key]
@@ -217,11 +188,7 @@ def _get_sentiment_features(symbol: str) -> dict:
 
 
 def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
-    """
-    Given a DataFrame of OHLCV data (yfinance .history() output, daily),
-    compute the 26 features required by the model. Returns the feature
-    dict for the most recent row, or None if there isn't enough history.
-    """
+    # Compute a flat dictionary of features for the ML model from the stock's historical OHLCV data and sentiment. Returns None if insufficient history is available.
     if history is None or len(history) < 25:
         return None
 
@@ -278,10 +245,7 @@ def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
 
 
 def predict_probability_up(history: pd.DataFrame, symbol: str) -> float | None:
-    """
-    Returns the model's probability (0..1) that the stock will close UP
-    in the next trading session, or None if features can't be computed.
-    """
+    # Compute features and run the XGBoost model to predict the probability that the stock will go up. Returns None if features cannot be computed.
     features = compute_features(history, symbol)
     if features is None:
         return None
@@ -295,25 +259,10 @@ def predict_probability_up(history: pd.DataFrame, symbol: str) -> float | None:
     return prob_up
 
 
-# ── Business-logic translation ───────────────────────────────────────────────
+#  Business-logic translation 
 
 def confidence_tier(prob_up: float) -> dict:
-    """
-    Translates the raw model probability into a business-facing confidence
-    level. The model's edge over a coin-flip (|prob_up - 0.5|) scales
-    against its known validation AUC to produce a "statistical confidence"
-    percentage capped at the model's proven AUC ceiling (~69%) for the
-    directional call itself, while the magnitude of conviction (how far
-    from 50/50) is shown separately as "signal strength".
-
-    Returns:
-      {
-        "direction": "up" | "down",
-        "signal_strength": float (0..1),   # |prob_up - 0.5| * 2
-        "confidence_pct": float,           # 50-69%, scaled by signal strength
-        "tier_label": "Low" | "Moderate" | "High"
-      }
-    """
+    
     direction = "up" if prob_up >= 0.5 else "down"
     signal_strength = abs(prob_up - 0.5) * 2  # 0 (no edge) .. 1 (max edge)
 
@@ -336,15 +285,5 @@ def confidence_tier(prob_up: float) -> dict:
 
 
 def expected_profit_margin_pct(prob_up: float, typical_daily_move_pct: float) -> float:
-    """
-    Expected-value profit margin for going long, expressed as a percentage:
-
-        E[return] = P(up) * (+typical_move) + P(down) * (-typical_move)
-                  = typical_move * (2 * P(up) - 1)
-
-    `typical_daily_move_pct` should be the stock's recent average absolute
-    daily return (e.g. derived from ATR% or historical volatility), which
-    anchors the *magnitude* of the move while the model supplies the
-    *directional* edge.
-    """
+  
     return round(typical_daily_move_pct * (2 * prob_up - 1), 4)

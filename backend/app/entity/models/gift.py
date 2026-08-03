@@ -1,14 +1,4 @@
-"""
-Chat gifts ("red packets") sent from a premium user to an expert.
 
-The sender picks an amount; it splits 70 / 30 between the expert and the
-platform. Both legs land in assets and in the wallet ledger, so a gift
-shows up in Transaction History like any other money movement.
-
-This table is the record of the gift itself (who, to whom, how much, the
-note). The resulting balance changes live in wallet_transaction and the
-platform's cut lives in platform_revenue.
-"""
 from sqlalchemy import Column, String, Float, DateTime, Text, or_, and_, func
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -18,8 +8,7 @@ from uuid import uuid4
 
 TZ = ZoneInfo("Asia/Singapore")
 
-# Split of every gift. Must sum to 1.0 — asserted at import so a bad edit
-# fails loudly at startup instead of quietly losing money.
+# Split of every gift. Must sum to 1.0 — asserted at import so a bad edit fails loudly at startup instead of quietly losing money.
 GIFT_EXPERT_SHARE = 0.70
 GIFT_PLATFORM_SHARE = 0.30
 assert abs((GIFT_EXPERT_SHARE + GIFT_PLATFORM_SHARE) - 1.0) < 1e-9, \
@@ -33,12 +22,7 @@ GIFT_PRESETS = [5, 10, 20, 50, 100, 200]
 
 
 def split_gift(amount: float) -> tuple[float, float]:
-    """(expert_share, platform_share) in dollars.
-
-    The platform takes the remainder rather than its own rounded percentage,
-    so the two legs always add back to exactly `amount` — no stray cent
-    created or destroyed by double rounding.
-    """
+  
     amount = round(float(amount), 2)
     expert_share = round(amount * GIFT_EXPERT_SHARE, 2)
     platform_share = round(amount - expert_share, 2)
@@ -88,8 +72,6 @@ class Gift(Base):
 
     @staticmethod
     def get_between(user_a, user_b, limit=100):
-        """Every gift in either direction between two users, oldest first so
-        the chat can merge them into the message timeline."""
         with get_session() as session:
             rows = session.query(Gift).filter(
                 or_(

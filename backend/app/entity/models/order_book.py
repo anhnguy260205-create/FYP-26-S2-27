@@ -35,11 +35,7 @@ class OrderBook(Base):
 
     @staticmethod
     def get_counterpart_orders(symbol: str, counterpart_type: str, limit_price: float) -> list:
-        """
-        Return open/partial counterpart orders eligible for matching.
-        For a new BUY at limit_price  → counterpart=sell, filter sell.price <= limit_price, sort price ASC then time ASC.
-        For a new SELL at limit_price → counterpart=buy,  filter buy.price  >= limit_price, sort price DESC then time ASC.
-        """
+      
         with get_session() as session:
             q = session.query(OrderBook).filter(
                 OrderBook.symbol == symbol,

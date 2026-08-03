@@ -25,11 +25,7 @@ def _clean_env(name: str) -> str:
 GMAIL_USER = _clean_env("GMAIL_USER")
 GMAIL_APP_PASSWORD = _clean_env("GMAIL_APP_PASSWORD")
 
-# ── Brevo (HTTP API, port 443) ────────────────────────────────────────────────
-# Some hosts block outbound SMTP ports (25/465/587), so this sends through
-# Brevo's REST API instead when configured. Set BREVO_API_KEY to enable; the
-# sender address MUST be a verified sender in the Brevo dashboard
-# (Senders & IPs → Senders). Falls back to Gmail SMTP when unset/failing.
+# Brevo (Sendinblue) HTTP API helper
 BREVO_API_KEY = _clean_env("BREVO_API_KEY")
 BREVO_SENDER_EMAIL = (os.getenv("BREVO_SENDER_EMAIL") or "").strip() or GMAIL_USER
 BREVO_SENDER_NAME = (os.getenv("BREVO_SENDER_NAME") or "Deskstock").strip()
@@ -37,7 +33,7 @@ _BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _html_from_msg(msg) -> str:
-    """Extract the HTML body from a MIME message."""
+    # Extract the HTML part of a MIMEMultipart email message. If no HTML part is found, return the plain text payload as a string.
     for part in msg.walk():
         if part.get_content_type() == "text/html":
             payload = part.get_payload(decode=True)
@@ -72,20 +68,14 @@ def _send_via_brevo(msg, to_email: str, label: str) -> bool:
         print(f"[EMAIL] Brevo send failed for {label}: {e}")
         return False
 
-# ── shared SMTP helper (Gmail) ─────────────────────────────────────────────────
+# shared SMTP helper (Gmail) 
 
 GMAIL_SMTP_HOST = "smtp.gmail.com"
 GMAIL_SMTP_PORT = 587
 
 
 def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
-    """Send via Gmail's SMTP server, authenticated with a Gmail App Password.
-
-    GMAIL_USER must be a real Gmail address, and GMAIL_APP_PASSWORD must be a
-    16-character App Password generated from the Google Account's Security
-    settings (this requires 2-Step Verification to be turned on). A normal
-    Gmail login password will NOT work here.
-    """
+   
     # Prefer Brevo's HTTP API when configured (works on hosts that block SMTP).
     if BREVO_API_KEY:
         if _send_via_brevo(msg, to_email, label):
@@ -95,9 +85,7 @@ def _send(msg: MIMEMultipart, to_email: str, label: str = "email"):
         print(f"[EMAIL] Credentials not set — skipping {label}. Check GMAIL_USER and GMAIL_APP_PASSWORD in backend/.env or your host's env vars.")
         return False
     try:
-        # local_hostname: smtplib defaults to the machine's computer name in the
-        # EHLO handshake; non-ASCII Windows PC names can crash with
-        # "'ascii' codec can't encode". Pin it to a safe literal instead.
+   
         with smtplib.SMTP(
             GMAIL_SMTP_HOST,
             GMAIL_SMTP_PORT,

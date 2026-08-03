@@ -1,13 +1,4 @@
-"""
-Hybrid Trading Engine
----------------------
-1. Validate investor funds / shares.
-2. Save order to order_book.
-3. Match against existing counterpart orders (Price-Time Priority).
-4. Market Maker fills any remaining quantity at the current live price.
-5. Update both investors' portfolios, balances, holdings, and transaction history.
-6. Return a structured execution report.
-"""
+
 
 from datetime import datetime
 from uuid import uuid4
@@ -26,14 +17,7 @@ from app.boundary.stock_ws import get_live_price
 _SGT = ZoneInfo("Asia/Singapore")
 
 
-# ── Platform commission ───────────────────────────────────────────────────────
-#
-# Charged on the executed value of an order: whichever is GREATER of a flat
-# minimum and a percentage. So a $1,000 trade pays the $4 floor; a $10,000
-# trade pays 0.1% = $10.
-#
-# NOTE: PLATFORM_FEE_RATE is 0.1% (0.001). If the intent was 1%, change this
-# single constant to 0.01 — nothing else needs to move.
+
 PLATFORM_FEE_MIN = 4.00
 PLATFORM_FEE_RATE = 0.001
 
@@ -49,13 +33,7 @@ def calculate_platform_fee(trade_value: float) -> float:
 def _charge_platform_fee(session, investor_id: str, user_id: str | None,
                          trade_value: float, symbol: str, order_type: str,
                          order_id: str) -> float:
-    """Debit the commission from assets and book it as revenue.
-
-    Returns the fee actually charged. If the investor can't cover the full
-    fee (possible on a sell that barely moved, or after a partial fill), we
-    take what's there rather than pushing the balance negative — the shortfall
-    is dropped, not carried as debt.
-    """
+  
     fee = calculate_platform_fee(trade_value)
     if fee <= 0:
         return 0.0
@@ -92,7 +70,7 @@ def _charge_platform_fee(session, investor_id: str, user_id: str | None,
     return fee
 
 
-# ── low-level helpers (all accept an open SQLAlchemy session) ──────────────────
+#  low-level helpers (all accept an open SQLAlchemy session) 
 
 def _buy_shares(session, investor_id: str, symbol: str, qty: int, price: float) -> bool:
     total = round(price * qty, 2)
@@ -111,7 +89,6 @@ def _buy_shares(session, investor_id: str, symbol: str, qty: int, price: float) 
 
 
 def _sell_shares(session, investor_id: str, symbol: str, qty: int, price: float):
-    """Returns realized_pnl float, or None on failure."""
     row = session.execute(
         text("SELECT holding_id, quantity, average_cost FROM holding WHERE investor_id=:iid AND symbol=:sym"),
         {"iid": investor_id, "sym": symbol},
@@ -219,18 +196,16 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
                 "message": f"Insufficient shares — need {quantity}, have {have}",
             }
 
-    # ── 3. Persist order ─────────────────────────────────────────────────────
+    #  Persist order 
     order_id = OrderBook.create(investor_id, symbol, order_type, quantity, limit_price)
 
     fills = []
     remaining = quantity
     counterpart_type = "sell" if order_type == "buy" else "buy"
-    # Every investor whose holdings/realized P&L changed in this call — each
-    # gets an expert-eligibility check after the order settles (buys can push
-    # distinct-stock count over the line, sells can push profit margin over it).
+
     affected_investor_ids = {investor_id}
 
-    # ── 4. Price-Time Priority matching ──────────────────────────────────────
+    # Price-Time Priority matching 
     counterparts = OrderBook.get_counterpart_orders(symbol, counterpart_type, limit_price)
 
     for cp in counterparts:
@@ -274,7 +249,7 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         affected_investor_ids.add(cp["investor_id"])
         remaining -= fill_qty
 
-    # ── 5. Market Maker fills remainder ──────────────────────────────────────
+    # Market Maker fills remainder 
     if remaining > 0:
         live_price = get_live_price(symbol)
         if live_price:
@@ -295,11 +270,7 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
                         fills.append({"source": "market_maker", "qty": remaining, "price": fill_price})
                         remaining = 0
 
-    # ── 6. Platform commission ───────────────────────────────────────────────
-    # Charged ONCE per order on the total executed value, not per fill —
-    # otherwise an order broken into three fills would pay the $4 minimum
-    # three times. Only the order initiator is charged; a resting order that
-    # gets hit is not separately commissioned.
+    # Platform commission 
     total_filled = quantity - remaining
     executed_value = round(sum(f["qty"] * f["price"] for f in fills), 2)
     platform_fee = 0.0
@@ -310,7 +281,7 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
                 symbol, order_type, order_id,
             )
 
-    # ── 7. Build summary ─────────────────────────────────────────────────────
+    # Build summary 
     avg_price = (
         round(sum(f["qty"] * f["price"] for f in fills) / total_filled, 4)
         if total_filled > 0 else None
@@ -327,8 +298,8 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
     else:
         message = "Order pending"
 
-    # ── 8. Expert-eligibility notification ───────────────────────────────────
-    # Best-effort — must never fail the trade itself.
+    # Expert-eligibility notification 
+   
     if total_filled > 0:
         try:
             for affected_id in affected_investor_ids:
@@ -354,7 +325,6 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
         "fills": fills,
         "executed_value": executed_value,
         "platform_fee": platform_fee,
-        # What actually left (buy) or landed in (sell) the account, fee included.
         "net_amount": round(
             executed_value + platform_fee if order_type == "buy"
             else executed_value - platform_fee, 2),

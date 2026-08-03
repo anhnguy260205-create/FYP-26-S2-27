@@ -22,14 +22,14 @@ class CreateAlertRequest(BaseModel):
     custom_message: Optional[str] = None
     notification_email: str
 
-
+## create alert endpoint
 @router.post("/create")
 def create_alert(
     data: CreateAlertRequest,
     current_user: dict = Depends(get_current_user),
 ):
     stock_symbol = data.stock_symbol.upper()
-
+    ## Validate the stock symbol and check if the current price can be retrieved. If not, raise an HTTPException with a 503 status code.
     current_price = get_live_price(stock_symbol)
     if current_price is None:
         raise HTTPException(
@@ -61,7 +61,7 @@ def create_alert(
         raise HTTPException(status_code=409, detail=result["message"])
     return {"success": True, "alert_id": result["alert_id"]}
 
-
+## get alerts endpoint
 @router.get("/list/{user_id}")
 def get_alerts(user_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
@@ -83,7 +83,7 @@ def get_alerts(user_id: str, current_user: dict = Depends(get_current_user)):
         for a in alerts
     ]}
 
-
+## delete alert endpoint
 @router.delete("/delete/{alert_id}")
 def delete_alert(alert_id: int, current_user: dict = Depends(get_current_user)):
     ok = DeleteAlertController().delete_alert(alert_id, current_user["user_id"])

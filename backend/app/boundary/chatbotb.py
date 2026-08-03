@@ -20,7 +20,6 @@ class ChatRequest(BaseModel):
     system: Optional[str] = None
 
 def sanitize_reply(reply: str) -> str:
-    """Clean plan wording and robotic markdown before showing AI replies."""
     if not reply:
         return reply
 
@@ -69,8 +68,7 @@ async def chat(
     data: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    # Basic investors: lifetime limit of 3 chatbot questions. Premium
-    # investors and non-investors (experts/admins) are never limited.
+    # Basic investors: lifetime limit of 3 chatbot questions. Premium investors and non-investors (experts/admins) are never limited.
     quota = ChatUsage.check(current_user["user_id"])
     if not quota["allowed"]:
         return JSONResponse(status_code=403, content={
@@ -133,5 +131,4 @@ async def chat(
 
 @router.get("/usage")
 def chat_usage(current_user: dict = Depends(get_current_user)):
-    """How many free chatbot questions the current user has used (basic plan)."""
     return {"success": True, **ChatUsage.get_usage(current_user["user_id"])}

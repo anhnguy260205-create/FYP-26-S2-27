@@ -479,7 +479,7 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
         "message": "Expert approved successfully",
     }
 
-
+# Handle rejection of an expert's verification application.
 @router.post("/experts/{expert_id}/reject")
 def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
@@ -490,13 +490,13 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
             "success": False,
             "message": "Expert not found",
         }
-
+    # Find the user ID associated with the expert and invalidate their profile cache if they exist.
     _user_id = Expert.get_user_id_by_expert_id(expert_id)
     if _user_id:
         info = UserAccount.get_user_information(_user_id)
         if info:
             invalidate_profile_cache(info["email_address"])
-
+    # This sets their status to "rejected" and notifies them via in-app notification and email.
     _notify_expert_verification(
         expert_id,
         notif_title="Your expert application was not approved",
@@ -527,8 +527,7 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
             "message": "Expert not found",
         }
 
-    # Notify + revoke premium before the expert row is removed — both look
-    # the account up by expert_id/user_id.
+    # Send notification and email to the expert about the cancellation
     _notify_expert_verification(
         expert_id,
         notif_title="Your expert verification has been cancelled",
@@ -536,7 +535,7 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
         email_fn=send_expert_verification_cancelled_email,
     )
     Investor.revokeExpertPremium(_user_id)
-
+    # Demote the expert to an investor, which deletes their expert record and all associated data
     success = Expert.demote_to_investor(_user_id)
     if not success:
         return {

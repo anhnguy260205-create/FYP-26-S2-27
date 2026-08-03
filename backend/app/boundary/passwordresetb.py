@@ -14,7 +14,6 @@ from app.control.services.rate_limit import limiter
 router = APIRouter(prefix="/user", tags=["Password Reset"])
 
 
-# ---- Step 0: lookup account by email (no OTP sent) ----
 class LookupAccountRequest(BaseModel):
     email_address: str
 
@@ -25,7 +24,6 @@ def lookup_account(request: Request, data: LookupAccountRequest):
     return LookupAccountController().lookup(data.email_address.strip().lower())
 
 
-# ---- Step 1: request OTP ----
 class ForgotPasswordRequest(BaseModel):
     email_address: str
 
@@ -46,7 +44,6 @@ def forgot_password(request: Request, data: ForgotPasswordRequest):
     return result
 
 
-# ---- Step 2: verify OTP ----
 class VerifyOtpRequest(BaseModel):
     email_address: str
     otp_code: str
@@ -67,7 +64,6 @@ def verify_reset_otp(data: VerifyOtpRequest):
     return result
 
 
-# ---- Step 3: reset password ----
 class ResetPasswordRequest(BaseModel):
     email_address: str
     otp_code: str
@@ -98,7 +94,6 @@ def reset_password(request: Request, data: ResetPasswordRequest):
     return result
 
 
-# ---- Change password (authenticated users) ----
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str

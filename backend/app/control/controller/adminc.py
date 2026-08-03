@@ -12,21 +12,11 @@ from app.entity.models.wallet import (
     PlatformRevenue, REVENUE_SOURCES, REVENUE_SOURCE_LABELS,
 )
 
-# Verification states that make someone an actual Expert rather than an
-# investor who merely applied.
+# Verification states that make someone an actual Expert rather than an investor who merely applied.
 _APPROVED_VERIFICATION = {"approved", "active", "verified"}
 
 
 def _classify_user(session, investor, expert):
-    """(role, subscription_tier) for the admin user lists.
-
-    An Expert row is created the moment an investor APPLIES, long before an
-    admin reviews the documents. Keying the role off the row's existence
-    therefore relabelled a still-pending investor as an Expert — and blanked
-    their subscription tier with it. Under the merged-roles model an applicant
-    stays an Investor until verification is approved, and the tier always
-    comes from the investor row regardless of expert status.
-    """
     approved_expert = False
     if expert:
         verification = session.query(ExpertVerification).filter(
@@ -41,8 +31,7 @@ def _classify_user(session, investor, expert):
         tier = ""
 
     if approved_expert:
-        # Verified experts get complimentary premium benefits, so show that
-        # rather than whatever they last paid for.
+        # Verified experts get complimentary premium benefits, so show that rather than whatever they last paid for.
         return "Expert", tier or "Premium"
     if investor or expert:
         return "Investor", tier

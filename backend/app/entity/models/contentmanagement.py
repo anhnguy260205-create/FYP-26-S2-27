@@ -11,13 +11,9 @@ class ContentManagement(Base):
     content_id = Column(String(50), primary_key=True, default=lambda: f"content_{uuid4()}")
     section = Column(String(50), nullable=False)   # e.g. "hero", "why_investor", "platform_features"
     title = Column(String(255), nullable=False)
-    # This used to be String(500), widened to MEDIUMTEXT so longer content
-    # (or, previously, base64 images) wouldn't get truncated. Kept as
-    # MEDIUMTEXT even after the image-upload feature was pulled since it
-    # doesn't cost anything to leave it roomy.
+   
     description = Column(MEDIUMTEXT, nullable=True)
-    # Optional editable image for hero/header sections. Can store a normal URL
-    # or a compressed data:image/... base64 string for Railway/no-storage setup.
+    
     image_url = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
 
@@ -45,12 +41,7 @@ class ContentManagement(Base):
 
     @staticmethod
     def reorder_section(section: str, ordered_ids: list) -> bool:
-        """Saves a full new ordering for one section in a single call —
-        order_index just becomes each id's position in ordered_ids. This is
-        what backs the drag-and-drop reordering in the admin panel (feature
-        cards, footer links, plan features, etc): the frontend reorders the
-        list locally while you drag, then sends the whole new order here at
-        once instead of a bunch of one-step swaps."""
+
         with get_session() as session:
             rows = session.query(ContentManagement).filter(
                 ContentManagement.section == section,
@@ -523,20 +514,13 @@ def seed_landing_content():
 
         ]
 
-        # Old unused sections from earlier content-management experiments.
-        # The current Community Forum uses the "forum_page" and "forum_topics"
-        # sections above; the legacy "forum_room" rows are safe to remove.
-        # "expert_tools"/"expert_tools_cta" belonged to the old standalone
-        # Expert Home page (ExpertLoggedInPage.jsx), removed in the
-        # investor/expert merge — nothing reads them anymore either.
+   
         dead_sections = ("feature", "expert", "forum_room", "expert_tools", "expert_tools_cta")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)
         ).delete(synchronize_session=False)
 
-        # These expert-home page fields lived in shared sections (so they
-        # aren't caught by dead_sections above), but nothing reads these
-        # specific ids anymore either — same removed page as above.
+
         dead_header_ids = (
             "header_expert_tools", "header_model_portfolio",
             "header_expert_profile", "header_documents",
@@ -552,11 +536,7 @@ def seed_landing_content():
             ContentManagement.content_id.in_(dead_header_ids)
         ).delete(synchronize_session=False)
 
-        # footer_company_0 (About Us) and footer_contact_0 (Help Center) were
-        # originally seeded with "#" as a placeholder URL instead of the real
-        # route, so the footer links never actually went anywhere. Only
-        # overwrite if it's still the untouched placeholder — never clobber
-        # a URL an admin has since customized on purpose.
+        
         placeholder_fixes = {
             "footer_company_0": "/about-us",
             "footer_contact_0": "/support",

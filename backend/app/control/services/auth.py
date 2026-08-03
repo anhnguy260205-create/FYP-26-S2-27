@@ -30,12 +30,7 @@ def _cached_auth_profile(email: str) -> dict | None:
 
 
 def invalidate_profile_cache(email: str) -> None:
-    """Bust the cached auth profile for one account. Call this after any
-    admin-side change to role/verification/subscription (e.g. approving,
-    rejecting, or cancelling an expert) so the affected user's very next
-    request reflects it — otherwise they can see stale role/is_expert data
-    (like a demoted expert still getting the expert interface) for up to
-    _PROFILE_TTL seconds."""
+    # Invalidate the cached auth profile for a given email, if it exists. This is useful when a user's role or status changes and you want to ensure that subsequent requests fetch the updated profile from the database.
     _profile_cache.pop(email, None)
 
 
@@ -56,8 +51,7 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
                 profile = _cached_auth_profile(email)
                 if profile:
                     profile = dict(profile)
-                    # Firebase login timestamp — identifies this login session
-                    # for the email-OTP second factor (see login_mfa.py).
+                    # Firebase login timestamp — identifies this login session for the email-OTP second factor (see login_mfa.py).
                     profile["auth_time"] = decoded.get("auth_time")
                     return profile
 
@@ -67,8 +61,7 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
         print(f"[AUTH] dev fallback email={dev_email!r}")
         if profile:
             profile = dict(profile)
-            # Dev-header sessions have no Firebase auth_time; use 0 so they
-            # still go through the email OTP once instead of bypassing MFA.
+            # Dev-header sessions have no Firebase auth_time; use 0 so they still go through the email OTP once instead of bypassing MFA.
             profile["auth_time"] = 0
             return profile
 
@@ -76,14 +69,10 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
 
 
 def mfa_satisfied(profile: dict) -> bool:
-    """True if this login session doesn't need (or has passed) email OTP.
-
-    All roles go through OTP, including admin. Dev-header sessions use
-    auth_time=0 so they must verify once too."""
+    # Check if the user has satisfied the multi-factor authentication (MFA) requirement. This is determined by checking if the user's email has been verified and if the auth_time from the Firebase token is recent enough to indicate that the user has completed the MFA process. If the auth_time is None, it indicates that there is no session identity, and we treat it as not satisfying MFA.
     auth_time = profile.get("auth_time")
     if auth_time is None:
-        # No session identity at all (shouldn't happen) — require OTP under
-        # a fixed key rather than silently skipping the second factor.
+        # No session identity at all (shouldn't happen) — require OTP under a fixed key rather than silently skipping the second factor.
         auth_time = 0
     from app.entity.models.login_mfa import LoginMfaSession
     return LoginMfaSession.is_verified(profile["email"], auth_time)
@@ -93,8 +82,7 @@ def get_current_user_pre_mfa(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict:
-    """Valid Firebase login, but MFA not yet enforced. ONLY for the login /
-    OTP endpoints themselves — everything else must use get_current_user."""
+    # Get the current authenticated user's profile before checking for multi-factor authentication (MFA). This function extracts the token from the request headers, verifies it, and retrieves the user's profile from the database. If the token is invalid or expired, or if the user is suspended, it raises an HTTPException with the appropriate status code and message.
     token = credentials.credentials if credentials else None
     profile = _resolve_profile_from_token(token, request.headers)
     if not profile:
@@ -129,9 +117,7 @@ def get_current_user_optional(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict | None:
-    """Like get_current_user, but returns None instead of raising 401 —
-    for endpoints that work for both guests and logged-in users, but need
-    to know who's asking (e.g. to mark 'is_mine' on a public review list)."""
+    # Get the current authenticated user's profile if available, but do not raise an exception if the user is not authenticated. This function is useful for endpoints that can be accessed by both authenticated and unauthenticated users. If the user is authenticated, it returns their profile; otherwise, it returns None.
     token = credentials.credentials if credentials else None
     profile = _resolve_profile_from_token(token, request.headers)
     if profile and profile.get("suspended"):

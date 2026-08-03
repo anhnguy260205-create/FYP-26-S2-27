@@ -36,12 +36,7 @@ def _env_true(name: str, default: bool = False) -> bool:
 
 
 def _send_or_queue_login_otp(background_tasks: BackgroundTasks, email: str, otp: str):
-    """Send login OTP.
-
-    Default is synchronous so local/dev immediately shows Gmail failures in the
-    API response and backend terminal. On Render, set LOGIN_OTP_BACKGROUND=true
-    after email delivery is confirmed if you want faster response time.
-    """
+    # Send the login OTP email, either in the background or synchronously depending on the LOGIN_OTP_BACKGROUND environment variable. Returns True if sent successfully, False if sending failed, or None if queued for background sending.
     from app.control.services.email_service import send_login_otp_email
 
     print(f"[MFA] login OTP for {email}: {otp}")
@@ -96,8 +91,7 @@ def check_email(request: Request, email: str):
 @router.get("/email-by-username")
 @limiter.limit("20/minute")
 def email_by_username(request: Request, username: str):
-    """Resolve a username to its account email (Firebase sign-in needs the
-    email). Used by the login page's username-based flow."""
+    # Check if a user exists with the given username and return their email address. If no user is found, return a message indicating that no account was found with this username.
     from app.entity.models.useraccount import UserAccount
     from app.entity.database.session import get_session
     name = username.strip()
@@ -122,11 +116,7 @@ def firebase_login(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user_pre_mfa),
 ):
-    """Exchange a verified Firebase token for the full internal user profile.
-
-    Every login additionally requires an email OTP (2nd factor): the first
-    call of a new login session sends the code and returns mfa_required=True;
-    the frontend then calls /user/mfa/verify to complete the login."""
+    # Handle Firebase login for the current user. If MFA is required, send a verification code to the user's email. If MFA is satisfied, return the user's profile information.
     if not mfa_satisfied(current_user):
         from app.entity.models.login_mfa import LoginMfaOtp
         email = current_user["email"]
@@ -153,11 +143,7 @@ def firebase_login(
 
 @router.get("/session")
 def get_session(current_user: dict = Depends(get_current_user)):
-    """Lightweight role/is_expert/verification/subscription check the
-    frontend re-runs on every protected-route navigation, so admin-side
-    changes (e.g. an expert's verification being cancelled) show up without
-    requiring the user to log out and back in. No DB write side-effects —
-    backed by the same 60s-cached lookup used for request authorization."""
+    # Return the current user's session information, including user ID, role, expert status, verification status, and subscription status.
     return {
         "success": True,
         "user": {
@@ -180,7 +166,7 @@ class MfaVerifyRequest(BaseModel):
 @limiter.limit("10/minute")
 def mfa_verify(request: Request, data: MfaVerifyRequest,
                current_user: dict = Depends(get_current_user_pre_mfa)):
-    """Verify the emailed OTP for the current login session."""
+    # Verify the MFA OTP code for the current user. If the OTP is valid, mark the session as verified and return the user's profile information. If the OTP is invalid, return an error message.
     from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession
 
     auth_time = current_user.get("auth_time")
@@ -205,7 +191,7 @@ def mfa_resend(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user_pre_mfa),
 ):
-    """Send a fresh login OTP (invalidates previous ones)."""
+    # Resend the MFA verification code to the current user's email. If MFA is already satisfied, return a message indicating that no verification is needed. Otherwise, generate a new OTP and send it to the user's email, returning a success message along with the email sending status.
     from app.entity.models.login_mfa import LoginMfaOtp
 
     if mfa_satisfied(current_user):
@@ -292,8 +278,7 @@ def update_information(
 @router.post("/delete-investor/request-otp")
 @limiter.limit("5/minute")
 def request_delete_otp(request: Request, current_user: dict = Depends(get_current_user)):
-    """Step 1 of the secured delete flow: email a 6-digit OTP to the account
-    holder. Deleting also requires the transaction PIN, so this is 2FA."""
+    # Request a verification code to be sent to the current user's email for account deletion. This is part of the self-service account deletion process, which requires both a transaction PIN and an email OTP for verification. If the email sending fails, return an error message; otherwise, return a success message indicating that the verification code has been sent.
     from app.entity.models.password_reset import PasswordReset
     email = current_user["email"]
     otp = PasswordReset.createOtp(email)
@@ -319,9 +304,7 @@ def delete_account(
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # Self-service deletion is gated by three checks. Admins deleting another
-    # account bypass the PIN/OTP (they've authenticated as admin) but the
-    # account must still be emptied first.
+    # Self-service deletion is gated by three checks. Admins deleting another account bypass the PIN/OTP (they've authenticated as admin) but the account must still be emptied first.
     from app.entity.models.investor import Investor
     from app.entity.models.password_reset import PasswordReset
 
@@ -350,11 +333,7 @@ def delete_account(
         if not data.otp or not PasswordReset.verifyOtp(current_user["email"], data.otp.strip()):
             raise HTTPException(status_code=403, detail="Invalid or expired email verification code.")
 
-    # Grab the target's email before the row is gone, so the auth-profile
-    # cache (keyed by email, up to 60s stale — see auth._PROFILE_TTL) can be
-    # busted immediately. Without this, re-registering the same email right
-    # after deletion could keep resolving to the deleted account's stale
-    # cached profile/user_id for up to a minute.
+    # Delete the account and invalidate the profile cache for the deleted email address. If the account deletion fails, return an error message; otherwise, return a success message indicating that the account has been deleted successfully.
     from app.entity.models.useraccount import UserAccount
     deleted_email = (UserAccount.get_user_information(user_id) or {}).get("email_address")
 
@@ -474,8 +453,7 @@ class VerifyPinRequest(BaseModel):
 
 @router.get("/pin/status")
 def pin_status(current_user: dict = Depends(get_current_user)):
-    """Whether the caller has set a transaction PIN — drives the first-login
-    setup flow and the trade/cash-out PIN prompt."""
+   # Check if the current user has a transaction PIN set. Returns a success message along with a boolean indicating whether the user has a PIN.
     from app.entity.models.investor import Investor
     return {"success": True, "has_pin": Investor.hasTransactionPin(current_user["user_id"])}
 

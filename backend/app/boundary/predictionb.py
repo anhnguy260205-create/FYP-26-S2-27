@@ -28,8 +28,7 @@ def predict(
     data: PredictRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    # Basic investors: lifetime limit of 3 distinct stocks. Re-viewing an
-    # already-unlocked stock is free; premium/expert/admin are unlimited.
+    # Basic investors: lifetime limit of 3 distinct stocks. Re-viewing an already-unlocked stock is free; premium/expert/admin are unlimited.
     quota = PredictionUsage.check(current_user["user_id"], data.symbol)
     if not quota["allowed"]:
         return {
@@ -64,7 +63,6 @@ def predict(
 
 @router.get("/usage")
 def prediction_usage(current_user: dict = Depends(get_current_user)):
-    """How many free predictions the current user has used (basic plan)."""
     return {"success": True, **PredictionUsage.get_usage(current_user["user_id"])}
 
 
@@ -89,7 +87,6 @@ def get_analyst(symbol: str, current_user: dict = Depends(get_current_user)):
 
 @router.get("/overview/{symbol}")
 def get_overview(symbol: str, current_user: dict = Depends(get_current_user)):
-    """Company key stats, upcoming earnings and profile for the Overview tab."""
     try:
         ticker = yf.Ticker(symbol.upper())
         info = ticker.info or {}

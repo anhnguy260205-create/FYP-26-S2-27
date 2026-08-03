@@ -1,36 +1,4 @@
-"""
-Expert compensation — paid monthly, per premium follower.
 
-An expert earns RATE_PER_PREMIUM_FOLLOWER for each premium user following them,
-but the payout only unlocks once ALL of these are true for the closed month:
-
-  * verified (approved/active)
-  * follower_count (total followers) >= FOLLOWER_COUNT_THRESHOLD
-  * portfolio rating average >= RATING_THRESHOLD
-
-There is no minimum on premium_follower_count itself — the amount earned is
-simply premium_follower_count * RATE_PER_PREMIUM_FOLLOWER once unlocked (so
-it can be $0 in a month where the expert qualifies but has no premium
-followers yet).
-
-Payout runs for the month that just closed. The daily poller in main.py calls
-run_monthly_payout(), which:
-
-  1. snapshots the expert's follower/premium-follower counts and rating for
-     the closed month,
-  2. writes a ledger row (the permanent record — it does NOT change later if
-     someone unfollows or the rating moves),
-  3. credits the expert's assets,
-  4. writes a wallet_transaction so the payout appears in Transaction History
-     the way a salary credit does on a bank statement.
-
-Idempotency: the (expert_id, period_start) unique constraint plus a `paid`
-flag mean the poller can run every day — and re-run after a crash — without
-paying twice.
-
-Only VERIFIED experts are paid. An expert who doesn't meet the bar still gets
-a ledger row (amount 0) so the history shows why nothing arrived.
-"""
 from sqlalchemy import Column, ForeignKey, String, DateTime, Integer, Float, Boolean, UniqueConstraint
 from sqlalchemy import text
 from app.entity.database.base import Base
@@ -42,9 +10,6 @@ from uuid import uuid4
 # $0.10 per premium follower, per month.
 RATE_PER_PREMIUM_FOLLOWER = 0.10
 
-# No minimum on premium followers specifically — kept as a named constant so
-# the intent reads as deliberate rather than as a missing check. The real
-# unlock gate is FOLLOWER_COUNT_THRESHOLD + RATING_THRESHOLD below.
 FOLLOWER_THRESHOLD = 0
 
 # Compensation unlock gate (in addition to being verified).
@@ -57,9 +22,6 @@ _APPROVED_VERIFICATION = ("verified", "approved", "active")
 
 
 def is_compensation_eligible(verified: bool, follower_count: int, rating_average: float) -> bool:
-    """The shared unlock rule — verified + 100 followers + 4.5★ rating.
-    Used by both the live summary endpoint and the monthly payout job so
-    they can never disagree on who qualifies."""
     return bool(
         verified
         and follower_count >= FOLLOWER_COUNT_THRESHOLD
@@ -79,8 +41,6 @@ def _add_month(dt, months=1):
 
 
 def _previous_completed_month_bounds(now):
-    """(period_start, period_end) for the most recently COMPLETED calendar
-    month — e.g. any day in July returns [June 1, July 1)."""
     current_month_start = _month_start(now)
     return _add_month(current_month_start, -1), current_month_start
 
@@ -101,19 +61,15 @@ class ExpertCompensationLedger(Base):
         "expert.expert_id"), nullable=False)
     period_start = Column(DateTime, nullable=False)
     period_end = Column(DateTime, nullable=False)
-    # Total followers — display/context only.
     follower_count = Column(Integer, nullable=False, default=0)
-    # The figure the payout is actually computed from.
     premium_follower_count = Column(Integer, nullable=False, default=0)
     eligible = Column(Boolean, default=False)
     amount = Column(Float, default=0.0)
-    # Payout tracking — `paid` guards against double-crediting.
     paid = Column(Boolean, default=False, nullable=False)
     paid_at = Column(DateTime, nullable=True)
     wallet_txn_id = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(TZ))
 
-    # ── payout ───────────────────────────────────────────────────────────
 
     @staticmethod
     def run_monthly_payout():
@@ -181,8 +137,7 @@ class ExpertCompensationLedger(Base):
                 entry.amount = amount
 
                 if amount <= 0:
-                    # Nothing to pay, but mark it settled so a closed month
-                    # isn't reconsidered every single day.
+                    # Nothing to pay, but mark it settled so a closed month isn't reconsidered every single day.
                     entry.paid = True
                     entry.paid_at = datetime.now(TZ)
                     session.flush()
@@ -192,8 +147,7 @@ class ExpertCompensationLedger(Base):
                     Investor.user_id == expert.user_id
                 ).first()
                 if not investor:
-                    # No wallet to pay into — leave unpaid so it settles once
-                    # the account is repaired.
+                    # No wallet to pay into — leave unpaid so it settles once the account is repaired.
                     session.flush()
                     continue
 
@@ -242,7 +196,6 @@ class ExpertCompensationLedger(Base):
     def materialize_completed_months():
         return ExpertCompensationLedger.run_monthly_payout()
 
-    # ── reads ────────────────────────────────────────────────────────────
 
     @staticmethod
     def get_history(expert_id, limit=12) -> list:
@@ -279,13 +232,6 @@ class ExpertCompensationLedger(Base):
 
 
 def ensure_compensation_schema():
-    """Add the columns introduced by the per-follower rewrite to an existing
-    expert_compensation_ledger table.
-
-    create_all() only creates missing TABLES, never missing COLUMNS, so a
-    database that already has this table from the old flat-$500 design would
-    otherwise break on the new fields.
-    """
     from app.entity.database.connection import engine
 
     additions = {

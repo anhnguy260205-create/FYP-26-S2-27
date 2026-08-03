@@ -8,16 +8,7 @@ from app.entity.models.investor import Investor
 
 
 class PredictionUsage(Base):
-    """Tracks which stocks a basic investor has viewed AI predictions for.
 
-    Basic plan: lifetime limit of BASIC_PREDICTION_LIMIT distinct stocks.
-    Re-viewing an already-unlocked stock is free (one row per investor+symbol).
-    Premium investors and non-investors (experts/admins) are never limited.
-
-    Flow (see predictionb.py): `check` gates the request WITHOUT consuming,
-    the prediction runs, and only a successful prediction calls `record_view`
-    — so failed predictions never burn quota.
-    """
     __tablename__ = "prediction_usage"
 
     usage_id = Column(String(50), primary_key=True,
@@ -32,7 +23,6 @@ class PredictionUsage(Base):
 
     @staticmethod
     def _investor_state(session, user_id):
-        """(investor, unlocked_symbols) — investor is None for experts/admins."""
         investor = session.query(Investor).filter(
             Investor.user_id == user_id).first()
         if not investor:
@@ -43,7 +33,6 @@ class PredictionUsage(Base):
 
     @staticmethod
     def check(user_id, stock_symbol):
-        """Is this user allowed to view this stock's prediction? (no side effects)"""
         symbol = stock_symbol.upper()
         with get_session() as session:
             investor, unlocked = PredictionUsage._investor_state(session, user_id)
@@ -59,7 +48,6 @@ class PredictionUsage(Base):
 
     @staticmethod
     def record_view(user_id, stock_symbol):
-        """Consume quota after a SUCCESSFUL prediction. Returns updated usage."""
         symbol = stock_symbol.upper()
         with get_session() as session:
             investor, unlocked = PredictionUsage._investor_state(session, user_id)
@@ -75,7 +63,6 @@ class PredictionUsage(Base):
 
     @staticmethod
     def get_usage(user_id):
-        """Read-only usage summary (for showing 'x of 3 used' in the UI)."""
         with get_session() as session:
             investor, unlocked = PredictionUsage._investor_state(session, user_id)
             if not investor or investor.investor_subscription_status == "premium":

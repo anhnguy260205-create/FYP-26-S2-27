@@ -15,7 +15,6 @@ from app.control.services.auth import get_current_user
 router = APIRouter(prefix="/knowledge", tags=["Knowledge Hub"])
 
 
-# ── Public reads ───────────────────────────────────────────────────────────────
 
 @router.get("/articles")
 def list_articles(
@@ -34,8 +33,6 @@ def get_article(article_id: str):
         return {"success": False, "message": "Article not found"}
     return {"success": True, "article": article}
 
-
-# ── Auth: expert-only writes ───────────────────────────────────────────────────
 
 @router.get("/my-articles/{user_id}")
 def get_my_articles(user_id: str, current_user: dict = Depends(get_current_user)):

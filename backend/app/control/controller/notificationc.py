@@ -42,11 +42,7 @@ _TEMPLATE_META = {item["content_id"]: item for item in DEFAULT_NOTIFICATION_TEMP
 
 
 def _ensure_notification_templates(session):
-    """Create any missing editable notification templates.
-
-    The content is stored in content_management so admin edits persist in the
-    database and future welcome notifications use the latest saved wording.
-    """
+    # Ensure that the default notification templates exist in the database. If any are missing, insert them. Return a dict mapping content_id to ContentManagement row.
     template_ids = list(_TEMPLATE_META)
     existing = {
         row.content_id: row
@@ -70,7 +66,7 @@ def _ensure_notification_templates(session):
 
 
 def get_welcome_notification(role: str) -> tuple[str, str]:
-    """Return the admin-editable welcome notification for a user role."""
+    # Return the title and description for the welcome notification for a given role ("investor" or "expert").
     role_key = "expert" if str(role).lower() == "expert" else "investor"
     template_id = f"notification_welcome_{role_key}"
     with get_session() as session:
@@ -80,9 +76,7 @@ def get_welcome_notification(role: str) -> tuple[str, str]:
 
 
 def create_notification(user_id: str, type: str, title: str, message: str):
-    """Insert a notification row. Call this from wherever a real user-facing
-    event happens (alert triggered, forum reply received, subscription renewed, ...).
-    Works for both investor and expert user_ids."""
+   # Create a notification for a user. Return the notification_id, or None if user_id is not provided.
     if not user_id:
         return None
     with get_session() as session:
@@ -202,7 +196,7 @@ class DeleteBroadcastController:
 
 class GetAllNotificationsAdminController:
     def get_notifications(self, search: str = None):
-        """Return delivered notifications across every user for admin review."""
+        # Return all notifications for admin view, optionally filtered by search term in title, message, type, or recipient name/email.
         with get_session() as session:
             query = session.query(Notification, UserAccount).outerjoin(
                 UserAccount, Notification.user_id == UserAccount.user_id

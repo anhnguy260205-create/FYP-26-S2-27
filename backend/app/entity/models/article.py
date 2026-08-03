@@ -27,7 +27,7 @@ class Article(Base):
     updated_at  = Column(DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Singapore")),
                          onupdate=lambda: datetime.now(ZoneInfo("Asia/Singapore")))
 
-    # ── helpers ──────────────────────────────────────────────────────────────
+    #  helpers S
 
     @staticmethod
     def _row_to_dict(a, resolved_author=None):
@@ -63,7 +63,7 @@ class Article(Base):
         user = session.query(UserAccount).filter(UserAccount.user_id == expert.user_id).first()
         return user.full_name or user.username if user else "Expert"
 
-    # ── Expert CRUD ───────────────────────────────────────────────────────────
+    #  Expert CRUD 
 
     @staticmethod
     def create(expert_id, title, summary, content, category, tags=""):
@@ -113,7 +113,7 @@ class Article(Base):
             session.delete(article)
             return True
 
-    # ── Admin CRUD (no expert_id required) ────────────────────────────────────
+    #  Admin CRUD (no expert_id required) 
 
     @staticmethod
     def admin_create(title, summary, content, category, tags="", status="published", author_name=None):

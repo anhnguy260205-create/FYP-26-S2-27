@@ -18,12 +18,9 @@ class Investor(Base):
     assets = Column(Float, default=0)
     used_amount = Column(Float, default=0)
     investor_subscription_status = Column(String(20), default="inactive")
-    # 6-digit transaction PIN, stored hashed (never in plaintext). Required to
-    # confirm every buy, sell and cash-out. NULL until the user sets one during
-    # first-login setup.
+ 
     transaction_pin = Column(String(255), nullable=True)
-    # One-shot flag so the "you're eligible to apply as an expert" notification
-    # fires exactly once, the moment the requirements are first met.
+
     expert_eligibility_notified = Column(Boolean, nullable=False, default=False)
 
     @staticmethod
@@ -101,10 +98,6 @@ class Investor(Base):
 
     @staticmethod
     def buyStock(user_id, symbol, quantity, price):
-        """
-        Deduct cost from assets, increase used_amount, add shares to holding,
-        and record the transaction. Returns dict with success flag and message.
-        """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
         from app.entity.models.wallet import (
@@ -138,8 +131,7 @@ class Investor(Base):
                 }
 
             investor.assets -= total_debit
-            # used_amount tracks capital deployed into positions, so the fee
-            # (an expense, not a position) is deliberately excluded.
+
             investor.used_amount += total_cost
             investor_id = investor.investor_id
             session.flush()
@@ -175,10 +167,6 @@ class Investor(Base):
 
     @staticmethod
     def sellStock(user_id, symbol, quantity, price):
-        """
-        Remove shares from holding, credit proceeds to assets,
-        decrease used_amount, and record the transaction.
-        """
         from app.entity.models.holding import Holding
         from app.entity.models.transaction import Transaction
         from app.entity.models.wallet import (
@@ -295,9 +283,7 @@ class Investor(Base):
             if not investor:
                 return False
 
-            # 1. FK-constrained children of investor (must go first, or the
-            # investor row can't be deleted — trading history in particular
-            # exists for almost any real account).
+
             session.query(Transaction).filter(
                 Transaction.investor_id == investor.investor_id
             ).delete()
@@ -337,9 +323,7 @@ class Investor(Base):
                 ExpertProfileView.investor_id == investor.investor_id
             ).delete()
 
-            # Chat conversations & messages involving this user — messages are
-            # deleted first since they FK to the conversation, which FKs to
-            # user_account; both must go before the user row can be dropped.
+           
             conv_ids = [
                 c.conv_id for c in session.query(Conversation).filter(
                     (Conversation.user_a_id == user_id) |
@@ -354,7 +338,7 @@ class Investor(Base):
                     Conversation.conv_id.in_(conv_ids)
                 ).delete(synchronize_session=False)
 
-            # 2. Alerts and notifications (keyed by user_id, not investor_id)
+            # Alerts and notifications (keyed by user_id, not investor_id)
             session.query(StockAlert).filter(
                 StockAlert.user_id == user_id
             ).delete()
@@ -362,8 +346,7 @@ class Investor(Base):
                 Notification.user_id == user_id
             ).delete()
 
-            # 2b. Merged roles: the account may also have an expert row —
-            # remove its children first so the user_account delete succeeds.
+            #  Merged roles: the account may also have an expert row, remove its children first so the user_account delete succeeds.
             from app.entity.models.expert import Expert
             expert = session.query(Expert).filter(
                 Expert.user_id == user_id
@@ -395,11 +378,11 @@ class Investor(Base):
                 ExpertVerification.delete_for_expert(session, expert.expert_id)
                 session.delete(expert)
 
-            # 3. Investor row (child of user_account)
+            # Investor row (child of user_account)
             session.delete(investor)
             session.flush()
 
-            # 4. User account row
+            # User account row
             user = session.query(UserAccount).filter(
                 UserAccount.user_id == user_id
             ).first()
@@ -439,8 +422,7 @@ class Investor(Base):
 
     @staticmethod
     def revokeExpertPremium(user_id):
-        """Called when expert verification is rejected/cancelled: fall back to
-        the latest active paid subscription plan, or inactive if none."""
+       
         from app.entity.models.subscription import Subscription
         with get_session() as session:
             investor = session.query(Investor).filter(
@@ -462,22 +444,7 @@ class Investor(Base):
 
     @staticmethod
     def getExpertEligibility(user_id, min_distinct_stocks=30, min_profit_margin=200.0):
-        """Expert-upgrade requirements: traded >= 30 distinct stocks and hit a
-        realized profit margin of >= 200%.
 
-        Profit is realized trading P&L — the sum of realized_pnl across every
-        sell (Transaction.getRealizedPnl) — earned purely from buy/sell
-        activity. Deliberately NOT the account balance, which also moves on
-        deposits, withdrawals, gifts, platform fees and compensation payouts,
-        none of which reflect trading skill.
-
-        Accounts start with 0 assets and fund themselves via the Cash Portal,
-        so there is no fixed starting capital. The margin is measured against
-        the net capital the user has put in (deposits - withdrawals):
-            profit = realized P&L
-            capital_in = total cash_in - total cash_out
-            profit_margin = profit / capital_in * 100   (0 when no capital in)
-        """
         from app.entity.models.transaction import Transaction
         from app.entity.models.wallet import WalletTransaction
 
@@ -511,12 +478,7 @@ class Investor(Base):
     def check_and_notify_expert_eligibility(
         user_id, min_distinct_stocks=30, min_profit_margin=200.0
     ):
-        """Fire the "you're eligible to apply as an expert" notification the
-        moment the requirements are first met — a one-shot check driven by
-        expert_eligibility_notified, so it never repeats on later trades.
-        Call this after any trade that could change distinct-stock count or
-        realized P&L. Safe to call on every fill; it's a no-op once notified
-        or once the user has already applied."""
+        
         from app.entity.models.expert import Expert
 
         with get_session() as session:

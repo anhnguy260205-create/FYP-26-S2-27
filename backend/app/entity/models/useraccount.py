@@ -123,9 +123,6 @@ class UserAccount(Base):
             expert = session.query(Expert).filter(
                 Expert.user_id == user.user_id).first()
 
-            # Merged roles: anyone with an investor OR expert row is an
-            # "investor". Expert is an add-on flag (is_expert) — verified
-            # experts automatically enjoy premium benefits.
             if investor or expert:
                 role = "investor"
             elif profile_name == "admin":
@@ -150,10 +147,7 @@ class UserAccount(Base):
                 "full_name": user.full_name,
                 "email_address": user.email_address,
                 "role": role,
-                # is_expert means VERIFIED expert, not merely "has applied" —
-                # an Expert row exists from the moment someone applies, but
-                # they must stay a plain investor (with an in-progress
-                # application) until an admin approves it.
+  
                 "is_expert": is_verified_expert,
                 "subscription_status": subscription_status,
                 "interests": investor.interests if investor else None,

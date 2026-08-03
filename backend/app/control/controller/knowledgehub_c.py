@@ -4,14 +4,14 @@ from app.entity.models.expertverification import ExpertVerification
 
 
 def _get_expert_id(user_id):
-    """Resolve expert_id from user_id."""
+    # Return the expert_id for a user_id, or None if the user is not an expert.
     with __import__("app.entity.database.session", fromlist=["get_session"]).get_session() as s:
         exp = s.query(Expert).filter(Expert.user_id == user_id).first()
         return exp.expert_id if exp else None
 
 
 def _get_expert(user_id):
-    """Return the Expert row for a user_id, or None."""
+    # Return the Expert row for a user_id, or None.
     with __import__("app.entity.database.session", fromlist=["get_session"]).get_session() as s:
         return s.query(Expert).filter(Expert.user_id == user_id).first()
 

@@ -1,20 +1,11 @@
-// Platform commission — display only.
-//
-// These constants MIRROR the server (backend/app/control/services/trading_engine.py:
-// PLATFORM_FEE_MIN / PLATFORM_FEE_RATE). The server always recomputes the fee it
-// actually charges, so a drift here shows a wrong preview but can't cause a wrong
-// charge. Still, change both together.
-//
-// Fee = whichever is GREATER of the flat minimum and the percentage of trade value.
-
-export const PLATFORM_FEE_MIN = 4.0;
+// Utility functions for calculating platform fees and related information.
+export const PLATFORM_FEE_MIN = 4.0;// Minimum platform fee in dollars.
 export const PLATFORM_FEE_RATE = 0.001; // 0.1%
-
+// Calculate the platform fee based on the trade value. The fee is the greater of a minimum fee or a percentage of the trade value.
 export function calculatePlatformFee(tradeValue) {
   if (!tradeValue || tradeValue <= 0) return 0;
   return Math.round(Math.max(PLATFORM_FEE_MIN, tradeValue * PLATFORM_FEE_RATE) * 100) / 100;
 }
-
-export const PLATFORM_FEE_LABEL = `$${PLATFORM_FEE_MIN.toFixed(2)} min or ${
-  PLATFORM_FEE_RATE * 100
-}%, whichever is higher`;
+// Generate a label for the platform fee, indicating the minimum fee and the percentage rate.
+export const PLATFORM_FEE_LABEL = `$${PLATFORM_FEE_MIN.toFixed(2)} min or ${PLATFORM_FEE_RATE * 100
+  }%, whichever is higher`;

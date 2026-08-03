@@ -1,9 +1,3 @@
-"""
-ratingb.py
-==========
-HTTP boundary for the Sector Quant Rating feature. Auth-protected, mirroring
-predictionb.py.
-"""
 
 from fastapi import APIRouter, Depends
 

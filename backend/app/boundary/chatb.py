@@ -1,10 +1,4 @@
-"""
-Direct-messaging boundary.
-
-REST (authenticated via get_current_user) performs all actions; the
-websocket at /chat/ws is push-only — it delivers new messages instantly to
-online users. Offline users get history from MySQL on next load.
-"""
+## Chat boundary (API) layer.
 import asyncio
 from typing import Dict, Set
 
@@ -17,12 +11,11 @@ from app.entity.models.chat import ChatController
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-# ── Online-user registry (user_id -> live websockets) ───────────────────────
-
+## In-memory storage for online users and their WebSocket connections, with a lock to ensure thread-safe access.
 _online: Dict[str, Set[WebSocket]] = {}
 _online_lock = asyncio.Lock()
 
-
+# Helper function to push a payload to all WebSocket connections of a specific user.
 async def _push_to_user(user_id: str, payload: dict) -> None:
     async with _online_lock:
         sockets = list(_online.get(user_id, ()))
@@ -35,14 +28,12 @@ async def _push_to_user(user_id: str, payload: dict) -> None:
 
 @router.websocket("/ws")
 async def chat_ws(websocket: WebSocket, user_id: str):
-    """Push channel. Connect as /chat/ws?user_id=<id>."""
     await websocket.accept()
     async with _online_lock:
         _online.setdefault(user_id, set()).add(websocket)
     try:
         while True:
-            # We don't act on client frames (REST does the work);
-            # reading keeps the connection alive and detects disconnects.
+        
             await websocket.receive_text()
     except WebSocketDisconnect:
         pass
@@ -53,7 +44,6 @@ async def chat_ws(websocket: WebSocket, user_id: str):
                 _online.pop(user_id, None)
 
 
-# ── REST ─────────────────────────────────────────────────────────────────────
 
 class SendMessageRequest(BaseModel):
     recipient_id: str

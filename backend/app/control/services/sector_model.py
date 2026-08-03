@@ -1,35 +1,4 @@
-"""
-sector_model.py
-===============
-Loads the 11 per-sector "Quant Rating" models and exposes helpers to turn a
-single ticker into a Seeking-Alpha-style rating.
 
-Each model lives in backend/ml_models/sector/sector_<Sector>.pkl and is a
-``CalibratedClassifierCV(XGBClassifier, method="isotonic")`` — i.e. an
-isotonic-calibrated **BUY classifier**. ``predict_proba(...)[:, 1]`` therefore
-returns a *calibrated probability that the stock is a BUY* over the model's
-training horizon. That single, trustworthy probability is the source of truth
-and gets translated into:
-
-  - a 0-100 score and a 1-5 star rating
-  - a Strong Buy / Buy / Hold / Sell / Strong Sell label (anchored on the
-    model's own stored decision ``threshold``)
-  - per-factor grades (Momentum / Value / Growth / Profitability / Technicals),
-    computed as the stock's percentile rank inside its sector cohort
-  - a sector leaderboard (rank within sector)
-
-Design notes
-------------
-* The set AND ORDER of features is read from the model itself
-  (``feature_names_in_``), never hard-coded. We compute a broad superset of
-  features and reindex to exactly what the model expects; any feature we can't
-  compute is left as NaN, which XGBoost handles natively. This keeps the
-  service correct even if the training feature list changes slightly.
-* All network/feature work is cached per (key, UTC-date) so a page view does
-  the expensive yfinance work at most once per ticker per day.
-* When ml_models/sector/sector_pooled.pkl exists (see
-  scripts/train_pooled_rating.py) it replaces the 11 per-sector models.
-"""
 
 import os
 import json
@@ -98,9 +67,7 @@ SECTOR_LABELS = {
     "RealEstate": "Real Estate", "Utilities": "Utilities", "CommServices": "Communication Services",
 }
 
-# Per-sector cohort used for the leaderboard + factor-grade percentiles.
-# Static map first (fast, deterministic); falls back to yfinance lookup for
-# anything not listed. Keep these to liquid large caps so yfinance is reliable.
+# Canonical sector key -> list of representative symbols for that sector (for UI display)
 SECTOR_UNIVERSE = {
     "Technology":      ["AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "ADBE", "CRM", "CSCO", "INTC", "QCOM", "TXN"],
     "Financials":      ["JPM", "BAC", "WFC", "GS", "MS", "C", "BLK", "SCHW", "AXP", "SPGI", "BX", "V"],
@@ -116,7 +83,7 @@ SECTOR_UNIVERSE = {
 }
 
 
-# ── Caches ───────────────────────────────────────────────────────────────────
+#  Caches 
 
 _models: dict = {}          # sector_key -> loaded estimator
 _rating_cache: dict = {}    # (symbol, "YYYY-MM-DD") -> rating dict
@@ -128,7 +95,7 @@ def _today() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d")
 
 
-# ── Model loading ────────────────────────────────────────────────────────────
+#  Model loading 
 
 def _load_model(sector_key: str):
     """Load (and cache) the calibrated estimator for a sector key."""
@@ -155,10 +122,6 @@ def _load_model(sector_key: str):
     return model
 
 
-# ── Pooled model (sector_pooled.pkl) — preferred when present ────────────────
-# Trained by scripts/train_pooled_rating.py: ONE model for all sectors
-# (binary "beat sector median 21d excess return"), features rank-normalized
-# within the sector cohort, sector identity one-hot encoded.
 
 _POOLED_PATH = os.path.join(_MODEL_DIR, "sector_pooled.pkl")
 _pooled_state = {"checked": False, "payload": None}
@@ -182,10 +145,7 @@ def _load_pooled():
 
 
 def _pooled_scores(payload: dict, sector_key: str, cohort_feats: dict) -> dict:
-    """P(beat sector median) for every symbol in cohort_feats.
-
-    Mirrors training exactly: price features rank-normalized (0..1) within the
-    cohort, sector one-hots appended, columns aligned to the training order."""
+  #  Compute model probabilities for a sector using the pooled model payload and the cohort features. Returns a dict mapping symbols to predicted probabilities of the "BUY" class.
     cols = payload["features"]
     price = payload.get("price_features") or [c for c in cols if not c.startswith("sec_")]
     raw = pd.DataFrame.from_dict(cohort_feats, orient="index")
@@ -203,7 +163,6 @@ def _pooled_scores(payload: dict, sector_key: str, cohort_feats: dict) -> dict:
 
 
 def _unwrap(model):
-    """Return (estimator, threshold, metrics) regardless of how the pkl was wrapped."""
     threshold = 0.5
     metrics = {}
     est = model
@@ -234,7 +193,6 @@ def _unwrap(model):
 
 
 def _inner_xgb(est):
-    """Find the fitted XGBClassifier inside a (possibly calibrated) estimator."""
     if hasattr(est, "get_booster"):
         return est
     ccs = getattr(est, "calibrated_classifiers_", None)
@@ -252,7 +210,6 @@ def _inner_xgb(est):
 
 
 def _expected_features(est) -> list | None:
-    """Read the ordered feature names the model was trained on (list of str) or None."""
     names = getattr(est, "feature_names_in_", None)
     if names is not None:
         return [str(x) for x in names]
@@ -280,11 +237,7 @@ def _is_str_list(v) -> bool:
 
 
 def _model_feature_names(model, est) -> list | None:
-    """Resolve the ordered training feature names.
 
-    The pkls are dict wrappers, so the feature list is most likely stored there
-    under some key. We (1) try common key names, (2) fall back to auto-detecting
-    the longest list-of-strings in the dict, then (3) fall back to the estimator."""
     if isinstance(model, dict):
         for k in ("features", "feature_names", "feature_cols", "feature_columns",
                   "feature_list", "feats", "X_columns", "x_columns", "columns", "cols"):
@@ -303,10 +256,7 @@ def _model_feature_names(model, est) -> list | None:
 
 
 def _buy_class_index(est) -> int:
-    """Index into predict_proba output for the BUY class.
 
-    Models are 3-class (0=Sell, 1=Hold, 2=Buy), so BUY is the highest label.
-    Falls back gracefully for binary models."""
     classes = list(getattr(est, "classes_", [0, 1]))
     try:
         return classes.index(max(classes))
@@ -385,11 +335,10 @@ def _market_ctx(sector_key: str) -> dict:
     return {"spy": cache["SPY"], "tnx": cache["^TNX"], "sect": cache[etf]}
 
 
-# ── Feature computation ──────────────────────────────────────────────────────
+#  Feature computation 
 
 def compute_features(history: pd.DataFrame, info: dict, sector_key: str) -> dict:
-    """Compute a broad superset of features for the latest bar. Missing values
-    are left as NaN; the caller reindexes to the model's expected columns."""
+    
     f: dict = {}
     if history is None or len(history) < 30:
         return f
@@ -505,12 +454,7 @@ def compute_features(history: pd.DataFrame, info: dict, sector_key: str) -> dict
 # ── Inference ────────────────────────────────────────────────────────────────
 
 def _buy_probability(est, features: dict, cols: list | None) -> float | None:
-    """Calibrated probability that the stock is a BUY.
-
-    Aligns the computed features to the model's EXACT expected feature list and
-    order (`cols`). Features the pipeline doesn't compute are left as NaN — XGBoost
-    treats them as missing, so shapes always match (no "Feature shape mismatch").
-    BUY probability is the highest class (models are 3-class: 0=Sell,1=Hold,2=Buy)."""
+   
     if not cols:
         raise RuntimeError(
             "Could not resolve the model's feature names — cannot align features. "
@@ -536,10 +480,7 @@ def _label_from_prob(p: float, threshold: float) -> str:
 
 
 def _stars_from_percentile(pct: float) -> float:
-    """Stars from the stock's score percentile WITHIN its sector cohort.
-
-    (Mapping raw probability linearly squashed every stock into 2-3 stars,
-    because calibrated probabilities rarely approach 0 or 1.)"""
+ 
     return round(1 + max(0.0, min(1.0, pct)) * 4, 1)   # 1.0 .. 5.0
 
 
@@ -648,7 +589,6 @@ _COHORT_DISK_PATH = os.path.join(
 
 
 def _load_disk_cohorts() -> dict:
-    """Today's persisted cohorts ({sector: {symbol: {feat: val}}}) or {}."""
     try:
         with open(_COHORT_DISK_PATH) as fh:
             data = json.load(fh)
@@ -685,10 +625,7 @@ def _save_disk_cohort(sector_key: str, cohort: dict) -> None:
 
 
 def _cohort_features(sector_key: str) -> dict:
-    """Feature dicts for every cohort member of a sector, cached per day.
-
-    Cache order: memory -> disk (survives restarts) -> parallel yfinance fetch
-    (12 tickers concurrently instead of sequentially: ~30s -> ~4s)."""
+   
     ckey = (sector_key, _today())
     if ckey in _cohort_cache:
         return _cohort_cache[ckey]
@@ -716,10 +653,7 @@ def _cohort_features(sector_key: str) -> dict:
 
 
 def _score_cohort(sector_key: str, extra: dict | None = None):
-    """Score every cohort member (plus `extra` {symbol: features}) on one scale.
-
-    Prefers the pooled model; falls back to the legacy per-sector pkl.
-    Returns (scores, threshold, model_info) or None."""
+   
     cohort = dict(_cohort_features(sector_key))
     if extra:
         cohort.update(extra)

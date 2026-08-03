@@ -1,5 +1,4 @@
-// Common country dial codes for the phone-number field. Not exhaustive —
-// covers the markets we expect, with Singapore first as the default.
+// Common country dial codes for the phone-number field. 
 export const COUNTRY_CODES = [
   { code: "+65", label: "Singapore", iso: "SG" },
   { code: "+60", label: "Malaysia", iso: "MY" },
@@ -33,7 +32,6 @@ export const COUNTRY_CODES = [
 export const DEFAULT_COUNTRY_CODE = "+65";
 
 // Country list for the "Country" dropdown on the personal-information forms.
-// Derived from COUNTRY_CODES (deduped by name), Singapore first, rest A–Z.
 export const COUNTRIES = (() => {
   const seen = new Set();
   const list = [];
@@ -47,9 +45,7 @@ export const COUNTRIES = (() => {
 
 const COUNTRY_NAMES = COUNTRIES.map((c) => c.name);
 
-// Personal info stores city + country combined in the single `address` column
-// as "City, Country" (no schema change). These helpers split/join it so the
-// forms can show a free-text City field and a Country dropdown separately.
+// Personal info stores city + country combined in the single `address` column as "City, Country" (no schema change)..
 export function splitAddress(address) {
   const raw = (address || "").trim();
   if (!raw) return { city: "", country: "" };
@@ -58,6 +54,7 @@ export function splitAddress(address) {
     (n) => raw.toLowerCase() === n.toLowerCase() || raw.toLowerCase().endsWith(", " + n.toLowerCase())
   );
   if (match) {
+    // Remove the country suffix and any trailing comma/space to get the city.
     const city = raw.slice(0, raw.length - match.length).replace(/,\s*$/, "").trim();
     return { city, country: match };
   }
@@ -66,7 +63,7 @@ export function splitAddress(address) {
   if (idx === -1) return { city: raw, country: "" };
   return { city: raw.slice(0, idx).trim(), country: raw.slice(idx + 1).trim() };
 }
-
+// Join city and country into a single string for the `address` column, omitting empty parts.
 export function joinAddress(city, country) {
   const c = (city || "").trim();
   const k = (country || "").trim();

@@ -17,7 +17,7 @@ except Exception:
         return datetime.now()
 
 
-# ── Forum categories ──────────────────────────────────────────────────────────
+#  Forum categories 
 FORUM_CATEGORIES = [
     "Technical Analysis",
     "Fundamental Analysis",
@@ -32,7 +32,6 @@ FORUM_CATEGORIES = [
 ]
 
 
-# ── Models ────────────────────────────────────────────────────────────────────
 
 class ForumPost(Base):
     __tablename__ = "forum_post"
@@ -54,8 +53,7 @@ class ForumPost(Base):
     created_at   = Column(DateTime, default=_now)
     updated_at   = Column(DateTime, default=_now)
 
-    # lazy="select" — replies are only queried when a post is actually opened,
-    # not on every list_posts() call (huge performance win for the forum feed).
+    # lazy="select" — replies are only queried when a post is actually opened, not on every list_posts() call (huge performance win for the forum feed).
     replies = relationship("ForumReply", cascade="all, delete-orphan", back_populates="post", lazy="select")
 
 
@@ -144,12 +142,7 @@ class ForumReplyFlag(Base):
 
 
 class ForumPostRemoval(Base):
-    """
-    Records an admin-removed post so the original author can still see why
-    their post was taken down, even after the ForumPost row itself is deleted.
-    Kept separate from ForumPost (no FK to it) since the post no longer exists
-    by the time this is queried.
-    """
+
     __tablename__ = "forum_post_removal"
 
     id           = Column(String(50), primary_key=True, default=lambda: f"pr_{uuid4()}")
@@ -160,7 +153,6 @@ class ForumPostRemoval(Base):
     acknowledged = Column(Boolean, default=False)  # user has seen/dismissed the notice
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _resolve_user_name(session, user_id):
     if not user_id:
@@ -282,7 +274,6 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
 
 
 
-# ── Seed data ─────────────────────────────────────────────────────────────────
 
 def seed_forum_posts():
     """Seed topic-specific posts on first run. Safe to call every startup."""
@@ -446,7 +437,6 @@ def ensure_forum_schema(engine):
         print("[FORUM SCHEMA] Schema check complete.")
 
 
-# ── Repository ────────────────────────────────────────────────────────────────
 
 class ForumRepository:
 
@@ -834,7 +824,6 @@ class ForumRepository:
             session.flush()
             return {"flagged": True, "reply_id": reply_id, "reason": reason}
 
-    # ── Admin moderation ────────────────────────────────────────────────────
 
     @staticmethod
     def create_removal_record(user_id, post_title, reason):
@@ -851,7 +840,6 @@ class ForumRepository:
 
     @staticmethod
     def get_unacknowledged_removal(user_id):
-        """Return the user's most recent un-dismissed removal notice, if any."""
         with get_session() as session:
             record = session.query(ForumPostRemoval).filter(
                 ForumPostRemoval.user_id == user_id,
@@ -890,7 +878,6 @@ class ForumRepository:
 
     @staticmethod
     def admin_list_posts():
-        """All posts, newest first — for the admin moderation queue."""
         with get_session() as session:
             posts = session.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
             return [_serialise_post(session, p, include_replies=False) for p in posts]
@@ -922,7 +909,6 @@ class ForumRepository:
 
     @staticmethod
     def admin_flagged_replies():
-        """Comments reported by at least one user, including their parent post."""
         with get_session() as session:
             flags = session.query(ForumReplyFlag).order_by(ForumReplyFlag.created_at.desc()).all()
             by_reply = {}

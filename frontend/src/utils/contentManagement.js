@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-
+// Utility functions for managing content fetched from the backend, including hooks for retrieving and formatting content data.
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export function useContentManagement() {
   const [content, setContent] = useState([]);
-
+  // Fetch the landing page content from the backend API when the component mounts. 
   useEffect(() => {
     if (!API_BASE) return;
     fetch(`${API_BASE}/content/landing`)
@@ -12,11 +12,12 @@ export function useContentManagement() {
       .then((data) => {
         if (data?.success && Array.isArray(data.content)) setContent(data.content);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
-
+  // Memoize the content management functions to avoid unnecessary recalculations on re-renders.
   return useMemo(() => {
     const byId = (id) => content.find((item) => item.content_id === id);
+    // Get the text content for a specific content ID, with optional fallback title and description if the content is not found.
     const text = (id, fallbackTitle = "", fallbackDescription = "") => {
       const item = byId(id);
       return {
@@ -25,6 +26,7 @@ export function useContentManagement() {
         image_url: item?.image_url || "",
       };
     };
+    // Get all content items for a specific section, sorted by their order index.
     const section = (sectionName) => content
       .filter((item) => item.section === sectionName)
       .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
@@ -32,7 +34,7 @@ export function useContentManagement() {
     return { content, byId, text, section };
   }, [content]);
 }
-
+// Fill a template string with replacements, replacing placeholders in the form of {key} with corresponding values from the replacements object.
 export function fillTemplate(value = "", replacements = {}) {
   return Object.entries(replacements).reduce(
     (text, [key, replacement]) => text.replaceAll(`{${key}}`, String(replacement)),

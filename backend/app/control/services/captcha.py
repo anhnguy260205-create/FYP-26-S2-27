@@ -1,21 +1,3 @@
-"""
-captcha.py
-==========
-Google reCAPTCHA v2 server-side verification for the registration endpoint.
-
-Setup: create keys at https://www.google.com/recaptcha/admin (choose
-"Challenge (v2)" → "I'm not a robot" checkbox, add localhost + your domain),
-then put the SECRET key in backend/.env:
-
-    RECAPTCHA_SECRET_KEY=...
-
-and the SITE key in frontend/.env:
-
-    VITE_RECAPTCHA_SITE_KEY=...
-
-If RECAPTCHA_SECRET_KEY is not set, verification is SKIPPED (dev convenience)
-— a warning is printed so this can't go unnoticed in production logs.
-"""
 
 import os
 import requests

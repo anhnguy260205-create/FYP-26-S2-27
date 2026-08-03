@@ -8,12 +8,7 @@ from app.entity.models.investor import Investor
 
 
 class ExpertProfileView(Base):
-    """Which expert profiles a basic investor has viewed.
 
-    Basic plan: lifetime limit of BASIC_PROFILE_VIEW_LIMIT distinct experts
-    (re-viewing an already-unlocked expert is free — one row per
-    investor+expert). Premium investors, experts and admins are unlimited.
-    """
     __tablename__ = "expert_profile_view"
 
     view_id = Column(String(50), primary_key=True,

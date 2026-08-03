@@ -281,11 +281,7 @@ COMPANY_NAMES: Dict[str, str] = {
     "YUM": "Yum! Brands", "ZBH": "Zimmer Biomet", "ZBRA": "Zebra Technologies", "ZTS": "Zoetis",
 }
 
-# Live-stream subset: Alpaca's free IEX websocket caps subscriptions at 30
-# symbols, so only these get true tick-by-tick updates while the market is
-# open. Everything else in stock_pool refreshes via the periodic batch
-# snapshot cycle (60s open / 300s closed), which is visually equivalent for
-# the dashboard grid.
+
 STREAM_SYMBOL_LIMIT = 30
 stream_pool = [
     "AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "AMD", "CRM", "QCOM", "ADBE",
@@ -296,25 +292,18 @@ stream_pool = [
     "AMT", "PLD", "O",
 ][:STREAM_SYMBOL_LIMIT]
 
-# Snapshot cache: avoids re-fetching yfinance/Alpaca for rapid reconnections
 _snapshot_cache: Dict[str, dict] = {}
 _snapshot_cache_ts: Dict[str, float] = {}
 SNAPSHOT_TTL = 30.0  # seconds
 
-# Batch pool cache: one yf.download for the whole pool instead of 500+
-# per-symbol fetches. Refreshed at most once per BATCH_REFRESH_INTERVAL.
+
 _spark_cache: Dict[str, list] = {}    # symbol -> daily bars (on-connect sparklines)
 _batch_refresh_lock = asyncio.Lock()
 _batch_last_refresh: Optional[float] = None   # monotonic ts of last successful refresh
-# Refresh cadence: each refresh is ~503 Yahoo requests, so keep it modest or
-# Yahoo rate-limits and symbols start "failing" (they keep their cached values).
+
 BATCH_REFRESH_INTERVAL = 240.0  # seconds between full-pool downloads
 SPARK_BARS = 30                 # ~6 weeks of daily bars per sparkline
 
-# ── Cache persistence ──────────────────────────────────────────────────────────
-# The batch caches are saved to disk after every refresh, so a restarted
-# server paints the dashboard instantly with the last known data while the
-# background refresh fetches fresh prices (within a minute or two).
 
 _CACHE_FILE = BASE_DIR / "snapshot_cache.json"
 
@@ -334,9 +323,7 @@ def _save_cache_to_disk() -> None:
 
 
 def _load_cache_from_disk() -> None:
-    """Warm the in-memory caches from the last saved copy. Any age is accepted
-    — stale prices beat an empty screen, and the batch refresh replaces them
-    shortly after startup."""
+  
     try:
         if not _CACHE_FILE.exists():
             return
@@ -419,10 +406,7 @@ def get_market_status() -> str:
     return "CLOSED"
 
 
-# ── Batch pool refresh (one download for all 500+ symbols) ─────────────────────
 
-# Set on server shutdown so an in-flight batch download aborts between chunks
-# instead of blocking uvicorn's "Waiting for background tasks to complete".
 _shutting_down = False
 _BATCH_CHUNK = 100  # symbols per yf.download call
 
@@ -433,16 +417,7 @@ def request_shutdown() -> None:
 
 
 def refresh_pool_snapshots() -> None:
-    """Populate the snapshot + sparkline caches for the ENTIRE pool with a
-    single batched yf.download (3 months of daily bars).
-
-    Derived per symbol:
-      - snapshot: price/open/high/low/volume from the latest bar,
-        previousClose from the bar before it, avgVolume = 3-month mean volume.
-      - sparkline: the last SPARK_BARS daily bars (sent on connect instead of
-        per-symbol 1-minute history; full-resolution charts stay on demand).
-
-    Runs in a worker thread (blocking I/O)."""
+    # Refresh the batch snapshot cache for all symbols in stock_pool.
     now = time.monotonic()
     frames = {}  # symbol -> per-symbol DataFrame
 
@@ -529,8 +504,7 @@ def refresh_pool_snapshots() -> None:
             })
         _spark_cache[symbol] = bars
 
-    # Risk bucket per symbol: volatility tertiles across the whole pool.
-    # Lowest third -> Conservative, middle -> Moderate, highest -> Aggressive.
+    # Risk bucket per symbol: volatility tertiles across the whole pool. Lowest third -> Conservative, middle -> Moderate, highest -> Aggressive.
     vol_items = [(s, snap["vol3m"]) for s, snap in _snapshot_cache.items()
                  if snap.get("vol3m") is not None]
     if len(vol_items) >= 3:
@@ -547,9 +521,7 @@ def refresh_pool_snapshots() -> None:
 
 
 async def ensure_snapshots_fresh(force: bool = False) -> None:
-    """Refresh the batch caches if stale. Safe to call from every client
-    connect — the lock + interval check means the expensive download runs at
-    most once per BATCH_REFRESH_INTERVAL regardless of connection count."""
+    # Ensure the batch snapshot cache is fresh, refreshing if needed or if forced.
     global _batch_last_refresh
     async with _batch_refresh_lock:
         fresh = (
@@ -566,7 +538,6 @@ async def ensure_snapshots_fresh(force: bool = False) -> None:
             print(f"Batch snapshot refresh failed: {e}")
 
 
-# ── yfinance helpers ───────────────────────────────────────────────────────────
 
 def get_snapshot_yfinance(symbol: str) -> dict:
     ticker = yf.Ticker(symbol)
@@ -583,8 +554,7 @@ def get_snapshot_yfinance(symbol: str) -> dict:
         today = hist.iloc[-1]
         yesterday = hist.iloc[-2] if len(hist) >= 2 else None
 
-    # avg volume: three_month_average_volume from fast_info is reliable
-    # (it's pre-computed by Yahoo, not derived from tick data)
+    # avg volume: three_month_average_volume from fast_info is reliable (it's pre-computed by Yahoo, not derived from tick data)
     avg_volume = getattr(ticker.fast_info, "three_month_average_volume", None)
 
     return {
@@ -662,17 +632,9 @@ def get_historical_bars_yfinance(symbol: str, range: str = "1D",  limit: int = 1
     return bars
 
 
-# ── Alpaca REST helpers (market OPEN) ──────────────────────────────────────────
 
 def get_snapshot_alpaca(symbol: str) -> dict:
-    """
-    Alpaca snapshot for live market hours.
-
-    Volume note: Alpaca IEX feed only captures ~10-15% of real market volume.
-    avgVolume comes from yfinance (Yahoo/SIP) so it uses the full market figure,
-    matching what Google Finance shows. The current volume will be lower than
-    Google's until you upgrade to the Alpaca SIP feed.
-    """
+    # Fetch the latest snapshot from Alpaca REST for the given symbol. This includes the latest trade, daily bar, and previous daily bar. It also fetches today's volume and 3-month average volume from yfinance as a fallback.
     url = f"{ALPACA_DATA_REST_URL}/{symbol}/snapshot?feed=iex"
     req = Request(url, headers=alpaca_headers())
     with urlopen(req, timeout=10) as resp:
@@ -714,7 +676,7 @@ def get_snapshot_alpaca(symbol: str) -> dict:
 
 
 def get_historical_bars_alpaca(symbol: str, range: str = "1D", limit: int = 1800) -> list:
-    """Fetch historical bars from Alpaca REST for the selected chart range."""
+    # Fetch historical bars from Alpaca REST for the given symbol and range. The range can be "1D", "1W", "1M", "3M", "6M", or "1Y". The limit is the maximum number of bars to return.
     if range == "1D":
         timeframe = "1Min"
         start_days = 2
@@ -811,7 +773,6 @@ def get_historical_bars(symbol: str, range: str = "1D", limit: int = 1800) -> li
         return get_historical_bars_alpaca(symbol, range=range, limit=limit)
 
 
-# ── Client management ──────────────────────────────────────────────────────────
 
 async def register_client(websocket: WebSocket):
     async with clients_lock:
@@ -861,15 +822,9 @@ async def broadcast_to_clients(message: str):
         await unregister_client(websocket)
 
 
-# ── On-connect data burst ──────────────────────────────────────────────────────
 
 async def send_snapshot_prices(websocket: WebSocket):
-    """Send the latest cached snapshot for the whole pool.
-
-    The cache is filled by one batched yf.download (see ensure_snapshots_fresh),
-    so connecting clients get an instant first paint instead of triggering
-    500+ per-symbol fetches. Live tick updates for stream_pool symbols follow
-    via the Alpaca websocket when the market is open."""
+     # Send the latest snapshot prices for all symbols in the stock pool.
     await ensure_snapshots_fresh()
 
     quotes = [_snapshot_cache[s] for s in stock_pool if s in _snapshot_cache]
@@ -889,9 +844,7 @@ async def send_snapshot_prices(websocket: WebSocket):
 
 
 async def send_spark_history(websocket: WebSocket):
-    """On-connect sparkline data: cached daily bars for every pool symbol,
-    derived from the same batch download as the snapshots. Full-resolution
-    charts are still fetched on demand via the client's "range" message."""
+    # Send the latest sparkline history for all symbols in the stock pool. This is a small set of daily bars (30 bars, ~6 weeks) for each symbol, used to render sparklines on the client side.
     await ensure_snapshots_fresh()
     await send_json_to_client(websocket, {
         "type":   "history",
@@ -902,7 +855,7 @@ async def send_spark_history(websocket: WebSocket):
 
 
 async def send_historical_candles(websocket: WebSocket, symbols: Optional[list[str]] = None, range: str = "1D"):
-    """Send historical bars for the requested range."""
+    # Send historical bars for the requested range.
     symbols = symbols or stock_pool
     results = await asyncio.gather(
         *[asyncio.to_thread(get_historical_bars, s, range, 1800)
@@ -933,7 +886,6 @@ async def send_historical_candles(websocket: WebSocket, symbols: Optional[list[s
         })
 
 
-# ── Alpaca WebSocket streaming (only when market OPEN) ────────────────────────
 
 async def run_alpaca_connection():
     while True:
@@ -952,9 +904,7 @@ async def run_alpaca_connection():
                 }))
                 await alpaca_ws.recv()
 
-                # Subscribe only to the hot subset — the free IEX feed caps
-                # websocket subscriptions at 30 symbols; the rest of the pool
-                # updates via the periodic batch snapshot broadcast.
+                # Subscribe only to the hot subset — the free IEX feed capswebsocket subscriptions at 30 symbols; the rest of the pool updates via the periodic batch snapshot broadcast.
                 await alpaca_ws.send(json.dumps({
                     "action": "subscribe",
                     "trades": stream_pool,
@@ -1028,8 +978,7 @@ async def ensure_alpaca_connection():
 
 
 async def periodic_snapshot_broadcast():
-    """Broadcast fresh snapshots to all clients.
-    60s interval when market is open, 300s when closed — reduces yfinance calls by 5x overnight."""
+    # Periodically refresh the batch snapshot cache and broadcast to all connected clients. The refresh interval is 60 seconds when the market is open, and 300 seconds when closed.
     while True:
         market_open = get_market_status() == "OPEN"
         await asyncio.sleep(60 if market_open else 300)
@@ -1039,8 +988,7 @@ async def periodic_snapshot_broadcast():
         if not clients:
             return
         try:
-            # Non-forced: actual downloads happen at most every
-            # BATCH_REFRESH_INTERVAL; in between we rebroadcast cached data.
+            # Refresh the batch snapshot cache and broadcast to all connected clients. This is a fallback for symbols not in the hot stream pool, and also ensures that all clients have up-to-date snapshots even if they missed some real-time updates.
             await ensure_snapshots_fresh()
             quotes = [_snapshot_cache[s] for s in stock_pool if s in _snapshot_cache]
             if quotes:
@@ -1058,11 +1006,9 @@ async def periodic_snapshot_broadcast():
             print(f"Periodic snapshot broadcast error: {e}")
 
 
-# ── WebSocket endpoint ─────────────────────────────────────────────────────────
-
 @router.get("/stocks/sectors")
 def rest_stock_sectors():
-    """S&P 500 pool categorized by GICS primary sector (11 sectors)."""
+    # Return the list of sectors and the count of stocks in each sector.
     return {
         "success": True,
         "count":   len(stock_pool),
@@ -1092,9 +1038,7 @@ def rest_stock_candles(symbol: str, range: str = "1D"):
 
 @router.get("/stocks/dashboard-access/{symbol}")
 def check_dashboard_access(symbol: str, current_user: dict = Depends(get_current_user)):
-    """Gate + consume quota for a basic investor opening a stock's real-time
-    dashboard. Basic plan: lifetime limit of 3 distinct stocks; re-opening an
-    already-unlocked stock is free. Premium/expert/admin are never limited."""
+    # Check if the current user has access to view the stock dashboard for the given symbol, based on their usage quota. If the user has reached their limit, return a message indicating that they need to upgrade to Premium for unlimited access.
     symbol = symbol.upper()
     quota = DashboardUsage.check(current_user["user_id"], symbol)
     if not quota["allowed"]:
@@ -1116,7 +1060,7 @@ def check_dashboard_access(symbol: str, current_user: dict = Depends(get_current
 
 @router.get("/stocks/dashboard-usage")
 def dashboard_usage(current_user: dict = Depends(get_current_user)):
-    """How many free stock dashboards the current user has opened (basic plan)."""
+    # How many free stock dashboards the current user has opened (basic plan).
     return {"success": True, **DashboardUsage.get_usage(current_user["user_id"])}
 
 
@@ -1137,26 +1081,25 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         market = get_market_status()
 
-        # 1. Latest prices for the whole pool, served from the batch cache
+        # Latest prices for the whole pool, served from the batch cache
         await send_snapshot_prices(websocket)
 
-        # 2. Daily candles for all stocks (needed for sparklines) — served
-        #    from the batch cache, not fetched per symbol
+        # Daily candles for all stocks (needed for sparklines) — served from the batch cache, not fetched per symbol
         await send_spark_history(websocket)
 
-        # 3. Market status banner
+        # Market status banner
         await send_json_to_client(websocket, {
             "type":   "market_status",
             "status": market,
         })
 
-        # 4. Live WebSocket stream when market is open
+        # Live WebSocket stream when market is open
         if market == "OPEN":
             await ensure_alpaca_connection()
         else:
             print("Market closed — using yfinance snapshots with periodic refresh")
 
-        # 5. Periodic snapshot refresh (every 60s) — works whether open or closed
+        # Periodic snapshot refresh (every 60s) — works whether open or closed
         asyncio.create_task(periodic_snapshot_broadcast())
 
         while True:

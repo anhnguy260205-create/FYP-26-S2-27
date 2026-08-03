@@ -24,7 +24,6 @@ class PasswordReset(Base):
 
     @staticmethod
     def createOtp(email_address) -> str:
-        """Generate a 6-digit OTP, store it, and return the code."""
         otp_code = f"{random.randint(0, 999999):06d}"
         now = datetime.now(ZoneInfo("Asia/Singapore"))
         expires_at = now + timedelta(minutes=OTP_VALID_MINUTES)

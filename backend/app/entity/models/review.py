@@ -19,14 +19,12 @@ except Exception:
 # ── Models ────────────────────────────────────────────────────────────────────
 
 class Review(Base):
-    """A platform review left by any non-admin user (basic / premium / expert)."""
     __tablename__ = "review"
     __table_args__ = (UniqueConstraint("user_id", name="uq_review_user"),)
 
     review_id     = Column(String(50), primary_key=True, default=lambda: f"review_{uuid4()}")
     user_id       = Column(String(50), nullable=False)
     author_name   = Column(String(100), default="RocketTrade User")
-    # Snapshot of the tier at time of posting: "basic" | "premium" | "expert"
     author_role   = Column(String(20), default="basic")
     rating        = Column(Integer, nullable=False)   # 1–5
     title         = Column(String(150), nullable=True)
@@ -40,7 +38,6 @@ class Review(Base):
 
 
 class ReviewHelpful(Base):
-    """Tracks which users marked a review as helpful — one vote per user per review."""
     __tablename__ = "review_helpful"
     __table_args__ = (UniqueConstraint("review_id", "user_id", name="uq_review_helpful"),)
 
@@ -63,12 +60,6 @@ class ReviewFlag(Base):
 
 
 class ReviewRemoval(Base):
-    """
-    Records an admin-removed review so the original author can still see why
-    their review was taken down, even after the Review row itself is deleted.
-    Kept separate from Review (no FK to it) since the review no longer exists
-    by the time this is queried.
-    """
     __tablename__ = "review_removal"
 
     id             = Column(String(50), primary_key=True, default=lambda: f"rr_{uuid4()}")
@@ -79,10 +70,8 @@ class ReviewRemoval(Base):
     acknowledged   = Column(Boolean, default=False)  # user has seen/dismissed the notice
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _resolve_author(session, user_id):
-    """Look up display name and tier (basic/premium/expert) for a user."""
     from app.entity.models.useraccount import UserAccount
     from app.entity.models.investor import Investor
     from app.entity.models.expert import Expert
@@ -113,9 +102,7 @@ def _anonymous_label(author_role):
 
 
 def _serialise_review(review, user_id=None, session=None, reveal_author=False):
-    """Platform reviews are anonymous to other users on the public Reviews
-    page — only admins (moderation) and the author's own responses reveal
-    the real name. Pass reveal_author=True for those cases."""
+
     helpful_by_me = False
     flagged_by_me = False
     flag_count = 0
@@ -154,7 +141,6 @@ def _serialise_review(review, user_id=None, session=None, reveal_author=False):
     }
 
 
-# ── Repository ────────────────────────────────────────────────────────────────
 
 class ReviewRepository:
 
@@ -337,7 +323,6 @@ class ReviewRepository:
 
     @staticmethod
     def create_removal_record(user_id, review_title, reason):
-        """Log a review removal so the author can see why their review was taken down."""
         with get_session() as session:
             record = ReviewRemoval(
                 user_id=user_id,
@@ -350,7 +335,6 @@ class ReviewRepository:
 
     @staticmethod
     def get_unacknowledged_removal(user_id):
-        """Return the user's most recent un-dismissed removal notice, if any."""
         with get_session() as session:
             record = session.query(ReviewRemoval).filter(
                 ReviewRemoval.user_id == user_id,
@@ -367,7 +351,6 @@ class ReviewRepository:
 
     @staticmethod
     def acknowledge_removal(removal_id, user_id):
-        """Mark a removal notice as seen/dismissed by the user."""
         with get_session() as session:
             record = session.query(ReviewRemoval).filter(
                 ReviewRemoval.id == removal_id,
@@ -380,7 +363,6 @@ class ReviewRepository:
 
     @staticmethod
     def get_review_by_id(review_id):
-        """Return serialised review dict — used before deletion to capture owner info."""
         with get_session() as session:
             review = session.query(Review).filter(Review.review_id == review_id).first()
             if not review:
@@ -389,14 +371,12 @@ class ReviewRepository:
 
     @staticmethod
     def admin_list_reviews():
-        """All reviews, newest first — for the admin moderation queue."""
         with get_session() as session:
             reviews = session.query(Review).order_by(Review.created_at.desc()).all()
             return [_serialise_review(r, session=session, reveal_author=True) for r in reviews]
 
     @staticmethod
     def admin_flagged_reviews():
-        """Reviews that have been flagged by at least one user, with flag details."""
         with get_session() as session:
             flags = session.query(ReviewFlag).order_by(ReviewFlag.created_at.desc()).all()
             # Group by review_id
@@ -421,10 +401,8 @@ class ReviewRepository:
             return result
 
 
-# ── Seed data ─────────────────────────────────────────────────────────────────
 
 def seed_reviews():
-    """Seed a handful of realistic reviews on first run so the page isn't empty."""
     with get_session() as session:
         if session.query(Review).count() > 0:
             return

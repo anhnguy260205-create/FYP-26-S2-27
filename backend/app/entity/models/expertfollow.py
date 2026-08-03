@@ -8,10 +8,6 @@ from app.entity.models.expert import Expert
 
 
 class ExpertFollow(Base):
-    """Who follows which expert. Any signed-in user (investor or expert) may
-    follow an expert, except themselves — powers the expert's follower count
-    used to gate compensation eligibility.
-    """
     __tablename__ = "expert_follow"
     __table_args__ = (UniqueConstraint(
         "follower_user_id", "expert_user_id", name="uq_expert_follow_user"),)
@@ -81,9 +77,6 @@ class ExpertFollow(Base):
 
     @staticmethod
     def get_premium_follower_count(expert_user_id) -> int:
-        """Followers on the premium plan — the only ones that earn the expert
-        compensation. Verified experts get complimentary premium, so they're
-        counted too (mirrors isPremiumUser() on the frontend)."""
         from app.entity.models.investor import Investor
         from app.entity.models.expertverification import ExpertVerification
 

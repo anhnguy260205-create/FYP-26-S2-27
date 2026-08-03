@@ -8,7 +8,6 @@ from app.control.services.auth import get_current_user, get_current_user_optiona
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
 
-# ── Request models ─────────────────────────────────────────────────────────────
 
 class CreateReviewRequest(BaseModel):
     rating: int
@@ -22,9 +21,6 @@ class UpdateReviewRequest(BaseModel):
     comment: Optional[str] = None
 
 
-# ── Public reads ───────────────────────────────────────────────────────────────
-# No auth required — visible on the public landing page so prospective users
-# can see reviews before signing up.
 
 @router.get("/stats")
 def get_stats():
@@ -35,15 +31,13 @@ def get_stats():
 def list_reviews(sort: str = "latest", page: int = 1, page_size: int = 10,
                   rating: Optional[int] = None,
                   current_user: Optional[dict] = Depends(get_current_user_optional)):
-    # user_id is resolved from the auth token (if present) — never trust a client-supplied
-    # user_id query param here, since that would let anyone claim ownership of any review.
+    # user_id is resolved from the auth token (if present) — never trust a client-supplied user_id query param here, since that would let anyone claim ownership of any review.
     resolved_user_id = current_user["user_id"] if current_user else None
     return ReviewController().list_reviews(
         user_id=resolved_user_id, sort=sort, page=page, page_size=page_size, rating_filter=rating
     )
 
 
-# ── Authenticated user actions ─────────────────────────────────────────────────
 
 @router.get("/mine")
 def get_my_review(current_user: dict = Depends(get_current_user)):
@@ -100,12 +94,7 @@ def toggle_helpful(review_id: str, current_user: dict = Depends(get_current_user
     return ReviewController().toggle_helpful(review_id, current_user["user_id"])
 
 
-# Registered last among the single-segment GET paths on purpose — FastAPI
-# matches routes in registration order, and this wildcard would otherwise
-# shadow /stats, /mine, and /removal-notice above (a request for
-# "/reviews/mine" would match here with review_id="mine" instead of hitting
-# the dedicated handler). The two-segment /admin/* routes below are safe
-# either way since this pattern only matches a single path segment.
+
 @router.get("/{review_id}")
 def get_review(review_id: str,
                 current_user: Optional[dict] = Depends(get_current_user_optional)):
@@ -113,7 +102,6 @@ def get_review(review_id: str,
     return ReviewController().get_review_by_id(review_id, user_id=resolved_user_id)
 
 
-# ── Admin moderation ────────────────────────────────────────────────────────────
 
 @router.get("/admin/flagged")
 def admin_get_flagged_reviews(current_user: dict = Depends(require_admin)):

@@ -8,7 +8,6 @@ from app.control.services.auth import get_current_user, require_admin
 router = APIRouter(prefix="/consultant-forum", tags=["Forum"])
 
 
-# ── Request models ─────────────────────────────────────────────────────────────
 
 class CreatePostRequest(BaseModel):
     title:       str
@@ -34,7 +33,6 @@ class EditReplyRequest(BaseModel):
     content: str
 
 
-# ── Public reads ───────────────────────────────────────────────────────────────
 
 @router.get("/posts")
 def list_posts(user_id: Optional[str] = None, category: Optional[str] = None,
@@ -51,7 +49,6 @@ def get_post(post_id: str, user_id: Optional[str] = None):
     return ForumController().get_post(post_id, user_id)
 
 
-# ── Authenticated write operations ─────────────────────────────────────────────
 
 @router.post("/posts")
 def create_post(
@@ -122,7 +119,6 @@ def delete_reply(
     return ForumController().delete_reply(post_id, reply_id, current_user["user_id"], is_admin=is_admin)
 
 
-# ── Flagging / removal notices ──────────────────────────────────────────────────
 
 class FlagPostRequest(BaseModel):
     reason: str = "Inappropriate content"
@@ -150,9 +146,6 @@ class AcknowledgeRemovalRequest(BaseModel):
 @router.post("/removal-notice/acknowledge")
 def acknowledge_removal(data: AcknowledgeRemovalRequest, current_user: dict = Depends(get_current_user)):
     return ForumController().acknowledge_removal(data.removal_id, current_user["user_id"])
-
-
-# ── Admin moderation ────────────────────────────────────────────────────────────
 
 @router.get("/admin/flagged")
 def admin_get_flagged_posts(current_user: dict = Depends(require_admin)):

@@ -33,9 +33,7 @@ class CreateAlertController:
             try:
                 session.flush()
             except IntegrityError:
-                # Two concurrent creates raced past the "existing" check above —
-                # the unique constraint caught it, so treat it the same as
-                # finding an existing row.
+                # If the user already has an alert for this stock, rollback the session and return an error message.
                 session.rollback()
                 return {"success": False, "message": already_exists_msg}
             return {"success": True, "alert_id": alert.alert_id}
@@ -65,8 +63,7 @@ class CheckAndTriggerAlertsController:
 
     @staticmethod
     def get_active_alert_symbols() -> set:
-        """Distinct symbols that have active, untriggered alerts — ONE query,
-        so the poller can skip the 500+ symbols nobody has alerts on."""
+        ## Get a set of all stock symbols that have active, untriggered alerts. This is used to determine which stocks need to be checked for price changes.
         with get_session() as session:
             rows = session.query(StockAlert.stock_symbol).filter_by(
                 is_active=True, is_triggered=False
@@ -101,10 +98,7 @@ class CheckAndTriggerAlertsController:
                 if not condition:
                     continue
 
-                # Atomically claim this alert before sending the email — if a
-                # concurrent tick for the same symbol already claimed it while
-                # its email was in flight, this affects 0 rows and we skip,
-                # preventing duplicate emails for the same crossing.
+                # Claim the alert to prevent other processes from sending duplicate emails. If the claim fails, it means another process has already claimed it, so skip sending the email.
                 claimed = session.query(StockAlert).filter_by(
                     alert_id=alert.alert_id, is_triggered=False
                 ).update({"is_triggered": True}, synchronize_session=False)
@@ -120,10 +114,7 @@ class CheckAndTriggerAlertsController:
                     custom_message=alert.custom_message,
                 )
                 if sent:
-                    # Alert has done its job — remove it so it disappears from
-                    # "My Alerts" and frees up the stock for a new alert
-                    # (matches the alert email's own "this alert has been
-                    # deactivated" wording).
+                   # Remove the alert from the database after sending the email, and create a notification for the user indicating that their alert has been triggered.
                     session.query(StockAlert).filter_by(
                         alert_id=alert.alert_id
                     ).delete(synchronize_session=False)

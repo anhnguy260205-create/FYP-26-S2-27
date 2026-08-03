@@ -1,17 +1,4 @@
-"""
-login_mfa.py
-============
-Email-OTP verification for logins (2nd factor), required for all roles. The
-gate check lives in app/control/services/auth.py.
 
-Two tables:
-  * login_mfa_otp     — one row per issued OTP (mirrors password_reset).
-  * login_mfa_session — one row per VERIFIED login session. A "session" is
-    identified by (email, auth_time): Firebase puts the login timestamp in
-    every ID token as `auth_time`, and it stays constant across token
-    refreshes but changes on every re-login. So verifying once covers the
-    whole session, and a new login requires a new OTP.
-"""
 
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, BigInteger
 from app.entity.database.base import Base
@@ -24,9 +11,6 @@ import random
 OTP_VALID_MINUTES = 10
 MAX_ATTEMPTS = 5
 
-# In-memory cache of verified (email, auth_time) pairs so get_current_user
-# doesn't hit the DB on every request. Safe: entries only ever go from
-# unverified -> verified, and a restart just repopulates from the DB.
 _verified_cache: set = set()
 
 
@@ -64,10 +48,6 @@ class LoginMfaOtp(Base):
 
     @staticmethod
     def verify_otp(email_address: str, otp_code: str) -> tuple[bool, str]:
-        """Check the latest active OTP. Returns (ok, message).
-
-        Wrong code increments `attempts`; after MAX_ATTEMPTS the OTP is burned
-        and the user must request a new one."""
         now = datetime.now(ZoneInfo("Asia/Singapore"))
         with get_session() as session:
             entry = session.query(LoginMfaOtp).filter(
@@ -127,11 +107,7 @@ class LoginMfaSession(Base):
 
     @staticmethod
     def get_login_days_this_week(email_address: str) -> int:
-        """Distinct calendar days in the last 7 with at least one fresh
-        login (a new Firebase auth_time, i.e. a real sign-in — not a token
-        refresh). There's no "hours online" tracking anywhere in the app;
-        this is the closest real signal to "how often do they show up,"
-        used as a login-frequency proxy on the expert review page."""
+
         now = datetime.now(ZoneInfo("Asia/Singapore"))
         cutoff = now - timedelta(days=7)
         with get_session() as session:
@@ -144,10 +120,7 @@ class LoginMfaSession(Base):
 
     @staticmethod
     def get_login_counts_by_day(email_address: str, days: int = 7) -> list[dict]:
-        """Login count per calendar day for the last `days` days, oldest
-        first, zero-filled — feeds the "logins per date" column chart on the
-        expert review page. Counts fresh logins (see get_login_days_this_week),
-        not hours online, which isn't tracked."""
+
         now = datetime.now(ZoneInfo("Asia/Singapore"))
         today = now.date()
         start_date = today - timedelta(days=days - 1)

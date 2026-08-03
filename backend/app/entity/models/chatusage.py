@@ -8,16 +8,7 @@ from app.entity.models.investor import Investor
 
 
 class ChatUsage(Base):
-    """Tracks how many AI chatbot questions a basic investor has asked.
-
-    Basic plan: lifetime limit of BASIC_CHAT_LIMIT questions total (one row
-    per question asked). Premium investors and non-investors (experts/admins)
-    are never limited.
-
-    Flow (see chatbotb.py): `check` gates the request WITHOUT consuming, and
-    only a successful reply from the model calls `record_question` — so
-    failed/errored requests never burn quota.
-    """
+    
     __tablename__ = "chat_usage"
 
     usage_id = Column(String(50), primary_key=True,
@@ -31,7 +22,6 @@ class ChatUsage(Base):
 
     @staticmethod
     def _investor_state(session, user_id):
-        """(investor, questions_used) — investor is None for experts/admins."""
         investor = session.query(Investor).filter(
             Investor.user_id == user_id).first()
         if not investor:
@@ -42,7 +32,6 @@ class ChatUsage(Base):
 
     @staticmethod
     def check(user_id):
-        """Is this user allowed to ask another chatbot question? (no side effects)"""
         with get_session() as session:
             investor, used = ChatUsage._investor_state(session, user_id)
             if not investor or investor.investor_subscription_status == "premium":
@@ -57,7 +46,6 @@ class ChatUsage(Base):
 
     @staticmethod
     def record_question(user_id):
-        """Consume quota after a SUCCESSFUL reply. Returns updated usage."""
         with get_session() as session:
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id).first()
@@ -71,7 +59,6 @@ class ChatUsage(Base):
 
     @staticmethod
     def get_usage(user_id):
-        """Read-only usage summary (for showing 'x of 3 used' in the UI)."""
         with get_session() as session:
             investor, used = ChatUsage._investor_state(session, user_id)
             if not investor or investor.investor_subscription_status == "premium":

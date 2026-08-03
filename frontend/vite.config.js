@@ -2,17 +2,16 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-
+// set config for vite to use tailwindcss and react plugin, and set alias for src folder
 export default defineConfig({
+  // plugins is for Vite plugins. We use the React plugin for JSX support and TailwindCSS for styling.
   plugins: [
-    // The React and Tailwind plugins are both required for Make, even if
-    // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
   ],
   resolve: {
+    // The alias configuration allows us to use '@' as a shorthand for the 'src' directory. This makes imports cleaner and easier to manage.
     alias: {
-      // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
     },
   },

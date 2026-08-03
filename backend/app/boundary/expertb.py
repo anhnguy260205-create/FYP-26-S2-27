@@ -17,12 +17,10 @@ EXPERT_MIN_DISTINCT_STOCKS = 30
 EXPERT_MIN_PROFIT_MARGIN = 200.0  # percent
 
 
-# ── Expert upgrade: eligibility & application (investor-facing) ─────────────
 
 @router.get("/eligibility")
 def expert_eligibility(current_user: dict = Depends(get_current_user)):
-    """Progress towards the expert upgrade: 30 distinct stocks traded and a
-    200% profit margin. Also reports the current application status."""
+
     from app.entity.models.investor import Investor
     from app.entity.models.expertverification import ExpertVerification
 
@@ -55,9 +53,7 @@ def expert_eligibility(current_user: dict = Depends(get_current_user)):
 
 @router.post("/apply")
 def apply_for_expert(current_user: dict = Depends(get_current_user)):
-    """Create the expert application (expert row + verification record) once
-    the trading requirements are met. Documents are then submitted via
-    POST /expert/documents and reviewed by an administrator."""
+   
     from app.entity.models.investor import Investor
 
     eligibility = Investor.getExpertEligibility(
@@ -89,7 +85,6 @@ def apply_for_expert(current_user: dict = Depends(get_current_user)):
     }
 
 
-# ── Public expert directory & profiles (investor-facing) ────────────────────
 
 @router.get("/public-list")
 def public_expert_list(current_user: dict = Depends(get_current_user)):
@@ -116,7 +111,6 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
 
 @router.get("/public-stats")
 def public_expert_stats(current_user: dict = Depends(get_current_user)):
-    """Aggregate stats for the Expert Portfolio page's top banner."""
     experts = Expert.get_all_for_admin()
     listed = [e for e in experts if e["verification_status"] in ("approved", "active")] or experts
 
@@ -143,10 +137,7 @@ def public_expert_stats(current_user: dict = Depends(get_current_user)):
 @router.get("/public-profile/{user_id}")
 def public_expert_profile(user_id: str,
                           current_user: dict = Depends(get_current_user)):
-    """Expert profile (core info) with the basic-plan view limit.
-
-    Basic investors may view up to 3 distinct expert profiles (lifetime);
-    re-viewing an unlocked profile is free. Premium/experts are unlimited."""
+   
     quota = ExpertProfileView.check_and_consume(current_user["user_id"], user_id)
     if not quota["allowed"]:
         return {
@@ -161,8 +152,7 @@ def public_expert_profile(user_id: str,
     if not info:
         return {"success": False, "message": "Expert not found"}
 
-    # Experts are also Investor records under the hood, so their sector
-    # interests (set on the shared profile page) live there.
+    # Experts are also Investor records under the hood, so their sector interests (set on the shared profile page) live there.
     from app.entity.models.investor import Investor
     investor_info = Investor.getInvestorByUserId(user_id)
 
@@ -191,7 +181,6 @@ def public_expert_profile(user_id: str,
     }
 
 
-# ── Follow / unfollow (investor-facing) ──────────────────────────────────────
 
 @router.get("/{expert_user_id}/followers")
 def get_follower_status(expert_user_id: str, current_user: dict = Depends(get_current_user)):
@@ -212,8 +201,7 @@ def unfollow_expert(expert_user_id: str, current_user: dict = Depends(get_curren
     return ExpertFollow.unfollow(current_user["user_id"], expert_user_id)
 
 
-# ── Portfolio ratings & reviews (investor- and expert-facing) ────────────────
-
+# Portfolio reviews (investor-facing), investors can rate and comment on experts' portfolios
 class PortfolioReviewRequest(BaseModel):
     rating: int
     comment: Optional[str] = ""
@@ -299,7 +287,6 @@ def save_portfolio(
     return ExpertPortfolioController().save_portfolio(user_id, data.dict())
 
 
-# ── Publish portfolio to homepage (premium-gated) ───────────────────────────
 
 class PublishPortfolioRequest(BaseModel):
     published: bool = True
@@ -310,15 +297,13 @@ def publish_portfolio(
     data: PublishPortfolioRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Verified experts publish (or unpublish) their portfolio so premium
-    users can reference it on the homepage."""
+    
     return ExpertPortfolioRepository.set_published(current_user["user_id"], data.published)
 
 
 @router.get("/published-portfolios")
 def published_portfolios(current_user: dict = Depends(get_current_user)):
-    """Published expert portfolios for the homepage — premium users only
-    (verified experts hold complimentary premium)."""
+
     from app.entity.models.investor import Investor
 
     investor = Investor.getInvestorByUserId(current_user["user_id"])
@@ -335,7 +320,7 @@ def published_portfolios(current_user: dict = Depends(get_current_user)):
     return {"success": True, "portfolios": ExpertPortfolioRepository.get_published()}
 
 
-# ── Expert profile & documents ─────────────────────────────────────────────────
+
 
 class DocumentItem(BaseModel):
     name: str
@@ -372,8 +357,7 @@ def set_chat_availability(
     data: ChatAvailabilityRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Verified experts toggle whether they're currently accepting new
-    chat requests from investors. Existing conversations are unaffected."""
+
     ok = Expert.set_chat_available(current_user["user_id"], data.available)
     if not ok:
         return {"success": False, "message": "Expert not found"}

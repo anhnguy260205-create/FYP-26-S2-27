@@ -8,9 +8,7 @@ from app.entity.database.session import get_session
 
 
 class ExpertVerification(Base):
-    """An expert's application/review state — kept separate from Expert
-    (who they are) so profile fields and verification workflow fields don't
-    live on the same row."""
+
     __tablename__ = 'expert_verification'
 
     verification_id = Column(String(50), primary_key=True,

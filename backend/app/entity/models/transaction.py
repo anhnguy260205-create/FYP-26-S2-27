@@ -20,9 +20,7 @@ class Transaction(Base):
     total_amount = Column(Float, nullable=False)
     transaction_date = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
-    # Realized profit/loss on this fill — only set on "sell" rows, computed as
-    # (sale price - average cost basis) * quantity at the moment of the sale
-    # (see trading_engine._sell_shares). Null on "buy" rows.
+
     realized_pnl = Column(Float, nullable=True)
 
     @staticmethod
@@ -61,10 +59,7 @@ class Transaction(Base):
 
     @staticmethod
     def getRealizedPnl(investor_id):
-        """Sum of realized profit/loss across every completed sell — the
-        actual gain/loss earned from buy/sell trading activity. Unlike
-        paper_money/used_amount, this is unaffected by deposits, withdrawals,
-        gifts, platform fees or compensation payouts credited to the wallet."""
+
         with get_session() as session:
             rows = session.query(Transaction.realized_pnl).filter(
                 Transaction.investor_id == investor_id,
@@ -74,8 +69,7 @@ class Transaction(Base):
 
     @staticmethod
     def getDistinctSymbolCount(investor_id):
-        """Number of distinct stock symbols this investor has ever traded —
-        used for the expert-upgrade eligibility check."""
+
         with get_session() as session:
             return session.query(Transaction.symbol).filter(
                 Transaction.investor_id == investor_id
@@ -84,10 +78,7 @@ class Transaction(Base):
     @staticmethod
     def getTransactionsByUserId(user_id, limit=100, symbol=None,
                                  transaction_type=None):
-        """
-        Convenience wrapper that resolves investor_id from user_id, then
-        returns transactions with optional symbol / type filters.
-        """
+      
         from app.entity.models.investor import Investor
         investor = Investor.getInvestorByUserId(user_id)
         if not investor:
@@ -120,11 +111,6 @@ class Transaction(Base):
 
     @staticmethod
     def getSummaryStats(user_id):
-        """
-        Returns aggregate stats for the Transaction Portal header cards:
-        total trades, total spent (buys), total proceeds (sells),
-        realised P&L, most-traded symbol.
-        """
         from app.entity.models.investor import Investor
         investor = Investor.getInvestorByUserId(user_id)
         if not investor:

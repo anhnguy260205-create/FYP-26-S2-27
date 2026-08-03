@@ -1,8 +1,6 @@
-// Shared by the AI chatbot's stock-aware replies and the market ticker's stock
-// items — both need to read the same live WebSocket stock data the same way.
-
+// Utility functions for managing stock snapshots and related information.
 export const SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO", "ORCL", "AMD"];
-
+// Mapping of stock symbols to their respective company names for display purposes.
 export const COMPANY_NAMES = {
     AAPL: "Apple", MSFT: "Microsoft", GOOGL: "Alphabet/Google", AMZN: "Amazon",
     NVDA: "NVIDIA", META: "Meta", TSLA: "Tesla", AVGO: "Broadcom",

@@ -1,25 +1,4 @@
-"""
-Money movements that aren't stock trades, plus the platform's revenue book.
 
-Two tables live here because they're written together almost everywhere:
-
-  WalletTransaction  — every credit/debit against an investor's assets
-                       that isn't a buy/sell fill: cash in, cash out, the
-                       platform fee on a trade, gifts sent/received, and the
-                       monthly expert compensation payout. The stock
-                       `transaction` table can't hold these (symbol/quantity/
-                       price are NOT NULL and meaningless for cash events), so
-                       the Transaction Portal unions the two on read.
-
-  PlatformRevenue    — one row per event that earns the platform money. This
-                       is the single source of truth for the finance admin
-                       dashboard. Subscriptions are mirrored in here too (see
-                       backfill_subscription_revenue) so the dashboard never
-                       has to union across differently-shaped tables.
-
-Amounts are float dollars, matching investor.assets. Note that
-subscription.amount is stored in CENTS — convert on the way in.
-"""
 from sqlalchemy import Column, ForeignKey, String, Float, DateTime, Text, func
 from app.entity.database.base import Base
 from app.entity.database.session import get_session
@@ -34,8 +13,6 @@ def _now():
     return datetime.now(TZ)
 
 
-# Wallet transaction types. Sign convention: `amount` is signed as the
-# investor experiences it — positive credits assets, negative debits it.
 TXN_CASH_IN = "cash_in"
 TXN_CASH_OUT = "cash_out"
 TXN_PLATFORM_FEE = "platform_fee"
@@ -43,7 +20,6 @@ TXN_GIFT_SENT = "gift_sent"
 TXN_GIFT_RECEIVED = "gift_received"
 TXN_COMPENSATION = "compensation"
 
-# Revenue sources — keep in sync with the finance dashboard filters.
 REV_SUBSCRIPTION = "subscription"
 REV_TRADE_FEE = "trade_fee"
 REV_GIFT_COMMISSION = "gift_commission"
@@ -136,13 +112,7 @@ class WalletTransaction(Base):
 
     @staticmethod
     def get_all_for_admin(session, limit=200, txn_type=None, status=None):
-        """Every wallet row across ALL investors, newest first, joined to the
-        owning user account so the finance admin can see who moved the money.
-        Read-only monitoring — no approval workflow is attached here.
-
-        Runs on a caller-supplied session so the name join happens in the same
-        query rather than a second round-trip.
-        """
+    
         from app.entity.models.investor import Investor
         from app.entity.models.useraccount import UserAccount
 
@@ -178,9 +148,6 @@ class WalletTransaction(Base):
 
     @staticmethod
     def get_platform_totals(large_threshold=1000.0):
-        """Platform-wide magnitudes per txn_type plus the counts behind them,
-        for the Payment Transactions summary cards. `large_cash_out` flags how
-        many withdrawals cleared the anti-money-laundering review threshold."""
         with get_session() as session:
             rows = session.query(
                 WalletTransaction.txn_type,
@@ -226,8 +193,7 @@ class WalletTransaction(Base):
 
     @staticmethod
     def get_totals(investor_id):
-        """{cash_in, cash_out, fees_paid, gifts_sent, gifts_received,
-        compensation} as positive magnitudes, for summary cards."""
+        
         with get_session() as session:
             rows = session.query(
                 WalletTransaction.txn_type,
@@ -255,11 +221,7 @@ class PlatformRevenue(Base):
                         default=lambda: f"rev_{uuid4()}")
     source = Column(String(30), nullable=False)      # see REVENUE_SOURCES
     amount = Column(Float, nullable=False)           # always positive, dollars
-    # Who generated it — the paying investor / gift sender / trader.
     user_id = Column(String(50), nullable=True)
-    # Idempotency + audit key. Unique per source in practice (sub_id, order_id,
-    # gift_id) so replays don't double-count; enforced in code, not by the DB,
-    # because the same reference can legitimately appear under two sources.
     reference_id = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=_now)
@@ -269,8 +231,7 @@ class PlatformRevenue(Base):
     @staticmethod
     def record(session, source, amount, *, user_id=None, reference_id=None,
                description=None):
-        """Book revenue on an ALREADY-OPEN session. Ignores non-positive
-        amounts so callers don't have to guard every call site."""
+
         amount = round(float(amount), 2)
         if amount <= 0:
             return None
@@ -288,9 +249,6 @@ class PlatformRevenue(Base):
     @staticmethod
     def record_once(session, source, amount, *, reference_id, user_id=None,
                     description=None):
-        """record(), but a no-op if this (source, reference_id) pair is
-        already booked. Used by the subscription backfill and anywhere a
-        retry could fire twice."""
         if reference_id:
             exists = session.query(PlatformRevenue.revenue_id).filter(
                 PlatformRevenue.source == source,
@@ -303,11 +261,9 @@ class PlatformRevenue(Base):
             reference_id=reference_id, description=description,
         )
 
-    # ── reads ────────────────────────────────────────────────────────────
 
     @staticmethod
     def get_totals_by_source(start=None, end=None):
-        """{source: total} for every known source, zero-filled."""
         with get_session() as session:
             q = session.query(
                 PlatformRevenue.source,
@@ -328,8 +284,6 @@ class PlatformRevenue(Base):
 
     @staticmethod
     def get_monthly_series(months=6):
-        """[{month: 'YYYY-MM', subscription, trade_fee, gift_commission,
-        total}] oldest-first, with empty months zero-filled."""
         now = datetime.now(TZ)
         start_month = _add_months(_month_start(now), -(months - 1))
 
@@ -386,7 +340,6 @@ class PlatformRevenue(Base):
             ]
 
 
-# ── month helpers (shared with expertcompensation.py) ────────────────────
 
 def _month_start(dt):
     return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -399,15 +352,8 @@ def _add_months(dt, months=1):
     return dt.replace(year=year, month=month)
 
 
-# ── one-time migration of pre-existing subscription revenue ──────────────
 
 def backfill_subscription_revenue():
-    """Copy any Subscription rows that predate PlatformRevenue into the
-    revenue book so the finance dashboard shows real historical numbers.
-
-    Idempotent via record_once(reference_id=sub_id) — runs on every startup
-    and does nothing once caught up.
-    """
     from app.entity.models.subscription import Subscription
     from app.entity.models.investor import Investor
 

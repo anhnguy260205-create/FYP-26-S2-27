@@ -25,9 +25,7 @@ router = APIRouter(prefix="/trading", tags=["Trading"])
 
 
 def _require_transaction_pin(user_id: str, pin: Optional[str]):
-    """Confirm the caller's 6-digit transaction PIN before a money move.
-    Every account must have a PIN — trading is blocked until one is set
-    (legacy accounts are forced to set one on their next login)."""
+    # Check if the user has set a transaction PIN and verify it. If not set, raise an HTTPException with status code 428. If the PIN is incorrect, raise an HTTPException with status code 403.
     if not Investor.hasTransactionPin(user_id):
         raise HTTPException(
             status_code=428,
@@ -39,8 +37,7 @@ def _require_transaction_pin(user_id: str, pin: Optional[str]):
 
 @router.get("/fee-schedule")
 def get_fee_schedule():
-    """Lets the Buy/Sell screens show the commission before the user commits,
-    using the same numbers the server will actually charge."""
+    # Lets the Buy/Sell screens show the commission before the user commits, using the same numbers the server will actually charge.
     return {
         "success": True,
         "minimum": PLATFORM_FEE_MIN,

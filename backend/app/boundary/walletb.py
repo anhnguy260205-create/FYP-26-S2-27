@@ -43,8 +43,7 @@ def cash_in(data: CashRequest, current_user: dict = Depends(get_current_user)):
 
 @router.post("/cash-out")
 def cash_out(data: CashRequest, current_user: dict = Depends(get_current_user)):
-    # Cash-out always confirms the 6-digit transaction PIN. Every account must
-    # have one set (legacy accounts are forced to set it on next login).
+    # Cash-out always confirms the 6-digit transaction PIN. Every account must have one set (legacy accounts are forced to set it on next login).
     if not Investor.hasTransactionPin(current_user["user_id"]):
         raise HTTPException(
             status_code=428,
@@ -59,7 +58,7 @@ def cash_out(data: CashRequest, current_user: dict = Depends(get_current_user)):
 
 @router.post("/gift")
 def send_gift(data: GiftRequest, current_user: dict = Depends(get_current_user)):
-    """Premium user sends a red packet to an expert from the chat window."""
+    #Premium user sends a red packet to an expert from the chat window.
     return SendGiftController().send(
         current_user["user_id"], data.expert_user_id, data.amount, data.message
     )
@@ -68,8 +67,7 @@ def send_gift(data: GiftRequest, current_user: dict = Depends(get_current_user))
 @router.get("/gifts/conversation/{other_user_id}")
 def get_conversation_gifts(other_user_id: str,
                            current_user: dict = Depends(get_current_user)):
-    """Gifts exchanged between the caller and one other user, so the chat can
-    render them inline alongside messages."""
+    # Gifts exchanged between the caller and one other user, so the chat can render them inline alongside messages.
     return GetGiftController().get_between(
         current_user["user_id"], other_user_id
     )

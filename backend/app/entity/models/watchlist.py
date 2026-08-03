@@ -22,12 +22,13 @@ class Watchlist(Base):
     stock_symbol = Column(String(20), nullable=False)
     added_at = Column(DateTime, default=lambda: datetime.now(
         ZoneInfo("Asia/Singapore")))
-
+    # Define a limit for the number of stocks that can be added to a basic watchlist.
     BASIC_WATCHLIST_LIMIT = 3
-
+    # Handle stock watchlist operations for both investors and experts, including adding, removing, and retrieving stocks from a user's watchlist.
     @staticmethod
     def add_stock(user_id, stock_symbol):
         with get_session() as session:
+            # Check if the user is an investor or an expert
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
@@ -37,7 +38,7 @@ class Watchlist(Base):
             if not investor and not expert:
                 return {"success": False, "message": "User not found"}
 
-            # Experts (and premium investors) have no cap — only basic-plan investors do.
+            # Experts and premium investors have no cap — only basic-plan investors do.
             if investor and investor.investor_subscription_status != "premium":
                 count = session.query(Watchlist).filter(
                     Watchlist.user_id == user_id
@@ -48,14 +49,14 @@ class Watchlist(Base):
                         "message": f"Basic plan is limited to {Watchlist.BASIC_WATCHLIST_LIMIT} watchlist stocks. Upgrade to Premium for unlimited.",
                         "limit_reached": True,
                     }
-
+            # Check if the stock is already in the user's watchlist
             existing = session.query(Watchlist).filter(
                 Watchlist.user_id == user_id,
                 Watchlist.stock_symbol == stock_symbol.upper()
             ).first()
             if existing:
                 return {"success": False, "message": "Stock is already in your watchlist"}
-
+            # Add the stock to the user's watchlist
             entry = Watchlist(
                 user_id=user_id,
                 stock_symbol=stock_symbol.upper()
@@ -64,9 +65,7 @@ class Watchlist(Base):
             try:
                 session.flush()
             except IntegrityError:
-                # Two concurrent adds raced past the "existing" check above —
-                # the unique constraint caught it, so treat it the same as
-                # finding an existing row.
+                # If the stock is already in the watchlist, rollback the session and return an error message.
                 session.rollback()
                 return {"success": False, "message": "Stock is already in your watchlist"}
             return {"success": True, "message": "Stock added to watchlist"}
@@ -74,12 +73,15 @@ class Watchlist(Base):
     @staticmethod
     def remove_stock(user_id, stock_symbol):
         with get_session() as session:
+            # Check if the stock is in the user's watchlist
             entry = session.query(Watchlist).filter(
                 Watchlist.user_id == user_id,
                 Watchlist.stock_symbol == stock_symbol.upper()
             ).first()
+            # If the stock is not found, return an error message. 
             if not entry:
                 return {"success": False, "message": "Stock not in watchlist"}
+            # Otherwise, delete the entry from the watchlist.
             session.delete(entry)
             return {"success": True}
 

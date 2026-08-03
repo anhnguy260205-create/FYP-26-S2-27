@@ -233,10 +233,7 @@ class VerifySessionRequest(BaseModel):
 
 @router.post("/verify-session")
 def verify_session(request: VerifySessionRequest):
-    """
-    Called from the payment success page to activate a premium subscription
-    by retrieving the Stripe session directly — no webhook dependency.
-    """
+    
     try:
         session = stripe.checkout.Session.retrieve(request.session_id)
     except stripe.error.StripeError as e:
