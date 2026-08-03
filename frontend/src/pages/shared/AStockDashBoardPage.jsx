@@ -943,7 +943,7 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
       {/* Buying power / position */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "18px" }}>
         <div style={{ flex: 1, background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)", borderRadius: "10px", padding: "10px 12px" }}>
-          <p style={lbl}>{isBuy ? "Buying Power" : "Cash Available"}</p>
+          <p style={lbl}>{isBuy ? "Available Assets" : "Cash Available"}</p>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: "16px", fontWeight: 700, color: "#0F9D58" }}>
             {buyingPower != null ? `$${buyingPower.toFixed(2)}` : "—"}
           </span>

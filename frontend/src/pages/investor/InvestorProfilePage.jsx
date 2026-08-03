@@ -1026,10 +1026,7 @@ function SecurityCard({ investorInfo }) {
 }
 
 function AssetsCard({ investorInfo }) {
-    const MAX_BALANCE = 10000;
     const assets = investorInfo?.assets ?? 0;
-    const usedAmount = investorInfo?.used_amount ?? 0;
-    const progressPct = Math.min(100, (assets / MAX_BALANCE) * 100);
 
     return (
         <GlassCard>
@@ -1056,21 +1053,6 @@ function AssetsCard({ investorInfo }) {
                         <div style={{ fontSize: "13px", color: TEXT_MUTED2, marginTop: "2px" }}>
                             Use your assets to practice stock trading without risking real capital.
                         </div>
-                    </div>
-                </div>
-
-                {/* Progress bar */}
-                <div style={{ marginTop: "24px" }}>
-                    <div className="flex justify-between" style={{ fontSize: "13px", marginBottom: "8px", color: "rgba(15,23,42,0.7)" }}>
-                        <span>Assets</span>
-                        <span>${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${MAX_BALANCE.toLocaleString()}</span>
-                    </div>
-                    <div style={{ width: "100%", height: "10px", borderRadius: "999px", background: "rgba(15,23,42,0.08)", overflow: "hidden" }}>
-                        <div style={{ width: `${progressPct}%`, height: "100%", background: `linear-gradient(90deg,${SUCCESS},#00D3F2)`, borderRadius: "999px", transition: "width 0.4s ease" }} />
-                    </div>
-                    <div className="flex justify-between" style={{ marginTop: "8px", fontSize: "12px", color: TEXT_MUTED2 }}>
-                        <span>Invested: ${usedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        <span>Cash: ${assets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
             </div>

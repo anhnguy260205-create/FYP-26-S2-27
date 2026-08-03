@@ -946,16 +946,18 @@ function PlatformFeatureCard({ Icon, title, description, to, badge, cta, primary
   );
 }
 
-function PlatformFeaturesSection({ header, items }) {
+function PlatformFeaturesSection({ header, items, isExpert }) {
   const h = header("header_investor_features", "Explore RocketTrade", "Everything the platform offers, all in one place");
   const features = items("investor_home_features", PLATFORM_FEATURES);
   const ctaOverrides = items("investor_home_features_cta", []);
   const badgeOverrides = items("investor_home_features_badge", []);
-  const withOverrides = features.map((f, i) => ({
-    ...f,
-    cta: ctaOverrides[i]?.title ?? f.cta,
-    badge: badgeOverrides[i]?.title ?? f.badge,
-  }));
+  const withOverrides = features
+    .map((f, i) => ({
+      ...f,
+      cta: ctaOverrides[i]?.title ?? f.cta,
+      badge: badgeOverrides[i]?.title ?? f.badge,
+    }))
+    .filter((f) => !isExpert || f.title !== "AI Chatbot & Expert Consultants");
   return (
     <section className="rounded-3xl bg-slate-50 ring-1 ring-slate-200/70 shadow-sm shadow-slate-900/5 p-6 md:p-10">
       <SectionHeader title={h.title} subtitle={h.description} dark={false} />
@@ -968,7 +970,7 @@ function PlatformFeaturesSection({ header, items }) {
   );
 }
 
-function RealtimeDashboardSection({ header, items }) {
+function RealtimeDashboardSection({ header, items, isExpert }) {
   const navigate = useNavigate();
   const h = header("header_investor_dashboard", "The Realtime Trading Dashboard", "One screen for every stock — AI-powered predictions, verified expert commentary, and paper trading against live market prices.");
   const DEFAULT_HIGHLIGHTS = [
@@ -977,7 +979,8 @@ function RealtimeDashboardSection({ header, items }) {
     { Icon: Wallet, title: "Paper Trading", description: "Trade against live market prices using virtual funds, zero real-money risk." },
     { Icon: Bell, title: "Customised Alerts", description: "Set your own price targets on any stock and get notified the moment they're hit." },
   ];
-  const highlights = items("investor_home_dashboard", DEFAULT_HIGHLIGHTS);
+  const highlights = items("investor_home_dashboard", DEFAULT_HIGHLIGHTS)
+    .filter((f) => !isExpert || f.title !== "Verified Expert Comments");
 
   return (
     <section
@@ -1240,8 +1243,8 @@ function LoggedInHomePage() {
           {!subscription.loading && !(subscription.status === "premium" || isPremiumInvestor) && (
             <BasicUpgradeBanner header={header} />
           )}
-          <PlatformFeaturesSection header={header} items={items} />
-          <RealtimeDashboardSection header={header} items={items} />
+          <PlatformFeaturesSection header={header} items={items} isExpert={isExpert} />
+          <RealtimeDashboardSection header={header} items={items} isExpert={isExpert} />
         </div>
 
       </main>
