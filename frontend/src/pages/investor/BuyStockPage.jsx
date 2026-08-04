@@ -8,8 +8,6 @@ import { buyStock } from "../../api/tradingApi.js";
 import { getInvestorInformation } from "../../api/userApi.js";
 import { calculatePlatformFee, PLATFORM_FEE_LABEL } from "../../utils/platformFee.js";
 import PinModal from "../../components/PinModal.jsx";
-
-/* ─── Helpers ─────────────────────────────────────────────── */
 function companyName(symbol) {
   const names = {
     AAPL: "Apple", TSLA: "Tesla", NVDA: "NVIDIA",
@@ -24,7 +22,6 @@ function formatCurrency(num) {
   return `$${Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-/* ─── Page ─────────────────────────────────────────────────── */
 function BuyStockPage() {
   const { symbol } = useParams();
   const navigate = useNavigate();
@@ -146,7 +143,8 @@ function BuyStockPage() {
               background: "#FFFFFF",
               border: "1px solid rgba(11,29,79,0.25)", borderRadius: "16px",
               boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-              padding: "28px",            }}
+              padding: "28px",
+            }}
           >
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>

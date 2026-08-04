@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import GeneralHeader from "../../layout/GeneralHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
@@ -8,9 +8,11 @@ import {
   cashIn,
   cashOut,
 } from "../../api/walletApi.js";
+import { getPortalTransactions } from "../../api/tradingApi.js";
 import PinModal from "../../components/PinModal.jsx";
 
-/* ─── Helpers ─────────────────────────────────────────────── */
+const LATEST_LIMIT = 5;
+
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -25,7 +27,8 @@ const formatDate = (iso) => {
   });
 };
 
-// Wallet rows only — stock buys/sells live in Transaction History.
+// Wallet rows plus buy/sell trades, merged into one recent-activity feed.
+// The full breakdown still lives on the Transaction History page.
 const TXN_LABELS = {
   cash_in: { label: "Deposit", color: "#0F9D58" },
   cash_out: { label: "Withdrawal", color: "#DC2626" },
@@ -33,6 +36,8 @@ const TXN_LABELS = {
   gift_sent: { label: "Gift sent", color: "#DC2626" },
   gift_received: { label: "Gift received", color: "#0F9D58" },
   compensation: { label: "Expert compensation", color: "#0F9D58" },
+  buy: { label: "Buy", color: "#DC2626" },
+  sell: { label: "Sell", color: "#0F9D58" },
 };
 
 const BANKS = [
@@ -42,9 +47,7 @@ const BANKS = [
 
 export default function CashPortalPage() {
   const location = useLocation();
-  // Callers (e.g. the "Refund" button on the Expert Compensation page) can
-  // land directly on Cash Out via router state instead of always defaulting
-  // to Cash In.
+  const navigate = useNavigate();
   const [mode, setMode] = useState(location.state?.mode === "cash_out" ? "cash_out" : "cash_in");
   const [amount, setAmount] = useState("");
   const [bankName, setBankName] = useState(BANKS[0]);
@@ -55,18 +58,55 @@ export default function CashPortalPage() {
   const [pinError, setPinError] = useState("");
 
   const [overview, setOverview] = useState(null);
+  const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isDeposit = mode === "cash_in";
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await getWalletOverview();
-    if (res.success) setOverview(res);
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const [walletRes, tradeRes] = await Promise.all([
+      getWalletOverview(),
+      currentUser?.user_id
+        ? getPortalTransactions(currentUser.user_id, { limit: LATEST_LIMIT }).catch(() => ({ success: false }))
+        : Promise.resolve({ success: false }),
+    ]);
+    if (walletRes.success) setOverview(walletRes);
+    if (tradeRes.success) setTrades(tradeRes.transactions || []);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Wallet rows and trades come from separate tables — merge into one
+  // chronological feed and keep only the most recent entries.
+  const activity = [
+    ...(overview?.transactions || []).map((txn) => {
+      const meta = TXN_LABELS[txn.txn_type] ?? { label: txn.txn_type, color: "#0F172A" };
+      return {
+        id: `w-${txn.wallet_txn_id}`,
+        date: txn.created_at,
+        label: meta.label,
+        color: meta.color,
+        details: txn.description || "—",
+        amount: txn.amount,
+      };
+    }),
+    ...trades.map((t) => {
+      const meta = TXN_LABELS[t.transaction_type] ?? { label: t.transaction_type, color: "#0F172A" };
+      return {
+        id: `t-${t.transaction_id}`,
+        date: t.transaction_date,
+        label: meta.label,
+        color: meta.color,
+        details: `${t.transaction_type === "buy" ? "Bought" : "Sold"} ${t.quantity} ${t.symbol} @ ${formatCurrency(t.price)}`,
+        amount: t.transaction_type === "buy" ? -t.total_amount : t.total_amount,
+      };
+    }),
+  ]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, LATEST_LIMIT);
 
   const balance = overview?.assets ?? null;
   const limits = overview?.limits ?? {};
@@ -341,17 +381,35 @@ export default function CashPortalPage() {
 
             {/* ── Ledger ───────────────────────────────────── */}
             <div style={cardStyle}>
-              <h2 style={{
-                fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
-                fontSize: "18px", color: "#0B1D4F", marginBottom: "4px",
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                marginBottom: "4px",
               }}>
-                Wallet Activity
-              </h2>
+                <h2 style={{
+                  fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                  fontSize: "18px", color: "#0B1D4F", margin: 0,
+                }}>
+                  Wallet Activity
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => navigate("/investor/transaction-history")}
+                  style={{
+                    padding: "6px 12px", borderRadius: "8px",
+                    border: "1px solid rgba(11,29,79,0.2)", background: "transparent",
+                    color: "#0B1D4F", fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                    fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase",
+                    cursor: "pointer",
+                  }}
+                >
+                  Transaction History
+                </button>
+              </div>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
                 color: "#5B6C88", marginBottom: "18px",
               }}>
-                Deposits, withdrawals, fees, gifts and compensation.
+                Latest deposits, withdrawals, trades, fees, gifts and compensation.
               </p>
 
               {/* Summary tiles */}
@@ -392,12 +450,12 @@ export default function CashPortalPage() {
                 <p style={{ color: "#5B6C88", fontFamily: "'DM Sans', sans-serif" }}>
                   Loading…
                 </p>
-              ) : !overview?.transactions?.length ? (
+              ) : !activity.length ? (
                 <p style={{
                   color: "#5B6C88", fontFamily: "'DM Sans', sans-serif",
                   fontSize: "14px", padding: "20px 0", textAlign: "center",
                 }}>
-                  No wallet activity yet.
+                  No activity yet.
                 </p>
               ) : (
                 <div style={{ overflowX: "auto" }}>
@@ -411,58 +469,45 @@ export default function CashPortalPage() {
                         <th style={{ padding: "8px 6px" }}>Type</th>
                         <th style={{ padding: "8px 6px" }}>Details</th>
                         <th style={{ padding: "8px 6px", textAlign: "right" }}>Amount</th>
-                        <th style={{ padding: "8px 6px", textAlign: "right" }}>Balance</th>
                         <th style={{ padding: "8px 6px" }}>Date</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {overview.transactions.map((txn) => {
-                        const meta = TXN_LABELS[txn.txn_type] ?? {
-                          label: txn.txn_type, color: "#0F172A",
-                        };
-                        return (
-                          <tr key={txn.wallet_txn_id} style={{
-                            borderTop: "1px solid rgba(15,23,42,0.06)",
-                            fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
-                            color: "#0F172A",
+                      {activity.map((row) => (
+                        <tr key={row.id} style={{
+                          borderTop: "1px solid rgba(15,23,42,0.06)",
+                          fontFamily: "'DM Sans', sans-serif", fontSize: "13px",
+                          color: "#0F172A",
+                        }}>
+                          <td style={{ padding: "10px 6px", whiteSpace: "nowrap" }}>
+                            <span style={{
+                              display: "inline-block", padding: "3px 8px",
+                              borderRadius: "999px", fontSize: "11px",
+                              background: "rgba(15,23,42,0.05)", color: row.color,
+                              fontWeight: 600,
+                            }}>
+                              {row.label}
+                            </span>
+                          </td>
+                          <td style={{ padding: "10px 6px", color: "#5B6C88" }}>
+                            {row.details}
+                          </td>
+                          <td style={{
+                            padding: "10px 6px", textAlign: "right",
+                            fontFamily: "'DM Mono', monospace", fontWeight: 600,
+                            color: row.amount >= 0 ? "#0F9D58" : "#DC2626",
                           }}>
-                            <td style={{ padding: "10px 6px", whiteSpace: "nowrap" }}>
-                              <span style={{
-                                display: "inline-block", padding: "3px 8px",
-                                borderRadius: "999px", fontSize: "11px",
-                                background: "rgba(15,23,42,0.05)", color: meta.color,
-                                fontWeight: 600,
-                              }}>
-                                {meta.label}
-                              </span>
-                            </td>
-                            <td style={{ padding: "10px 6px", color: "#5B6C88" }}>
-                              {txn.description || "—"}
-                            </td>
-                            <td style={{
-                              padding: "10px 6px", textAlign: "right",
-                              fontFamily: "'DM Mono', monospace", fontWeight: 600,
-                              color: txn.amount >= 0 ? "#0F9D58" : "#DC2626",
-                            }}>
-                              {txn.amount >= 0 ? "+" : "−"}
-                              {formatCurrency(Math.abs(txn.amount))}
-                            </td>
-                            <td style={{
-                              padding: "10px 6px", textAlign: "right",
-                              fontFamily: "'DM Mono', monospace", color: "#5B6C88",
-                            }}>
-                              {txn.balance_after != null
-                                ? formatCurrency(txn.balance_after) : "—"}
-                            </td>
-                            <td style={{
-                              padding: "10px 6px", color: "#5B6C88",
-                              whiteSpace: "nowrap", fontSize: "12px",
-                            }}>
-                              {formatDate(txn.created_at)}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                            {row.amount >= 0 ? "+" : "−"}
+                            {formatCurrency(Math.abs(row.amount))}
+                          </td>
+                          <td style={{
+                            padding: "10px 6px", color: "#5B6C88",
+                            whiteSpace: "nowrap", fontSize: "12px",
+                          }}>
+                            {formatDate(row.date)}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>

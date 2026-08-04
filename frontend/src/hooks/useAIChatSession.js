@@ -473,7 +473,6 @@ function toAssistantMessage(reply) {
     };
 }
 
-// ─── Shared chat session hook ──────────────────────────────────────────────────
 // Used by both the full AIChatbot page and the floating ChatWidget so they share
 // one implementation (and, via sessionStorage, the same conversation history).
 export function useAIChatSession() {
@@ -510,26 +509,19 @@ export function useAIChatSession() {
     const [error, setError] = useState(null);
     const [showScroll, setShowScroll] = useState(false);
 
-    // Basic-plan chatbot quota (lifetime limit of 3 questions), enforced
-    // server-side (see chatbotb.py). Fetched once on mount and refreshed
-    // from each chat response so the page and the floating widget — both
-    // built on this hook — stay in sync without duplicating the check.
+
     const [chatUsage, setChatUsage] = useState(null);
     useEffect(() => {
         let cancelled = false;
         authFetch(`${import.meta.env.VITE_API_URL}/chatbot/usage`)
             .then(r => r.json())
             .then(res => { if (!cancelled && res?.success) setChatUsage(res); })
-            .catch(() => {});
+            .catch(() => { });
         return () => { cancelled = true; };
     }, []);
     const chatLimitReached = chatUsage?.premium === false
         && chatUsage.questions_used >= chatUsage.limit;
 
-    // Save the chat for the current logged-in browser session so users can leave the page,
-    // refresh, or visit the dashboard and still come back to the same chat.
-    // It resets when they click End chat, type "end", switch account, log out,
-    // or the browser session ends.
     useEffect(() => {
         try {
             sessionStorage.setItem(chatStorageKey, JSON.stringify(messages));
