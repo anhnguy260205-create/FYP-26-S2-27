@@ -27,8 +27,6 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 def _notify_article_author(article: dict, notif_title: str, notif_message: str):
-    """Notify the expert who wrote the article — admin-created articles have
-    no expert_id, so this is a no-op for those."""
     expert_id = article.get("expert_id")
     if not expert_id:
         return
@@ -38,8 +36,7 @@ def _notify_article_author(article: dict, notif_title: str, notif_message: str):
 
 
 def _notify_investors_new_article(article: dict):
-    """Broadcast a new-content notification to every investor, naming the
-    author and topic so it's useful without opening it."""
+    
     title = f"New article: {article['title']}"
     message = f"{article['author']} just published a new {article['category']} article — check it out in Educational Content."
     for user_id in Investor.get_all_user_ids():
@@ -47,9 +44,7 @@ def _notify_investors_new_article(article: dict):
 
 
 def _notify_expert_verification(expert_id: str, notif_title: str, notif_message: str, email_fn):
-    """Create the in-app notification synchronously (so it's visible the
-    moment the admin action returns) and send the matching email in the
-    background, mirroring the pattern used for subscription emails."""
+
     user_id = Expert.get_user_id_by_expert_id(expert_id)
     if not user_id:
         return
@@ -204,9 +199,7 @@ def suspend_user_account(user_id: str, current_user: dict = Depends(require_admi
             "message": "User not found",
         }
 
-    # Bust the cached auth profile so the suspension takes effect on this
-    # user's very next request instead of waiting up to _PROFILE_TTL seconds —
-    # this is what actually "kicks out" an already-logged-in user.
+   
     invalidate_profile_cache(email)
 
     return {
@@ -221,8 +214,7 @@ class DeleteFirebaseOrphanRequest(BaseModel):
 
 @router.post("/firebase-cleanup")
 def delete_firebase_orphan(data: DeleteFirebaseOrphanRequest, current_user: dict = Depends(require_admin)):
-    """Delete a Firebase Auth user that has no matching account in our DB —
-    for cleaning up accounts deleted before Firebase deletion was wired in."""
+  
     ok = delete_firebase_user_by_email(data.email.strip().lower())
     return {"success": ok}
 
@@ -277,8 +269,7 @@ def get_wallet_transactions(
     limit: int = 200,
     current_user: dict = Depends(require_admin_or_hr),
 ):
-    """Platform-wide wallet ledger for the finance admin's Payment
-    Transactions monitor: cash in/out, gifts, fees and payouts."""
+
     boundary = AdminUserAccountPage()
     txns = boundary.getWalletTransactions(txn_type, status, limit)
     return {"success": True, "count": len(txns), "transactions": txns}
@@ -299,8 +290,7 @@ def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_a
 @router.get("/revenue-ledger")
 def get_revenue_ledger(source: str = None, limit: int = 100,
                        current_user: dict = Depends(require_admin_or_hr)):
-    """Line-by-line platform revenue, optionally filtered to one source
-    (subscription / trade_fee / gift_commission)."""
+
     boundary = AdminUserAccountPage()
     return boundary.getRevenueLedger(source, limit)
 
