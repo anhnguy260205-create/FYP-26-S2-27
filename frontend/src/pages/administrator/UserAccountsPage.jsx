@@ -189,11 +189,10 @@ function UserAccountsPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
                 <th className="px-5 py-4">User</th>
-                <th className="px-5 py-4">Contact</th>
                 <th className="px-5 py-4">Role</th>
-                <th className="px-5 py-4">Subscription Tier</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Join Date</th>
+
                 <th className="px-5 py-4">Last Active</th>
                 <th className="px-5 py-4">Actions</th>
               </tr>
@@ -216,16 +215,7 @@ function UserAccountsPage() {
                     </div>
                   </td>
 
-                  <td className="px-5 py-5 text-slate-600">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Mail size={15} className="text-gray-400" />
-                      <span>{user.email_address}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone size={15} className="text-gray-400" />
-                      <span>{user.phone_number}</span>
-                    </div>
-                  </td>
+
 
                   <td className="px-5 py-5">
                     <span className={`px-4 py-2 rounded-full text-xs font-bold ${roleStyle(user.role)}`}>
@@ -233,15 +223,6 @@ function UserAccountsPage() {
                     </span>
                   </td>
 
-                  <td className="px-5 py-5">
-                    {user.subscription_tier ? (
-                      <span className={`px-4 py-2 rounded-full text-xs font-bold ${tierStyle(user.subscription_tier)}`}>
-                        {user.subscription_tier}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
 
                   <td className="px-5 py-5">
                     <span className={`px-4 py-2 rounded-full text-xs font-bold ${statusStyle(user.account_status)}`}>

@@ -120,9 +120,11 @@ export default function ProfileSetupPage() {
       };
       sessionStorage.setItem("currentUser", JSON.stringify(updated));
 
-      // Onward to the subscription plan (then the risk-assessment prompt shows
-      // on the investor home).
-      navigate("/investor/subscription");
+      // New accounts are auto-activated on the free Basic plan (see
+      // Investor.createAccount), so go straight to the investor home — the
+      // risk-assessment prompt shows there. Subscription page is still
+      // reachable later for anyone who wants to upgrade to Premium.
+      navigate("/investor");
     } catch {
       setError("Something went wrong. Please try again.");
       setSaving(false);

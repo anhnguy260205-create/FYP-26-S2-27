@@ -8,13 +8,11 @@ import { useContentManagement } from "../../utils/contentManagement.js";
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
 
-// Experts only ever see 3 verification states — Unverified / Pending /
-// Approved. A "rejected" status (admin-side only) falls back to Unverified
-// below since there's no entry for it here.
+
 const STATUS_CONFIG = {
-  not_submitted: { label: "Unverified", icon: FileText,     style: { color: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" } },
-  pending:       { label: "Pending Review", icon: Clock,       style: { color: "#eab308", bg: "rgba(234,179,8,0.12)",  border: "rgba(234,179,8,0.3)"  } },
-  approved:      { label: "Approved",       icon: CheckCircle2, style: { color: "#22c55e", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)"  } },
+  not_submitted: { label: "Unverified", icon: FileText, style: { color: "#94a3b8", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" } },
+  pending: { label: "Pending Review", icon: Clock, style: { color: "#eab308", bg: "rgba(234,179,8,0.12)", border: "rgba(234,179,8,0.3)" } },
+  approved: { label: "Approved", icon: CheckCircle2, style: { color: "#22c55e", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)" } },
 };
 
 const docTypeStyle = (type) => {
@@ -106,7 +104,7 @@ function ExpertDocumentPage() {
           </div>
           <h1 className="leading-tight mb-2" style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 700, letterSpacing: "0.04em", color: "#000" }}>{pageHeader.title}</h1>
           <p className="text-gray-500 text-[14px]">
-{pageHeader.description}
+            {pageHeader.description}
           </p>
           {(() => {
             const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.not_submitted;

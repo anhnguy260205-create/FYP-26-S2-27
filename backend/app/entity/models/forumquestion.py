@@ -404,6 +404,198 @@ def seed_forum_posts():
         print(f"[FORUM] Seeded {len(seed_data)} posts across {len(FORUM_CATEGORIES)} categories.")
 
 
+def seed_expert_forum_posts():
+    """Seed 2 forum posts each (with comments) for the additional verified
+    expert roster (see SEED_EXPERTS in app.entity.models.expert). Unlike the
+    older seed_forum_posts() batch, these are wired to the experts' real
+    user_id so they show up as genuine posts from verified accounts, not
+    decorative author_name strings. Idempotent via fixed post_id/reply_id;
+    safe to call every startup."""
+    from app.entity.models.expert import get_seed_expert_ids
+
+    experts = get_seed_expert_ids()
+    if not experts:
+        print("[FORUM] Skipping expert forum seed — no seed experts found yet")
+        return
+
+    def eid(username):
+        info = experts.get(username)
+        return info["user_id"] if info else None
+
+    POSTS_BY_EXPERT = {
+        "elena_vasquez": [
+            {
+                "post_id": "post_seed_elena_01", "category": "Fundamental Analysis",
+                "title": "Screening for quality: the three ratios I check before anything else",
+                "content": "Before I even look at price, I run three checks: current ratio for short-term solvency, debt-to-equity for how much of the business is financed by borrowing, and goodwill as a share of total assets to see if growth has come mostly from acquisitions. None of these tell you whether a stock is cheap — they just tell you whether the business is standing on solid ground. Educational only, not financial advice.",
+                "tags": "fundamentals,screening,ratios", "ticker_tags": "",
+                "likes_count": 18, "views_count": 640,
+                "replies": [
+                    {"reply_id": "reply_elena_01a", "user": "marcus_chen", "content": "I check these too before ever pulling up a chart. A great setup on a balance sheet that's falling apart is still a trap.", "likes_count": 9},
+                    {"reply_id": "reply_elena_01b", "author_name": "Hannah Wu", "author_role": "investor", "content": "The goodwill check is the one I always skip. Adding it to my process now.", "likes_count": 5},
+                ],
+            },
+            {
+                "post_id": "post_seed_elena_02", "category": "Fundamental Analysis",
+                "title": "Why I don't chase 52-week lows without a fundamentals check first",
+                "content": "A stock near its 52-week low can be a bargain or a business genuinely deteriorating — the chart alone can't tell you which. Before I get interested, I want to see whether the decline was driven by a single overreacted event or by actual, worsening fundamentals: shrinking margins, rising debt, falling revenue over multiple quarters. Cheap and broken are not the same as cheap and temporarily out of favor. Educational only, not financial advice.",
+                "tags": "value-investing,fundamentals,mean-reversion", "ticker_tags": "",
+                "likes_count": 22, "views_count": 910,
+                "replies": [
+                    {"reply_id": "reply_elena_02a", "author_name": "Tom Bakker", "author_role": "investor", "content": "This is exactly why I got burned twice buying 'cheap' stocks that just kept getting cheaper.", "likes_count": 11},
+                ],
+            },
+        ],
+        "marcus_chen": [
+            {
+                "post_id": "post_seed_marcus_01", "category": "Technical Analysis",
+                "title": "Volume-confirmed breakouts: the filter that cuts my false signals in half",
+                "content": "A breakout above resistance on below-average volume fails far more often than it follows through. My rule: I only treat a breakout as valid if volume on the breakout candle is at least 1.5x the 20-day average. It won't catch every real move, but it filters out a huge share of the traps that reverse within a day or two. Educational only, not financial advice.",
+                "tags": "breakout,volume,technical", "ticker_tags": "",
+                "likes_count": 27, "views_count": 1180, "is_pinned": 1,
+                "replies": [
+                    {"reply_id": "reply_marcus_01a", "author_name": "Wei Zhang", "author_role": "investor", "content": "1.5x is a good threshold. I've been using 2x and missing some valid setups.", "likes_count": 8},
+                    {"reply_id": "reply_marcus_01b", "user": "priya_sharma", "content": "Pairs well with checking IV too — low volume breakouts often coincide with compressed volatility right before an expansion.", "likes_count": 6},
+                ],
+            },
+            {
+                "post_id": "post_seed_marcus_02", "category": "Technical Analysis",
+                "title": "Reading a weekly chart before you ever open a daily chart",
+                "content": "I see a lot of beginners jump straight into a 5-minute or daily chart and lose the plot on where price actually sits in the bigger picture. My process: always start on the weekly chart to identify the dominant trend and major support/resistance zones, then zoom into daily and intraday only to time entries within that context. A great daily setup against the weekly trend is a much weaker trade than the same setup with the weekly trend.",
+                "tags": "timeframes,trend,technical", "ticker_tags": "",
+                "likes_count": 31, "views_count": 1450,
+                "replies": [
+                    {"reply_id": "reply_marcus_02a", "author_name": "Sarah Chen", "author_role": "investor", "content": "This changed how I trade. I was fighting the weekly trend constantly without realizing it.", "likes_count": 14},
+                ],
+            },
+        ],
+        "priya_sharma": [
+            {
+                "post_id": "post_seed_priya_01", "category": "Risk Management",
+                "title": "The options mistake I see beginners make most: selling naked calls too early",
+                "content": "Selling a call without owning the underlying stock (a 'naked' call) has theoretically unlimited risk, since there's no ceiling on how high a stock can rise. I regularly see newer traders sell naked calls for a small premium without appreciating that a single bad move can wipe out weeks of gains from smaller, safer trades. If you want to sell calls for income, start covered — own the shares first. Educational only, not financial advice.",
+                "tags": "options,risk,naked-calls", "ticker_tags": "",
+                "likes_count": 24, "views_count": 990,
+                "replies": [
+                    {"reply_id": "reply_priya_01a", "author_name": "Marcus Rivera", "author_role": "investor", "content": "Learned this one the hard way on a small position. Not a mistake I'll repeat.", "likes_count": 10},
+                ],
+            },
+            {
+                "post_id": "post_seed_priya_02", "category": "Risk Management",
+                "title": "How I size hedges relative to portfolio delta",
+                "content": "Instead of hedging a fixed dollar amount, I size protective puts based on my portfolio's total delta exposure — effectively, how much my whole book moves for a 1% move in the market. This keeps the hedge proportional as the portfolio grows or shrinks, rather than under- or over-hedging after a big rally or drawdown changes my actual exposure. Educational only, not financial advice.",
+                "tags": "hedging,options,delta,risk-management", "ticker_tags": "",
+                "likes_count": 19, "views_count": 760,
+                "replies": [
+                    {"reply_id": "reply_priya_02a", "user": "david_okafor", "content": "Worth layering in a macro view here too — I widen hedges heading into major central bank decisions regardless of what delta says.", "likes_count": 7},
+                ],
+            },
+        ],
+        "david_okafor": [
+            {
+                "post_id": "post_seed_david_01", "category": "Global Markets",
+                "title": "Why I'm watching real yields, not headline rates, right now",
+                "content": "Headline interest rates get all the attention, but real yields — rates minus inflation expectations — are what actually drive capital flows and asset valuations. A high headline rate with even higher inflation is still an accommodative real rate. Right now the gap between the two is telling a more interesting story than either number on its own. Educational only, not financial advice.",
+                "tags": "macro,real-yields,rates", "ticker_tags": "",
+                "likes_count": 21, "views_count": 880,
+                "replies": [
+                    {"reply_id": "reply_david_01a", "author_name": "Priya Nair", "author_role": "investor", "content": "Never thought to separate these two. Makes the recent rally in gold make a lot more sense.", "likes_count": 9},
+                ],
+            },
+            {
+                "post_id": "post_seed_david_02", "category": "Global Markets",
+                "title": "A framework for currency-hedging international ETF exposure",
+                "content": "Unhedged international ETFs carry a hidden second bet on currency that most investors never actively decide to make. My rule of thumb: hedge currency exposure when I'm investing in international bonds (where currency swings can dwarf the yield), and leave equity exposure unhedged for long holding periods, since currency effects tend to average out over many years while hedging costs compound. Educational only, not financial advice.",
+                "tags": "currency,hedging,international,macro", "ticker_tags": "",
+                "likes_count": 16, "views_count": 610,
+                "replies": [],
+            },
+        ],
+        "sofia_martins": [
+            {
+                "post_id": "post_seed_sofia_01", "category": "Crypto & Digital Assets",
+                "title": "Stablecoin de-pegs: what actually happened in past cases and what to watch",
+                "content": "Most stablecoin de-peg events share a common pattern: a loss of confidence triggers redemptions faster than reserves can be verified or liquidated, and the peg breaks under the panic rather than because the backing itself was instantly worthless. Before holding a large stablecoin position, I check three things: reserve composition and audit frequency, redemption mechanism speed, and how the peg has historically behaved during broad market stress, not just calm periods. Educational only, not financial advice.",
+                "tags": "stablecoins,crypto,risk", "ticker_tags": "",
+                "likes_count": 20, "views_count": 870,
+                "replies": [
+                    {"reply_id": "reply_sofia_01a", "author_name": "Wei Zhang", "author_role": "investor", "content": "The redemption mechanism speed point is underrated. That's usually where the actual panic starts.", "likes_count": 8},
+                ],
+            },
+            {
+                "post_id": "post_seed_sofia_02", "category": "Crypto & Digital Assets",
+                "title": "Why I treat on-chain data as confirmation, not a signal on its own",
+                "content": "Active addresses, exchange flows, and holder concentration are genuinely useful, but I've learned not to trade off them directly — they're noisy and can be skewed by a handful of large wallets moving funds between their own addresses. I use on-chain data to confirm or question what price and volume are already telling me, not as a standalone entry trigger. Educational only, not financial advice.",
+                "tags": "crypto,on-chain,strategy", "ticker_tags": "",
+                "likes_count": 17, "views_count": 720,
+                "replies": [
+                    {"reply_id": "reply_sofia_02a", "user": "elena_vasquez", "content": "Same principle I apply to fundamentals versus price — data confirms a thesis, it rarely creates one on its own.", "likes_count": 6},
+                ],
+            },
+        ],
+    }
+
+    added_posts = 0
+    added_replies = 0
+    with get_session() as session:
+        for username, posts in POSTS_BY_EXPERT.items():
+            info = experts.get(username)
+            if not info:
+                continue
+            for data in posts:
+                if session.query(ForumPost).filter(
+                    ForumPost.post_id == data["post_id"]
+                ).first():
+                    continue
+                post = ForumPost(
+                    post_id=data["post_id"],
+                    user_id=info["user_id"],
+                    author_name=info["full_name"],
+                    author_role="expert",
+                    title=data["title"],
+                    content=data["content"],
+                    category=data["category"],
+                    tags=data.get("tags", ""),
+                    ticker_tags=data.get("ticker_tags", ""),
+                    likes_count=data.get("likes_count", 0),
+                    views_count=data.get("views_count", 0),
+                    is_pinned=data.get("is_pinned", 0),
+                    is_featured=data.get("is_featured", 0),
+                    is_closed=data.get("is_closed", 0),
+                )
+                session.add(post)
+                session.flush()
+                added_posts += 1
+                for r in data.get("replies", []):
+                    if session.query(ForumReply).filter(
+                        ForumReply.reply_id == r["reply_id"]
+                    ).first():
+                        continue
+                    reply_user = r.get("user")
+                    if reply_user:
+                        reply_info = experts.get(reply_user)
+                        reply_user_id = reply_info["user_id"] if reply_info else None
+                        reply_author_name = reply_info["full_name"] if reply_info else "Expert"
+                        reply_author_role = "expert"
+                    else:
+                        reply_user_id = None
+                        reply_author_name = r["author_name"]
+                        reply_author_role = r.get("author_role", "investor")
+                    session.add(ForumReply(
+                        reply_id=r["reply_id"],
+                        post_id=post.post_id,
+                        user_id=reply_user_id,
+                        author_name=reply_author_name,
+                        author_role=reply_author_role,
+                        content=r["content"],
+                        likes_count=r.get("likes_count", 0),
+                    ))
+                    added_replies += 1
+        session.flush()
+
+    print(f"[FORUM] Added {added_posts} expert forum posts with {added_replies} comments")
+
+
 def ensure_forum_schema(engine):
     """
     Safely add new forum columns to existing tables without dropping data.

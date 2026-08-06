@@ -472,8 +472,10 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
 # Handle rejection of an expert's verification application.
 @router.post("/experts/{expert_id}/reject")
 def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
-    boundary = AdminUserAccountPage()
-    success = boundary.setExpertVerificationStatus(expert_id, "rejected")
+    # Rejecting clears the submitted documents immediately (not just the
+    # status), so the expert sees a clean slate and must upload a fresh set
+    # to be reviewed again — see ExpertVerification.reject_and_clear_documents.
+    success = Expert.reject_verification(expert_id)
 
     if not success:
         return {

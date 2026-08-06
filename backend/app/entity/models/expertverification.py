@@ -59,6 +59,19 @@ class ExpertVerification(Base):
             return True
 
     @staticmethod
+    def reject_and_clear_documents(expert_id):
+        with get_session() as session:
+            record = session.query(ExpertVerification).filter(
+                ExpertVerification.expert_id == expert_id).first()
+            if not record:
+                record = ExpertVerification(expert_id=expert_id)
+                session.add(record)
+            record.verification_status = "rejected"
+            record.documents = None
+            record.approved_date = None
+            return True
+
+    @staticmethod
     def get_for_expert(expert_id):
         with get_session() as session:
             record = session.query(ExpertVerification).filter(
@@ -90,8 +103,5 @@ class ExpertVerification(Base):
 
     @staticmethod
     def delete_for_expert(session, expert_id):
-        """Deletes within the caller's own session/transaction — used by
-        Expert.deleteExpert so the FK to expert_id is satisfied before the
-        parent expert row is removed."""
         session.query(ExpertVerification).filter(
             ExpertVerification.expert_id == expert_id).delete()

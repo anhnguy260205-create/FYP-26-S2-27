@@ -25,20 +25,20 @@ from app.entity.database.connection import engine
 from app.entity.database.base import Base
 from app.entity.models.userprofile import seed_profiles
 from app.entity.models.useraccount import seed_admin_account, seed_hr_account
-from app.entity.models.expert import seed_jordan_account
+from app.entity.models.expert import seed_jordan_account, seed_additional_experts
 from app.entity.models.expertverification import ExpertVerification
 from app.entity.models.subscription import Subscription
 from app.entity.models.watchlist import Watchlist
 from app.entity.models.holding import Holding
 from app.entity.models.transaction import Transaction
 from app.entity.models.password_reset import PasswordReset
-from app.entity.models.article import Article, seed_articles
+from app.entity.models.article import Article, seed_articles, seed_expert_articles
 from app.entity.models.expertportfolio import ExpertPortfolio, ExpertPortfolioHolding
 from app.entity.models.review import Review, ReviewHelpful, ReviewFlag, ReviewRemoval, seed_reviews
 from app.entity.models.forumquestion import (
     ForumPost, ForumReply, ForumPostLike, ForumPostSave,
     ForumReplyLike, ForumPostView,
-    seed_forum_posts, ensure_forum_schema,
+    seed_forum_posts, seed_expert_forum_posts, ensure_forum_schema,
 )
 from app.entity.models.contentmanagement import ContentManagement, seed_landing_content
 from app.entity.models.emailalert import StockAlert
@@ -476,9 +476,12 @@ if RUN_SEEDS:
     seed_admin_account()
     seed_hr_account()
     seed_jordan_account()
+    seed_additional_experts()
     seed_articles()
+    seed_expert_articles()
     seed_landing_content()
     seed_forum_posts()
+    seed_expert_forum_posts()
     seed_reviews()
     # Pull pre-existing subscriptions into the revenue ledger so the finance
     # dashboard isn't blank on first run. Idempotent.

@@ -52,8 +52,20 @@ class Investor(Base):
 
                 )
                 session.add(investor)
+                session.flush()  # populate investor_id from its Python-side default
+                investor_id = investor.investor_id
                 # get_session() handles commit automatically
             print("INVESTOR CREATED")
+
+            # Every new investor starts on the free Basic plan automatically —
+            # no manual "activate subscription" step required.
+            try:
+                from app.entity.models.subscription import Subscription
+                Subscription.createSubscription(
+                    f"basic_{uuid4()}", "basic", investor_id)
+            except Exception as e:
+                print("BASIC SUBSCRIPTION ACTIVATION ERROR:", e)
+
             return user_id
         except Exception as e:
             print("INVESTOR ERROR:", e)

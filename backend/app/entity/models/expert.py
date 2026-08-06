@@ -110,6 +110,15 @@ class Expert(Base):
         return ExpertVerification.set_status(expert_id, status)
 
     @staticmethod
+    def reject_verification(expert_id):
+        with get_session() as session:
+            expert = session.query(Expert).filter(
+                Expert.expert_id == expert_id).first()
+            if not expert:
+                return False
+        return ExpertVerification.reject_and_clear_documents(expert_id)
+
+    @staticmethod
     def demote_to_investor(user_id):
 
         from app.entity.models.article import Article
@@ -231,21 +240,13 @@ class Expert(Base):
 
     @staticmethod
     def deleteExpert(user_id):
-        # Merged roles: every expert also has an Investor row (holdings,
-        # transactions, chat/dashboard/prediction usage, subscription, …).
-        # Investor.deleteInvestor already cleans up those tables *and* the
-        # expert-only ones (portfolio, articles, verification, compensation)
-        # before deleting the expert and user_account rows — deleting only
-        # the expert-side tables here left the Investor row behind, which
-        # blocked the user_account delete with a foreign-key violation.
+
         from app.entity.models.investor import Investor
         return Investor.deleteInvestor(user_id)
 
 
 def _promote_seed_expert(email_address: str):
-    """Merged-roles: make a seeded expert account a fully verified expert —
-    investor row (everyone trades as an investor), approved verification,
-    and the complimentary premium tier. Idempotent; safe on every startup."""
+ 
     from app.entity.models.investor import Investor
 
     with get_session() as session:
@@ -281,3 +282,73 @@ def seed_jordan_account():
         linked_in_url="https://linkedin.com/in/jordan"
     )
     _promote_seed_expert("jordan@gmail.com")
+
+
+
+SEED_EXPERTS = [
+    dict(
+        username="elena_vasquez", email="elena@gmail.com",
+        full_name="Elena Vasquez", specialty="Fundamental & Value Investing",
+        experience_year=9, linked_in_url="https://linkedin.com/in/elenavasquez",
+    ),
+    dict(
+        username="marcus_chen", email="marcuschen@gmail.com",
+        full_name="Marcus Chen", specialty="Technical Analysis",
+        experience_year=7, linked_in_url="https://linkedin.com/in/marcuschen",
+    ),
+    dict(
+        username="priya_sharma", email="priyasharma@gmail.com",
+        full_name="Priya Sharma", specialty="Options & Risk Management",
+        experience_year=10, linked_in_url="https://linkedin.com/in/priyasharma",
+    ),
+    dict(
+        username="david_okafor", email="davidokafor@gmail.com",
+        full_name="David Okafor", specialty="Macro & Global Markets",
+        experience_year=12, linked_in_url="https://linkedin.com/in/davidokafor",
+    ),
+    dict(
+        username="sofia_martins", email="sofiamartins@gmail.com",
+        full_name="Sofia Martins", specialty="Crypto & Digital Assets",
+        experience_year=6, linked_in_url="https://linkedin.com/in/sofiamartins",
+    ),
+]
+
+
+def seed_additional_experts():
+    for e in SEED_EXPERTS:
+        Expert.createAccount(
+            username=e["username"],
+            email_address=e["email"],
+            experience_year=e["experience_year"],
+            linked_in_url=e["linked_in_url"],
+        )
+        with get_session() as session:
+            user = session.query(UserAccount).filter(
+                UserAccount.email_address == e["email"]).first()
+            if user and not user.full_name:
+                user.full_name = e["full_name"]
+        _promote_seed_expert(e["email"])
+    print(f"[SEED] Ensured {len(SEED_EXPERTS)} additional verified expert accounts")
+
+
+def get_seed_expert_ids():
+
+    emails = [e["email"] for e in SEED_EXPERTS]
+    with get_session() as session:
+        users = session.query(UserAccount).filter(
+            UserAccount.email_address.in_(emails)).all()
+        by_email_user_id = {u.email_address: u.user_id for u in users}
+        experts = session.query(Expert).filter(
+            Expert.user_id.in_(by_email_user_id.values())).all()
+        expert_id_by_user_id = {ex.user_id: ex.expert_id for ex in experts}
+    result = {}
+    for e in SEED_EXPERTS:
+        user_id = by_email_user_id.get(e["email"])
+        expert_id = expert_id_by_user_id.get(user_id)
+        if user_id and expert_id:
+            result[e["username"]] = {
+                "user_id": user_id,
+                "expert_id": expert_id,
+                "full_name": e["full_name"],
+            }
+    return result

@@ -104,3 +104,11 @@ def seed_all_firebase_accounts():
     seed_firebase_user("fyphd3009@gmail.com", os.getenv("SEED_ADMIN_PASSWORD", "admin123"),    "Admin")
     seed_firebase_user("jordan@gmail.com", os.getenv("SEED_JORDAN_PASSWORD",   "password123"), "Jordan")
     seed_firebase_user("fyphr123@gmail.com", os.getenv("SEED_HR_PASSWORD",    "password"),     "Finance Admin")
+
+    # Additional verified expert roster — see SEED_EXPERTS in
+    # app/entity/models/expert.py for the matching DB accounts.
+    seed_firebase_user("elena@gmail.com", os.getenv("SEED_ELENA_PASSWORD", "password123"), "Elena Vasquez")
+    seed_firebase_user("marcuschen@gmail.com", os.getenv("SEED_MARCUS_PASSWORD", "password123"), "Marcus Chen")
+    seed_firebase_user("priyasharma@gmail.com", os.getenv("SEED_PRIYA_PASSWORD", "password123"), "Priya Sharma")
+    seed_firebase_user("davidokafor@gmail.com", os.getenv("SEED_DAVID_PASSWORD", "password123"), "David Okafor")
+    seed_firebase_user("sofiamartins@gmail.com", os.getenv("SEED_SOFIA_PASSWORD", "password123"), "Sofia Martins")
