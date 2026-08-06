@@ -6,16 +6,22 @@
 - run frontend, open new terminal to run:
   + cd frontend
   + npm run dev
-- app link: http://localhost:5173/ 
-- Admin account:
+- app link: http://localhost:5173/
+- Operation Admin account:
+  + Email: fyphr123@gmail.com
+  + Password: password
+- Finance Admin account:
   + Email: fyphd3009@gmail.com
-  + Password: admin123
-- Investor account:
+  + Password: password123
+- Basic Investor account:
   + Email: kim@gmail.com
   + Password: password
-- Expert account:
-  + Email : kimhi@gmail.com
+- Premium Investor account:
+  + Email: himodilesg242@gmail.com
   + Password: password
+- Expert account:
+  + Email : anhnguy.260205@gmail.com
+  + Password: Limyuk.2005
 - Check api: http://127.0.0.1:8000/docs#/
 - Deployment:
  Frontend:
