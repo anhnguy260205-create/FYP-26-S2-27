@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../../layout/Header.jsx";
 import { fetchStockSnapshot } from "../../api/stockApi.js";
 import { getReviewStats, getReviews } from "../../api/reviewApi.js";
-import { useLandingContent, usePlanContent } from "../../api/contentApi.js";
+import { useLandingContent, usePlanContent, toEmbeddableVideoUrl } from "../../api/contentApi.js";
 import MarketOverviewTicker from "../../components/MarketOverviewTicker.jsx";
 import { SectionHeader } from "../../components/dashboard/DashboardKit.jsx";
 import aboutUsImg from "../../images/about_us.jpg";
@@ -101,7 +101,7 @@ function useLandingContentExtras() {
 
   const header = (id, fallbackTitle, fallbackDescription) => {
     const item = content?.find((c) => c.content_id === id);
-    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription };
+    return { title: item?.title ?? fallbackTitle, description: item?.description ?? fallbackDescription, video_url: item?.video_url || "" };
   };
 
   // Matches fetched title/description onto the fallback list by position,
@@ -340,20 +340,39 @@ function FAQSection({ heading, subtitle, faqs = FAQS }) {
   );
 }
 
-function MarketingVideoSection({ heading, subtitle }) {
+function MarketingVideoSection({ heading, subtitle, videoUrl }) {
+  const embedUrl = toEmbeddableVideoUrl(videoUrl);
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8">
       <SectionHeader title={heading} subtitle={subtitle} dark={false} />
-      <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
-        <button
-          type="button"
-          aria-label="Play marketing video"
-          className="group relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.5)] hover:bg-cyan-400 transition-colors"
-        >
-          <Play className="text-white translate-x-0.5" size={28} fill="currentColor" />
-        </button>
-        <span className="absolute bottom-4 text-xs text-slate-500">Video coming soon</span>
-      </div>
+      {videoUrl ? (
+        embedUrl ? (
+          <iframe
+            src={embedUrl}
+            title={heading || "RocketTrade walkthrough video"}
+            className="aspect-video w-full rounded-2xl border border-cyan-400/30 shadow-[0_0_45px_rgba(34,211,238,0.12)]"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video
+            src={videoUrl}
+            controls
+            className="aspect-video w-full rounded-2xl border border-cyan-400/30 bg-black shadow-[0_0_45px_rgba(34,211,238,0.12)]"
+          />
+        )
+      ) : (
+        <div className="relative aspect-video w-full rounded-2xl border border-cyan-400/30 bg-slate-900/60 shadow-[0_0_45px_rgba(34,211,238,0.12)] overflow-hidden flex items-center justify-center">
+          <button
+            type="button"
+            aria-label="Play marketing video"
+            className="group relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.5)] hover:bg-cyan-400 transition-colors"
+          >
+            <Play className="text-white translate-x-0.5" size={28} fill="currentColor" />
+          </button>
+          <span className="absolute bottom-4 text-xs text-slate-500">Video coming soon</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -919,7 +938,7 @@ function HomePage() {
       <main className="flex-1 flex flex-col">
         <Hero />
         <LandingPanel className="pt-24 pb-16">
-          <MarketingVideoSection heading={videoHeader.title} subtitle={videoHeader.description} />
+          <MarketingVideoSection heading={videoHeader.title} subtitle={videoHeader.description} videoUrl={videoHeader.video_url} />
         </LandingPanel>
 
         <LandingPanel muted>

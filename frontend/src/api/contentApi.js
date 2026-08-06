@@ -73,3 +73,35 @@ export function usePlanContent() {
 
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
 }
+
+/** Converts a YouTube/Vimeo/Google Drive share link into its embeddable
+ * player URL. Returns null for anything else (a direct file link, or an
+ * unrecognized host) so the caller can fall back to a plain <video> tag.
+ * Shared by the admin content preview and the real landing-page video
+ * section, so both embed identically. */
+export function toEmbeddableVideoUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com") && u.searchParams.get("v")) {
+      return `https://www.youtube.com/embed/${u.searchParams.get("v")}`;
+    }
+    if (u.hostname === "youtu.be") {
+      return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    }
+    if (u.hostname.includes("vimeo.com")) {
+      const id = u.pathname.split("/").filter(Boolean).pop();
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+    if (u.hostname === "drive.google.com") {
+      // Share-link formats: /file/d/FILE_ID/view?usp=... or /open?id=FILE_ID
+      const parts = u.pathname.split("/").filter(Boolean);
+      const dIndex = parts.indexOf("d");
+      const fileId = dIndex !== -1 ? parts[dIndex + 1] : u.searchParams.get("id");
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

@@ -7,8 +7,8 @@ class GetAllContentController:
 
 
 class UpdateContentController:
-    def update(self, content_id: str, title: str, description: str, image_url: str | None = None):
-        return ContentManagement.update(content_id, title, description, image_url)
+    def update(self, content_id: str, title: str, description: str, image_url: str | None = None, video_url: str | None = None):
+        return ContentManagement.update(content_id, title, description, image_url, video_url)
 
 
 class ReorderContentController:

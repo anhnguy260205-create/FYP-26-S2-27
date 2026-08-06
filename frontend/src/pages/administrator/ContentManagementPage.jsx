@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "../../layout/AdminPage.jsx";
 import { authFetch } from "../../api/apiClient.js";
+import { toEmbeddableVideoUrl } from "../../api/contentApi.js";
 import investorLoggedInImg from "../../images/investorloggedin.jpg";
 import professorPageImg from "../../images/professorpage.jpg";
 import aboutUsImg from "../../images/about_us.jpg";
@@ -67,6 +68,10 @@ const IMAGE_CONTENT_IDS = new Set([
   "forum_topic_communication",
   "forum_topic_energy",
   "forum_topic_real_estate",
+]);
+
+const VIDEO_CONTENT_IDS = new Set([
+  "header_video",
 ]);
 
 function resizeImageToDataUrl(file, maxWidth = 1600, quality = 0.82) {
@@ -1355,18 +1360,33 @@ function TextPreview({ title, ctaLabel }) {
   );
 }
 
-function VideoPreview({ heading, description }) {
+function VideoPreview({ heading, description, videoUrl }) {
+  const embedUrl = toEmbeddableVideoUrl(videoUrl);
   return (
     <div className="p-6 bg-white">
       <div className="text-center mb-4">
         <p className="text-slate-900 text-sm font-extrabold leading-tight">{heading}</p>
         <p className="text-slate-400 text-[10px] mt-0.5">{description}</p>
       </div>
-      <div className="relative aspect-video w-full rounded-xl border border-cyan-400/30 bg-slate-900 flex items-center justify-center">
-        <span className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center">
-          <PlayCircle className="text-white" size={16} />
-        </span>
-      </div>
+      {videoUrl ? (
+        embedUrl ? (
+          <iframe
+            src={embedUrl}
+            title="Video preview"
+            className="aspect-video w-full rounded-xl border border-cyan-400/30"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video src={videoUrl} controls className="aspect-video w-full rounded-xl border border-cyan-400/30 bg-black" />
+        )
+      ) : (
+        <div className="relative aspect-video w-full rounded-xl border border-cyan-400/30 bg-slate-900 flex items-center justify-center">
+          <span className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center">
+            <PlayCircle className="text-white" size={16} />
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1509,7 +1529,7 @@ function FooterPreview({ brand, brandTagline, version, product, company, resourc
 function ContentManagementPage() {
   const [content, setContent] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", image_url: "" });
+  const [form, setForm] = useState({ title: "", description: "", image_url: "", video_url: "" });
   const [saving, setSaving] = useState(false);
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
@@ -1542,7 +1562,7 @@ function ContentManagementPage() {
 
   const startEdit = (item) => {
     setEditing(item.content_id);
-    setForm({ title: item.title, description: item.description || "", image_url: item.image_url || "" });
+    setForm({ title: item.title, description: item.description || "", image_url: item.image_url || "", video_url: item.video_url || "" });
   };
 
   const cancelEdit = () => setEditing(null);
@@ -1730,6 +1750,40 @@ function ContentManagementPage() {
                 <p className="mt-1 text-[11px] text-slate-400">Paste an image URL above, or use the upload button to store a compressed image in the database.</p>
               </div>
             )}
+            {VIDEO_CONTENT_IDS.has(item.content_id) && (
+              <div>
+                <label className="text-xs font-bold text-slate-400 mb-1 block">VIDEO</label>
+                <input
+                  value={form.video_url}
+                  onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                  placeholder="YouTube/Vimeo link, or a direct .mp4 URL"
+                  className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
+                />
+                {form.video_url && (
+                  <>
+                    {toEmbeddableVideoUrl(form.video_url) ? (
+                      <iframe
+                        src={toEmbeddableVideoUrl(form.video_url)}
+                        title="Video preview"
+                        className="w-full aspect-video rounded-lg border border-slate-200"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={form.video_url} controls className="w-full aspect-video rounded-lg border border-slate-200 bg-black" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, video_url: "" }))}
+                      className="mt-2 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Remove video
+                    </button>
+                  </>
+                )}
+                <p className="mt-1 text-[11px] text-slate-400">Paste a YouTube or Vimeo link (embeds automatically), or a direct link to an .mp4/.webm file. Leave blank to show the "Video coming soon" placeholder.</p>
+              </div>
+            )}
             <div className="flex gap-2 pt-1">
               <button onClick={() => saveEdit(item.content_id)} disabled={saving}
                 className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
@@ -1757,6 +1811,11 @@ function ContentManagementPage() {
                 {item.image_url && IMAGE_CONTENT_IDS.has(item.content_id) && (
                   <img src={item.image_url} alt="Header preview" className="mt-3 h-20 w-36 rounded-lg object-cover border border-slate-200" />
                 )}
+                {VIDEO_CONTENT_IDS.has(item.content_id) && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    {item.video_url ? `Video: ${item.video_url}` : "No video set — showing \"Video coming soon\" placeholder"}
+                  </p>
+                )}
               </div>
             </div>
             <button onClick={() => startEdit(item)}
@@ -1772,7 +1831,7 @@ function ContentManagementPage() {
   // Whatever's currently being edited shows the in-progress form values in
   // the preview (so it updates as you type), everything else just uses
   // what's saved.
-  const liveItem = (item) => item?.content_id === editing ? { ...item, title: form.title, description: form.description, image_url: form.image_url } : item;
+  const liveItem = (item) => item?.content_id === editing ? { ...item, title: form.title, description: form.description, image_url: form.image_url, video_url: form.video_url } : item;
   const liveList = (list) => list.map(liveItem);
 
   const renderPreview = () => {
@@ -1823,7 +1882,7 @@ function ContentManagementPage() {
       const items = tab.itemsSection ? liveList(bySection(tab.itemsSection)) : [];
       const heading = header?.title, description = header?.description;
       if (tab.preview === "video") {
-        return <PreviewFrame label={tab.label}><VideoPreview heading={heading} description={description} /></PreviewFrame>;
+        return <PreviewFrame label={tab.label}><VideoPreview heading={heading} description={description} videoUrl={header?.video_url} /></PreviewFrame>;
       }
       if (tab.preview === "text_only") {
         return <PreviewFrame label={tab.label}><TextPreview title={heading} ctaLabel={tab.ctaId ? liveItem(byId(tab.ctaId))?.title : null} /></PreviewFrame>;

@@ -15,6 +15,7 @@ class ContentManagement(Base):
     description = Column(MEDIUMTEXT, nullable=True)
     
     image_url = Column(MEDIUMTEXT, nullable=True)
+    video_url = Column(MEDIUMTEXT, nullable=True)
     order_index = Column(Integer, default=0)
 
     @staticmethod
@@ -26,7 +27,7 @@ class ContentManagement(Base):
             return [_serialize(r) for r in rows]
 
     @staticmethod
-    def update(content_id: str, title: str, description: str, image_url: str | None = None) -> bool:
+    def update(content_id: str, title: str, description: str, image_url: str | None = None, video_url: str | None = None) -> bool:
         with get_session() as session:
             row = session.query(ContentManagement).filter(
                 ContentManagement.content_id == content_id
@@ -37,6 +38,8 @@ class ContentManagement(Base):
             row.description = description
             if image_url is not None:
                 row.image_url = image_url
+            if video_url is not None:
+                row.video_url = video_url
             return True
 
     @staticmethod
@@ -62,6 +65,7 @@ def _serialize(row: ContentManagement) -> dict:
         "title": row.title,
         "description": row.description,
         "image_url": row.image_url,
+        "video_url": row.video_url,
         "order_index": row.order_index,
     }
 

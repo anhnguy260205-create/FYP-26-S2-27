@@ -176,6 +176,7 @@ def ensure_all_schemas(engine):
         ("expert_portfolio", "is_published",       "ALTER TABLE expert_portfolio ADD COLUMN is_published TINYINT(1) NOT NULL DEFAULT 0"),
         ("expert",       "chat_available",         "ALTER TABLE expert ADD COLUMN chat_available TINYINT(1) NOT NULL DEFAULT 1"),
         ("content_management", "image_url",        "ALTER TABLE content_management ADD COLUMN image_url MEDIUMTEXT NULL"),
+        ("content_management", "video_url",        "ALTER TABLE content_management ADD COLUMN video_url MEDIUMTEXT NULL"),
         ("investor",     "expert_eligibility_notified", "ALTER TABLE investor ADD COLUMN expert_eligibility_notified TINYINT(1) NOT NULL DEFAULT 0"),
     ]
 

@@ -15,6 +15,7 @@ class UpdateContentRequest(BaseModel):
     title: str
     description: str = ""
     image_url: Optional[str] = None
+    video_url: Optional[str] = None
 
 
 class ReorderSectionRequest(BaseModel):
@@ -41,7 +42,7 @@ def update_content(
     data: UpdateContentRequest,
     _: dict = Depends(require_admin),
 ):
-    success = UpdateContentController().update(content_id, data.title, data.description, data.image_url)
+    success = UpdateContentController().update(content_id, data.title, data.description, data.image_url, data.video_url)
     if not success:
         return {"success": False, "message": "Content not found"}
     return {"success": True, "message": "Content updated"}
