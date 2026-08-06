@@ -7,6 +7,12 @@ import { useContentManagement } from "../../utils/contentManagement.js";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const DOC_TYPES = ["certification", "degree", "employment", "other"];
+const NAME_PLACEHOLDER_BY_TYPE = {
+  certification: "Document name (CMT, CFA, CFP,...)",
+  degree: "Document name (Bachelor's, Master's, MBA,...)",
+  employment: "Document name (Manager, Analyst, Director,...)",
+  other: "Document name",
+};
 
 
 const STATUS_CONFIG = {
@@ -155,7 +161,7 @@ function ExpertDocumentPage() {
             <p style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>{addLabel}</p>
 
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Document name"
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={NAME_PLACEHOLDER_BY_TYPE[form.type] || NAME_PLACEHOLDER_BY_TYPE.other}
                 className={inputCls} style={inputStyle} />
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                 className="w-full h-10.5 rounded-[10px] bg-white border border-gray-300 px-3 text-gray-800 text-sm">
