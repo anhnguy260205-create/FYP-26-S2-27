@@ -690,8 +690,6 @@ function WatchlistSection({ header }) {
   );
 }
 
-
-
 function PopularStockCard({ symbol, snapshot, candles, confidence, onSelect }) {
   const price = snapshot?.p ?? null;
   const prev = snapshot?.previousClose ?? null;

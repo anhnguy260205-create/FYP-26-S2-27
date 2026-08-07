@@ -121,6 +121,27 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
     return {"success": True, "experts": out}
 
 
+@router.get("/my-follows")
+def my_followed_experts(current_user: dict = Depends(get_current_user)):
+    """Experts the current investor follows — for the homepage 'Following' section."""
+    followed_ids = ExpertFollow.get_followed_by_user(current_user["user_id"])
+
+    experts = []
+    for expert_user_id in followed_ids:
+        info = Expert.get_expert_information(expert_user_id)
+        if not info:
+            continue
+        experts.append({
+            "user_id": expert_user_id,
+            "full_name": info.get("full_name"),
+            "experience_years": info.get("experience_years"),
+            "rating": info.get("rating"),
+            "follower_count": ExpertFollow.get_follower_count(expert_user_id),
+            "portfolio_rating": ExpertPortfolioReview.get_stats(expert_user_id),
+        })
+    return {"success": True, "experts": experts}
+
+
 @router.get("/public-stats")
 def public_expert_stats(current_user: dict = Depends(get_current_user)):
     experts = Expert.get_all_for_admin()

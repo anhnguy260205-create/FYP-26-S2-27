@@ -40,6 +40,9 @@ export const followExpert = (expertUserId) =>
 export const unfollowExpert = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/follow`, { method: "DELETE" });
 
+export const getFollowedExperts = () =>
+  requestJson(`${EXPERT_BASE_URL}/my-follows`);
+
 // ── Portfolio ratings & reviews ────────────────────────────────────────────────
 
 export const getPortfolioReviews = (expertUserId) =>

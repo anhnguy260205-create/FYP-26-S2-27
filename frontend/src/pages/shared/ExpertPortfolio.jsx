@@ -6,13 +6,14 @@ import { useContentManagement } from "../../utils/contentManagement.js";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authFetch } from "../../api/apiClient.js";
-import { getPublicExpertStats } from "../../api/expertApi.js";
+import { getPublicExpertStats, getFollowedExperts } from "../../api/expertApi.js";
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Search,
     Users,
     Star,
     UserRound,
+    UserCheck,
     ExternalLink,
     ChevronLeft,
     ChevronRight,
@@ -124,6 +125,8 @@ export default function ExpertPortfolio() {
     const [page, setPage] = useState(1);
     const [experts, setExperts] = useState([]);
     const [publicStats, setPublicStats] = useState(null);
+    const [followingOnly, setFollowingOnly] = useState(false);
+    const [followedIds, setFollowedIds] = useState(new Set());
 
     useEffect(() => {
         authFetch(`${import.meta.env.VITE_API_URL}/expert/public-list`)
@@ -136,6 +139,10 @@ export default function ExpertPortfolio() {
         getPublicExpertStats()
             .then(res => { if (res.success) setPublicStats(res); })
             .catch(() => { });
+
+        getFollowedExperts()
+            .then(res => { if (res.success) setFollowedIds(new Set((res.experts || []).map(e => e.user_id))); })
+            .catch(() => { });
     }, []);
 
     const STATS = [
@@ -145,13 +152,15 @@ export default function ExpertPortfolio() {
     ];
 
     const filtered = experts.filter(e =>
-        e.name.toLowerCase().includes(query.toLowerCase()) ||
-        e.market.toLowerCase().includes(query.toLowerCase())
+        (e.name.toLowerCase().includes(query.toLowerCase()) ||
+            e.market.toLowerCase().includes(query.toLowerCase())) &&
+        (!followingOnly || followedIds.has(e.user_id))
     );
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     const handleSearch = () => setPage(1);
+    const toggleFollowingOnly = () => { setFollowingOnly(v => !v); setPage(1); };
 
     const COLS = "48px 1fr 1fr 100px 80px 130px 120px";
 
@@ -256,6 +265,26 @@ export default function ExpertPortfolio() {
                     >
                         {searchCta}
                     </button>
+
+                    <button
+                        onClick={toggleFollowingOnly}
+                        className="flex items-center gap-2"
+                        style={{
+                            padding: "0 18px",
+                            height: "46px",
+                            borderRadius: "10px",
+                            background: followingOnly ? C.accent : C.card,
+                            border: `1px solid ${followingOnly ? C.accentBorder : C.border}`,
+                            color: followingOnly ? C.accentText : C.muted,
+                            fontWeight: 700,
+                            fontSize: "14px",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                        }}
+                    >
+                        <UserCheck size={16} />
+                        Following
+                    </button>
                 </div>
 
                 {/* Statistics */}
@@ -346,7 +375,7 @@ export default function ExpertPortfolio() {
                     {/* Rows */}
                     {visible.length === 0 && (
                         <div className="px-5 py-8 text-center text-sm" style={{ color: C.muted }}>
-                            {emptyMessage}
+                            {followingOnly ? "You're not following any experts yet." : emptyMessage}
                         </div>
                     )}
                     {visible.map((expert, index) => (

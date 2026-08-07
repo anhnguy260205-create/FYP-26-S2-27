@@ -69,6 +69,13 @@ class ExpertFollow(Base):
             ).first() is not None
 
     @staticmethod
+    def get_followed_by_user(user_id) -> list:
+        with get_session() as session:
+            return [uid for (uid,) in session.query(ExpertFollow.expert_user_id).filter(
+                ExpertFollow.follower_user_id == user_id
+            ).order_by(ExpertFollow.followed_at.desc()).all()]
+
+    @staticmethod
     def get_follower_count(expert_user_id) -> int:
         with get_session() as session:
             return session.query(ExpertFollow).filter(
