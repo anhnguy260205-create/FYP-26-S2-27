@@ -9,7 +9,6 @@ import InteractiveChart from "../../components/InteractiveChart.jsx";
 import StockComments from "../../components/StockComments.jsx";
 import StockOverview from "../../components/StockOverview.jsx";
 import StockQuantRating from "../../components/StockQuantRating.jsx";
-import StockPrediction from "../../components/StockPrediction.jsx";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { createAlert, getAlerts, deleteAlert } from "../../api/alertApi.js";
@@ -1261,8 +1260,7 @@ function AStockDashBoardPage() {
               )}
 
               {tab === "prediction" && (
-                <div className="max-w mx-auto flex flex-col gap-6">
-                  <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
+                <div className="flex flex-col gap-6">
                   <StockQuantRating symbol={selectedStock || symbol} />
                 </div>
               )}

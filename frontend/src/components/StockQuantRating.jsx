@@ -11,10 +11,12 @@ const LABEL_THEME = {
   "Sell": { text: "#fb923c", ring: "#fb923c", bg: "rgba(251,146,60,0.12)", border: "rgba(251,146,60,0.35)" },
   "Strong Sell": { text: "#f87171", ring: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.4)" },
 };
-const GRADE_COLOR = { A: "#0F9D58", B: "#34a853", C: "#B45309", D: "#EA580C", F: "#DC2626", "N/A": "#5B6C88" };
 const CARD = { background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px" };
 const themeFor = (l) => LABEL_THEME[l] || LABEL_THEME["Hold"];
 const pct = (x) => (x == null ? "—" : `${(x * 100).toFixed(1)}%`);
+const UP = "#0F9D58";
+const DOWN = "#DC2626";
+const DAY_OPTIONS = [7, 15, 30];
 
 function Gauge({ score, label }) {
   const t = themeFor(label);
@@ -37,6 +39,7 @@ export default function StockQuantRating({ symbol }) {
   const [r, setR] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [days, setDays] = useState(7);
 
   useEffect(() => {
     let alive = true;
@@ -73,7 +76,7 @@ export default function StockQuantRating({ symbol }) {
           style={{ color: t.text, background: t.bg, border: `1px solid ${t.border}` }}>{r.label}</span>
         <div className="mt-2 text-amber-600">{"★".repeat(Math.round(r.stars || 0))}</div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 w-full text-center">
           <Mini label="Buy probability" value={pct(r.buyProbability)} />
           <Mini label="Threshold" value={pct(r.threshold)} />
           <Mini label="Price" value={r.currentPrice ? `$${r.currentPrice.toFixed(2)}` : "—"} />
@@ -82,22 +85,44 @@ export default function StockQuantRating({ symbol }) {
         </div>
       </div>
 
-      {/* Factor grades */}
-      <div style={CARD} className="p-5">
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#0092b8", letterSpacing: "0.14em", textTransform: "uppercase" }} className="mb-1">Factor Grades</p>
-        <p className="text-xs text-slate-500 mb-4">Percentile rank within the {r.sectorLabel} cohort.</p>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-          {(r.factorGrades || []).map((g) => (
-            <div key={g.factor} className="rounded-xl bg-slate-100 border border-slate-200 p-3 text-center">
-              <div className="text-2xl font-extrabold" style={{ color: GRADE_COLOR[g.grade] || "#5B6C88" }}>{g.grade}</div>
-              <div className="text-[11px] text-slate-600 mt-1 leading-tight">{g.factor}</div>
-              <div className="h-1.5 mt-2 rounded-full bg-slate-200 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${g.percentile ?? 0}%`, background: GRADE_COLOR[g.grade] || "#5B6C88" }} />
+      {/* Projected price path */}
+      {(r.pricePath || []).length > 0 && (() => {
+        const chosen = r.pricePath.find((p) => p.days === days) || r.pricePath[0];
+        const isUp = chosen.changePct >= 0;
+        const dirColor = isUp ? UP : DOWN;
+        return (
+          <div style={CARD} className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#0092b8", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                Projected Price Path
+              </p>
+              <div className="flex gap-1.5">
+                {DAY_OPTIONS.map((d) => (
+                  <button key={d} onClick={() => setDays(d)}
+                    className="text-xs px-3 py-1 rounded-full border transition"
+                    style={{
+                      color: d === days ? "#0B1D4F" : "#5B6C88",
+                      background: d === days ? "rgba(0,146,184,0.15)" : "transparent",
+                      borderColor: d === days ? "rgba(0,146,184,0.5)" : "rgba(11,29,79,0.2)",
+                    }}>
+                    {d}d
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              <Mini label="Current" value={r.currentPrice ? `$${r.currentPrice.toFixed(2)}` : "—"} />
+              <Mini label={`${days}-day target`} value={`$${chosen.price.toFixed(2)}`} color={dirColor} />
+              <Mini label="Projected change" value={`${isUp ? "+" : ""}${chosen.changePct.toFixed(2)}%`} color={dirColor} />
+              <Mini label="Range" value={`$${chosen.lower.toFixed(2)} – $${chosen.upper.toFixed(2)}`} />
+            </div>
+            <p className="text-[11px] text-slate-500 mt-4">
+              Statistical projection derived from the buy signal's edge vs. its threshold and realised volatility — not a separately trained per-horizon model.
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Model reliability */}
       <div style={CARD} className="p-5">

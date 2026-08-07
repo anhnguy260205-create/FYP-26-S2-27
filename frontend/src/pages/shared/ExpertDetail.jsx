@@ -14,7 +14,7 @@ import {
 import { openChatWith } from "../../components/chat/ChatDock.jsx";
 import {
     Star, Briefcase, Shield, BadgeCheck, ArrowLeft, MessageSquare,
-    Mail, Link2, PieChart, Wallet, Layers, Clock3, TrendingUp, Target,
+    Mail, Link2, PieChart, Layers, TrendingUp, Target,
     Users, UserPlus, UserCheck, X, Trash2, Tags,
 } from "lucide-react";
 
@@ -55,9 +55,9 @@ function StatCard({ icon: Icon, color, bg, value, label }) {
     );
 }
 
-function InfoCard({ icon: Icon, label, children }) {
+function InfoCard({ icon: Icon, label, children, className = "" }) {
     return (
-        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)" }}>
+        <div className={`flex items-center gap-3 p-4 rounded-xl ${className}`} style={{ background: "#F8FAFC", border: "1px solid rgba(11,29,79,0.12)" }}>
             <Icon size={16} color="#0092b8" />
             <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11, color: "#5B6C88" }}>{label}</div>
@@ -267,20 +267,20 @@ function PortfolioSection({ portfolio, error, notPublished, interests }) {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-6">
+            <div className="grid grid-cols-3 gap-5 mt-6">
                 <StatCard icon={TrendingUp} color="#0F9D58" bg="rgba(15,157,88,0.12)" value={formatCurrency(totalInvested)} label="Total Invested" />
                 <StatCard icon={Layers} color="#1D4ED8" bg="rgba(29,78,216,0.12)" value={holdings.length} label="Holdings" />
-                <StatCard icon={Wallet} color="#B45309" bg="rgba(180,83,9,0.12)" value={formatCurrency(portfolio.cash_balance)} label="Cash Balance" />
-                <StatCard icon={Clock3} color="#0092b8" bg="rgba(0,146,184,0.12)" value={formatDate(portfolio.last_rebalanced)} label="Last Rebalanced" />
+                <StatCard icon={PieChart}
+                    color={(portfolio.return_pct ?? 0) >= 0 ? "#0F9D58" : "#DC2626"}
+                    bg={(portfolio.return_pct ?? 0) >= 0 ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)"}
+                    value={`${(portfolio.return_pct ?? 0) >= 0 ? "+" : ""}${(portfolio.return_pct ?? 0).toFixed(2)}%`}
+                    label="Total Return" />
             </div>
 
             {/* Overview */}
             <div className="grid gap-3 md:grid-cols-2 mt-6">
-                <InfoCard icon={Target} label="Investment Objective">
+                <InfoCard icon={Target} label="Investment Objective" className="md:col-span-2">
                     <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.investment_objective || "—"}</div>
-                </InfoCard>
-                <InfoCard icon={Clock3} label="Time Horizon">
-                    <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.time_horizon || "—"}</div>
                 </InfoCard>
                 <InfoCard icon={Shield} label="Risk Level">
                     <div style={{ fontSize: 13, color: "#0F172A" }}>{portfolio.risk_level || "—"}</div>

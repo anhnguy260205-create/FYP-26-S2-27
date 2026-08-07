@@ -17,9 +17,8 @@ import {
   Bot, GraduationCap,
   Wallet, BrainCircuit, MessagesSquare,
   Eye, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Gauge,
-  Users, ListChecks, BadgeCheck, Sparkles, Award, Briefcase, Bell,
+  Users, BadgeCheck, Sparkles, Award, Briefcase, Bell,
 } from "lucide-react";
-import { authFetch } from "../../api/apiClient.js";
 import {
   CARD_HOVER, CARD_GLOW_HOVER, FOCUS_RING,
   SectionHeader, PrimaryButton,
@@ -1104,35 +1103,19 @@ function ExpertFeatureCard({ icon: Icon, title, description, onClick }) {
 }
 
 // ── Expert features ────────────────────────────────────────────────────
-// Quick links to the expert's own tools, plus published portfolios from
-// other verified experts as reference material. Hidden entirely for
-// non-experts (gated at the call site).
+// Quick links to the expert's own tools. Hidden entirely for non-experts
+// (gated at the call site).
 function ExpertFeaturesSection() {
   const navigate = useNavigate();
-  const [portfolios, setPortfolios] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    authFetch(`${import.meta.env.VITE_API_URL}/expert/published-portfolios`)
-      .then(r => r.json())
-      .then(res => {
-        if (cancelled) return;
-        if (res.success && (res.portfolios || []).length > 0) {
-          setPortfolios(res.portfolios);
-        }
-      })
-      .catch(() => { });
-    return () => { cancelled = true; };
-  }, []);
 
   return (
     <section>
       <SectionHeader
         title="Expert Features"
-        subtitle="Your expert tools, plus reference portfolios from other verified experts"
+        subtitle="Your expert tools"
         dark={false}
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {EXPERT_FEATURE_CARDS.map((card) => (
           <ExpertFeatureCard
             key={card.key}
@@ -1142,48 +1125,6 @@ function ExpertFeaturesSection() {
             onClick={() => navigate(card.path)}
           />
         ))}
-
-        {portfolios.map((p) => {
-          const up = (p.return_pct ?? 0) >= 0;
-          return (
-            <div
-              key={p.portfolio_id}
-              onClick={() => navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
-                state: { from: "/investor", fromLabel: "Home" },
-              })}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") navigate(`/investor/expertdetails?user_id=${p.expert_user_id}`, {
-                  state: { from: "/investor", fromLabel: "Home" },
-                });
-              }}
-              className={`group cursor-pointer ${CARD_PURPLE} ${CARD_HOVER} hover:shadow-xl hover:shadow-slate-900/10 hover:ring-[#7C3AED]/30 p-6 flex flex-col gap-4`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#7C3AED]/10 text-[#6D28D9] shrink-0">
-                    <Briefcase size={19} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-slate-900 font-bold text-[15px] truncate">{p.portfolio_name}</h3>
-                    <p className="text-xs text-[#7C3AED] truncate">by {p.expert_name}</p>
-                  </div>
-                </div>
-                <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${up ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"}`}>
-                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {up ? "+" : ""}{Number(p.return_pct ?? 0).toFixed(1)}%
-                </span>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{p.description || p.investment_objective}</p>
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mt-auto">
-                <span className="inline-flex items-center gap-1"><ListChecks size={13} /> {p.total_holdings} holdings</span>
-                <span className="inline-flex items-center gap-1"><Gauge size={13} /> {p.risk_level}</span>
-                <span className="inline-flex items-center gap-1 text-[#7C3AED] group-hover:gap-2 transition-all">View <ArrowRight size={12} /></span>
-              </div>
-            </div>
-          );
-        })}
       </div>
     </section>
   );
