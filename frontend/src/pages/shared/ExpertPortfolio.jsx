@@ -114,7 +114,7 @@ export default function ExpertPortfolio() {
 
     const cms = useContentManagement();
     const headerContent = isExpert
-        ? cms.text("expert_portfolio_list_expert_header", "Expert Portfolio Directory", "Preview how investors browse verified expert portfolios.")
+        ? cms.text("expert_portfolio_list_expert_header", "Expert Portfolio ", "Preview how investors browse verified expert portfolios.")
         : cms.text("expert_portfolio_list_header", "Expert Portfolio", "Explore and invest in portfolios managed by our expert consultants.");
     const searchPlaceholder = cms.text("expert_portfolio_search_placeholder", "Search expert by name or keyword...").title;
     const searchCta = cms.text("expert_portfolio_search_cta", "Search").title;
