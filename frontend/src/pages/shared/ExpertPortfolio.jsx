@@ -12,7 +12,6 @@ import {
     Search,
     Users,
     Star,
-    PieChart,
     UserRound,
     ExternalLink,
     ChevronLeft,
@@ -139,11 +138,9 @@ export default function ExpertPortfolio() {
             .catch(() => { });
     }, []);
 
-    const returnPositive = (publicStats?.avg_return ?? 0) >= 0;
     const STATS = [
         { icon: Users, title: "Total Experts", value: publicStats ? publicStats.total_experts : "—", desc: "Active on platform", color: C.cyan, bg: "rgba(14,116,144,0.12)" },
         { icon: Star, title: "Top Rated", value: publicStats?.top_rated?.name || "—", desc: publicStats?.top_rated ? `${publicStats.top_rated.rating.toFixed(1)} rating` : "No ratings yet", color: C.amber, bg: "rgba(180,83,9,0.12)" },
-        { icon: PieChart, title: "Avg. Return", value: publicStats ? `${publicStats.avg_return >= 0 ? "+" : ""}${publicStats.avg_return.toFixed(2)}%` : "—", desc: "All time", color: returnPositive ? C.success : C.danger, bg: returnPositive ? "rgba(15,157,88,0.12)" : "rgba(220,38,38,0.12)" },
         { icon: UserRound, title: "Total Followers", value: publicStats ? publicStats.total_followers.toLocaleString() : "—", desc: "Across all experts", color: "#7C3AED", bg: "rgba(124,58,237,0.12)" },
     ];
 
@@ -262,7 +259,7 @@ export default function ExpertPortfolio() {
                 </div>
 
                 {/* Statistics */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     {STATS.map((item, index) => {
                         const Icon = item.icon;
 
