@@ -142,9 +142,11 @@ class Investor(Base):
                     ),
                 }
 
-            investor.assets -= total_debit
-
-            investor.used_amount += total_cost
+            # Round-and-persist immediately -- Float can't exactly represent
+            # cents, so without this every trade compounds a tiny binary
+            # rounding error into the next one until stray pennies show up.
+            investor.assets = round(investor.assets - total_debit, 2)
+            investor.used_amount = round(investor.used_amount + total_cost, 2)
             investor_id = investor.investor_id
             session.flush()
 
@@ -166,6 +168,16 @@ class Investor(Base):
         transaction_id = Transaction.createTransaction(
             investor_id, symbol, "buy", quantity, price, total_cost
         )
+
+        try:
+            from app.control.controller.notificationc import create_notification
+            create_notification(
+                user_id, "trading", f"Buy order executed — {symbol}",
+                f"Bought {quantity} share{'s' if quantity != 1 else ''} of {symbol} "
+                f"at ${price:,.2f} (total ${total_cost:,.2f}).",
+            )
+        except Exception as e:
+            print(f"[TRADING] buy notification failed: {e}")
 
         return {
             "success": True,
@@ -216,8 +228,9 @@ class Investor(Base):
             investor = session.query(Investor).filter(
                 Investor.user_id == user_id
             ).first()
-            investor.assets += net_proceeds
-            investor.used_amount -= cost_basis
+            # Round-and-persist immediately -- see buyStock() for why.
+            investor.assets = round(investor.assets + net_proceeds, 2)
+            investor.used_amount = round(investor.used_amount - cost_basis, 2)
             if investor.used_amount < 0:
                 investor.used_amount = 0
             session.flush()
@@ -238,6 +251,16 @@ class Investor(Base):
         transaction_id = Transaction.createTransaction(
             investor_id, symbol, "sell", quantity, price, total_proceeds
         )
+
+        try:
+            from app.control.controller.notificationc import create_notification
+            create_notification(
+                user_id, "trading", f"Sell order executed — {symbol}",
+                f"Sold {quantity} share{'s' if quantity != 1 else ''} of {symbol} "
+                f"at ${price:,.2f} (total ${total_proceeds:,.2f}).",
+            )
+        except Exception as e:
+            print(f"[TRADING] sell notification failed: {e}")
 
         return {
             "success": True,

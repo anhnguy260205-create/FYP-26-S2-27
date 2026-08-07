@@ -151,13 +151,13 @@ class ExpertCompensationLedger(Base):
                     session.flush()
                     continue
 
+                # Write the exact rounded balance back rather than
+                # "assets = assets + :a" -- see walletc.py deposit() for why.
+                new_balance = round(float(investor.assets or 0) + amount, 2)
                 session.execute(
-                    text("UPDATE investor SET assets = assets + :a "
-                         "WHERE investor_id = :iid"),
-                    {"a": amount, "iid": investor.investor_id},
+                    text("UPDATE investor SET assets = :bal WHERE investor_id = :iid"),
+                    {"bal": new_balance, "iid": investor.investor_id},
                 )
-                new_balance = round(
-                    float(investor.assets or 0) + amount, 2)
 
                 session.flush()  # entry.ledger_id must exist for the reference
                 txn_id = WalletTransaction.record(

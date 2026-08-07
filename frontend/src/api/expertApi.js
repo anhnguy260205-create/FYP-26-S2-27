@@ -1,16 +1,7 @@
-import { authFetch } from "./apiClient";
+import { requestJson } from "./apiClient";
 
 const EXPERT_BASE_URL = `${import.meta.env.VITE_API_URL}/expert`;
 const FORUM_BASE_URL = `${import.meta.env.VITE_API_URL}/consultant-forum`;
-
-async function requestJson(url, options = {}) {
-  const response = await authFetch(url, options);
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || `Request failed with status ${response.status}`);
-  }
-  return data;
-}
 
 export const getExpertPortfolio = (userId) =>
   requestJson(`${EXPERT_BASE_URL}/portfolio/${userId || "demo"}`);

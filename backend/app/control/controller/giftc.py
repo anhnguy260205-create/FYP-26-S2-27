@@ -121,21 +121,20 @@ class SendGiftController:
             recipient_balance = round(
                 float(recipient_investor.assets or 0), 2)
 
-            #  move the money 
-            session.execute(
-                text("UPDATE investor SET assets = assets - :a "
-                     "WHERE investor_id = :iid"),
-                {"a": amount, "iid": sender_id},
-            )
-            session.execute(
-                text("UPDATE investor SET assets = assets + :a "
-                     "WHERE investor_id = :iid"),
-                {"a": expert_share, "iid": recipient_id},
-            )
-
+            #  move the money — write the exact rounded balance back rather
+            # than "assets = assets +/- :a", which lets binary rounding
+            # error on the Float column compound across transactions.
             sender_balance_after = round(balance - amount, 2)
             recipient_balance_after = round(
                 recipient_balance + expert_share, 2)
+            session.execute(
+                text("UPDATE investor SET assets = :bal WHERE investor_id = :iid"),
+                {"bal": sender_balance_after, "iid": sender_id},
+            )
+            session.execute(
+                text("UPDATE investor SET assets = :bal WHERE investor_id = :iid"),
+                {"bal": recipient_balance_after, "iid": recipient_id},
+            )
 
             gift_id = Gift.record(
                 session, sender_user_id, expert_user_id, amount,

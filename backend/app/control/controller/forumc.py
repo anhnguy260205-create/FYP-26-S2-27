@@ -13,8 +13,8 @@ class ForumController:
         # result is already {"posts": [...], "total": ..., "page": ...}
         return {"success": True, **result}
 
-    def get_post(self, post_id, user_id=None):
-        post = ForumRepository.get_post(post_id, user_id)
+    def get_post(self, post_id, user_id=None, viewer_is_privileged=True):
+        post = ForumRepository.get_post(post_id, user_id, viewer_is_privileged=viewer_is_privileged)
         if not post:
             return {"success": False, "message": "Post not found"}
         return {"success": True, "post": post}
@@ -28,6 +28,19 @@ class ForumController:
             return {"success": False, "message": "Failed to create post"}
         return {"success": True, "post": post, "message": "Post created successfully"}
 
+    def list_stock_comments(self, symbol, user_id=None, viewer_is_privileged=False, page=1, page_size=50):
+        result = ForumRepository.list_stock_comments(
+            symbol, user_id=user_id, viewer_is_privileged=viewer_is_privileged,
+            page=page, page_size=page_size,
+        )
+        return {"success": True, **result}
+
+    def create_stock_comment(self, user_id, symbol, content):
+        post = ForumRepository.create_stock_comment(user_id, symbol, content)
+        if not post:
+            return {"success": False, "message": "Failed to create stock comment"}
+        return {"success": True, "post": post, "message": "Comment posted successfully"}
+
     def update_post(self, post_id, user_id, title=None, content=None,
                     category=None, tags=None, ticker_tags=None):
         post = ForumRepository.update_post(
@@ -38,8 +51,8 @@ class ForumController:
             return {"success": False, "message": "Post not found or you can only edit your own posts"}
         return {"success": True, "post": post, "message": "Post updated successfully"}
 
-    def reply_post(self, post_id, user_id, content):
-        post = ForumRepository.add_reply(post_id, user_id, content)
+    def reply_post(self, post_id, user_id, content, actor_is_privileged=True):
+        post = ForumRepository.add_reply(post_id, user_id, content, actor_is_privileged=actor_is_privileged)
         if not post:
             return {"success": False, "message": "Post not found or thread is closed"}
         author_id = post.get("user_id")
@@ -54,14 +67,14 @@ class ForumController:
             )
         return {"success": True, "post": post, "message": "Reply posted successfully"}
 
-    def toggle_like(self, post_id, user_id):
-        post = ForumRepository.toggle_like(post_id, user_id)
+    def toggle_like(self, post_id, user_id, actor_is_privileged=True):
+        post = ForumRepository.toggle_like(post_id, user_id, actor_is_privileged=actor_is_privileged)
         if not post:
             return {"success": False, "message": "Unable to toggle like"}
         return {"success": True, "post": post}
 
-    def toggle_save(self, post_id, user_id):
-        post = ForumRepository.toggle_save(post_id, user_id)
+    def toggle_save(self, post_id, user_id, actor_is_privileged=True):
+        post = ForumRepository.toggle_save(post_id, user_id, actor_is_privileged=actor_is_privileged)
         if not post:
             return {"success": False, "message": "Unable to toggle save"}
         return {"success": True, "post": post}

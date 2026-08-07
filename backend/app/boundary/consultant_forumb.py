@@ -1,12 +1,23 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.control.controller.forumc import ForumController
-from app.control.services.auth import get_current_user, require_admin
+from app.control.services.auth import get_current_user, get_current_user_optional, require_admin
 
 router = APIRouter(prefix="/consultant-forum", tags=["Forum"])
 
+
+def _is_privileged(current_user: Optional[dict]) -> bool:
+    """True for verified experts, admins, and premium subscribers -- the set
+    of viewers allowed to read/act on gated Stock Discussion content."""
+    if not current_user:
+        return False
+    return (
+        current_user.get("is_expert") is True
+        or current_user.get("role") == "admin"
+        or (current_user.get("subscription_status") or "").lower() == "premium"
+    )
 
 
 class CreatePostRequest(BaseModel):
@@ -45,8 +56,38 @@ def list_posts(user_id: Optional[str] = None, category: Optional[str] = None,
 
 
 @router.get("/posts/{post_id}")
-def get_post(post_id: str, user_id: Optional[str] = None):
-    return ForumController().get_post(post_id, user_id)
+def get_post(
+    post_id: str, user_id: Optional[str] = None,
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
+    return ForumController().get_post(post_id, user_id, viewer_is_privileged=_is_privileged(current_user))
+
+
+class CreateStockCommentRequest(BaseModel):
+    content: str
+
+
+@router.get("/stock-comments/{symbol}")
+def list_stock_comments(
+    symbol: str, page: int = 1, page_size: int = 50,
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
+    user_id = current_user.get("user_id") if current_user else None
+    return ForumController().list_stock_comments(
+        symbol, user_id=user_id, viewer_is_privileged=_is_privileged(current_user),
+        page=page, page_size=page_size,
+    )
+
+
+@router.post("/stock-comments/{symbol}")
+def create_stock_comment(
+    symbol: str,
+    data: CreateStockCommentRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user.get("is_expert") is not True:
+        raise HTTPException(status_code=403, detail="Only verified experts can post stock commentary.")
+    return ForumController().create_stock_comment(current_user["user_id"], symbol, data.content)
 
 
 
@@ -80,17 +121,24 @@ def reply_post(
     data: ReplyRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    return ForumController().reply_post(post_id, current_user["user_id"], data.content)
+    return ForumController().reply_post(
+        post_id, current_user["user_id"], data.content,
+        actor_is_privileged=_is_privileged(current_user),
+    )
 
 
 @router.post("/posts/{post_id}/like")
 def toggle_like(post_id: str, current_user: dict = Depends(get_current_user)):
-    return ForumController().toggle_like(post_id, current_user["user_id"])
+    return ForumController().toggle_like(
+        post_id, current_user["user_id"], actor_is_privileged=_is_privileged(current_user)
+    )
 
 
 @router.post("/posts/{post_id}/save")
 def toggle_save(post_id: str, current_user: dict = Depends(get_current_user)):
-    return ForumController().toggle_save(post_id, current_user["user_id"])
+    return ForumController().toggle_save(
+        post_id, current_user["user_id"], actor_is_privileged=_is_privileged(current_user)
+    )
 
 
 @router.delete("/posts/{post_id}")

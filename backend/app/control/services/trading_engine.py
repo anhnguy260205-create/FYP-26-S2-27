@@ -49,11 +49,14 @@ def _charge_platform_fee(session, investor_id: str, user_id: str | None,
     if fee <= 0:
         return 0.0
 
-    session.execute(
-        text("UPDATE investor SET assets=assets-:f WHERE investor_id=:iid"),
-        {"f": fee, "iid": investor_id},
-    )
+    # Write the exact rounded balance back rather than "assets=assets-:f" --
+    # raw SQL arithmetic on a Float column lets binary rounding error
+    # compound across fills until stray cents show up.
     balance_after = round(float(row.assets) - fee, 2)
+    session.execute(
+        text("UPDATE investor SET assets=:bal WHERE investor_id=:iid"),
+        {"bal": balance_after, "iid": investor_id},
+    )
 
     WalletTransaction.record(
         session, investor_id, TXN_PLATFORM_FEE, -fee,
@@ -75,14 +78,18 @@ def _charge_platform_fee(session, investor_id: str, user_id: str | None,
 def _buy_shares(session, investor_id: str, symbol: str, qty: int, price: float) -> bool:
     total = round(price * qty, 2)
     row = session.execute(
-        text("SELECT assets FROM investor WHERE investor_id=:iid"),
+        text("SELECT assets, used_amount FROM investor WHERE investor_id=:iid"),
         {"iid": investor_id},
     ).fetchone()
     if not row or row.assets < total:
         return False
+    # Write the exact rounded values back rather than "assets=assets-:t,
+    # used_amount=used_amount+:t" -- see _charge_platform_fee() for why.
+    new_assets = round(float(row.assets) - total, 2)
+    new_used = round(float(row.used_amount) + total, 2)
     session.execute(
-        text("UPDATE investor SET assets=assets-:t, used_amount=used_amount+:t WHERE investor_id=:iid"),
-        {"t": total, "iid": investor_id},
+        text("UPDATE investor SET assets=:a, used_amount=:u WHERE investor_id=:iid"),
+        {"a": new_assets, "u": new_used, "iid": investor_id},
     )
     _upsert_holding_buy(session, investor_id, symbol, qty, price)
     return True
@@ -103,9 +110,18 @@ def _sell_shares(session, investor_id: str, symbol: str, qty: int, price: float)
         text("UPDATE holding SET quantity=:q, average_cost=CASE WHEN :q=0 THEN 0 ELSE average_cost END WHERE holding_id=:hid"),
         {"q": new_qty, "hid": row.holding_id},
     )
+    # Write the exact rounded values back rather than "assets=assets+:t,
+    # used_amount=GREATEST(0, used_amount-:c)" -- see _charge_platform_fee()
+    # for why raw column arithmetic is avoided here.
+    inv_row = session.execute(
+        text("SELECT assets, used_amount FROM investor WHERE investor_id=:iid"),
+        {"iid": investor_id},
+    ).fetchone()
+    new_assets = round(float(inv_row.assets) + total, 2)
+    new_used = max(0.0, round(float(inv_row.used_amount) - cost_basis, 2))
     session.execute(
-        text("UPDATE investor SET assets=assets+:t, used_amount=GREATEST(0, used_amount-:c) WHERE investor_id=:iid"),
-        {"t": total, "c": cost_basis, "iid": investor_id},
+        text("UPDATE investor SET assets=:a, used_amount=:u WHERE investor_id=:iid"),
+        {"a": new_assets, "u": new_used, "iid": investor_id},
     )
     return pnl
 
@@ -298,7 +314,20 @@ def submit_order(user_id: str, symbol: str, order_type: str, quantity: int, limi
     else:
         message = "Order pending"
 
-    # Expert-eligibility notification 
+    if total_filled > 0:
+        try:
+            from app.control.controller.notificationc import create_notification
+            create_notification(
+                user_id,
+                "trading",
+                f"{order_type.capitalize()} order {final_status} — {symbol}",
+                f"{total_filled}/{quantity} share{'s' if quantity != 1 else ''} {order_type} "
+                f"filled @ avg ${avg_price:.2f}.",
+            )
+        except Exception as e:
+            print(f"[TRADING] order notification failed: {e}")
+
+    # Expert-eligibility notification
    
     if total_filled > 0:
         try:

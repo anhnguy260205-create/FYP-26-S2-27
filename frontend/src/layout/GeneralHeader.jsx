@@ -169,8 +169,8 @@ function GeneralHeader() {
       label: "Dashboard",
       activePaths: ["/watchlist", "/realtimedashboard", "/investor/alerts"],
       submenu: [
-        { title: "Watchlist", path: "/watchlist" },
         { title: "Real-time Dashboard", path: "/realtimedashboard" },
+        { title: "My Watchlist", path: "/watchlist" },
         { title: "My Alerts", path: "/investor/alerts" },
       ],
     },

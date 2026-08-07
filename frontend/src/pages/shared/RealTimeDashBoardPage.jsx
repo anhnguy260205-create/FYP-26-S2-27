@@ -10,22 +10,14 @@ import { useNavigate } from "react-router-dom";
 import { fetchStockSnapshot, fetchStockCandles, fetchDashboardUsage } from "../../api/stockApi.js";
 import { Activity, TrendingUp, TrendingDown, Database, Lock } from "lucide-react";
 
-// The 11 GICS primary sectors — every pool stock carries a matching
-// `sector` field in its snapshot (set by the backend), used for filtering.
+
 const GICS_SECTORS = [
   "Information Technology", "Communication Services", "Consumer Discretionary",
   "Financials", "Energy", "Real Estate", "Health Care", "Consumer Staples",
   "Industrials", "Materials", "Utilities",
 ];
 
-// How many stocks "Recommended for You" shows. Candidates come from the
-// user's interest sectors; stocks whose volatility bucket (computed by the
-// backend: 3-month volatility tertiles → Conservative/Moderate/Aggressive)
-// matches the user's risk tolerance rank first, then by 1-month momentum.
 const RECOMMEND_COUNT = 8;
-// Top Picks gets its own cap so it can't eat the whole RECOMMEND_COUNT
-// budget — with 500+ stocks in the pool, risk-matched candidates alone
-// routinely exceed 8, which used to starve "For You" completely.
 const TOP_PICKS_COUNT = 4;
 
 function SearchBar({ onSearch, loading }) {
@@ -359,7 +351,7 @@ function RealTimeDashBoardPage() {
   useEffect(() => {
     fetchDashboardUsage().then(res => {
       if (res?.success) setDashboardUsage(res);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
   const unlockedSymbols = useMemo(
     () => new Set(dashboardUsage?.unlocked_symbols ?? []),

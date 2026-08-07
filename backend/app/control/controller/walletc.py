@@ -76,16 +76,21 @@ class CashInController:
         masked = _mask_account(account_number)
 
         with get_session() as session:
-            session.execute(
-                text("UPDATE investor SET assets = assets + :a "
-                     "WHERE investor_id = :iid"),
-                {"a": amount, "iid": investor_id},
-            )
+            # Compute the new balance in Python and write that exact rounded
+            # value back, rather than "assets = assets + :a" -- raw SQL
+            # arithmetic on a Float column lets binary rounding error
+            # compound across transactions until stray cents show up.
             row = session.execute(
                 text("SELECT assets FROM investor WHERE investor_id = :iid"),
                 {"iid": investor_id},
             ).fetchone()
-            new_balance = round(float(row.assets), 2) if row else None
+            if not row:
+                return {"success": False, "message": "Investor not found"}
+            new_balance = round(float(row.assets) + amount, 2)
+            session.execute(
+                text("UPDATE investor SET assets = :bal WHERE investor_id = :iid"),
+                {"bal": new_balance, "iid": investor_id},
+            )
 
             txn_id = WalletTransaction.record(
                 session, investor_id, TXN_CASH_IN, amount,
@@ -148,12 +153,13 @@ class CashOutController:
                     ),
                 }
 
-            session.execute(
-                text("UPDATE investor SET assets = assets - :a "
-                     "WHERE investor_id = :iid"),
-                {"a": amount, "iid": investor_id},
-            )
+            # Write the exact rounded value back -- see deposit() for why
+            # "assets = assets - :a" isn't used here.
             new_balance = round(available - amount, 2)
+            session.execute(
+                text("UPDATE investor SET assets = :bal WHERE investor_id = :iid"),
+                {"bal": new_balance, "iid": investor_id},
+            )
 
             txn_id = WalletTransaction.record(
                 session, investor_id, TXN_CASH_OUT, -amount,
@@ -189,7 +195,7 @@ class GetWalletController:
         investor_id = investor["investor_id"]
         return {
             "success": True,
-            "assets": investor["assets"],
+            "assets": round(float(investor["assets"] or 0), 2),
             "totals": WalletTransaction.get_totals(investor_id),
             "transactions": WalletTransaction.get_for_investor(investor_id, limit=100),
             "limits": {

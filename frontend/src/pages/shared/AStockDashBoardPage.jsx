@@ -19,7 +19,6 @@ import { fetchStockSnapshot, fetchStockCandles, checkDashboardAccess } from "../
 import { getPortfolio, submitOrder, getOrders, cancelOrder } from "../../api/tradingApi.js";
 import PinModal from "../../components/PinModal.jsx";
 
-/* ─── Helpers ─────────────────────────────────────────────── */
 function formatNumber(num) {
   if (!Number.isFinite(Number(num))) return "0";
   num = Number(num);
@@ -38,7 +37,7 @@ function companyName(symbol) {
   return names[symbol] ?? "";
 }
 
-/* ─── Trade Buttons ────────────────────────────────────────── */
+/*  Trade Buttons */
 function Button({ marketStatus, symbol }) {
   const navigate = useNavigate();
   const isOpen = marketStatus === "OPEN";
@@ -183,7 +182,7 @@ function WatchlistButton({ stock_symbol, currentUser }) {
     </div>
   );
 }
-/* ─── First Level ──────────────────────────────────────────── */
+/*  First Level  */
 // selectedStock = symbol string ("NVDA"), stock = live data object from useLiveStocks
 function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, currentUser }) {
   //Price data lives in `stock` (passed from stocks[selectedStock] in the page).
@@ -268,7 +267,7 @@ function FirstLevel({ symbol, selectedStock, stock, marketStatus, lastUpdated, c
   );
 }
 
-/* ─── Stat Pill ────────────────────────────────────────────── */
+/*  Stat Pill  */
 function StatPill({ label, value }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "12px 20px", flex: 1 }}>
@@ -288,7 +287,7 @@ function StatPill({ label, value }) {
   );
 }
 
-/* ─── Alert Board ──────────────────────────────────────────── */
+/*  Alert Board  */
 function AlertBoard({ symbol }) {
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const userId = currentUser?.user_id;
@@ -542,7 +541,7 @@ function AlertBoard({ symbol }) {
   );
 }
 
-/* ─── Premium Lock Card ────────────────────────────────────── */
+/*  Premium Lock Card  */
 function PremiumLockCard() {
   const navigate = useNavigate();
   return (
@@ -594,7 +593,7 @@ function PremiumLockCard() {
   );
 }
 
-/* ─── Dashboard Lock Card (basic plan: 3-stock lifetime limit) ─ */
+/*  Dashboard Lock Card (basic plan: 3-stock lifetime limit)  */
 function DashboardLockCard({ symbol, viewsUsed, viewsLimit }) {
   const navigate = useNavigate();
   return (
@@ -647,7 +646,7 @@ function DashboardLockCard({ symbol, viewsUsed, viewsLimit }) {
   );
 }
 
-/* ─── Second + Third Level (two-column layout) ─────────────── */
+/*  Second + Third Level (two-column layout)  */
 const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, stockCandles, requestRangeData, stockList, candles, candleRanges, isPremium, showAlerts = true }) {
   if (!stock) return null;
   const { open, high, low, volume, avgVolume } = stock;
@@ -713,7 +712,7 @@ const SecondAndThirdLevel = memo(function SecondAndThirdLevel({ symbol, stock, s
   );
 });
 
-/* ─── Paper Exchange Panel ──────────────────────────────────── */
+/*  Paper Exchange Panel  */
 function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   const isMarketOpen = marketStatus === "OPEN";
   const userId = JSON.parse(sessionStorage.getItem("currentUser") || "{}").user_id;
@@ -1098,7 +1097,7 @@ function PaperExchangePanel({ symbol, livePrice, marketStatus }) {
   );
 }
 
-/* ─── Page ─────────────────────────────────────────────────── */
+/*  Page  */
 function AStockDashBoardPage() {
   const { symbol } = useParams();
   const location = useLocation();
@@ -1108,15 +1107,10 @@ function AStockDashBoardPage() {
   const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "{}");
   const isPremium = currentUser?.subscription_status?.toLowerCase() === "premium";
 
-  // Which page linked here — passed as router state by the caller (Watchlist,
-  // Real-time Dashboard, Portfolio Overview, Home, …). Falls back to the
-  // Real-time Dashboard when unset (e.g. a direct link/refresh has no state).
   const fromPath = location.state?.from || "/realtimedashboard";
   const fromLabel = location.state?.fromLabel || "Real-time Dashboard";
 
-  // Basic investors: lifetime limit of 3 distinct stocks' real-time
-  // dashboards. Re-opening an already-unlocked stock is free; premium and
-  // non-investor accounts are never limited (checked server-side).
+
   const [dashboardAccess, setDashboardAccess] = useState(null);
   useEffect(() => {
     if (!selectedStock) return;
@@ -1128,9 +1122,7 @@ function AStockDashBoardPage() {
     return () => { cancelled = true; };
   }, [selectedStock]);
 
-  // Pool membership is dynamic: any symbol present in the live snapshot
-  // (all 503 S&P 500 stocks) uses websocket data; anything else falls back
-  // to a one-off REST fetch.
+  // Pool membership is dynamic: any symbol present in the live snapshot(all 503 S&P 500 stocks) uses websocket data; anything else falls back to a one-off REST fetch.
   const isPoolStock = Boolean(stocks?.[selectedStock]);
 
   // For non-pool stocks, fetch snapshot + candles via REST
@@ -1206,87 +1198,87 @@ function AStockDashBoardPage() {
               viewsLimit={dashboardAccess.views_limit}
             />
           ) : (
-          <>
-          <FirstLevel
-            symbol={symbol}
-            selectedStock={selectedStock}
-            stock={stock}
-            marketStatus={marketStatus}
-            lastUpdated={lastUpdated}
-            currentUser={currentUser}
-          />
-          {/* Persistent price chart — stays fixed above the tabs on every view */}
-          {stock && (
-            <div style={{
-              background: "#FFFFFF",
-              border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
-              padding: "20px", marginTop: "16px",
-            }}>
-              <p style={{
-                fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8",
-                letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px"
-              }}>
-                Price Chart
-              </p>
-              <InteractiveChart
-                data={stockCandles}
+            <>
+              <FirstLevel
                 symbol={symbol}
-                requestRangeData={requestRangeData}
-                stockList={stockList}
-                compareDataBySymbol={candles}
-                candleRanges={candleRanges}
+                selectedStock={selectedStock}
+                stock={stock}
+                marketStatus={marketStatus}
+                lastUpdated={lastUpdated}
+                currentUser={currentUser}
               />
-            </div>
-          )}
-
-          {/* Tab bar — chart above stays put; only the panel below switches */}
-          <div style={{
-            display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
-            borderBottom: "1px solid rgba(11,29,79,0.25)"
-          }}>
-            {TABS.map((t) => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                style={{
-                  padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
-                  cursor: "pointer", color: tab === t.key ? "#0B1D4F" : "#5B6C88",
-                  borderBottom: tab === t.key ? "2px solid #0092b8" : "2px solid transparent",
+              {/* Persistent price chart — stays fixed above the tabs on every view */}
+              {stock && (
+                <div style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px",
+                  padding: "20px", marginTop: "16px",
                 }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+                  <p style={{
+                    fontFamily: "'DM Mono', monospace", fontSize: "10px", color: "#0092b8",
+                    letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px"
+                  }}>
+                    Price Chart
+                  </p>
+                  <InteractiveChart
+                    data={stockCandles}
+                    symbol={symbol}
+                    requestRangeData={requestRangeData}
+                    stockList={stockList}
+                    compareDataBySymbol={candles}
+                    candleRanges={candleRanges}
+                  />
+                </div>
+              )}
 
-          {tab === "overview" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <StockOverview symbol={selectedStock || symbol} live={stock} />
-            </div>
-          )}
+              {/* Tab bar — chart above stays put; only the panel below switches */}
+              <div style={{
+                display: "flex", gap: "4px", marginTop: "20px", marginBottom: "20px",
+                borderBottom: "1px solid rgba(11,29,79,0.25)"
+              }}>
+                {TABS.map((t) => (
+                  <button key={t.key} onClick={() => setTab(t.key)}
+                    style={{
+                      padding: "10px 18px", fontSize: "14px", fontWeight: 600, background: "transparent",
+                      cursor: "pointer", color: tab === t.key ? "#0B1D4F" : "#5B6C88",
+                      borderBottom: tab === t.key ? "2px solid #0092b8" : "2px solid transparent",
+                    }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-          {tab === "trading" && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-              <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
-            </div>
-          )}
+              {tab === "overview" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <StockOverview symbol={selectedStock || symbol} live={stock} />
+                </div>
+              )}
 
-          {tab === "prediction" && (
-            <div className="max-w mx-auto flex flex-col gap-6">
-              <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
-              <StockQuantRating symbol={selectedStock || symbol} />
-            </div>
-          )}
+              {tab === "trading" && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                  <PaperExchangePanel symbol={selectedStock} livePrice={stock?.price ?? null} marketStatus={marketStatus} />
+                </div>
+              )}
 
-          {tab === "comments" && (
-            <div className="max-w mx-auto">
-              <StockComments symbol={selectedStock || symbol} />
-            </div>
-          )}
+              {tab === "prediction" && (
+                <div className="max-w mx-auto flex flex-col gap-6">
+                  <StockPrediction symbol={selectedStock || symbol} livePrice={stock?.price ?? null} />
+                  <StockQuantRating symbol={selectedStock || symbol} />
+                </div>
+              )}
 
-          {tab === "alerts" && (
-            <div className="max-w mx-auto">
-              {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
-            </div>
-          )}
-          </>
+              {tab === "comments" && (
+                <div className="max-w mx-auto">
+                  <StockComments symbol={selectedStock || symbol} />
+                </div>
+              )}
+
+              {tab === "alerts" && (
+                <div className="max-w mx-auto">
+                  {isPremium ? <AlertBoard symbol={selectedStock || symbol} /> : <PremiumLockCard />}
+                </div>
+              )}
+            </>
           )}
 
         </main>

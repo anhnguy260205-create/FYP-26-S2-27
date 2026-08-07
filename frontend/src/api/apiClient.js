@@ -59,14 +59,33 @@ export async function authFetch(url, options = {}) {
   });
 
   if (response.status === 403) {
-    response
-      .clone()
-      .json()
-      .then((body) => {
-        if (body?.detail?.code === "account_suspended") kickOutSuspendedUser();
-      })
-      .catch(() => { });
+    try {
+      const body = await response.clone().json();
+      if (body?.detail?.code === "account_suspended") {
+        kickOutSuspendedUser();
+      } else if (body && typeof body.detail === "object" && body.detail !== null
+        && typeof body.detail.message === "string") {
+        // Some auth checks (e.g. mfa_required) return detail as
+        // {code, message} instead of a plain string. Callers throughout the
+        // app assume `detail` is always a string and render it directly, so
+        // flatten it here rather than fixing every call site individually.
+        return new Response(
+          JSON.stringify({ ...body, detail: body.detail.message }),
+          { status: response.status, statusText: response.statusText, headers: response.headers },
+        );
+      }
+    } catch { /* not JSON, or body already consumed -- fall through untouched */ }
   }
 
   return response;
+}
+
+/** authFetch() + JSON parsing, throwing on a non-OK response. */
+export async function requestJson(url, options = {}) {
+  const response = await authFetch(url, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || data.detail || `Request failed with status ${response.status}`);
+  }
+  return data;
 }

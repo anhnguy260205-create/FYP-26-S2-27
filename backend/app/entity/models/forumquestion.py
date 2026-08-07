@@ -31,6 +31,11 @@ FORUM_CATEGORIES = [
     "Risk Management",
 ]
 
+# Category used for per-stock expert comments (StockComments panel). Deliberately kept OUT of
+# FORUM_CATEGORIES so _validate_category() can never accept it on the general create/update post
+# routes -- it's only ever set directly by create_stock_comment().
+STOCK_COMMENT_CATEGORY = "Stock Discussion"
+
 
 
 class ForumPost(Base):
@@ -179,6 +184,14 @@ def _can_modify_reply(session, reply, user_id):
     return False
 
 
+def _forum_action_allowed(post, actor_is_privileged):
+    """Gate mutating actions (reply/like/save) that echo full post content back
+    in their response, for Stock Discussion posts only. No-op for every other
+    category -- without this, a non-privileged user with a valid login could
+    read gated content by replying/liking directly instead of listing posts."""
+    return post.category != STOCK_COMMENT_CATEGORY or actor_is_privileged
+
+
 def _validate_category(category):
     if category and category in FORUM_CATEGORIES:
         return category
@@ -221,7 +234,7 @@ def _serialise_reply(reply, user_id=None, session=None):
     }
 
 
-def _serialise_post(session, post, user_id=None, include_replies=True):
+def _serialise_post(session, post, user_id=None, include_replies=True, viewer_is_privileged=True):
     liked = saved = commented = flagged_by_me = False
     if user_id:
         liked = session.query(ForumPostLike).filter(
@@ -242,7 +255,8 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
     replies = list(post.replies or [])
     sorted_replies = sorted(replies, key=lambda r: r.created_at or datetime.min)
     ticker_list = [t.strip().upper() for t in (post.ticker_tags or "").split(",") if t.strip()]
-    return {
+    gated = post.category == STOCK_COMMENT_CATEGORY and not viewer_is_privileged
+    data = {
         "id":              post.post_id,
         "post_id":         post.post_id,
         "user_id":         post.user_id,
@@ -270,7 +284,13 @@ def _serialise_post(session, post, user_id=None, include_replies=True):
         "updated_at":      _safe_dt(post.updated_at),
         "time":            _safe_dt(post.created_at),
         "replies":         [_serialise_reply(r, user_id=user_id, session=session) for r in sorted_replies] if include_replies else [],
+        "is_gated":        gated,
     }
+    if gated:
+        data["content"] = None
+        data["preview"] = None
+        data["replies"] = []
+    return data
 
 
 
@@ -642,7 +662,7 @@ class ForumRepository:
     def list_posts(user_id=None, category=None, search=None, sort="latest",
                    ticker=None, page=1, page_size=20):
         with get_session() as session:
-            q = session.query(ForumPost)
+            q = session.query(ForumPost).filter(ForumPost.category != STOCK_COMMENT_CATEGORY)
             if category and category.lower() not in ("all", ""):
                 q = q.filter(ForumPost.category == category)
             if ticker:
@@ -673,7 +693,29 @@ class ForumRepository:
             }
 
     @staticmethod
-    def get_post(post_id, user_id=None):
+    def list_stock_comments(symbol, user_id=None, viewer_is_privileged=False, page=1, page_size=50):
+        with get_session() as session:
+            q = session.query(ForumPost).filter(
+                ForumPost.category == STOCK_COMMENT_CATEGORY,
+                ForumPost.ticker_tags.ilike(f"%{symbol.upper()}%"),
+            ).order_by(ForumPost.is_pinned.desc(), ForumPost.updated_at.desc())
+            total = q.count()
+            posts = q.offset((page - 1) * page_size).limit(page_size).all()
+            return {
+                "posts": [
+                    _serialise_post(session, p, user_id=user_id, include_replies=True,
+                                     viewer_is_privileged=viewer_is_privileged)
+                    for p in posts
+                ],
+                "total":       total,
+                "page":        page,
+                "page_size":   page_size,
+                "total_pages": max(1, -(-total // page_size)),
+                "gated":       not viewer_is_privileged,
+            }
+
+    @staticmethod
+    def get_post(post_id, user_id=None, viewer_is_privileged=True):
         with get_session() as session:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
@@ -687,7 +729,8 @@ class ForumRepository:
                     session.add(ForumPostView(post_id=post_id, user_id=user_id))
                     post.views_count = int(post.views_count or 0) + 1
                     session.flush()
-            return _serialise_post(session, post, user_id=user_id, include_replies=True)
+            return _serialise_post(session, post, user_id=user_id, include_replies=True,
+                                    viewer_is_privileged=viewer_is_privileged)
 
     @staticmethod
     def create_post(user_id, title, content, category=None, tags=None, ticker_tags=None):
@@ -707,6 +750,35 @@ class ForumRepository:
             session.add(post)
             session.flush()
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
+
+    @staticmethod
+    def create_stock_comment(user_id, symbol, content):
+        """Create an expert comment scoped to a single stock symbol. Bypasses
+        _validate_category on purpose -- STOCK_COMMENT_CATEGORY is never in
+        FORUM_CATEGORIES so it can only be set through this path."""
+        content = str(content or "").strip()
+        symbol = str(symbol or "").strip().upper()
+        if not content or not symbol:
+            return None
+        with get_session() as session:
+            author_name, author_role = _resolve_user_name(session, user_id)
+            title = content[:70] or f"{symbol} discussion"
+            post = ForumPost(
+                post_id=f"post_{uuid4()}",
+                user_id=user_id,
+                author_name=author_name,
+                author_role=author_role,
+                title=title,
+                content=content,
+                category=STOCK_COMMENT_CATEGORY,
+                tags="",
+                ticker_tags=symbol,
+            )
+            session.add(post)
+            session.flush()
+            # Author always sees their own freshly-posted comment in full.
+            return _serialise_post(session, post, user_id=user_id, include_replies=True,
+                                    viewer_is_privileged=True)
 
     @staticmethod
     def update_post(post_id, user_id, title=None, content=None,
@@ -736,7 +808,7 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def add_reply(post_id, user_id, content):
+    def add_reply(post_id, user_id, content, actor_is_privileged=True):
         if not content or not str(content).strip():
             return None
         # Step 1: write the reply in its own session so it fully commits to DB
@@ -745,6 +817,8 @@ class ForumRepository:
             if not post:
                 return None
             if post.is_closed:
+                return None
+            if not _forum_action_allowed(post, actor_is_privileged):
                 return None
             author_name, author_role = _resolve_user_name(session, user_id)
             reply = ForumReply(
@@ -766,12 +840,14 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def toggle_like(post_id, user_id):
+    def toggle_like(post_id, user_id, actor_is_privileged=True):
         if not user_id:
             return None
         with get_session() as session:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
+                return None
+            if not _forum_action_allowed(post, actor_is_privileged):
                 return None
             existing = session.query(ForumPostLike).filter(
                 ForumPostLike.post_id == post_id, ForumPostLike.user_id == user_id
@@ -807,12 +883,14 @@ class ForumRepository:
             return _serialise_post(session, post, user_id=user_id, include_replies=True)
 
     @staticmethod
-    def toggle_save(post_id, user_id):
+    def toggle_save(post_id, user_id, actor_is_privileged=True):
         if not user_id:
             return None
         with get_session() as session:
             post = session.query(ForumPost).filter(ForumPost.post_id == post_id).first()
             if not post:
+                return None
+            if not _forum_action_allowed(post, actor_is_privileged):
                 return None
             existing = session.query(ForumPostSave).filter(
                 ForumPostSave.post_id == post_id, ForumPostSave.user_id == user_id
