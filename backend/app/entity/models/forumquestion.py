@@ -159,6 +159,20 @@ class ForumPostRemoval(Base):
 
 
 
+def _is_verified_expert(session, user_id):
+    """Merged-role accounts (an investor later approved as an expert) keep
+    profile_name == "investor" forever -- verification status, not
+    profile_name, is the real signal for whether someone is an expert."""
+    from app.entity.models.expert import Expert
+    from app.entity.models.expertverification import ExpertVerification
+    expert = session.query(Expert).filter(Expert.user_id == user_id).first()
+    if not expert:
+        return False
+    verification = ExpertVerification.get_for_expert(expert.expert_id)
+    status = (verification or {}).get("verification_status")
+    return status in ("approved", "active")
+
+
 def _resolve_user_name(session, user_id):
     if not user_id:
         return "RocketTrade User", "investor"
@@ -166,6 +180,8 @@ def _resolve_user_name(session, user_id):
     if not user:
         return "RocketTrade User", "investor"
     role = user.profile.profile_name if getattr(user, "profile", None) else "user"
+    if role not in ("admin", "expert") and _is_verified_expert(session, user_id):
+        role = "expert"
     return user.full_name or user.username, role or "user"
 
 

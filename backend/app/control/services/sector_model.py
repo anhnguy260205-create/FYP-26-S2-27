@@ -505,6 +505,37 @@ def _confidence_level(auc, reliable) -> str:
     return "low"
 
 
+# Horizons (trading days) the UI lets users pick for the projected price path.
+PRICE_PATH_HORIZONS = (7, 15, 30)
+
+
+def _price_path(current_price: float, buy_probability: float, threshold: float,
+                 vol_21d: float | None) -> list:
+    """Random-walk-with-drift price path for a few short horizons, derived from
+    the calibrated buy probability (as a directional tilt around the model's
+    decision threshold) and realised volatility (for the confidence band).
+    This is a statistical projection layered on the trained 21-day buy/sell
+    signal, not a separately retrained per-horizon model."""
+    if not current_price or not math.isfinite(current_price):
+        return []
+    daily_vol = (vol_21d if vol_21d and math.isfinite(vol_21d) else 0.25) / math.sqrt(252)
+    edge = (buy_probability or 0.5) - (threshold or 0.5)
+    daily_drift = max(-0.01, min(0.01, edge * daily_vol))
+
+    path = []
+    for days in PRICE_PATH_HORIZONS:
+        price = current_price * (1 + daily_drift) ** days
+        band = daily_vol * math.sqrt(days)
+        path.append({
+            "days": days,
+            "price": round(price, 4),
+            "upper": round(price * math.exp(band), 4),
+            "lower": round(price * math.exp(-band), 4),
+            "changePct": round((price / current_price - 1) * 100, 2),
+        })
+    return path
+
+
 # Factor groups: (feature, +1 if higher-is-better else -1)
 _FACTOR_GROUPS = {
     "Momentum": [("mom_21d", 1), ("mom_63d", 1), ("mom_126d", 1), ("mom_252d", 1),
@@ -753,6 +784,10 @@ def rate_symbol(symbol: str) -> dict | None:
         "threshold": round(threshold, 4),
         "currentPrice": _safe(info.get("currentPrice", hist["Close"].iloc[-1])),
         "targetMeanPrice": _safe(info.get("targetMeanPrice")),
+        "pricePath": _price_path(
+            _safe(info.get("currentPrice", hist["Close"].iloc[-1])),
+            prob, threshold, features.get("vol_21d"),
+        ),
         "factorGrades": grades,
         "confidence": {
             "level": _confidence_level(minfo.get("auc"), minfo.get("reliable")),

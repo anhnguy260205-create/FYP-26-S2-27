@@ -3,7 +3,7 @@ RatingController
 ================
 Drives the Sector Quant Rating feature. Thin wrapper over
 ``app.control.services.sector_model`` — keeps the boundary layer free of any
-ML / yfinance details, mirroring PredictionController.
+ML / yfinance details.
 
 Endpoints it backs (see ratingb.py):
   • GET /rating/{symbol}          -> full quant rating for one ticker

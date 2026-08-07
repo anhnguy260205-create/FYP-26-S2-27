@@ -88,12 +88,57 @@ def _serialise_holding(holding):
     }
 
 
-def _serialise_portfolio(portfolio):
+def _build_real_holdings(user_id, rationales=None):
+    """Build the showcase holdings list from the expert's actual brokerage
+    positions (bought via the platform), so what investors see always
+    matches what the expert really holds instead of a separately hand-typed
+    row that can drift out of sync."""
+    from app.entity.models.investor import Investor
+    from app.entity.models.holding import Holding
+    from app.boundary.stock_ws import COMPANY_NAMES, SYMBOL_SECTOR, get_live_price
+
+    investor_info = Investor.getInvestorByUserId(user_id)
+    if not investor_info:
+        return []
+
+    positions = Holding.getHoldingsByInvestor(investor_info["investor_id"])
+    rationales = rationales or {}
+
+    rows = []
+    for pos in positions:
+        symbol = pos["symbol"]
+        quantity = float(pos["quantity"] or 0)
+        avg_cost = float(pos["average_cost"] or 0)
+        current_price = get_live_price(symbol) or avg_cost
+        rows.append({
+            "holding_id": pos["holding_id"],
+            "ticker": symbol,
+            "company_name": COMPANY_NAMES.get(symbol, symbol),
+            "asset_class": "Equity",
+            "sector": SYMBOL_SECTOR.get(symbol),
+            "units": quantity,
+            "average_buy_price": avg_cost,
+            "current_price": current_price,
+            "total_invested": quantity * avg_cost,
+            "allocation_percentage": 0.0,
+            "purchase_rationale": rationales.get(symbol, ""),
+        })
+
+    total_invested = sum(r["total_invested"] for r in rows)
+    if total_invested > 0:
+        for r in rows:
+            r["allocation_percentage"] = round(r["total_invested"] / total_invested * 100, 2)
+
+    return rows
+
+
+def _serialise_portfolio(portfolio, holdings=None):
     if not portfolio:
         return None
-    holdings = list(portfolio.holdings or [])
-    total_invested = sum(float(h.total_invested or 0) for h in holdings)
-    total_allocation = sum(float(h.allocation_percentage or 0) for h in holdings)
+    if holdings is None:
+        holdings = [_serialise_holding(h) for h in (portfolio.holdings or [])]
+    total_invested = sum(float(h.get("total_invested") or 0) for h in holdings)
+    total_allocation = sum(float(h.get("allocation_percentage") or 0) for h in holdings)
     return {
         "portfolio_id": portfolio.portfolio_id,
         "expert_id": portfolio.expert_id,
@@ -112,8 +157,31 @@ def _serialise_portfolio(portfolio):
         "total_invested": total_invested,
         "total_allocation": total_allocation,
         "total_holdings": len(holdings),
-        "holdings": [_serialise_holding(h) for h in holdings],
+        "holdings": holdings,
     }
+
+
+def _with_performance(data: dict) -> dict:
+    """Adds total_value (mark-to-market) and return_pct to an already-
+    serialised portfolio dict, computed from its holdings."""
+    total_value = sum(float(h["units"] or 0) * float(h["current_price"] or 0) for h in data["holdings"])
+    invested = data["total_invested"] or 0
+    data.update({
+        "total_value": round(total_value, 2),
+        "return_pct": round((total_value - invested) / invested * 100, 2) if invested > 0 else 0.0,
+    })
+    return data
+
+
+def _holdings_for_display(portfolio, user_id):
+    """Prefer the expert's real positions; fall back to the hand-entered
+    rows only when they have no real holdings yet (e.g. a fresh demo)."""
+    manual_holdings = list(portfolio.holdings or [])
+    rationales = {h.ticker: h.purchase_rationale for h in manual_holdings if h.purchase_rationale}
+    real_holdings = _build_real_holdings(user_id, rationales) if user_id else []
+    if real_holdings:
+        return real_holdings
+    return [_serialise_holding(h) for h in manual_holdings]
 
 
 class ExpertPortfolioRepository:
@@ -147,7 +215,11 @@ class ExpertPortfolioRepository:
             if not portfolio:
                 portfolio = ExpertPortfolioRepository._create_demo(session, expert_id)
                 session.flush()
-            return _serialise_portfolio(portfolio)
+
+            resolved_user_id = user_id or session.query(Expert).filter(
+                Expert.expert_id == expert_id).first().user_id
+            return _with_performance(
+                _serialise_portfolio(portfolio, _holdings_for_display(portfolio, resolved_user_id)))
 
     @staticmethod
     def save_for_user(user_id, payload):
@@ -190,7 +262,7 @@ class ExpertPortfolioRepository:
                     purchase_rationale=item.get("purchase_rationale") or item.get("rationale") or "",
                 ))
             session.flush()
-            return _serialise_portfolio(portfolio)
+            return _with_performance(_serialise_portfolio(portfolio, _holdings_for_display(portfolio, user_id)))
 
     @staticmethod
     def get_by_user(user_id):
@@ -203,7 +275,9 @@ class ExpertPortfolioRepository:
                 return None
             portfolio = session.query(ExpertPortfolio).filter(
                 ExpertPortfolio.expert_id == expert.expert_id).first()
-            return _serialise_portfolio(portfolio)
+            if not portfolio:
+                return None
+            return _with_performance(_serialise_portfolio(portfolio, _holdings_for_display(portfolio, user_id)))
 
     @staticmethod
     def set_published(user_id, published: bool):
@@ -245,18 +319,13 @@ class ExpertPortfolioRepository:
             )
             out = []
             for portfolio, expert, user in rows:
-                data = _serialise_portfolio(portfolio)
-                total_value = sum(
-                    float(h.units or 0) * float(h.current_price or 0)
-                    for h in portfolio.holdings)
-                invested = data["total_invested"] or 0
+                data = _with_performance(
+                    _serialise_portfolio(portfolio, _holdings_for_display(portfolio, expert.user_id)))
                 data.update({
                     "expert_user_id": expert.user_id,
                     "expert_name": user.full_name or user.username or "Expert",
                     "expert_rating": expert.rating,
                     "experience_years": expert.experience_years,
-                    "total_value": round(total_value, 2),
-                    "return_pct": round((total_value - invested) / invested * 100, 2) if invested > 0 else 0.0,
                 })
                 out.append(data)
             return out

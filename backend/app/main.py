@@ -44,7 +44,6 @@ from app.entity.models.contentmanagement import ContentManagement, seed_landing_
 from app.entity.models.emailalert import StockAlert
 from app.entity.models.notification import Notification, NotificationBroadcast
 from app.entity.models.order_book import OrderBook
-from app.entity.models.predictionusage import PredictionUsage
 from app.entity.models.dashboardusage import DashboardUsage
 from app.entity.models.chatusage import ChatUsage
 from app.entity.models.login_mfa import LoginMfaOtp, LoginMfaSession

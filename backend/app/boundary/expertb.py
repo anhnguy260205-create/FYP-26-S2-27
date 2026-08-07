@@ -97,9 +97,12 @@ def apply_for_expert(current_user: dict = Depends(get_current_user)):
 @router.get("/public-list")
 def public_expert_list(current_user: dict = Depends(get_current_user)):
     """Approved experts with their core info, for the Expert Portfolio page."""
+    from app.entity.models.investor import Investor
+
     experts = Expert.get_all_for_admin()
 
     def _pub(e):
+        investor_info = Investor.getInvestorByUserId(e["user_id"])
         return {
             "user_id": e["user_id"],
             "full_name": e["full_name"],
@@ -108,6 +111,7 @@ def public_expert_list(current_user: dict = Depends(get_current_user)):
             "verification_status": e["verification_status"],
             "follower_count": ExpertFollow.get_follower_count(e["user_id"]),
             "portfolio_rating": ExpertPortfolioReview.get_stats(e["user_id"]),
+            "risk_tolerance": (investor_info or {}).get("risk_tolerance"),
         }
 
     approved = [_pub(e) for e in experts
@@ -185,6 +189,7 @@ def public_expert_profile(user_id: str,
             "is_self": current_user["user_id"] == user_id,
             "portfolio_rating": ExpertPortfolioReview.get_stats(user_id),
             "interests": (investor_info or {}).get("interests"),
+            "risk_tolerance": (investor_info or {}).get("risk_tolerance"),
         },
     }
 
