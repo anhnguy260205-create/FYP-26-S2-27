@@ -311,7 +311,7 @@ def seed_landing_content():
 
             # Shared Expert Portfolio list page (ExpertPortfolio.jsx)
             ContentManagement(content_id="expert_portfolio_list_header", section="expert_portfolio_page", title="Expert Portfolio", description="Explore and invest in portfolios managed by our expert consultants.", order_index=0),
-            ContentManagement(content_id="expert_portfolio_list_expert_header", section="expert_portfolio_page", title="Expert Portfolio Directory", description="Preview how investors browse verified expert portfolios.", order_index=1),
+            ContentManagement(content_id="expert_portfolio_list_expert_header", section="expert_portfolio_page", title="Expert Portfolio", description="Preview how investors browse verified expert portfolios.", order_index=1),
             ContentManagement(content_id="expert_portfolio_search_placeholder", section="expert_portfolio_page", title="Search expert by name or keyword...", order_index=2),
             ContentManagement(content_id="expert_portfolio_search_cta", section="expert_portfolio_page", title="Search", order_index=3),
             ContentManagement(content_id="expert_portfolio_empty", section="expert_portfolio_page", title="No experts found.", order_index=4),
