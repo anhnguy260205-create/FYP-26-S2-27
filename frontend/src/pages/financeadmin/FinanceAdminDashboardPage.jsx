@@ -136,11 +136,10 @@ function FinanceAdminDashboardPage() {
                 <button
                   key={opt.months}
                   onClick={() => setMonths(opt.months)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${
-                    months === opt.months
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${months === opt.months
                       ? "bg-white text-green-600 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -180,26 +179,7 @@ function FinanceAdminDashboardPage() {
           )}
         </div>
 
-        {/* Quick links */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: "Revenue Analysis", desc: "Trends & commission ledger", path: "/finance-admin/revenue" },
-            { label: "Payment Transactions", desc: "Cash in / out monitoring", path: "/finance-admin/payments" },
-            { label: "Financial Reports", desc: "Daily / weekly / monthly", path: "/finance-admin/reports" },
-          ].map((link) => (
-            <button
-              key={link.path}
-              onClick={() => navigate(link.path)}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left hover:border-blue-200 hover:shadow transition"
-            >
-              <p className="font-bold text-slate-900">{link.label}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{link.desc}</p>
-              <span className="mt-3 inline-flex items-center gap-1 text-blue-600 text-sm font-medium">
-                Open <ArrowRight size={14} className="group-hover:translate-x-0.5 transition" />
-              </span>
-            </button>
-          ))}
-        </div>
+
       </div>
     </FinanceAdminLayout>
   );
