@@ -47,6 +47,9 @@ const docTypeStyle = (type) => {
 const inputCls = "w-full rounded-[10px] px-3 text-[13px] text-gray-800 placeholder-gray-400 focus:outline-none transition";
 const inputStyle = { height: 42, background: "white", border: "1px solid #d1d5db" };
 
+// Must be an actual LinkedIn profile/company link — not just any URL or free text.
+const LINKEDIN_URL_RE = /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/(in|company)\/[a-z0-9\-_%]+\/?(\?.*)?$/i;
+
 function ProgressCard({ icon: Icon, title, current, target, unit, done }) {
   const pct = Math.max(0, Math.min(100, (current / target) * 100));
   return (
@@ -131,8 +134,11 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
   const toggleInterest = (s) =>
     setInterests((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
+  const linkedInTrimmed = linkedInUrl.trim();
+  const linkedInValid = LINKEDIN_URL_RE.test(linkedInTrimmed);
+
   const complete = fullName.trim() && phoneNumber.trim() && country &&
-    experienceYears !== "" && linkedInUrl.trim() && riskTolerance && interests.length > 0;
+    experienceYears !== "" && linkedInValid && riskTolerance && interests.length > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -207,8 +213,18 @@ function ParticularsForm({ initial, onContinue, onCancel, submitLabel = "Continu
         </select>
         <input type="number" min="0" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)} placeholder="Years of experience"
           className={inputCls} style={inputStyle} />
-        <input value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} placeholder="LinkedIn URL"
-          className={inputCls} style={{ ...inputStyle, gridColumn: "span 2" }} />
+        <input type="url" value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)}
+          placeholder="LinkedIn URL (e.g. https://linkedin.com/in/yourname)"
+          className={inputCls}
+          style={{
+            ...inputStyle, gridColumn: "span 2",
+            border: linkedInTrimmed && !linkedInValid ? "1px solid #dc2626" : inputStyle.border,
+          }} />
+        {linkedInTrimmed && !linkedInValid && (
+          <p style={{ gridColumn: "span 2", margin: 0, fontSize: 11, color: "#dc2626" }}>
+            Enter a valid LinkedIn profile or company link, e.g. https://linkedin.com/in/yourname
+          </p>
+        )}
       </div>
 
       <div>

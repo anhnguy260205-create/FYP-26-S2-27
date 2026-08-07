@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   getStockComments,
   postStockComment,
@@ -15,10 +15,10 @@ const EXPERT_ROLES = ["expert", "consultant", "admin"];
 const CARD = { background: "#FFFFFF", border: "1px solid rgba(11,29,79,0.25)", borderRadius: "12px" };
 
 const ROLE_BADGE = {
-  expert:     { label: "Expert",     color: "#B45309", bg: "rgba(180,83,9,0.1)", border: "rgba(180,83,9,0.3)" },
+  expert: { label: "Expert", color: "#B45309", bg: "rgba(180,83,9,0.1)", border: "rgba(180,83,9,0.3)" },
   consultant: { label: "Consultant", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.3)" },
-  admin:      { label: "Admin",      color: "#0E7490", bg: "rgba(14,116,144,0.1)", border: "rgba(14,116,144,0.3)" },
-  premium:    { label: "Premium",    color: "#0092b8", bg: "rgba(0,146,184,0.1)", border: "rgba(0,146,184,0.3)" },
+  admin: { label: "Admin", color: "#0E7490", bg: "rgba(14,116,144,0.1)", border: "rgba(14,116,144,0.3)" },
+  premium: { label: "Premium", color: "#0092b8", bg: "rgba(0,146,184,0.1)", border: "rgba(0,146,184,0.3)" },
 };
 const isExpert = (role) => EXPERT_ROLES.includes((role || "").toLowerCase());
 
@@ -151,6 +151,7 @@ function CommentCard({ post, me, canPost, onChanged }) {
 /* CourseHero-style premium gate: real posts render blurred underneath a
    lock overlay, so basic users see that content exists but can't read it. */
 function PremiumBlurGate({ children, count, symbol }) {
+  const navigate = useNavigate();
   return (
     <div className="relative rounded-xl overflow-hidden">
       <div style={{ filter: "blur(7px)", userSelect: "none", pointerEvents: "none" }} aria-hidden="true">
@@ -163,18 +164,16 @@ function PremiumBlurGate({ children, count, symbol }) {
           🔒
         </div>
         <div className="text-slate-900 font-semibold text-sm">
-          {count > 0
-            ? `${count} expert post${count === 1 ? "" : "s"} on ${symbol} — Premium only`
-            : `Expert commentary on ${symbol} — Premium only`}
+          {count} expert post{count === 1 ? "" : "s"} on {symbol} — Premium only
         </div>
         <div className="text-slate-500 text-xs max-w-70">
           Upgrade to Premium to read what verified experts are saying about {symbol}.
         </div>
-        <Link to="/investor/subscription"
+        <button onClick={() => navigate("/investor/subscription")}
           className="text-sm font-semibold px-5 py-2 rounded-xl text-white hover:opacity-90 active:scale-[0.99] transition"
           style={{ background: "linear-gradient(90deg, #d4a017, #b8860b)", boxShadow: "0 8px 18px rgba(212,160,23,0.25)" }}>
           Upgrade to Premium →
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -185,9 +184,7 @@ export default function StockComments({ symbol }) {
   // Posting is server-side restricted to verified experts only.
   const canPost = me.is_expert === true;
   const [posts, setPosts] = useState([]);
-  // Reflects the server's own gating decision (res.gated) rather than a
-  // possibly-stale local guess, since the backend now redacts content for
-  // non-privileged viewers regardless of what the UI shows.
+
   const [gated, setGated] = useState(true);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -236,14 +233,6 @@ export default function StockComments({ symbol }) {
             </button>
           </div>
         </div>
-      ) : gated ? (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-5 text-center text-sm text-slate-600">
-          Only <span className="font-semibold text-amber-600">verified experts</span> can post here.{" "}
-          <Link to="/investor/subscription" className="font-semibold text-cyan-600 hover:underline">
-            Upgrade to Premium
-          </Link>{" "}
-          to read what they're saying about {symbol}.
-        </div>
       ) : (
         <div className="rounded-xl bg-slate-100 border border-slate-200 p-4 mb-5 text-center text-sm text-slate-600">
           Only <span className="font-semibold text-amber-600">verified experts</span> can post here. You can read the discussion below.
@@ -255,20 +244,9 @@ export default function StockComments({ symbol }) {
         <div className="space-y-3">
           {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-xl bg-slate-200 animate-pulse" />)}
         </div>
-      ) : gated ? (
-        // Basic users always see the paywall, even with zero posts today —
-        // otherwise an empty state would leak "nothing to unlock here" info
-        // and undercut the upgrade prompt.
-        <PremiumBlurGate count={posts.length} symbol={symbol}>
-          <div className="space-y-3">
-            {posts.slice(0, 3).map((p) => (
-              <CommentCard key={p.post_id} post={p} me={me} canPost={false} onChanged={() => {}} />
-            ))}
-          </div>
-        </PremiumBlurGate>
       ) : posts.length === 0 ? (
         <div className="text-center py-10 text-slate-500 text-sm">No expert posts on {symbol} yet.</div>
-      ) : (
+      ) : !gated ? (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
             {posts.map((p) => (
@@ -276,6 +254,14 @@ export default function StockComments({ symbol }) {
             ))}
           </AnimatePresence>
         </div>
+      ) : (
+        <PremiumBlurGate count={posts.length} symbol={symbol}>
+          <div className="space-y-3">
+            {posts.slice(0, 3).map((p) => (
+              <CommentCard key={p.post_id} post={p} me={me} canPost={false} onChanged={() => { }} />
+            ))}
+          </div>
+        </PremiumBlurGate>
       )}
     </div>
   );

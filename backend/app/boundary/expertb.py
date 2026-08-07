@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -15,6 +16,13 @@ router = APIRouter(prefix="/expert", tags=["Expert"])
 # Expert-upgrade requirements (merged roles: investors apply to become experts)
 EXPERT_MIN_DISTINCT_STOCKS = 30
 EXPERT_MIN_PROFIT_MARGIN = 200.0  # percent
+
+# Mirrors the frontend's LINKEDIN_URL_RE (BecomeExpertPage.jsx) so the check
+# still holds if a caller hits this endpoint directly instead of the form.
+_LINKEDIN_URL_RE = re.compile(
+    r"^https://([a-z]{2,3}\.)?linkedin\.com/(in|company)/[a-z0-9\-_%]+/?(\?.*)?$",
+    re.IGNORECASE,
+)
 
 
 
@@ -338,6 +346,16 @@ def update_expert_profile(
     data: UpdateExpertProfileRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    if data.linked_in_url is not None:
+        url = data.linked_in_url.strip()
+        if not _LINKEDIN_URL_RE.match(url):
+            return {
+                "success": False,
+                "message": "Enter a valid LinkedIn profile or company link, "
+                           "e.g. https://linkedin.com/in/yourname",
+            }
+        data.linked_in_url = url
+
     ok = Expert.update_profile(
         current_user["user_id"],
         data.experience_years,

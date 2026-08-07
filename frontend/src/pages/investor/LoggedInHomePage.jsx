@@ -1065,6 +1065,13 @@ const EXPERT_FEATURE_CARDS = [
     path: "/expert/knowledge-hub",
   },
   {
+    key: "portfolio",
+    icon: Briefcase,
+    title: "My Portfolio",
+    description: "Publish and manage the portfolio you share with investors.",
+    path: "/investor/expertportfolio",
+  },
+  {
     key: "compensation",
     icon: Wallet,
     title: "Compensation",
@@ -1125,7 +1132,7 @@ function ExpertFeaturesSection() {
         subtitle="Your expert tools, plus reference portfolios from other verified experts"
         dark={false}
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {EXPERT_FEATURE_CARDS.map((card) => (
           <ExpertFeatureCard
             key={card.key}

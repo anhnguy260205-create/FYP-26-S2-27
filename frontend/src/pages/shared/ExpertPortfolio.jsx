@@ -43,9 +43,6 @@ const PAGE = {
     heading: "#0B1D4F",
     sub: "#33477A",
 };
-
-// Experts are loaded from the backend (/expert/public-list) and mapped to
-// this display shape. The risk badge reflects the expert's risk_tolerance.
 const RISK_MAP = { Aggressive: "High", Moderate: "Moderate", Conservative: "Low" };
 
 function toDisplayExpert(e) {
@@ -58,8 +55,7 @@ function toDisplayExpert(e) {
         market: "Global Markets",
         risk: RISK_MAP[e.risk_tolerance] || "Moderate",
         followers: e.follower_count ?? 0,
-        // Prefer the real portfolio-review average; fall back to the static
-        // Expert.rating field until an expert has any reviews.
+
         rating: portfolioRating.total > 0 ? portfolioRating.average : Number(e.rating || 0),
         avatar: name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase(),
     };
@@ -345,7 +341,6 @@ export default function ExpertPortfolio() {
                     >
 
                         <div>Expert</div>
-                        <div>Target Market</div>
                         <div>Risk Level</div>
                         <div>Followers</div>
                         <div>Rating</div>
@@ -399,7 +394,6 @@ export default function ExpertPortfolio() {
                                 </div>
                             </div>
 
-                            <div style={{ color: C.text }}>{expert.market}</div>
 
                             <div>
                                 <span
