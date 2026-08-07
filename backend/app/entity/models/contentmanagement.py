@@ -244,6 +244,22 @@ def seed_landing_content():
             # Expert home page (ExpertLoggedInPage.jsx) — also used to be hardcoded
             ContentManagement(content_id="expert_hero_subtitle", section="expert_hero",
                 title="Manage your portfolio, publish content, and connect with investors.", order_index=0),
+
+            # Expert Features quick-link cards shown on the shared logged-in
+            # homepage (LoggedInHomePage.jsx), experts only. Icons and link
+            # targets stay hardcoded client-side, same as other card sections.
+            ContentManagement(content_id="header_expert_features", section="page_headers",
+                title="Expert Features", description="Your expert tools", order_index=29),
+            ContentManagement(content_id="expert_home_feat_0", section="expert_home_features",
+                title="My Education Content", description="Write and manage the articles you've published to the knowledge hub.", order_index=0),
+            ContentManagement(content_id="expert_home_feat_1", section="expert_home_features",
+                title="My Portfolio", description="Publish and manage the portfolio you share with investors.", order_index=1),
+            ContentManagement(content_id="expert_home_feat_2", section="expert_home_features",
+                title="Compensation", description="Track your earnings and payout history as a verified expert.", order_index=2),
+            # Button text for each card above, matched up by position (same pattern as investor_home_features_cta)
+            ContentManagement(content_id="expert_home_feat_0_cta", section="expert_home_features_cta", title="Open", order_index=0),
+            ContentManagement(content_id="expert_home_feat_1_cta", section="expert_home_features_cta", title="Open", order_index=1),
+            ContentManagement(content_id="expert_home_feat_2_cta", section="expert_home_features_cta", title="Open", order_index=2),
             ContentManagement(content_id="header_expert_tools", section="page_headers", title="Your Tools", description="Everything you need to publish, answer, and grow your reach", order_index=11),
             ContentManagement(content_id="expert_tool_0", section="expert_tools", title="Real-time Dashboard", description="View live stock prices, AI-powered predictions, and market insights to support investment decision-making.", order_index=0),
             ContentManagement(content_id="expert_tool_1", section="expert_tools", title="Knowledge Hub",       description="Write and publish educational articles for investors, from beginner basics to advanced strategy.", order_index=1),

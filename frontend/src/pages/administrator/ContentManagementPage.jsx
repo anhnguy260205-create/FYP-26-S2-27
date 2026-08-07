@@ -30,6 +30,7 @@ const CARD_ICONS = {
   expert_role_benefits: [BrainCircuit, DollarSign, Users],
   investor_home_features: [Wallet, BrainCircuit, MessagesSquare, Bot, GraduationCap],
   expert_tools: [Activity, GraduationCap, MessagesSquare, Briefcase, MessageSquare],
+  expert_home_features: [GraduationCap, Briefcase, Wallet],
   forum_topics: [Gauge, BrainCircuit, Briefcase, TrendingUp, GraduationCap, Sparkles, Activity, DollarSign, Wallet, MessageSquare, Zap, LayoutDashboard],
 };
 
@@ -231,6 +232,7 @@ const INVESTOR_EXPERT_HOME_SUBTABS = [
 // appear scrolling down the page: hero, model portfolio, profile, tools,
 // then the verification documents banner at the very bottom.
 const EXPERT_PAGES_SUBTABS = [
+  { key: "expert_home_page", label: "Logged In Homepage", icon: LayoutDashboard, kind: "generic", preview: "cards", headerId: "header_expert_features", itemsSection: "expert_home_features", perCardCtaSection: "expert_home_features_cta", hint: "Controls the \"Expert Features\" heading, quick-link cards (My Education Content, My Portfolio, Compensation), and each card's button text, shown to experts on the shared logged-in homepage." },
   { key: "expert_compensation_page", label: "Compensation Page", icon: DollarSign, kind: "generic", preview: "expert_compensation_page", headerId: "expert_compensation_header", itemsSection: "expert_compensation_page", hint: "Controls the main headings, notices, locked-state copy, and empty-state messages on the Expert Compensation page. Numerical values and table column labels remain system-generated." },
   { key: "expert_documents_page", label: "Documents Page", icon: FileText, kind: "generic", preview: "expert_documents_page", headerId: "expert_documents_page_header", itemsSection: "expert_documents_page", hint: "Controls the headings, instructions, and action text on the Expert document submission page." },
   { key: "expert_knowledge_page", label: "Knowledge Hub Page", icon: GraduationCap, kind: "generic", preview: "expert_knowledge_page", headerId: "expert_knowledge_header", itemsSection: "expert_knowledge_page", hint: "Controls the headings, empty-state messages, and verification guidance shown on the Expert Knowledge Hub page." },
@@ -444,6 +446,7 @@ const DESCRIPTION_SECTIONS = new Set([
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "investor_banner_basic", "investor_banner_premium",
   "about_values", "about_team", "help_faqs",
+  "expert_home_features",
 ]);
 
 const DESCRIPTION_CONTENT_IDS = new Set([
@@ -455,6 +458,12 @@ const LONG_TITLE_CONTENT_IDS = new Set([
   "help_faq_category_desc",
   "help_empty_desc",
   "help_contact_desc",
+]);
+
+// Sections where admins may only edit the description — the card title
+// stays fixed so it keeps matching the page it links to.
+const TITLE_LOCKED_SECTIONS = new Set([
+  "expert_home_features",
 ]);
 
 // Live preview mockups. These are hand-built approximations of how each
@@ -1645,6 +1654,7 @@ function ContentManagementPage() {
     const orderable = ORDERABLE_SECTIONS.has(item.section) && list.length > 1;
     const isDragOver = orderable && dragOverId === item.content_id && dragId !== item.content_id;
     const showDesc = (DESCRIPTION_SECTIONS.has(item.section) || DESCRIPTION_CONTENT_IDS.has(item.content_id)) && !item.content_id.endsWith("_cta");
+    const titleLocked = TITLE_LOCKED_SECTIONS.has(item.section);
     return (
       <div
         key={item.content_id}
@@ -1660,7 +1670,11 @@ function ContentManagementPage() {
           <div className="space-y-3">
             <div>
               <label className="text-xs font-bold text-slate-400 mb-1 block">TITLE</label>
-              {LONG_TITLE_CONTENT_IDS.has(item.content_id) ? (
+              {titleLocked ? (
+                <p className="w-full border rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-500" title="This title is fixed and can't be edited.">
+                  {form.title}
+                </p>
+              ) : LONG_TITLE_CONTENT_IDS.has(item.content_id) ? (
                 <textarea
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}

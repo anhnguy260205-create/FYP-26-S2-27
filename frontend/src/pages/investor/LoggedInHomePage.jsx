@@ -1077,7 +1077,7 @@ const EXPERT_FEATURE_CARDS = [
   },
 ];
 
-function ExpertFeatureCard({ icon: Icon, title, description, onClick }) {
+function ExpertFeatureCard({ icon: Icon, title, description, cta, onClick }) {
   return (
     <div
       onClick={onClick}
@@ -1094,7 +1094,7 @@ function ExpertFeatureCard({ icon: Icon, title, description, onClick }) {
       </div>
       <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
       <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#7C3AED] group-hover:gap-2 transition-all mt-auto">
-        Open <ArrowRight size={12} />
+        {cta || "Open"} <ArrowRight size={12} />
       </span>
     </div>
   );
@@ -1103,23 +1103,27 @@ function ExpertFeatureCard({ icon: Icon, title, description, onClick }) {
 // ── Expert features ────────────────────────────────────────────────────
 // Quick links to the expert's own tools. Hidden entirely for non-experts
 // (gated at the call site).
-function ExpertFeaturesSection() {
+function ExpertFeaturesSection({ header, items }) {
   const navigate = useNavigate();
+  const h = header("header_expert_features", "Expert Features", "Your expert tools");
+  const cards = items("expert_home_features", EXPERT_FEATURE_CARDS);
+  const ctaOverrides = items("expert_home_features_cta", []);
 
   return (
     <section>
       <SectionHeader
-        title="Expert Features"
-        subtitle="Your expert tools"
+        title={h.title}
+        subtitle={h.description}
         dark={false}
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {EXPERT_FEATURE_CARDS.map((card) => (
+        {cards.map((card, i) => (
           <ExpertFeatureCard
             key={card.key}
             icon={card.icon}
             title={card.title}
             description={card.description}
+            cta={ctaOverrides[i]?.title}
             onClick={() => navigate(card.path)}
           />
         ))}
@@ -1184,7 +1188,7 @@ function LoggedInHomePage() {
           <AIInsightsSection portfolioData={portfolioData} header={header} userId={userId} riskTolerance={currentUser?.risk_tolerance} />
           <PortfolioSummarySection portfolioData={portfolioData} userId={userId} header={header} />
           <WatchlistSection header={header} />
-          {isExpert && <ExpertFeaturesSection />}
+          {isExpert && <ExpertFeaturesSection header={header} items={items} />}
 
           {!subscription.loading && !(subscription.status === "premium" || isPremiumInvestor) && (
             <BasicUpgradeBanner header={header} />
