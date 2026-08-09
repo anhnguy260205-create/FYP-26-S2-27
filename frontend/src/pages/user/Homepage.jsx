@@ -18,27 +18,27 @@ import {
 const FAQS = [
   {
     title: "Is this real money trading?",
-    description: "No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.",
+    description: "Nope — RocketTrade is a paper trading platform. You trade against live market prices using virtual funds, so you can build real skills without any real financial risk.",
   },
   {
     title: "How much does it cost to use RocketTrade?",
-    description: "You can start for free with our Starter plan. Upgrade to Pro anytime for unlimited AI predictions, deeper quant ratings, and priority expert access.",
+    description: "You can get started for free with our Starter plan. Whenever you're ready, upgrade to Pro for unlimited AI predictions, deeper quant ratings, and priority access to our experts.",
   },
   {
     title: "How accurate are the AI predictions?",
-    description: "Our models combine technical indicators and news sentiment to forecast short-term price direction. They're a decision-support tool, not a guarantee, so always do your own research too.",
+    description: "Our models combine technical indicators with news sentiment to forecast short-term price direction. Think of it as a decision-support tool rather than a guarantee — it's always worth doing your own research too.",
   },
   {
     title: "Do I need any trading experience to get started?",
-    description: "Not at all. Our Educational Content library covers everything from beginner basics to advanced strategy, so you can learn as you go.",
+    description: "Not at all. Our Educational Content library covers everything from the basics to more advanced strategy, so you can pick things up as you go.",
   },
   {
     title: "Can I get help from a real person?",
-    description: "Yes — chat instantly with our AI assistant, or connect with a verified market expert through consultations and Q&A.",
+    description: "Yes — you can chat with our AI assistant instantly, or connect with one of our verified market experts through consultations and Q&A.",
   },
   {
     title: "Can I cancel or change my plan anytime?",
-    description: "Yes, you can upgrade, downgrade, or cancel your subscription at any time from your account settings.",
+    description: "Definitely. You can upgrade, downgrade, or cancel your subscription whenever you like, right from your account settings.",
   },
 ];
 
@@ -530,9 +530,9 @@ function LandingSectionDivider({ label = "Next Section" }) {
   );
 }
 
-function LandingPanel({ children, className = "", muted = false }) {
+function LandingPanel({ children, className = "", muted = false, id }) {
   return (
-    <section className={`bg-white ${muted ? "bg-slate-50/70" : ""} border-b border-slate-100 ${className}`}>
+    <section id={id} className={`bg-white ${muted ? "bg-slate-50/70" : ""} border-b border-slate-100 ${className}`}>
       {children}
     </section>
   );
@@ -926,6 +926,19 @@ function HomePage() {
   const faqHeader = header("header_faq", "Frequently Asked Questions", "Everything you need to know before you get started.");
   const pricingHeader = header("header_pricing", "Simple, Transparent Pricing", "Compare our Free and Pro plans — create an investor account to get started.");
 
+  // Scroll to an in-page section (e.g. #features, #pricing) when the page is opened with a hash,
+  // such as from the footer's "Features" / "Pricing" links on other pages.
+  useEffect(() => {
+    const hash = window.location.hash?.replace("#", "");
+    if (!hash) return;
+    const target = document.getElementById(hash);
+    if (!target) return;
+    const timer = setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <motion.div
       className="min-h-screen flex flex-col bg-linear-to-br from-slate-950 via-blue-950 to-slate-900 text-white"
@@ -949,7 +962,7 @@ function HomePage() {
           />
         </LandingPanel>
 
-        <LandingPanel>
+        <LandingPanel id="features">
           <FeatureCards
             heading={featuresInvestorHeader.title}
             subtitle={featuresInvestorHeader.description}
@@ -958,7 +971,7 @@ function HomePage() {
           />
         </LandingPanel>
 
-        <LandingPanel muted>
+        <LandingPanel id="pricing" muted>
           <PricingSection heading={pricingHeader.title} subtitle={pricingHeader.description} />
         </LandingPanel>
 

@@ -12,10 +12,10 @@ function FooterLink({ href, children }) {
 const DEFAULT = {
   brand: { title: "Rocket Trading", description: "AI-powered stock market predictions for the modern investor." },
   version: "v1.0.0",
-  product: [{ title: "Features", description: "#" }, { title: "Pricing", description: "/investor/subscription" }],
-  company: [{ title: "About Us", description: "#" }, { title: "Careers", description: "#" }, { title: "Blog", description: "#" }, { title: "Press", description: "#" }, { title: "Reviews", description: "/reviews" }],
+  product: [{ title: "Features", description: "/#features" }, { title: "Pricing", description: "/#pricing" }],
+  company: [{ title: "About Us", description: "/about-us" }, { title: "Reviews", description: "/reviews" }],
   resources: [{ title: "GitHub Repository", description: "#" }, { title: "Documentation", description: "#" }, { title: "API Status", description: "#" }],
-  contact: [{ title: "support@deskstock.ai", description: "" }, { title: "Help Center", description: "#" }, { title: "Terms of Service", description: "#" }, { title: "Privacy Policy", description: "#" }],
+  contact: [{ title: "kimanh.work26@gmail.com", description: "" }, { title: "Help Center", description: "/support" }, { title: "Terms of Service", description: "/terms-of-service" }, { title: "Privacy Policy", description: "/privacy-policy" }],
 };
 
 function Footer() {

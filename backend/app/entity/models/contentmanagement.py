@@ -102,24 +102,24 @@ def seed_landing_content():
             ContentManagement(content_id="footer_brand",         section="footer_brand",   title="Rocket Trading",              description="AI-powered stock market predictions for the modern investor.", order_index=0),
             # Footer — version badge shown next to the brand name (e.g. "v1.0.0")
             ContentManagement(content_id="footer_version",       section="footer_meta",    title="v1.0.0",                       order_index=0),
-            # Footer — product links (title = label, description = URL)
-            ContentManagement(content_id="footer_product_0",     section="footer_product", title="Features",            description="#", order_index=0),
-            ContentManagement(content_id="footer_product_1",     section="footer_product", title="Pricing",             description="#", order_index=1),
-            # Footer — company links
+            # Footer — product links (title = label, description = URL). These point at the
+            # Features/Pricing sections on the landing page itself (public, no login required).
+            ContentManagement(content_id="footer_product_0",     section="footer_product", title="Features",            description="/#features", order_index=0),
+            ContentManagement(content_id="footer_product_1",     section="footer_product", title="Pricing",             description="/#pricing", order_index=1),
+            # Footer — company links. Careers/Blog/Press were dropped: we don't have job
+            # postings, a blog, or press coverage to link to, so those would just be dead "#"
+            # links. Only keep pages that actually exist.
             ContentManagement(content_id="footer_company_0",     section="footer_company", title="About Us",            description="/about-us", order_index=0),
-            ContentManagement(content_id="footer_company_1",     section="footer_company", title="Careers",             description="#", order_index=1),
-            ContentManagement(content_id="footer_company_2",     section="footer_company", title="Blog",                description="#", order_index=2),
-            ContentManagement(content_id="footer_company_3",     section="footer_company", title="Press",               description="#", order_index=3),
-            ContentManagement(content_id="footer_company_4",     section="footer_company", title="Reviews",             description="/reviews", order_index=4),
+            ContentManagement(content_id="footer_company_4",     section="footer_company", title="Reviews",             description="/reviews", order_index=1),
             # Footer — resources links (was hardcoded and unreachable from admin before)
             ContentManagement(content_id="footer_resources_0",   section="footer_resources", title="GitHub Repository", description="#", order_index=0),
             ContentManagement(content_id="footer_resources_1",   section="footer_resources", title="Documentation",     description="#", order_index=1),
             ContentManagement(content_id="footer_resources_2",   section="footer_resources", title="API Status",        description="#", order_index=2),
             # Footer — contact
-            ContentManagement(content_id="footer_contact_email", section="footer_contact", title="support@deskstock.ai", description="", order_index=0),
+            ContentManagement(content_id="footer_contact_email", section="footer_contact", title="kimanh.work26@gmail.com", description="", order_index=0),
             ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="/support", order_index=1),
-            ContentManagement(content_id="footer_contact_1",     section="footer_contact", title="Terms of Service",     description="#", order_index=2),
-            ContentManagement(content_id="footer_contact_2",     section="footer_contact", title="Privacy Policy",       description="#", order_index=3),
+            ContentManagement(content_id="footer_contact_1",     section="footer_contact", title="Terms of Service",     description="/terms-of-service", order_index=2),
+            ContentManagement(content_id="footer_contact_2",     section="footer_contact", title="Privacy Policy",       description="/privacy-policy", order_index=3),
             # Premium investor subscription features
             ContentManagement(content_id="prem_feat_0", section="premium_investor", title="Everything in Free Plan",           order_index=0),
             ContentManagement(content_id="prem_feat_1", section="premium_investor", title="Unlimited AI Stock Predictions",    order_index=1),
@@ -158,12 +158,12 @@ def seed_landing_content():
             ContentManagement(content_id="expert_benefit_2", section="expert_role_benefits", title="Grow Your Network", description="Build your professional presence by sharing insights, answering investor questions, publishing content, and connecting with the RocketTrade community.", order_index=2),
 
             # FAQ (title = question, description = answer)
-            ContentManagement(content_id="faq_0", section="faq", title="Is this real money trading?", description="No. RocketTrade is a paper trading platform — you trade against live market prices using virtual funds, so you can build real skills with zero financial risk.", order_index=0),
-            ContentManagement(content_id="faq_1", section="faq", title="How much does it cost to use RocketTrade?", description="You can start for free with our Starter plan. Upgrade to Pro anytime for unlimited AI predictions, deeper quant ratings, and priority expert access.", order_index=1),
-            ContentManagement(content_id="faq_2", section="faq", title="How accurate are the AI predictions?", description="Our models combine technical indicators and news sentiment to forecast short-term price direction. They're a decision-support tool, not a guarantee, so always do your own research too.", order_index=2),
-            ContentManagement(content_id="faq_3", section="faq", title="Do I need any trading experience to get started?", description="Not at all. Our Educational Content library covers everything from beginner basics to advanced strategy, so you can learn as you go.", order_index=3),
-            ContentManagement(content_id="faq_4", section="faq", title="Can I get help from a real person?", description="Yes — chat instantly with our AI assistant, or connect with a verified market expert through consultations and Q&A.", order_index=4),
-            ContentManagement(content_id="faq_5", section="faq", title="Can I cancel or change my plan anytime?", description="Yes, you can upgrade, downgrade, or cancel your subscription at any time from your account settings.", order_index=5),
+            ContentManagement(content_id="faq_0", section="faq", title="Is this real money trading?", description="Nope — RocketTrade is a paper trading platform. You trade against live market prices using virtual funds, so you can build real skills without any real financial risk.", order_index=0),
+            ContentManagement(content_id="faq_1", section="faq", title="How much does it cost to use RocketTrade?", description="You can get started for free with our Starter plan. Whenever you're ready, upgrade to Pro for unlimited AI predictions, deeper quant ratings, and priority access to our experts.", order_index=1),
+            ContentManagement(content_id="faq_2", section="faq", title="How accurate are the AI predictions?", description="Our models combine technical indicators with news sentiment to forecast short-term price direction. Think of it as a decision-support tool rather than a guarantee — it's always worth doing your own research too.", order_index=2),
+            ContentManagement(content_id="faq_3", section="faq", title="Do I need any trading experience to get started?", description="Not at all. Our Educational Content library covers everything from the basics to more advanced strategy, so you can pick things up as you go.", order_index=3),
+            ContentManagement(content_id="faq_4", section="faq", title="Can I get help from a real person?", description="Yes — you can chat with our AI assistant instantly, or connect with one of our verified market experts through consultations and Q&A.", order_index=4),
+            ContentManagement(content_id="faq_5", section="faq", title="Can I cancel or change my plan anytime?", description="Definitely. You can upgrade, downgrade, or cancel your subscription whenever you like, right from your account settings.", order_index=5),
 
             # "How to Get Started" — registration steps (STEP 1/2/3/4 label comes from position, not stored)
             ContentManagement(content_id="get_started_0", section="get_started_steps", title="Choose your role & sign up", description="Pick Investor or Expert, then create your account with a username, email, and password.", order_index=0),
@@ -503,7 +503,7 @@ def seed_landing_content():
             ContentManagement(content_id="help_contact_cta", section="help_contact",
                 title="Contact Support", order_index=2),
             ContentManagement(content_id="help_contact_email", section="help_contact",
-                title="kim@gmail.com", order_index=3),
+                title="kimanh.work26@gmail.com", order_index=3),
             ContentManagement(content_id="help_category_0", section="help_categories", title="Account & Login",          order_index=0),
             ContentManagement(content_id="help_category_1", section="help_categories", title="Subscription & Payments",  order_index=1),
             ContentManagement(content_id="help_category_2", section="help_categories", title="Stock Trading",            order_index=2),
@@ -513,24 +513,24 @@ def seed_landing_content():
             # FAQ question/answer pairs. SupportPage.jsx groups each block of
             # three FAQs under the category at the same positional index, so
             # admins can rename category labels without breaking filtering.
-            ContentManagement(content_id="help_faq_0",  section="help_faqs", title="How do I create an account?", description="Select Get Started or Register from the homepage. Enter the required personal information, choose the appropriate account type, and submit the registration form. You may also be required to verify your email address before logging in.", order_index=0),
-            ContentManagement(content_id="help_faq_1",  section="help_faqs", title="How can I reset my password?", description="Open the login page and select Forgot Password. Enter the email address associated with your account and follow the password reset instructions sent to your email.", order_index=1),
-            ContentManagement(content_id="help_faq_2",  section="help_faqs", title="Why can\u2019t I log in?", description="Confirm that your email address and password are correct. Check whether your account has been verified or suspended. If the issue continues, reset your password or contact the Rocket Trade support team.", order_index=2),
-            ContentManagement(content_id="help_faq_3",  section="help_faqs", title="How do I subscribe to a premium plan?", description="Log in to your investor account, open the Subscription page from your profile menu, select an available plan, and complete the payment process.", order_index=3),
-            ContentManagement(content_id="help_faq_4",  section="help_faqs", title="Can I cancel my subscription?", description="Yes. Open the Subscription page, review your active plan, and select the cancellation option. Your access may remain available until the end of the current billing period.", order_index=4),
-            ContentManagement(content_id="help_faq_5",  section="help_faqs", title="What should I do if my payment fails?", description="Check that your payment information is correct and that sufficient funds are available. Try the payment again. If the issue continues, contact your payment provider or Rocket Trade support.", order_index=5),
-            ContentManagement(content_id="help_faq_6",  section="help_faqs", title="How do I buy a stock?", description="Open the real-time stock dashboard, select a stock, and choose Buy. Enter the quantity, review the estimated transaction amount, and confirm the order.", order_index=6),
-            ContentManagement(content_id="help_faq_7",  section="help_faqs", title="How do I sell a stock?", description="Open your portfolio or the relevant stock page, select Sell, enter the quantity you want to sell, review the transaction details, and confirm the sale.", order_index=7),
-            ContentManagement(content_id="help_faq_8",  section="help_faqs", title="Where can I view my transaction history?", description="Open Transactions from the investor navigation menu and select Transaction History. This page displays your previous buy and sell activities.", order_index=8),
-            ContentManagement(content_id="help_faq_9",  section="help_faqs", title="How are AI stock predictions generated?", description="Rocket Trade uses machine-learning models to analyse historical market data, current market information, and identifiable patterns. These models generate analytical estimates that may support investment research.", order_index=9),
-            ContentManagement(content_id="help_faq_10", section="help_faqs", title="Are AI predictions guaranteed to be accurate?", description="No. AI predictions are analytical estimates and cannot guarantee future market performance. They should not be treated as professional financial advice or as guaranteed investment outcomes.", order_index=10),
-            ContentManagement(content_id="help_faq_11", section="help_faqs", title="Where can I view prediction results?", description="Prediction results and analytical insights are available through the supported stock dashboard and relevant analysis tools within Rocket Trade.", order_index=11),
-            ContentManagement(content_id="help_faq_12", section="help_faqs", title="How do I create a forum post?", description="Open the Community Forum, select the option to create a new post, enter the title and content, choose an appropriate category, and publish the post.", order_index=12),
-            ContentManagement(content_id="help_faq_13", section="help_faqs", title="How do I reply to another user?", description="Open the relevant forum post, enter your response in the reply section, and submit the comment. Your reply will appear within the discussion.", order_index=13),
-            ContentManagement(content_id="help_faq_14", section="help_faqs", title="How do forum notifications work?", description="You may receive a notification when another user likes your post or replies to one of your discussions. Notifications can be viewed from your account notification page.", order_index=14),
-            ContentManagement(content_id="help_faq_15", section="help_faqs", title="How is my personal information protected?", description="Rocket Trade applies authentication, controlled access, secure data-handling practices, and account protection measures to reduce unauthorised access to user information.", order_index=15),
-            ContentManagement(content_id="help_faq_16", section="help_faqs", title="Is my payment information stored?", description="Payment transactions are processed through the connected payment provider. Rocket Trade should not directly display or store complete payment card credentials.", order_index=16),
-            ContentManagement(content_id="help_faq_17", section="help_faqs", title="What should I do if I notice suspicious activity?", description="Change your password immediately and log out of your account. Record any unusual activity and contact the Rocket Trade support team with the relevant details.", order_index=17),
+            ContentManagement(content_id="help_faq_0",  section="help_faqs", title="How do I create an account?", description="Head to the homepage and click Get Started or Register. You'll just need to fill in a few basic details and pick your account type — investor or expert. We'll usually ask you to verify your email before you can log in.", order_index=0),
+            ContentManagement(content_id="help_faq_1",  section="help_faqs", title="How can I reset my password?", description="No worries, it happens. On the login page, click Forgot Password and enter the email you signed up with, and we'll send you a link to set a new one.", order_index=1),
+            ContentManagement(content_id="help_faq_2",  section="help_faqs", title="Why can\u2019t I log in?", description="First, double-check your email and password — typos are the usual culprit. It's also worth checking that your account is verified and hasn't been suspended. Still stuck? Reset your password, or reach out to our support team and we'll sort it out.", order_index=2),
+            ContentManagement(content_id="help_faq_3",  section="help_faqs", title="How do I subscribe to a premium plan?", description="Log in to your investor account, then head to Subscription from your profile menu. From there you can pick a plan and check out — it only takes a minute.", order_index=3),
+            ContentManagement(content_id="help_faq_4",  section="help_faqs", title="Can I cancel my subscription?", description="Yep, anytime. Go to your Subscription page, find your current plan, and hit cancel. You'll keep your premium access until the end of the billing period you've already paid for.", order_index=4),
+            ContentManagement(content_id="help_faq_5",  section="help_faqs", title="What should I do if my payment fails?", description="Start by checking your card details and making sure there's enough available balance, then give it another go. If it still won't go through, it's worth checking with your bank or card provider — and if you're really stuck, our support team is happy to help.", order_index=5),
+            ContentManagement(content_id="help_faq_6",  section="help_faqs", title="How do I buy a stock?", description="Open the real-time dashboard, pick a stock, and hit Buy. Enter how many shares you want, take a look at the estimated cost, and confirm — that's it.", order_index=6),
+            ContentManagement(content_id="help_faq_7",  section="help_faqs", title="How do I sell a stock?", description="From your portfolio (or the stock's page), hit Sell, enter the quantity you're letting go of, double-check the details, and confirm the trade.", order_index=7),
+            ContentManagement(content_id="help_faq_8",  section="help_faqs", title="Where can I view my transaction history?", description="Head to Transactions in your investor menu, then Transaction History — you'll find a full record of everything you've bought and sold.", order_index=8),
+            ContentManagement(content_id="help_faq_9",  section="help_faqs", title="How are AI stock predictions generated?", description="Our models look at historical price data, current market activity, and recurring patterns to generate an analytical estimate of where a stock might be headed. Think of it as a research tool, not a crystal ball.", order_index=9),
+            ContentManagement(content_id="help_faq_10", section="help_faqs", title="Are AI predictions guaranteed to be accurate?", description="No, and we want to be upfront about that. They're estimates based on data, not promises. Markets are unpredictable, so please don't treat our predictions as financial advice or a guaranteed outcome.", order_index=10),
+            ContentManagement(content_id="help_faq_11", section="help_faqs", title="Where can I view prediction results?", description="You'll find predictions and related insights right on each stock's dashboard, alongside the other analysis tools.", order_index=11),
+            ContentManagement(content_id="help_faq_12", section="help_faqs", title="How do I create a forum post?", description="Head into the Community Forum and look for the New Post button. Give it a title, write what's on your mind, pick a category, and post it — the community will take it from there.", order_index=12),
+            ContentManagement(content_id="help_faq_13", section="help_faqs", title="How do I reply to another user?", description="Open the post you want to respond to, type your reply in the box below it, and hit submit. It'll show up right in the discussion thread.", order_index=13),
+            ContentManagement(content_id="help_faq_14", section="help_faqs", title="How do forum notifications work?", description="If someone likes your post or replies to you, we'll let you know. You can check all your notifications anytime from your account's notification page.", order_index=14),
+            ContentManagement(content_id="help_faq_15", section="help_faqs", title="How is my personal information protected?", description="We take this seriously. Your data is protected through authentication checks, restricted access controls, and secure handling practices designed to keep it away from anyone who shouldn't see it.", order_index=15),
+            ContentManagement(content_id="help_faq_16", section="help_faqs", title="Is my payment information stored?", description="Not by us. Your payments are handled directly by our payment provider, and we never see or store your full card details on our end.", order_index=16),
+            ContentManagement(content_id="help_faq_17", section="help_faqs", title="What should I do if I notice suspicious activity?", description="Change your password right away and log out of any active sessions. Then note down what you noticed and get in touch with our support team — we'll help you look into it.", order_index=17),
 
         ]
 
@@ -538,6 +538,13 @@ def seed_landing_content():
         dead_sections = ("feature", "expert", "forum_room", "expert_tools", "expert_tools_cta")
         session.query(ContentManagement).filter(
             ContentManagement.section.in_(dead_sections)
+        ).delete(synchronize_session=False)
+
+        # Careers/Blog/Press footer links were dropped (no jobs page, blog, or press coverage
+        # to link to) — remove them from databases that were seeded before this change.
+        dead_footer_ids = ("footer_company_1", "footer_company_2", "footer_company_3")
+        session.query(ContentManagement).filter(
+            ContentManagement.content_id.in_(dead_footer_ids)
         ).delete(synchronize_session=False)
 
 
@@ -560,6 +567,10 @@ def seed_landing_content():
         placeholder_fixes = {
             "footer_company_0": "/about-us",
             "footer_contact_0": "/support",
+            "footer_product_0": "/#features",
+            "footer_product_1": "/#pricing",
+            "footer_contact_1": "/terms-of-service",
+            "footer_contact_2": "/privacy-policy",
         }
         for content_id, real_url in placeholder_fixes.items():
             row = session.query(ContentManagement).filter(
@@ -568,6 +579,36 @@ def seed_landing_content():
             ).first()
             if row:
                 row.description = real_url
+
+        # The contact email went through a couple of placeholder values
+        # ("support@deskstock.ai", then "kim@gmail.com") before landing on the
+        # real one. Correct both footer and help-centre copies on databases
+        # seeded before this fix, wherever they still hold a stale value.
+        stale_contact_emails = ("support@deskstock.ai", "kim@gmail.com")
+        for content_id in ("footer_contact_email", "help_contact_email"):
+            contact_row = session.query(ContentManagement).filter(
+                ContentManagement.content_id == content_id,
+                ContentManagement.title.in_(stale_contact_emails),
+            ).first()
+            if contact_row:
+                contact_row.title = "kimanh.work26@gmail.com"
+
+        # FAQ copy was rewritten to sound more natural (less formulaic
+        # "open X, select Y" phrasing) — refresh the answer text on databases
+        # that were seeded with the older wording, not just newly-added rows.
+        faq_updates = {
+            e.content_id: e.description
+            for e in entries
+            if e.content_id.startswith("faq_") or e.content_id.startswith("help_faq_")
+        }
+        if faq_updates:
+            faq_rows = session.query(ContentManagement).filter(
+                ContentManagement.content_id.in_(faq_updates.keys())
+            ).all()
+            for row in faq_rows:
+                new_description = faq_updates.get(row.content_id)
+                if new_description is not None and row.description != new_description:
+                    row.description = new_description
 
         to_add = [e for e in entries if e.content_id not in existing_ids]
         if to_add:
