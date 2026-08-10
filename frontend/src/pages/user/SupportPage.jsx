@@ -53,114 +53,114 @@ const FAQS_FALLBACK = [
     category: "Account & Login",
     question: "How do I create an account?",
     answer:
-      "Select Get Started or Register from the homepage. Enter the required personal information, choose the appropriate account type, and submit the registration form. You may also be required to verify your email address before logging in.",
+      "Head to the homepage and click Get Started or Register. You'll just need to fill in a few basic details and pick your account type — investor or expert. We'll usually ask you to verify your email before you can log in.",
   },
   {
     category: "Account & Login",
     question: "How can I reset my password?",
     answer:
-      "Open the login page and select Forgot Password. Enter the email address associated with your account and follow the password reset instructions sent to your email.",
+      "No worries, it happens. On the login page, click Forgot Password and enter the email you signed up with, and we'll send you a link to set a new one.",
   },
   {
     category: "Account & Login",
     question: "Why can’t I log in?",
     answer:
-      "Confirm that your email address and password are correct. Check whether your account has been verified or suspended. If the issue continues, reset your password or contact the Rocket Trade support team.",
+      "First, double-check your email and password — typos are the usual culprit. It's also worth checking that your account is verified and hasn't been suspended. Still stuck? Reset your password, or reach out to our support team and we'll sort it out.",
   },
 
   {
     category: "Subscription & Payments",
     question: "How do I subscribe to a premium plan?",
     answer:
-      "Log in to your investor account, open the Subscription page from your profile menu, select an available plan, and complete the payment process.",
+      "Log in to your investor account, then head to Subscription from your profile menu. From there you can pick a plan and check out — it only takes a minute.",
   },
   {
     category: "Subscription & Payments",
     question: "Can I cancel my subscription?",
     answer:
-      "Yes. Open the Subscription page, review your active plan, and select the cancellation option. Your access may remain available until the end of the current billing period.",
+      "Yep, anytime. Go to your Subscription page, find your current plan, and hit cancel. You'll keep your premium access until the end of the billing period you've already paid for.",
   },
   {
     category: "Subscription & Payments",
     question: "What should I do if my payment fails?",
     answer:
-      "Check that your payment information is correct and that sufficient funds are available. Try the payment again. If the issue continues, contact your payment provider or Rocket Trade support.",
+      "Start by checking your card details and making sure there's enough available balance, then give it another go. If it still won't go through, it's worth checking with your bank or card provider — and if you're really stuck, our support team is happy to help.",
   },
 
   {
     category: "Stock Trading",
     question: "How do I buy a stock?",
     answer:
-      "Open the real-time stock dashboard, select a stock, and choose Buy. Enter the quantity, review the estimated transaction amount, and confirm the order.",
+      "Open the real-time dashboard, pick a stock, and hit Buy. Enter how many shares you want, take a look at the estimated cost, and confirm — that's it.",
   },
   {
     category: "Stock Trading",
     question: "How do I sell a stock?",
     answer:
-      "Open your portfolio or the relevant stock page, select Sell, enter the quantity you want to sell, review the transaction details, and confirm the sale.",
+      "From your portfolio (or the stock's page), hit Sell, enter the quantity you're letting go of, double-check the details, and confirm the trade.",
   },
   {
     category: "Stock Trading",
     question: "Where can I view my transaction history?",
     answer:
-      "Open Transactions from the investor navigation menu and select Transaction History. This page displays your previous buy and sell activities.",
+      "Head to Transactions in your investor menu, then Transaction History — you'll find a full record of everything you've bought and sold.",
   },
 
   {
     category: "AI Predictions",
     question: "How are AI stock predictions generated?",
     answer:
-      "Rocket Trade uses machine-learning models to analyse historical market data, current market information, and identifiable patterns. These models generate analytical estimates that may support investment research.",
+      "Our models look at historical price data, current market activity, and recurring patterns to generate an analytical estimate of where a stock might be headed. Think of it as a research tool, not a crystal ball.",
   },
   {
     category: "AI Predictions",
     question: "Are AI predictions guaranteed to be accurate?",
     answer:
-      "No. AI predictions are analytical estimates and cannot guarantee future market performance. They should not be treated as professional financial advice or as guaranteed investment outcomes.",
+      "No, and we want to be upfront about that. They're estimates based on data, not promises. Markets are unpredictable, so please don't treat our predictions as financial advice or a guaranteed outcome.",
   },
   {
     category: "AI Predictions",
     question: "Where can I view prediction results?",
     answer:
-      "Prediction results and analytical insights are available through the supported stock dashboard and relevant analysis tools within Rocket Trade.",
+      "You'll find predictions and related insights right on each stock's dashboard, alongside the other analysis tools.",
   },
 
   {
     category: "Community Forum",
     question: "How do I create a forum post?",
     answer:
-      "Open the Community Forum, select the option to create a new post, enter the title and content, choose an appropriate category, and publish the post.",
+      "Head into the Community Forum and look for the New Post button. Give it a title, write what's on your mind, pick a category, and post it — the community will take it from there.",
   },
   {
     category: "Community Forum",
     question: "How do I reply to another user?",
     answer:
-      "Open the relevant forum post, enter your response in the reply section, and submit the comment. Your reply will appear within the discussion.",
+      "Open the post you want to respond to, type your reply in the box below it, and hit submit. It'll show up right in the discussion thread.",
   },
   {
     category: "Community Forum",
     question: "How do forum notifications work?",
     answer:
-      "You may receive a notification when another user likes your post or replies to one of your discussions. Notifications can be viewed from your account notification page.",
+      "If someone likes your post or replies to you, we'll let you know. You can check all your notifications anytime from your account's notification page.",
   },
 
   {
     category: "Privacy & Security",
     question: "How is my personal information protected?",
     answer:
-      "Rocket Trade applies authentication, controlled access, secure data-handling practices, and account protection measures to reduce unauthorised access to user information.",
+      "We take this seriously. Your data is protected through authentication checks, restricted access controls, and secure handling practices designed to keep it away from anyone who shouldn't see it.",
   },
   {
     category: "Privacy & Security",
     question: "Is my payment information stored?",
     answer:
-      "Payment transactions are processed through the connected payment provider. Rocket Trade should not directly display or store complete payment card credentials.",
+      "Not by us. Your payments are handled directly by our payment provider, and we never see or store your full card details on our end.",
   },
   {
     category: "Privacy & Security",
     question: "What should I do if I notice suspicious activity?",
     answer:
-      "Change your password immediately and log out of your account. Record any unusual activity and contact the Rocket Trade support team with the relevant details.",
+      "Change your password right away and log out of any active sessions. Then note down what you noticed and get in touch with our support team — we'll help you look into it.",
   },
 ];
 
@@ -191,7 +191,7 @@ function SupportPage() {
     "Get in touch with us for more details"
   ).title;
   const contactCta = cms.text("help_contact_cta", "Contact Support").title;
-  const contactEmail = cms.text("help_contact_email", "kim@gmail.com").title;
+  const contactEmail = cms.text("help_contact_email", "kimanh.work26@gmail.com").title;
   const [heroPlain, heroAccent] = hero.title.includes("|") ? hero.title.split("|") : ["", hero.title];
 
   const categoryItems = cms.section("help_categories");
