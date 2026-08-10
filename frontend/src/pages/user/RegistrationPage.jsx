@@ -288,9 +288,9 @@ function RegistrationPage() {
         </div>
 
         {/* Image half — full-bleed cover, sticks in view while the form scrolls, hidden on mobile */}
-        <div className="hidden md:block md:w-1/2 md:self-start md:sticky md:top-[60px] md:h-[calc(100vh-60px)] relative overflow-hidden">
+        <div className="hidden md:block md:w-1/2 md:self-start md:sticky md:top-15 md:h-[calc(100vh-60px)] relative overflow-hidden">
           <img alt="" src={img} className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-transparent" />
           <div className="absolute bottom-12 left-10 right-10 text-white z-10">
             <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-3 [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">Smart Trading Starts Here</h1>
             <p className="text-sm lg:text-base font-medium text-gray-100 leading-relaxed [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">

@@ -205,7 +205,7 @@ function FeatureCards({ heading, subtitle, items, theme = "cyan" }) {
         {items.map(({ Icon, title, description }) => (
           <div
             key={title}
-            className={`rounded-2xl bg-white ring-1 ${t.ring} shadow-md shadow-slate-900/5 p-6 transition-all duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10`}
+            className={`rounded-2xl bg-white ring-1 ${t.ring} shadow-md shadow-slate-900/5 p-6 transition-all duration-180 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10`}
           >
             <div className={`w-11 h-11 rounded-xl ${t.iconBg} flex items-center justify-center mb-4`}>
               <Icon className={t.iconColor} size={22} />
@@ -520,11 +520,11 @@ function LandingSectionDivider({ label = "Next Section" }) {
   return (
     <div className="bg-white px-4 sm:px-8 py-6">
       <div className="max-w-6xl mx-auto flex items-center gap-4">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-slate-300" />
+        <div className="h-px flex-1 bg-linear-to-r from-transparent via-slate-200 to-slate-300" />
         <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
           {label}
         </span>
-        <div className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-200 to-slate-300" />
+        <div className="h-px flex-1 bg-linear-to-l from-transparent via-slate-200 to-slate-300" />
       </div>
     </div>
   );
@@ -659,7 +659,7 @@ function RegistrationGuide({ heading, subtitle, steps = REGISTRATION_STEPS }) {
         {steps.map(({ Icon, step, title, description }) => (
           <div
             key={step}
-            className="relative rounded-2xl bg-white ring-1 ring-slate-200 shadow-md shadow-slate-900/5 p-6 transition-all duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-cyan-300"
+            className="relative rounded-2xl bg-white ring-1 ring-slate-200 shadow-md shadow-slate-900/5 p-6 transition-all duration-180 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 hover:ring-cyan-300"
           >
             <span className="absolute top-4 right-4 text-xs font-bold text-cyan-300">STEP {step}</span>
             <div className="w-11 h-11 rounded-xl bg-cyan-100 flex items-center justify-center mb-4">

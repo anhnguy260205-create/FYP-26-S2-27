@@ -410,9 +410,11 @@ const MAIN_TABS = [
   { key: "landing", label: "Landing Page", icon: Rocket, subtabs: LANDING_SUBTABS },
   { key: "membership", label: "Membership & Payment", icon: CreditCard, subtabs: MEMBERSHIP_PAYMENT_SUBTABS },
   { key: "investor_expert_home", label: "Shared Investor + Expert", icon: Wallet, subtabs: INVESTOR_EXPERT_HOME_SUBTABS },
-  { key: "investor_banners", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
+  {
+    key: "investor_banners", label: "Basic Upgrade Banner", icon: Wallet, kind: "generic", preview: "banner_basic",
     headerId: "investor_banner_basic", ctaId: "investor_banner_basic_cta", itemsSection: null,
-    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors and Expert accounts do not see this banner." },
+    hint: "Controls the upgrade banner shown only to Basic investors. Premium investors and Expert accounts do not see this banner."
+  },
   { key: "investor_pages", label: "Investor Pages", icon: Wallet, subtabs: INVESTOR_PAGES_SUBTABS },
   { key: "investor_setup", label: "Investor Setup & Applications", icon: UserPlus, subtabs: INVESTOR_SETUP_SUBTABS },
   { key: "expert_pages", label: "Expert Pages", icon: Briefcase, subtabs: EXPERT_PAGES_SUBTABS },
@@ -799,7 +801,7 @@ function PortfolioOverviewPagePreview({ heading, description }) {
       </div>
       <div className="grid grid-cols-[1.5fr_1fr] gap-2 mb-2">
         <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-2">Cumulative P&L, last 30 days</p><div className="h-16 rounded bg-cyan-50 border border-cyan-100 relative overflow-hidden"><div className="absolute bottom-3 left-3 right-3 h-7 border-b-2 border-cyan-500 rounded-[50%]" /></div></div>
-        <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-2">Diversification</p><div className="w-16 h-16 rounded-full border-[12px] border-cyan-300 mx-auto" /></div>
+        <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-2">Diversification</p><div className="w-16 h-16 rounded-full border-12px border-cyan-300 mx-auto" /></div>
       </div>
       <div className="rounded-lg bg-white border border-blue-100 p-2"><p className="text-[8px] text-slate-500 mb-1">Current holdings</p><div className="grid grid-cols-6 gap-1 text-[7px] text-slate-500 border-b pb-1"><span>Symbol</span><span>Shares</span><span>Avg cost</span><span>Price</span><span>Value</span><span>P&L</span></div>{["AAPL", "NVDA"].map((s) => <div key={s} className="grid grid-cols-6 gap-1 text-[8px] py-1 border-b border-slate-100"><b>{s}</b><span>3</span><span>$180</span><span>$190</span><span>$570</span><span className="text-emerald-600">+$30</span></div>)}</div>
     </InvestorPageShellPreview>
@@ -812,7 +814,7 @@ function QuantRatingPagePreview({ heading, description }) {
       <div className="flex gap-2 mb-2"><div className="flex-1 rounded-lg bg-white border border-blue-100 px-2 py-1.5 text-[8px] text-slate-400">Enter ticker (e.g. AAPL)</div><span className="rounded-lg bg-cyan-400 px-3 py-1.5 text-[8px] font-bold text-cyan-950">Rate</span></div>
       <div className="flex flex-wrap gap-1 mb-3">{["Technology", "Financials", "Energy", "Real Estate"].map(s => <span key={s} className="rounded-full bg-white border border-blue-100 px-2 py-1 text-[7px] text-slate-600">{s}</span>)}</div>
       <div className="grid grid-cols-[1fr_1.6fr] gap-2">
-        <div className="rounded-xl bg-white border border-emerald-200 p-3 text-center"><p className="text-left text-[12px] font-bold text-slate-900">AAPL</p><div className="mx-auto my-2 w-24 h-12 rounded-t-full border-[10px] border-b-0 border-emerald-500" /><span className="rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-bold px-2 py-1">Buy</span><div className="grid grid-cols-2 gap-1 mt-3 text-[7px]"><span>Buy probability<br /><b>64%</b></span><span>Price<br /><b>$190.00</b></span></div></div>
+        <div className="rounded-xl bg-white border border-emerald-200 p-3 text-center"><p className="text-left text-[12px] font-bold text-slate-900">AAPL</p><div className="mx-auto my-2 w-24 h-12 rounded-t-full border-10px border-b-0 border-emerald-500" /><span className="rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-bold px-2 py-1">Buy</span><div className="grid grid-cols-2 gap-1 mt-3 text-[7px]"><span>Buy probability<br /><b>64%</b></span><span>Price<br /><b>$190.00</b></span></div></div>
         <div className="space-y-2"><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Factor Grades</p><div className="grid grid-cols-5 gap-1">{["A", "B", "C", "B", "A"].map((g, i) => <div key={i} className="rounded-lg bg-slate-50 text-center py-2"><b className="text-emerald-600">{g}</b><p className="text-[6px] text-slate-500 m-0">Factor</p></div>)}</div></div><div className="rounded-xl bg-white border border-blue-100 p-3"><p className="text-[10px] font-bold text-slate-900 mb-2">Sector Leaderboard</p>{["NVDA", "MSFT", "AAPL"].map((s, i) => <div key={s} className="grid grid-cols-4 text-[8px] py-1 border-b border-slate-100"><span>#{i + 1}</span><b>{s}</b><span>{85 - i * 4}</span><span>Buy</span></div>)}</div></div>
       </div>
     </InvestorPageShellPreview>
@@ -874,7 +876,7 @@ function UpdateParticularPagePreview({ items }) {
   const skip = cmItem(items, "update_particular_skip_cta", "Skip for now").title;
   return (
     <div className="p-5 flex items-center justify-center" style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 74px, #FFFFFF 100%)" }}>
-      <div className="w-full max-w-[250px] rounded-2xl bg-white border border-blue-100 shadow p-4 text-center"><p className="text-[14px] font-bold text-slate-900 font-mono">{heading}</p><p className="text-[8px] text-slate-500 mb-3">{subtitle}</p>{["Full Name", "Phone Number", "Location"].map(x => <div key={x} className="text-left mb-2"><p className="text-[7px] font-bold text-slate-500 mb-1">{x}</p><div className="h-7 rounded-lg bg-white border border-slate-200" /></div>)}<p className="text-left text-[7px] font-bold text-slate-500 mb-1">Stock Interests</p><div className="grid grid-cols-2 gap-1 mb-2">{["Technology", "Financials", "Energy", "Real Estate"].map(x => <span key={x} className="rounded-lg bg-slate-100 px-2 py-1 text-[7px] text-slate-500 text-left">{x}</span>)}</div><div className="rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 text-white py-2 text-[9px] font-bold">{submit}</div><p className="text-[8px] text-slate-400 mt-2">{skip}</p></div>
+      <div className="w-full max-w-62.5 rounded-2xl bg-white border border-blue-100 shadow p-4 text-center"><p className="text-[14px] font-bold text-slate-900 font-mono">{heading}</p><p className="text-[8px] text-slate-500 mb-3">{subtitle}</p>{["Full Name", "Phone Number", "Location"].map(x => <div key={x} className="text-left mb-2"><p className="text-[7px] font-bold text-slate-500 mb-1">{x}</p><div className="h-7 rounded-lg bg-white border border-slate-200" /></div>)}<p className="text-left text-[7px] font-bold text-slate-500 mb-1">Stock Interests</p><div className="grid grid-cols-2 gap-1 mb-2">{["Technology", "Financials", "Energy", "Real Estate"].map(x => <span key={x} className="rounded-lg bg-slate-100 px-2 py-1 text-[7px] text-slate-500 text-left">{x}</span>)}</div><div className="rounded-xl bg-linear-to-r from-cyan-600 to-blue-600 text-white py-2 text-[9px] font-bold">{submit}</div><p className="text-[8px] text-slate-400 mt-2">{skip}</p></div>
     </div>
   );
 }
@@ -932,24 +934,24 @@ function AboutValuesPreview({ heading, items, imageUrl }) {
       <img src={imageUrl || aboutUsImg} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover" style={{ filter: "blur(3px)" }} />
       <div className="absolute inset-0 bg-blue-950/80" />
       <div className="relative">
-      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
-        <Sparkles size={10} />
-        {(heading || "Our Values").toUpperCase()}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {shown.slice(0, 4).map((item, i) => {
-          const Icon = ABOUT_VALUE_ICONS[i] || ShieldCheck;
-          return (
-            <article key={item.content_id} className="min-h-32 rounded-2xl border border-slate-200 bg-white p-3 shadow-md">
-              <div className="mb-2 grid h-8 w-8 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
-                <Icon size={15} strokeWidth={1.8} />
-              </div>
-              <p className="text-[10px] font-semibold text-slate-800">{item.title}</p>
-              <p className="mt-1 text-[8px] leading-4 text-slate-600">{item.description}</p>
-            </article>
-          );
-        })}
-      </div>
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
+          <Sparkles size={10} />
+          {(heading || "Our Values").toUpperCase()}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {shown.slice(0, 4).map((item, i) => {
+            const Icon = ABOUT_VALUE_ICONS[i] || ShieldCheck;
+            return (
+              <article key={item.content_id} className="min-h-32 rounded-2xl border border-slate-200 bg-white p-3 shadow-md">
+                <div className="mb-2 grid h-8 w-8 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
+                  <Icon size={15} strokeWidth={1.8} />
+                </div>
+                <p className="text-[10px] font-semibold text-slate-800">{item.title}</p>
+                <p className="mt-1 text-[8px] leading-4 text-slate-600">{item.description}</p>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -965,26 +967,26 @@ function AboutPeoplePreview({ badge, heading, description, roleLabel, items, ima
       <img src={imageUrl || aboutUsImg} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover" style={{ filter: "blur(3px)" }} />
       <div className="absolute inset-0 bg-blue-950/80" />
       <div className="relative">
-      <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
-        <Users size={10} />
-        {badge || "OUR PEOPLE"}
-      </div>
-      <p className="mt-4 text-lg font-bold">{heading}</p>
-      <p className="mt-2 text-[9px] leading-4 text-slate-400">{description}</p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {shown.map((item) => (
-          <article key={item.content_id} className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-md">
-            <div className="relative mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-[10px] font-bold text-cyan-700">
-              {item.description}
-              <span className="absolute inset-1 rounded-full border border-cyan-400/10" />
-            </div>
-            <p className="text-[9px] font-semibold leading-4 text-slate-800">{item.title}</p>
-            <p className="mt-1 text-[6px] font-medium tracking-wider text-cyan-600">
-              {roleLabel || "ROCKET TRADE TEAM"}
-            </p>
-          </article>
-        ))}
-      </div>
+        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/60 bg-cyan-400/5 px-3 py-1.5 text-[8px] font-bold tracking-wider text-cyan-400">
+          <Users size={10} />
+          {badge || "OUR PEOPLE"}
+        </div>
+        <p className="mt-4 text-lg font-bold">{heading}</p>
+        <p className="mt-2 text-[9px] leading-4 text-slate-400">{description}</p>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {shown.map((item) => (
+            <article key={item.content_id} className="rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-md">
+              <div className="relative mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-[10px] font-bold text-cyan-700">
+                {item.description}
+                <span className="absolute inset-1 rounded-full border border-cyan-400/10" />
+              </div>
+              <p className="text-[9px] font-semibold leading-4 text-slate-800">{item.title}</p>
+              <p className="mt-1 text-[6px] font-medium tracking-wider text-cyan-600">
+                {roleLabel || "ROCKET TRADE TEAM"}
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1002,9 +1004,8 @@ function HelpCategoryRow({ items }) {
         return (
           <div
             key={item.content_id}
-            className={`flex shrink-0 items-center gap-1.5 rounded-xl border bg-white px-2 py-1.5 shadow-md ${
-              i === 0 ? "border-cyan-400" : "border-slate-200"
-            }`}
+            className={`flex shrink-0 items-center gap-1.5 rounded-xl border bg-white px-2 py-1.5 shadow-md ${i === 0 ? "border-cyan-400" : "border-slate-200"
+              }`}
           >
             <span className="grid h-6 w-6 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
               <Icon size={11} strokeWidth={1.8} />
@@ -1085,7 +1086,7 @@ function HelpFaqPreview({
     : description;
 
   return (
-    <div className="max-h-[560px] overflow-y-auto bg-white p-5">
+    <div className="max-h-140 overflow-y-auto bg-white p-5">
       <p className="text-center text-base font-bold text-slate-900">{heading}</p>
       <p className="mt-2 text-center text-[9px] leading-4 text-slate-600">{subtext}</p>
 
@@ -1102,9 +1103,8 @@ function HelpFaqPreview({
             return (
               <article
                 key={item.content_id}
-                className={`overflow-hidden rounded-xl border bg-white shadow-md ${
-                  isOpen ? "border-cyan-400" : "border-slate-200"
-                }`}
+                className={`overflow-hidden rounded-xl border bg-white shadow-md ${isOpen ? "border-cyan-400" : "border-slate-200"
+                  }`}
               >
                 <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                   <div className="flex items-center gap-2">
@@ -1451,7 +1451,7 @@ function WatchlistEmptyPreview({ title, description, ctaLabel }) {
           <Eye size={18} className="text-slate-500" />
         </div>
         <p className="text-slate-900 font-bold text-xs mb-1">{title || "Empty-state heading"}</p>
-        <p className="text-slate-500 text-[10px] mb-4 max-w-[220px]">{description || "Empty-state description"}</p>
+        <p className="text-slate-500 text-[10px] mb-4 max-w-55">{description || "Empty-state description"}</p>
         <span className="px-4 py-1.5 rounded-lg bg-cyan-400 text-slate-900 text-[10px] font-bold">{ctaLabel || "+ Add Stocks"}</span>
         <p className="text-slate-400 text-[8px] uppercase tracking-wide font-semibold mt-5 mb-2">Suggested for you</p>
         <div className="flex gap-1.5">
