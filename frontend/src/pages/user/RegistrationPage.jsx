@@ -254,9 +254,9 @@ function RegistrationPage() {
                 />
                 <label htmlFor="terms" className="text-sm text-gray-600">
                   I acknowledge that I have read, understood, and agree to RocketTrade's{" "}
-                  <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Terms and Conditions</a>
+                  <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 transition-colors">Terms and Conditions</a>
                   {" "}and{" "}
-                  <a href="#" className="text-blue-500 hover:text-blue-600 transition-colors">Privacy Policy</a>
+                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 transition-colors">Privacy Policy</a>
                 </label>
               </div>
 

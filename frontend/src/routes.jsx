@@ -11,6 +11,8 @@ const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.js
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
 const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));
+const TermsOfServicePage = lazy(() => import("./pages/user/TermsOfServicePage.jsx"));
+const PrivacyPolicyPage = lazy(() => import("./pages/user/PrivacyPolicyPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/user/ResetPasswordPage.jsx"));
 const RealTimeDashBoardPage = lazy(() => import("./pages/shared/RealTimeDashBoardPage.jsx"));
 const QuantRatingPage = lazy(() => import("./pages/investor/QuantRatingPage.jsx"));
@@ -58,11 +60,12 @@ const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
 // The S component is a wrapper that ensures the page scrolls to the top when the route changes. It also provides a Suspense fallback for lazy-loaded components.
 function S({ children }) {
-    const { pathname, key } = useLocation();
-    //Scroll to top when route changes
+    const { pathname, hash, key } = useLocation();
+    //Scroll to top when route changes, unless the URL points at an in-page anchor (e.g. /#pricing)
     useEffect(() => {
+        if (hash) return;
         window.scrollTo(0, 0);
-    }, [pathname]);
+    }, [pathname, hash]);
     // Suspense fallback is a simple div with a minimum height to prevent layout shifts while the lazy-loaded component is being fetched.
     return (
         <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
@@ -96,6 +99,8 @@ export const router = createBrowserRouter([
     { path: "/", element: wrapWithStocks(HomePage) },
     { path: "/about-us", element: wrap(AboutUsPage) },
     { path: "/support", element: wrap(SupportPage) },
+    { path: "/terms-of-service", element: wrap(TermsOfServicePage) },
+    { path: "/privacy-policy", element: wrap(PrivacyPolicyPage) },
     { path: "/register", element: wrap(RegistrationPage) },
     { path: "/login", element: wrap(LoginPage) },
     { path: "/reset-password", element: wrap(ResetPasswordPage) },
