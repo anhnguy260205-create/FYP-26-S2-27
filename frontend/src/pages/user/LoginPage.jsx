@@ -11,10 +11,7 @@ import { isExpertUser } from "../../utils/userRole.js";
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  // Where to send the user after a successful login, if they got here by
-  // clicking something specific (e.g. "Read all reviews") rather than the
-  // generic Login link. Falls back to the normal role-based landing page —
-  // see goToRole() below.
+
   const from = location.state?.from;
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(() =>

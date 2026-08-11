@@ -1,49 +1,74 @@
 import { useEffect, useState } from "react";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/content/landing`;
+const POLL_INTERVAL_MS = 30000;
 
-// Shared across every component that reads CMS content — Footer, Homepage,
-// LoggedInHomePage, and SubscriptionPage all used to fire their own
-// independent fetch of the same full table on every mount (up to 4 identical
-// requests per landing-page visit). This caches the first request's promise
-// so everyone else just waits on it instead of re-fetching.
+
 let cache = null;
+let inFlight = null;
+const subscribers = new Set();
+let pollTimer = null;
 
 function fetchLandingContent() {
-  if (!cache) {
-    cache = fetch(BASE_URL)
+  if (!inFlight) {
+    inFlight = fetch(BASE_URL)
       .then((r) => r.json())
       .then((data) => {
+        inFlight = null;
         if (!data.success) throw new Error("content fetch failed");
         return data.content;
       })
       .catch((err) => {
-        cache = null; // don't cache a failure — let the next caller retry
+        inFlight = null;
         throw err;
       });
   }
-  return cache;
+  return inFlight;
 }
 
-/** The full CMS content list (all sections), or null while the first
- * consumer's fetch is still in flight. */
+function broadcast(content) {
+  cache = content;
+  subscribers.forEach((setContent) => setContent(content));
+}
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => {
+    fetchLandingContent().then(broadcast).catch(() => { /* keep last good content on a transient failure */ });
+  }, POLL_INTERVAL_MS);
+}
+
+function stopPollingIfIdle() {
+  if (pollTimer && subscribers.size === 0) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+
 export function useLandingContent() {
-  const [content, setContent] = useState(null);
+  const [content, setContent] = useState(cache);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLandingContent()
-      .then((c) => { if (!cancelled) setContent(c); })
-      .catch(() => { });
-    return () => { cancelled = true; };
+    subscribers.add(setContent);
+    if (cache === null) {
+      fetchLandingContent()
+        .then((c) => { if (!cancelled) broadcast(c); })
+        .catch(() => { });
+    }
+    startPolling();
+    return () => {
+      cancelled = true;
+      subscribers.delete(setContent);
+      stopPollingIfIdle();
+    };
   }, []);
 
   return content;
 }
 
-/** Free/Premium plan copy (name, price, features) — shared by Homepage.jsx
- * (landing page pricing section) and SubscriptionPage.jsx (upgrade page),
- * which both need the exact same free_investor/premium_investor CMS rows. */
+
 export function usePlanContent() {
   const content = useLandingContent();
   const c = content ?? [];
@@ -74,11 +99,7 @@ export function usePlanContent() {
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
 }
 
-/** Converts a YouTube/Vimeo/Google Drive share link into its embeddable
- * player URL. Returns null for anything else (a direct file link, or an
- * unrecognized host) so the caller can fall back to a plain <video> tag.
- * Shared by the admin content preview and the real landing-page video
- * section, so both embed identically. */
+
 export function toEmbeddableVideoUrl(url) {
   if (!url) return null;
   try {
