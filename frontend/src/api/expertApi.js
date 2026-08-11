@@ -31,9 +31,6 @@ export const getPublicExpertStats = () =>
 
 // ── Follow / unfollow an expert ──────────────────────────────────────────────
 
-export const getFollowerStatus = (expertUserId) =>
-  requestJson(`${EXPERT_BASE_URL}/${expertUserId}/followers`);
-
 export const followExpert = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/follow`, { method: "POST" });
 
@@ -165,9 +162,6 @@ export const adminDeleteForumPost = (postId, reason) =>
     body: JSON.stringify({ reason: reason || "Violated community guidelines" }),
   });
 
-
-export const adminClearForumReplyFlags = (replyId) =>
-  requestJson(`${FORUM_BASE_URL}/admin/replies/${replyId}/flags`, { method: "DELETE" });
 
 export const adminDeleteForumReply = (postId, replyId, reason) =>
   requestJson(`${FORUM_BASE_URL}/admin/posts/${postId}/replies/${replyId}`, {

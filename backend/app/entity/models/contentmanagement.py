@@ -238,10 +238,6 @@ def seed_landing_content():
                 order_index=0),
             ContentManagement(content_id="investor_banner_premium_cta", section="investor_banner_premium", title="Manage Subscription", order_index=1),
 
-            # Expert home page (ExpertLoggedInPage.jsx) — also used to be hardcoded
-            ContentManagement(content_id="expert_hero_subtitle", section="expert_hero",
-                title="Manage your portfolio, publish content, and connect with investors.", order_index=0),
-
             # Expert Features quick-link cards shown on the shared logged-in
             # homepage (LoggedInHomePage.jsx), experts only. Icons and link
             # targets stay hardcoded client-side, same as other card sections.
@@ -257,42 +253,6 @@ def seed_landing_content():
             ContentManagement(content_id="expert_home_feat_0_cta", section="expert_home_features_cta", title="Open", order_index=0),
             ContentManagement(content_id="expert_home_feat_1_cta", section="expert_home_features_cta", title="Open", order_index=1),
             ContentManagement(content_id="expert_home_feat_2_cta", section="expert_home_features_cta", title="Open", order_index=2),
-            ContentManagement(content_id="header_expert_tools", section="page_headers", title="Your Tools", description="Everything you need to publish, answer, and grow your reach", order_index=11),
-            ContentManagement(content_id="expert_tool_0", section="expert_tools", title="Real-time Dashboard", description="View live stock prices, AI-powered predictions, and market insights to support investment decision-making.", order_index=0),
-            ContentManagement(content_id="expert_tool_1", section="expert_tools", title="Knowledge Hub",       description="Write and publish educational articles for investors, from beginner basics to advanced strategy.", order_index=1),
-            ContentManagement(content_id="expert_tool_2", section="expert_tools", title="Community Forum",     description="Join discussions with investors and fellow experts on markets, strategy, and platform news.", order_index=2),
-            ContentManagement(content_id="expert_tool_3", section="expert_tools", title="Model Portfolio",     description="Publish and rebalance the model portfolio investors follow — holdings, allocation, and rationale.", order_index=3),
-            ContentManagement(content_id="expert_tool_4", section="expert_tools", title="Messages",            description="Your place to talk directly with investors and answer the questions they send you.", order_index=4),
-            # All 5 cards above share this one button label
-            ContentManagement(content_id="expert_tools_cta", section="expert_tools_cta", title="Open", order_index=0),
-
-            # Model Portfolio card
-            ContentManagement(content_id="header_model_portfolio", section="page_headers", title="Model Portfolio",
-                description="The portfolio investors follow", order_index=16),
-            ContentManagement(content_id="model_portfolio_empty_msg", section="expert_home_misc", title="You haven't set up a model portfolio yet.", order_index=0),
-            ContentManagement(content_id="model_portfolio_cta_create", section="expert_home_misc", title="Create Portfolio", order_index=1),
-            ContentManagement(content_id="model_portfolio_cta_manage", section="expert_home_misc", title="Manage Portfolio", order_index=2),
-
-            # Your Profile card
-            ContentManagement(content_id="header_expert_profile", section="page_headers", title="Your Profile", order_index=17),
-            ContentManagement(content_id="expert_profile_edit_cta", section="expert_home_misc", title="Edit Profile", order_index=3),
-            ContentManagement(content_id="expert_profile_not_rated", section="expert_home_misc", title="Not yet rated \u2014 keep building your reputation with investors.", order_index=4),
-
-            # Verification Documents banner
-            ContentManagement(content_id="header_documents", section="page_headers", title="Verification Documents", order_index=18),
-            ContentManagement(content_id="documents_desc_verified",   section="expert_home_misc", title="Manage the credential documents tied to your verified expert account.", order_index=5),
-            ContentManagement(content_id="documents_desc_unverified", section="expert_home_misc", title="Submit your credential documents to get verified and unlock the rest of the platform.", order_index=6),
-            ContentManagement(content_id="documents_cta_verified",    section="expert_home_misc", title="Manage Documents", order_index=7),
-            ContentManagement(content_id="documents_cta_unverified",  section="expert_home_misc", title="Submit Documents", order_index=8),
-
-            # Compensation card, inside the Your Profile section
-            ContentManagement(content_id="compensation_pending_label", section="expert_home_misc", title="Pending payout", order_index=9),
-            # "{followers}" gets replaced client-side with the real follower
-            # threshold number — see ProfileSummarySection in ExpertLoggedInPage.jsx
-            ContentManagement(content_id="compensation_need_followers", section="expert_home_misc", title="Need {followers} followers to earn", order_index=10),
-            ContentManagement(content_id="compensation_locked_label", section="expert_home_misc", title="Locked", order_index=11),
-            ContentManagement(content_id="compensation_locked_msg", section="expert_home_misc", title="Get verified to unlock compensation", order_index=12),
-
             # Expert Compensation page (ExpertCompensationPage.jsx)
             ContentManagement(content_id="expert_compensation_header", section="expert_compensation_page", title="Compensation", description="Track your earnings, payout history, and follower eligibility.", order_index=0),
             ContentManagement(content_id="expert_compensation_notice", section="expert_compensation_page", title="Display-only notice", description="Compensation figures on this page are calculated for display purposes only — no funds are transferred.", order_index=1),

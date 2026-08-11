@@ -449,7 +449,7 @@ const ORDERABLE_SECTIONS = new Set([
   "why_investor", "platform_features", "expert_role_benefits",
   "get_started_steps", "faq",
   "free_investor", "premium_investor",
-  "footer_product", "footer_company", "footer_resources", "footer_contact",
+  "footer_product", "footer_company", "footer_contact",
   "investor_home_features", "investor_home_dashboard", "expert_tools", "forum_topics",
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "become_expert_page", "transaction_history_page", "investor_profile_page",
@@ -461,7 +461,7 @@ const DESCRIPTION_SECTIONS = new Set([
   "hero", "page_headers",
   "why_investor", "platform_features", "expert_role_benefits",
   "get_started_steps", "faq",
-  "footer_brand", "footer_product", "footer_company", "footer_resources", "footer_contact",
+  "footer_brand", "footer_product", "footer_company", "footer_contact",
   "investor_home_features", "investor_home_dashboard", "expert_tools", "forum_page", "forum_topics",
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "investor_banner_basic", "investor_banner_premium",
@@ -1695,7 +1695,6 @@ function ContentManagementPage() {
   const footerBrand = bySection("footer_brand");
   const footerProduct = bySection("footer_product");
   const footerCompany = bySection("footer_company");
-  const footerResources = bySection("footer_resources");
   const footerContact = bySection("footer_contact");
 
   const currentMainTab = MAIN_TABS.find((t) => t.key === activeMainTab);
@@ -1747,7 +1746,7 @@ function ContentManagementPage() {
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
                   {["hero", "page_headers"].includes(item.section) ? "SUBTITLE"
-                    : ["footer_product", "footer_company", "footer_resources", "footer_contact"].includes(item.section) ? "URL"
+                    : ["footer_product", "footer_company", "footer_contact"].includes(item.section) ? "URL"
                       : ["faq", "help_faqs"].includes(item.section) ? "ANSWER"
                         : item.section === "about_team" ? "INITIALS"
                           : DESCRIPTION_CONTENT_IDS.has(item.content_id) || ["terms_of_service", "privacy_policy"].includes(item.section) ? "SECTION TEXT"
@@ -1938,7 +1937,6 @@ function ContentManagementPage() {
             version={liveItem(byId("footer_version"))?.title}
             product={liveList(footerProduct)}
             company={liveList(footerCompany)}
-            resources={liveList(footerResources)}
             contact={liveList(footerContact)}
           />
         </PreviewFrame>

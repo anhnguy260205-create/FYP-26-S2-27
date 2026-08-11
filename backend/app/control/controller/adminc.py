@@ -1,7 +1,6 @@
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 from datetime import datetime as dt
-from sqlalchemy import func
 from app.entity.database.session import get_session
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor

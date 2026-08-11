@@ -15,13 +15,6 @@ export const createAccount = async (formData) => {
   return response.json();
 };
 
-export const checkEmailExists = async (email) => {
-  const response = await fetch(
-    `${BASE_URL}/check-email?email=${encodeURIComponent(email)}`
-  );
-  return response.json();
-};
-
 export const lookupAccount = async (emailAddress) => {
   const response = await fetch(`${BASE_URL}/lookup-account`, {
     method: "POST",
@@ -130,11 +123,6 @@ export const getInvestorInformation = async (userId) => {
   return requestJson(`${BASE_URL}/investor-information/${userId}`);
 };
 
-export const getExpertInformation = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/expert-information/${userId}`);
-  return response.json();
-};
-
 export const updateUserInformation = async (
   userId,
   user_name,
@@ -183,13 +171,6 @@ export const deleteInvestor = async (userId, pin = null, otp = null) => {
       message: `Server returned an unreadable response (HTTP ${response.status}).`,
     };
   }
-};
-
-export const deleteExpert = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/delete-expert/${userId}`, {
-    method: "DELETE",
-  });
-  return response.json();
 };
 
 export const getWatchlist = async (userId) => {
@@ -241,15 +222,6 @@ export const setTransactionPin = async (pin, confirmPin) => {
   const response = await authFetch(`${BASE_URL}/pin/set`, {
     method: "POST",
     body: JSON.stringify({ pin, confirm_pin: confirmPin }),
-  });
-  return response.json();
-};
-
-/** Verify a 6-digit PIN. Returns { success, valid }. */
-export const verifyTransactionPin = async (pin) => {
-  const response = await authFetch(`${BASE_URL}/pin/verify`, {
-    method: "POST",
-    body: JSON.stringify({ pin }),
   });
   return response.json();
 };

@@ -21,7 +21,6 @@ const DEFAULT = {
   version: "v1.0.0",
   product: [{ title: "Features", description: "/#features" }, { title: "Pricing", description: "/#pricing" }],
   company: [{ title: "About Us", description: "/about-us" }, { title: "Reviews", description: "/reviews" }],
-  resources: [{ title: "GitHub Repository", description: "#" }, { title: "Documentation", description: "#" }, { title: "API Status", description: "#" }],
   contact: [{ title: "kimanh.work26@gmail.com", description: "" }, { title: "Help Center", description: "/support" }, { title: "Terms of Service", description: "/terms-of-service" }, { title: "Privacy Policy", description: "/privacy-policy" }],
 };
 
@@ -38,8 +37,6 @@ function Footer() {
   const product = productItems.length ? productItems : DEFAULT.product;
   const companyItems = c.filter((x) => x.section === "footer_company");
   const company = companyItems.length ? companyItems : DEFAULT.company;
-  const resourcesItems = c.filter((x) => x.section === "footer_resources");
-  const resources = resourcesItems.length ? resourcesItems : DEFAULT.resources;
   const contactItems = c.filter((x) => x.section === "footer_contact");
   const contact = contactItems.length ? contactItems : DEFAULT.contact;
 

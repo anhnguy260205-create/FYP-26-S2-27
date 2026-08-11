@@ -23,11 +23,6 @@ export const getPortfolio = async (userId) => {
   return response.json();
 };
 
-export const getTransactionHistory = async (investorId) => {
-  const response = await authFetch(`${BASE_URL}/transactions/${investorId}`);
-  return response.json();
-};
-
 export const getPortalTransactions = async (
   userId,
   { limit = 100, symbol = null, transactionType = null } = {}
@@ -41,14 +36,6 @@ export const getPortalTransactions = async (
 
 export const getPortalSummary = async (userId) => {
   const response = await authFetch(`${BASE_URL}/portal/${userId}/summary`);
-  return response.json();
-};
-
-export const addAssets = async (userId, amount) => {
-  const response = await authFetch(`${BASE_URL}/add-assets`, {
-    method: "POST",
-    body: JSON.stringify({ amount }),
-  });
   return response.json();
 };
 

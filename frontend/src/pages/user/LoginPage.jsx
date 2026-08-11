@@ -61,7 +61,8 @@ function LoginPage() {
       return;
     }
 
-    setError("Unknown role: " + role);  };
+    setError("Unknown role: " + role);
+  };
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
@@ -204,72 +205,72 @@ function LoginPage() {
                 </form>
               </>
             ) : (
-            <>
-            <div className="text-center">
-              <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">Welcome Back</h1>
-              <p className="text-black mt-2 mb-8 text-base md:text-[20px]" style={{ marginTop: "8px", marginBottom: "36px" }}>
-                Log in to your RocketTrade account
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-              {/* Email */}
-              <div className="flex flex-col gap-1">
-                <label className="font-semibold text-[14px] text-gray-700 pl-1">Email</label>
-                <input
-                  id="email" name="email"
-                  type="email" placeholder="Enter your email"
-                  value={formData.email} required autoComplete="email"
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                  style={inputStyle} onFocus={focusStyle} onBlur={blurStyle}
-                />
-              </div>
-
-              {/* Password */}
-              <div className="flex flex-col gap-1">
-                <div className="flex justify-between">
-                  <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
-                  <label className="text-[#00A9C4] font-medium text-[14px] cursor-pointer"
-                    onClick={() => navigate("/reset-password")}>
-                    Forgot password?
-                  </label>
+              <>
+                <div className="text-center">
+                  <h1 className="font-bold text-black leading-[1.1] text-3xl md:text-[40px]">Welcome Back</h1>
+                  <p className="text-black mt-2 mb-8 text-base md:text-[20px]" style={{ marginTop: "8px", marginBottom: "36px" }}>
+                    Log in to your RocketTrade account
+                  </p>
                 </div>
-                <input
-                  id="password" name="password"
-                  type="password" placeholder="Enter your password"
-                  value={formData.password} required autoComplete="current-password"
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  className="w-full rounded-[14px] bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
-                  style={{ ...inputStyle, border: error ? "1.5px solid #ef4444" : "1px solid #d1d5db" }}
-                  onFocus={focusStyle} onBlur={blurStyle}
-                />
-                {error && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    <p className="text-[13px] font-medium" style={{ color: "#ef4444" }}>{error}</p>
+
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+                  {/* Email */}
+                  <div className="flex flex-col gap-1">
+                    <label className="font-semibold text-[14px] text-gray-700 pl-1">Email</label>
+                    <input
+                      id="email" name="email"
+                      type="email" placeholder="Enter your email"
+                      value={formData.email} required autoComplete="email"
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      className="w-full rounded-[14px] border border-gray-300 bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                      style={inputStyle} onFocus={focusStyle} onBlur={blurStyle}
+                    />
                   </div>
-                )}
-              </div>
 
-              {/* Submit */}
-              <button type="submit" disabled={loading}
-                className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ height: "46px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}>
-                {loading ? "Signing in…" : "Sign In"}
-              </button>
-            </form>
+                  {/* Password */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <label className="font-semibold text-[14px] text-gray-700 pl-1">Password</label>
+                      <label className="text-[#00A9C4] font-medium text-[14px] cursor-pointer"
+                        onClick={() => navigate("/reset-password")}>
+                        Forgot password?
+                      </label>
+                    </div>
+                    <input
+                      id="password" name="password"
+                      type="password" placeholder="Enter your password"
+                      value={formData.password} required autoComplete="current-password"
+                      onChange={(e) => handleChange("password", e.target.value)}
+                      className="w-full rounded-[14px] bg-white px-4 text-[15px] text-gray-800 placeholder-gray-400 focus:outline-none transition"
+                      style={{ ...inputStyle, border: error ? "1.5px solid #ef4444" : "1px solid #d1d5db" }}
+                      onFocus={focusStyle} onBlur={blurStyle}
+                    />
+                    {error && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <p className="text-[13px] font-medium" style={{ color: "#ef4444" }}>{error}</p>
+                      </div>
+                    )}
+                  </div>
 
-            <p className="text-center text-sm text-gray-700 mt-3">
-              Don't have an account?{" "}
-              <a onClick={() => navigate("/register")} className="text-[#00A9C4] font-semibold cursor-pointer">
-                Create Account
-              </a>
-            </p>
-            </>
+                  {/* Submit */}
+                  <button type="submit" disabled={loading}
+                    className="w-full font-semibold text-[16px] rounded-[14px] mt-1 hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ height: "46px", background: "#00D3F2", color: "#004450", boxShadow: "0px 10px 24px rgba(0,211,242,0.30)" }}>
+                    {loading ? "Signing in…" : "Sign In"}
+                  </button>
+                </form>
+
+                <p className="text-center text-sm text-gray-700 mt-3">
+                  Don't have an account?{" "}
+                  <a onClick={() => navigate("/register")} className="text-[#00A9C4] font-semibold cursor-pointer">
+                    Create Account
+                  </a>
+                </p>
+              </>
             )}
           </div>
         </div>
@@ -277,7 +278,7 @@ function LoginPage() {
         {/* Image half — full-bleed cover, hidden on mobile */}
         <div className="hidden md:block md:w-1/2 relative overflow-hidden">
           <img alt="" src={login} className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-transparent" />
           <div className="absolute bottom-12 left-10 right-10 text-white z-10">
             <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-3 [text-shadow:0_2px_10px_rgba(0,0,0,0.7)]">Smart Trading Starts Here</h1>
             <p className="text-sm lg:text-base font-medium text-gray-100 leading-relaxed [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">
