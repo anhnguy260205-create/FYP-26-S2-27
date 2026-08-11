@@ -51,7 +51,7 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
       const info = infoRes?.investor_information || {};
       const user = { ...currentUser, ...info };
       const { country } = splitAddress(user.address || "");
-      const needsInfo = !(user.full_name && user.phone_number && country);
+      const needsInfo = infoRes ? !(user.full_name && user.phone_number && country) : false;
       const needsPin = pinRes ? pinRes.has_pin !== true : false;
       setGate({ needsInfo, needsPin, user });
     });

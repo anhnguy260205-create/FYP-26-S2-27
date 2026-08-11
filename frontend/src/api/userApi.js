@@ -1,5 +1,5 @@
 import { signOut } from "firebase/auth";
-import { authFetch } from "./apiClient";
+import { authFetch, requestJson } from "./apiClient";
 import { auth } from "../firebase";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/user`;
@@ -127,8 +127,7 @@ export const logoutOnUnload = () => {
 };
 
 export const getInvestorInformation = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/investor-information/${userId}`);
-  return response.json();
+  return requestJson(`${BASE_URL}/investor-information/${userId}`);
 };
 
 export const getExpertInformation = async (userId) => {
@@ -167,11 +166,23 @@ export const requestDeleteOtp = async () => {
 
 /** Step 2 — delete, confirmed with the transaction PIN and the email OTP. */
 export const deleteInvestor = async (userId, pin = null, otp = null) => {
-  const response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
-    method: "DELETE",
-    body: JSON.stringify({ pin, otp }),
-  });
-  return response.json();
+  let response;
+  try {
+    response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
+      method: "DELETE",
+      body: JSON.stringify({ pin, otp }),
+    });
+  } catch (networkError) {
+    return { success: false, message: `Network error: ${networkError.message}` };
+  }
+  try {
+    return await response.json();
+  } catch {
+    return {
+      success: false,
+      message: `Server returned an unreadable response (HTTP ${response.status}).`,
+    };
+  }
 };
 
 export const deleteExpert = async (userId) => {
@@ -222,8 +233,7 @@ export const updateRiskTolerance = async (userId, riskTolerance) => {
 
 /** Whether the current user has set a 6-digit transaction PIN. */
 export const getPinStatus = async () => {
-  const response = await authFetch(`${BASE_URL}/pin/status`);
-  return response.json();
+  return requestJson(`${BASE_URL}/pin/status`);
 };
 
 /** Set (or reset) the 6-digit transaction PIN — requires it entered twice. */

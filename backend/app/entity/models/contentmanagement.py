@@ -111,10 +111,7 @@ def seed_landing_content():
             # links. Only keep pages that actually exist.
             ContentManagement(content_id="footer_company_0",     section="footer_company", title="About Us",            description="/about-us", order_index=0),
             ContentManagement(content_id="footer_company_4",     section="footer_company", title="Reviews",             description="/reviews", order_index=1),
-            # Footer — resources links (was hardcoded and unreachable from admin before)
-            ContentManagement(content_id="footer_resources_0",   section="footer_resources", title="GitHub Repository", description="#", order_index=0),
-            ContentManagement(content_id="footer_resources_1",   section="footer_resources", title="Documentation",     description="#", order_index=1),
-            ContentManagement(content_id="footer_resources_2",   section="footer_resources", title="API Status",        description="#", order_index=2),
+ 
             # Footer — contact
             ContentManagement(content_id="footer_contact_email", section="footer_contact", title="kimanh.work26@gmail.com", description="", order_index=0),
             ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="/support", order_index=1),

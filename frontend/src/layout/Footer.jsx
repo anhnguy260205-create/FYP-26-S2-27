@@ -38,10 +38,10 @@ function Footer() {
   return (
     <footer className="border-t border-white/10 bg-slate-950">
       <div className="max-w-300 mx-auto px-6 lg:px-8 py-14 md:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-10 md:gap-12 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-10">
 
           {/* Brand */}
-          <div className="sm:col-span-2 xl:col-span-1">
+          <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-white tracking-tight">
                 {brand.title}
@@ -70,18 +70,6 @@ function Footer() {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Company</h4>
             <ul className="space-y-2.5">
               {company.map((item) => (
-                <li key={item.content_id ?? item.title}>
-                  <FooterLink href={item.description}>{item.title}</FooterLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Resources</h4>
-            <ul className="space-y-2.5">
-              {resources.map((item) => (
                 <li key={item.content_id ?? item.title}>
                   <FooterLink href={item.description}>{item.title}</FooterLink>
                 </li>

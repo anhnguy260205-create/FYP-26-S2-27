@@ -1517,7 +1517,7 @@ function FooterCol({ label, items }) {
   );
 }
 
-function FooterPreview({ brand, brandTagline, version, product, company, resources, contact }) {
+function FooterPreview({ brand, brandTagline, version, product, company, contact }) {
   return (
     <div className="p-6" style={{ background: "#0B1D4F" }}>
       <div className="flex items-center gap-1.5 mb-1">
@@ -1528,7 +1528,6 @@ function FooterPreview({ brand, brandTagline, version, product, company, resourc
       <div className="grid grid-cols-4 gap-3">
         <FooterCol label="Product" items={product} />
         <FooterCol label="Company" items={company} />
-        <FooterCol label="Resources" items={resources} />
         <FooterCol label="Contact" items={contact} />
       </div>
     </div>
@@ -2369,16 +2368,7 @@ function ContentManagementPage() {
                   <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
                   <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Resources Links</p>
-                  <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-                  <div className="space-y-3">
-                    {footerResources.length === 0
-                      ? <p className="text-slate-400 text-sm">No content found for this section.</p>
-                      : footerResources.map((item) => renderRow(item, footerResources))
-                    }
-                  </div>
-                </div>
+
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
                   <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>

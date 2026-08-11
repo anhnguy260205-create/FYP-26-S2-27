@@ -328,7 +328,7 @@ function DeleteAccountButton() {
             }
         } catch (error) {
             console.error(error);
-            setError("Failed to delete account");
+            setError(error?.message ? `Failed to delete account: ${error.message}` : "Failed to delete account");
         } finally {
             setDeleting(false);
         }
