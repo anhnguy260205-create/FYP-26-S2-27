@@ -2,7 +2,7 @@ import { authFetch } from "./apiClient";
 
 const BASE = `${import.meta.env.VITE_API_URL}/knowledge`;
 
-// ── Public reads ───────────────────────────────────────────────────────────────
+// Public reads 
 
 export const getArticles = async ({ category, tag, limit = 50 } = {}) => {
   const params = new URLSearchParams({ limit });
@@ -17,7 +17,7 @@ export const getArticle = async (articleId) => {
   return res.json();
 };
 
-// ── Auth required ──────────────────────────────────────────────────────────────
+// Auth required 
 
 export const getMyArticles = async (userId) => {
   const res = await authFetch(`${BASE}/my-articles/${userId}`);
@@ -67,7 +67,7 @@ export const rejectArticle = async (articleId) => {
   return res.json();
 };
 
-// ── Admin authoring (create/edit articles directly, no expert review needed) ───
+// Admin can create/edit articles directly, no expert review needed
 
 export const adminCreateArticle = async (data) => {
   const res = await authFetch(`${ADMIN_BASE}/articles`, {

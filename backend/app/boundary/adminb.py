@@ -25,7 +25,7 @@ from app.entity.models.useraccount import UserAccount
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-
+# Send a notification to the expert who owns the article
 def _notify_article_author(article: dict, notif_title: str, notif_message: str):
     expert_id = article.get("expert_id")
     if not expert_id:
@@ -34,7 +34,7 @@ def _notify_article_author(article: dict, notif_title: str, notif_message: str):
     if user_id:
         create_notification(user_id, "article", notif_title, notif_message)
 
-
+# Let all investors know when a new article is published
 def _notify_investors_new_article(article: dict):
     
     title = f"New article: {article['title']}"
@@ -42,7 +42,7 @@ def _notify_investors_new_article(article: dict):
     for user_id in Investor.get_all_user_ids():
         create_notification(user_id, "article", title, message)
 
-
+# Send both in-app notification and email for expert verification updates
 def _notify_expert_verification(expert_id: str, notif_title: str, notif_message: str, email_fn):
 
     user_id = Expert.get_user_id_by_expert_id(expert_id)
@@ -57,7 +57,7 @@ def _notify_expert_verification(expert_id: str, notif_title: str, notif_message:
             daemon=True,
         ).start()
 
-
+# Request body used when creating or updating an investment article
 class InvestmentArticleRequest(BaseModel):
     title: str
     category: str
@@ -67,7 +67,7 @@ class InvestmentArticleRequest(BaseModel):
     status: str = "published"
     author_name: Optional[str] = None
 
-
+# Acts as a boundary between the API routes and admin controllers
 class AdminUserAccountPage:
     def __init__(self):
         self.controller = AdminUserAccountController()
@@ -152,7 +152,7 @@ class AdminUserAccountPage:
     def setExpertVerificationStatus(self, expert_id, status):
         return self.controller.setExpertVerificationStatus(expert_id, status)
 
-
+# Get the list of user accounts with optional filters
 @router.get("/useraccounts")
 def get_user_accounts(
     keyword: Optional[str] = None,
@@ -170,7 +170,7 @@ def get_user_accounts(
         "users": users,
     }
 
-
+# View the details of one user account
 @router.get("/useraccounts/{user_id}")
 def view_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -187,7 +187,7 @@ def view_user_account(user_id: str, current_user: dict = Depends(require_admin))
         "user": user,
     }
 
-
+# Suspend a user account and refresh the cached profile
 @router.put("/useraccounts/{user_id}/suspend")
 def suspend_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -211,14 +211,14 @@ def suspend_user_account(user_id: str, current_user: dict = Depends(require_admi
 class DeleteFirebaseOrphanRequest(BaseModel):
     email: str
 
-
+# Remove a Firebase account that no longer has a matching user record   
 @router.post("/firebase-cleanup")
 def delete_firebase_orphan(data: DeleteFirebaseOrphanRequest, current_user: dict = Depends(require_admin)):
   
     ok = delete_firebase_user_by_email(data.email.strip().lower())
     return {"success": ok}
 
-
+# Activate a suspended user account
 @router.put("/useraccounts/{user_id}/activate")
 def activate_user_account(user_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -237,31 +237,31 @@ def activate_user_account(user_id: str, current_user: dict = Depends(require_adm
         "message": "User activated successfully",
     }
 
-
+# Dashboard data used by the admin overview page
 @router.get("/dashboard-stats")
 def get_dashboard_stats(current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getDashboardStats()}
 
-
+# Show the number of new signups over time
 @router.get("/signup-stats")
 def get_signup_stats(days: int = 30, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getSignupStats(days)}
 
-
+# Break down users by their account type
 @router.get("/user-types")
 def get_user_types(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getUserTypeBreakdown()}
 
-
+# Get the revenue information for the admin dashboard
 @router.get("/revenue-stats")
 def get_revenue_stats(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueStats()}
 
-
+# Get wallet transactions with optional filters
 @router.get("/wallet-transactions")
 def get_wallet_transactions(
     txn_type: Optional[str] = None,
@@ -274,19 +274,19 @@ def get_wallet_transactions(
     txns = boundary.getWalletTransactions(txn_type, status, limit)
     return {"success": True, "count": len(txns), "transactions": txns}
 
-
+# Get a summary of completed and pending payments
 @router.get("/payment-summary")
 def get_payment_summary(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getPaymentSummary()}
 
-
+# Show monthly revenue for the selected period
 @router.get("/revenue-by-month")
 def get_revenue_by_month(months: int = 6, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     return {"success": True, **boundary.getRevenueByMonth(months)}
 
-
+# Get the revenue records for the admin ledger
 @router.get("/revenue-ledger")
 def get_revenue_ledger(source: str = None, limit: int = 100,
                        current_user: dict = Depends(require_admin_or_hr)):
@@ -294,14 +294,14 @@ def get_revenue_ledger(source: str = None, limit: int = 100,
     boundary = AdminUserAccountPage()
     return boundary.getRevenueLedger(source, limit)
 
-
+# Get the current subscription records
 @router.get("/subscriptions")
 def get_subscriptions(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
     subs = boundary.getSubscriptions()
     return {"success": True, "subscriptions": subs}
 
-
+# Get all investment articles for admin review
 @router.get("/articles")
 def get_investment_articles(current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -330,19 +330,19 @@ def get_investment_article(article_id: str, current_user: dict = Depends(require
         "article": article,
     }
 
-
+# Create a new investment article
 @router.post("/articles")
 def create_investment_article(data: InvestmentArticleRequest, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return boundary.createInvestmentArticle(data)
 
-
+# Update an existing investment article
 @router.put("/articles/{article_id}")
 def update_investment_article(article_id: str, data: InvestmentArticleRequest, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
     return boundary.updateInvestmentArticle(article_id, data)
 
-
+# Delete an article and notify its author
 @router.delete("/articles/{article_id}")
 def delete_investment_article(article_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -358,7 +358,7 @@ def delete_investment_article(article_id: str, current_user: dict = Depends(requ
 
     return result
 
-
+# Approve an article and make it visible in the Knowledge Hub
 @router.post("/articles/{article_id}/approve")
 def approve_article(article_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -378,7 +378,7 @@ def approve_article(article_id: str, current_user: dict = Depends(require_admin)
 
     return {"success": True, "message": "Article approved and published"}
 
-
+# Reject an article and let the author know
 @router.post("/articles/{article_id}/reject")
 def reject_article(article_id: str, current_user: dict = Depends(require_admin)):
     boundary = AdminUserAccountPage()
@@ -396,7 +396,7 @@ def reject_article(article_id: str, current_user: dict = Depends(require_admin))
     )
     return {"success": True, "message": "Article rejected"}
 
-
+# Get all experts for admin review
 @router.get("/experts")
 def get_all_experts(current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
@@ -408,14 +408,13 @@ def get_all_experts(current_user: dict = Depends(require_admin_or_hr)):
         "experts": experts,
     }
 
-
+#Get the number of logins per day for the activity chart.
 @router.get("/experts/{expert_id}/login-activity")
 def get_expert_login_activity(
     expert_id: str, days: int = 7,
     current_user: dict = Depends(require_admin_or_hr),
 ):
-    """Logins per day for the review page's activity chart. Counts fresh
-    logins, not hours online — there's no duration tracking anywhere."""
+
     from app.entity.models.expert import Expert
     from app.entity.models.login_mfa import LoginMfaSession
 
@@ -434,7 +433,7 @@ def get_expert_login_activity(
             info["email_address"], days=days),
     }
 
-
+# Approve the expert and give them premium access
 @router.post("/experts/{expert_id}/approve")
 def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
     boundary = AdminUserAccountPage()
@@ -446,8 +445,7 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
             "message": "Expert not found",
         }
 
-    # Verified experts automatically enjoy premium benefits (alerts, unlimited
-    # predictions, etc.) without a paid subscription.
+    
     from app.entity.models.expert import Expert
     from app.entity.models.investor import Investor
     _user_id = Expert.get_user_id_by_expert_id(expert_id)
@@ -472,9 +470,6 @@ def approve_expert(expert_id: str, current_user: dict = Depends(require_admin_or
 # Handle rejection of an expert's verification application.
 @router.post("/experts/{expert_id}/reject")
 def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
-    # Rejecting clears the submitted documents immediately (not just the
-    # status), so the expert sees a clean slate and must upload a fresh set
-    # to be reviewed again — see ExpertVerification.reject_and_clear_documents.
     success = Expert.reject_verification(expert_id)
 
     if not success:
@@ -482,7 +477,7 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
             "success": False,
             "message": "Expert not found",
         }
-    # Find the user ID associated with the expert and invalidate their profile cache if they exist.
+    # Find the user ID associated with the expert and invalidate their profile cache if they...
     _user_id = Expert.get_user_id_by_expert_id(expert_id)
     if _user_id:
         info = UserAccount.get_user_information(_user_id)
@@ -501,14 +496,9 @@ def reject_expert(expert_id: str, current_user: dict = Depends(require_admin_or_
         "message": "Expert rejected successfully",
     }
 
-
+# Cancel the expert verification and return the account to investor status
 @router.post("/experts/{expert_id}/cancel")
 def cancel_expert_verification(expert_id: str, current_user: dict = Depends(require_admin_or_hr)):
-    """Revoke a previously-approved expert's verified status and demote them
-    back to a plain investor: their expert row (+ published portfolio,
-    authored articles, compensation ledger) is removed entirely, so they
-    disappear from expert surfaces immediately. Their investor account is
-    untouched; they can reapply from scratch via Become an Expert."""
     from app.entity.models.expert import Expert
     from app.entity.models.investor import Investor
 
@@ -526,8 +516,9 @@ def cancel_expert_verification(expert_id: str, current_user: dict = Depends(requ
         notif_message="An administrator has revoked your verified status and you are now a regular investor. Reapply anytime from Become an Expert.",
         email_fn=send_expert_verification_cancelled_email,
     )
+    # Remove the expert's premium access before demoting the account
     Investor.revokeExpertPremium(_user_id)
-    # Demote the expert to an investor, which deletes their expert record and all associated data
+    # Remove the expert record and return the account to investor status
     success = Expert.demote_to_investor(_user_id)
     if not success:
         return {

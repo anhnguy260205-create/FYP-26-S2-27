@@ -11,23 +11,30 @@ from app.control.controller.passwordresetc import (
 from app.control.services.auth import get_current_user
 from app.control.services.rate_limit import limiter
 
+
 router = APIRouter(prefix="/user", tags=["Password Reset"])
 
 
+# Request data used to find an account by email
 class LookupAccountRequest(BaseModel):
     email_address: str
 
 
+# Check whether an account exists before starting the reset process
 @router.post("/lookup-account")
 @limiter.limit("10/minute")
 def lookup_account(request: Request, data: LookupAccountRequest):
-    return LookupAccountController().lookup(data.email_address.strip().lower())
+    return LookupAccountController().lookup(
+        data.email_address.strip().lower()
+    )
 
 
+# Request data for sending a password reset OTP
 class ForgotPasswordRequest(BaseModel):
     email_address: str
 
 
+# Handles the password reset request through the controller
 class ForgotPasswordPage:
     def __init__(self):
         self.controller = ForgotPasswordController()
@@ -36,82 +43,139 @@ class ForgotPasswordPage:
         return self.controller.request_otp(email_address)
 
 
+# Send an OTP to the user's email
 @router.post("/forgot-password")
 @limiter.limit("5/minute")
 def forgot_password(request: Request, data: ForgotPasswordRequest):
     boundary = ForgotPasswordPage()
-    result = boundary.request_otp(data.email_address.strip().lower())
+    result = boundary.request_otp(
+        data.email_address.strip().lower()
+    )
     return result
 
 
+# Request data used to verify the reset OTP
 class VerifyOtpRequest(BaseModel):
     email_address: str
     otp_code: str
 
 
+# Handles OTP verification through the controller
 class VerifyOtpPage:
     def __init__(self):
         self.controller = VerifyOtpController()
 
     def verify(self, email_address, otp_code):
-        return self.controller.verify(email_address, otp_code)
+        return self.controller.verify(
+            email_address,
+            otp_code
+        )
 
 
+# Verify the OTP before allowing the password to be reset
 @router.post("/verify-reset-otp")
 def verify_reset_otp(data: VerifyOtpRequest):
     boundary = VerifyOtpPage()
-    result = boundary.verify(data.email_address.strip().lower(), data.otp_code.strip())
+    result = boundary.verify(
+        data.email_address.strip().lower(),
+        data.otp_code.strip()
+    )
     return result
 
 
+# Request data needed to reset a password
 class ResetPasswordRequest(BaseModel):
     email_address: str
     otp_code: str
     new_password: str
 
 
+# Handles password reset requests through the controller
 class ResetPasswordPage:
     def __init__(self):
         self.controller = ResetPasswordController()
 
     def reset_password(self, email_address, otp_code, new_password):
-        return self.controller.reset_password(email_address, otp_code, new_password)
+        return self.controller.reset_password(
+            email_address,
+            otp_code,
+            new_password
+        )
 
 
+# Reset the password after the OTP has been verified
 @router.post("/reset-password")
 @limiter.limit("5/minute")
-def reset_password(request: Request, data: ResetPasswordRequest):
+def reset_password(
+    request: Request,
+    data: ResetPasswordRequest
+):
     boundary = ResetPasswordPage()
 
+    # Do a basic password length check before calling the controller
     if len(data.new_password) < 8:
-        return {"success": False, "message": "Password must be at least 8 characters"}
+        return {
+            "success": False,
+            "message": "Password must be at least 8 characters"
+        }
 
     result = boundary.reset_password(
         data.email_address.strip().lower(),
         data.otp_code.strip(),
         data.new_password
     )
+
     return result
 
 
+# Request data for changing an existing password
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
 
 
+# Handles password changes for logged-in users
 class ChangePasswordBoundary:
     def __init__(self):
         self.controller = ChangePasswordController()
 
-    def change_password(self, email, current_password, new_password):
-        return self.controller.change_password(email, current_password, new_password)
+    def change_password(
+        self,
+        email,
+        current_password,
+        new_password
+    ):
+        return self.controller.change_password(
+            email,
+            current_password,
+            new_password
+        )
 
 
+# Change the password for the currently logged-in user
 @router.post("/change-password")
-def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    # Keep the new password within the allowed length
     if len(data.new_password) < 8 or len(data.new_password) > 24:
-        return {"success": False, "message": "Password must be 8-24 characters"}
+        return {
+            "success": False,
+            "message": "Password must be 8-24 characters"
+        }
+
+    # Prevent users from reusing their current password
     if data.new_password == data.current_password:
-        return {"success": False, "message": "New password must be different from your current password"}
+        return {
+            "success": False,
+            "message": "New password must be different from your current password"
+        }
+
     boundary = ChangePasswordBoundary()
-    return boundary.change_password(current_user["email"], data.current_password, data.new_password)
+
+    return boundary.change_password(
+        current_user["email"],
+        data.current_password,
+        data.new_password
+    )

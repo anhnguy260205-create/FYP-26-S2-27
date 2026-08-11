@@ -6,7 +6,7 @@ import "./style/index.css";
 window.addEventListener("vite:preloadError", () => {
   window.location.reload();
 });
-// Render the root React component (App) into the DOM element with the ID "root". This is the entry point of the React application.
+// Render the root React component (App) into the DOM element with the ID "root".
 ReactDOM.createRoot(document.getElementById("root")).render(
   <App />
 );

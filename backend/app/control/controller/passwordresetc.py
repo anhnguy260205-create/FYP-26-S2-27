@@ -53,7 +53,7 @@ class ResetPasswordController:
 
 class ChangePasswordController:
     def change_password(self, email, current_password, new_password):
-        # Verify the current password server-side. (Client-side reauthenticate would start a new Firebase session and invalidate the MFA check.)
+        # Verify the current password server-side.
         if not verify_password_firebase(email, current_password):
             return {"success": False, "message": "Current password is incorrect"}
 

@@ -1,7 +1,7 @@
 // Utility functions for managing user roles and related information.
 export function getStoredUser() {
   try {
-    //get the current user from session storage, which is stored as a JSON string. If the user is not found, return null.
+    // get the current user from session storage, which is stored as a JSON string.
     return JSON.parse(sessionStorage.getItem("currentUser") || "null");
   } catch {
     return null;

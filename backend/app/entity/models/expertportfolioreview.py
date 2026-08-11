@@ -28,7 +28,7 @@ class ExpertPortfolioReview(Base):
 
     @staticmethod
     def _reviewer_name(session, user_id):
-        # Portfolio reviews are anonymous — the expert (and other viewers) never see who left a review, only the rating/comment.
+        # Portfolio reviews are anonymous — the expert (and other viewers) never see who left a r...
         return "Anonymous Investor"
 
     @staticmethod

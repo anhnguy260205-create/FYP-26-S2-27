@@ -1,15 +1,4 @@
-"""One-off admin utility: upgrade an existing account to verified expert.
 
-Usage (from the backend folder, venv active):
-    python upgrade_to_expert.py jordanlimjunhong@gmail.com
-
-What it does (merged-roles model):
-1. Finds the user account by email.
-2. Ensures an investor row exists (everyone is an investor).
-3. Creates the expert row + verification record if missing.
-4. Marks the verification as approved.
-5. Grants the complimentary premium tier.
-"""
 import sys
 
 from app.entity.database.session import get_session

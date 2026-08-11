@@ -12,7 +12,7 @@ from app.boundary.stock_ws import get_live_price
 
 router = APIRouter(prefix="/alert", tags=["Alert"])
 
-
+# Request data used when creating a price alert
 class CreateAlertRequest(BaseModel):
     stock_symbol: str
     price_above: Optional[float] = None
@@ -22,20 +22,21 @@ class CreateAlertRequest(BaseModel):
     custom_message: Optional[str] = None
     notification_email: str
 
-## create alert endpoint
+# Create a new price alert
 @router.post("/create")
 def create_alert(
     data: CreateAlertRequest,
     current_user: dict = Depends(get_current_user),
 ):
     stock_symbol = data.stock_symbol.upper()
-    ## Validate the stock symbol and check if the current price can be retrieved. If not, raise an HTTPException with a 503 status code.
+    # Check the current price before creating the alert
     current_price = get_live_price(stock_symbol)
     if current_price is None:
         raise HTTPException(
             status_code=503,
             detail="Unable to verify the current price right now — try again shortly.",
         )
+    # Make sure the alert prices are valid
     if data.price_above is not None and data.price_above <= current_price:
         raise HTTPException(
             status_code=400,
@@ -46,7 +47,7 @@ def create_alert(
             status_code=400,
             detail=f"Price below must be lower than the current price (${current_price:.2f}).",
         )
-
+    # Save the alert through the controller
     result = CreateAlertController().create_alert(
         current_user["user_id"],
         stock_symbol,
@@ -61,9 +62,10 @@ def create_alert(
         raise HTTPException(status_code=409, detail=result["message"])
     return {"success": True, "alert_id": result["alert_id"]}
 
-## get alerts endpoint
+# Get all alerts for a user
 @router.get("/list/{user_id}")
 def get_alerts(user_id: str, current_user: dict = Depends(get_current_user)):
+    # Users can only view their own alerts unless they are admins
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
     alerts = GetAlertsController().get_alerts(user_id)
@@ -83,7 +85,7 @@ def get_alerts(user_id: str, current_user: dict = Depends(get_current_user)):
         for a in alerts
     ]}
 
-## delete alert endpoint
+# Delete an existing alert
 @router.delete("/delete/{alert_id}")
 def delete_alert(alert_id: int, current_user: dict = Depends(get_current_user)):
     ok = DeleteAlertController().delete_alert(alert_id, current_user["user_id"])

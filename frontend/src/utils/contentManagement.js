@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-// Utility functions for managing content fetched from the backend, including hooks for retrieving and formatting content data.
+// Utility functions for managing content fetched from the backend, including hooks for re...
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export function useContentManagement() {
@@ -14,10 +14,10 @@ export function useContentManagement() {
       })
       .catch(() => { });
   }, []);
-  // Memoize the content management functions to avoid unnecessary recalculations on re-renders.
+  // Memoize the content management functions to avoid unnecessary recalculations on re-rend...
   return useMemo(() => {
     const byId = (id) => content.find((item) => item.content_id === id);
-    // Get the text content for a specific content ID, with optional fallback title and description if the content is not found.
+    // Get the text content for a specific content ID, with optional fallback title and descri...
     const text = (id, fallbackTitle = "", fallbackDescription = "") => {
       const item = byId(id);
       return {
@@ -34,7 +34,7 @@ export function useContentManagement() {
     return { content, byId, text, section };
   }, [content]);
 }
-// Fill a template string with replacements, replacing placeholders in the form of {key} with corresponding values from the replacements object.
+// Fill a template string with replacements, replacing placeholders in the form of {key} w...
 export function fillTemplate(value = "", replacements = {}) {
   return Object.entries(replacements).reduce(
     (text, [key, replacement]) => text.replaceAll(`{${key}}`, String(replacement)),

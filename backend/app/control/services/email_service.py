@@ -33,7 +33,7 @@ _BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _html_from_msg(msg) -> str:
-    # Extract the HTML part of a MIMEMultipart email message. If no HTML part is found, return the plain text payload as a string.
+    # Extract the HTML part of a MIMEMultipart email message.
     for part in msg.walk():
         if part.get_content_type() == "text/html":
             payload = part.get_payload(decode=True)

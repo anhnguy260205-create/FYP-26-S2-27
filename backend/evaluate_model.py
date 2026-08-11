@@ -1,8 +1,3 @@
-"""
-Offline evaluation of the XGBoost stock prediction model.
-Run from the backend directory:
-    python evaluate_model.py
-"""
 import time, math, requests, numpy as np, pandas as pd, xgboost as xgb
 from sklearn.metrics import (roc_auc_score, accuracy_score, precision_score,
                               recall_score, f1_score, confusion_matrix)
@@ -11,7 +6,7 @@ requests.packages.urllib3.disable_warnings()
 _HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
 def fetch_ohlcv(symbol: str, start: str, end: str) -> pd.DataFrame:
-    """Fetch daily OHLCV from Yahoo Finance v8 API using raw requests."""
+    #Fetch daily OHLCV from Yahoo Finance v8 API using raw requests. 
     import time as _time
     from datetime import datetime
     p1 = int(datetime.strptime(start, "%Y-%m-%d").timestamp())
@@ -40,7 +35,7 @@ SYMBOLS = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA","AVGO","ORCL","AMD"
 START   = "2024-01-01"
 END     = "2025-12-31"
 
-# ── Technical indicator helpers ───────────────────────────────────────────────
+# Technical indicator helpers 
 def rsi(s, p=14):
     d = s.diff(); g = d.clip(lower=0); l = -d.clip(upper=0)
     rs = g.rolling(p).mean() / l.rolling(p).mean().replace(0, np.nan)
@@ -65,14 +60,14 @@ def atr_pct(h, l, c, p=14):
     tr = pd.concat([h-l, (h-pc).abs(), (l-pc).abs()], axis=1).max(axis=1)
     return (tr.rolling(p).mean() / c.replace(0, np.nan)).fillna(0)
 
-# ── Load model ────────────────────────────────────────────────────────────────
+# Load model 
 print("Loading model...")
 booster = xgb.Booster()
 booster.load_model(MODEL)
 FEATS = booster.feature_names
 print(f"Features ({len(FEATS)}): {FEATS}\n")
 
-# ── Fetch SPY market data ─────────────────────────────────────────────────────
+# Fetch SPY market data 
 print("Fetching SPY...")
 spy_df = fetch_ohlcv("SPY", START, END)
 time.sleep(0.5)
@@ -83,7 +78,7 @@ else:
     spy_close = spy_df["Close"]
     print(f"SPY: {len(spy_df)} rows\n")
 
-# ── Evaluate per symbol ───────────────────────────────────────────────────────
+# Evaluate per symbol  
 all_probs, all_labels = [], []
 results = []
 
@@ -152,7 +147,7 @@ for sym in SYMBOLS:
     all_labels.extend(df["label"].tolist())
     print(f"n={len(df):3d}  AUC={sym_auc:.4f}  Acc={sym_acc:.4f}  F1={sym_f1:.4f}  base={base:.4f}")
 
-# ── Aggregate results ─────────────────────────────────────────────────────────
+# Aggregate results 
 print("\n" + "="*60)
 if not all_labels:
     print("No data collected — yfinance may be rate-limited. Try again in a few minutes.")

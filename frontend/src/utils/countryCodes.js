@@ -45,7 +45,7 @@ export const COUNTRIES = (() => {
 
 const COUNTRY_NAMES = COUNTRIES.map((c) => c.name);
 
-// Personal info stores city + country combined in the single `address` column as "City, Country" (no schema change)..
+// Personal info stores city + country combined in the single `address` column as "City, C...
 export function splitAddress(address) {
   const raw = (address || "").trim();
   if (!raw) return { city: "", country: "" };

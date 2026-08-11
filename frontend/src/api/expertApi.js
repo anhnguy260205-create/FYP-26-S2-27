@@ -24,13 +24,12 @@ export const setChatAvailability = (available) =>
     body: JSON.stringify({ available }),
   });
 
-// ── Public expert directory ────────────────────────────────────────────────────
 
+// Public expert directory
 export const getPublicExpertStats = () =>
   requestJson(`${EXPERT_BASE_URL}/public-stats`);
 
-// ── Follow / unfollow an expert ──────────────────────────────────────────────
-
+// Follow or unfollow an expert
 export const getFollowerStatus = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/followers`);
 
@@ -43,8 +42,7 @@ export const unfollowExpert = (expertUserId) =>
 export const getFollowedExperts = () =>
   requestJson(`${EXPERT_BASE_URL}/my-follows`);
 
-// ── Portfolio ratings & reviews ────────────────────────────────────────────────
-
+// Portfolio ratings and reviews
 export const getPortfolioReviews = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/portfolio-reviews`);
 
@@ -57,13 +55,12 @@ export const submitPortfolioReview = (expertUserId, { rating, comment }) =>
 export const deletePortfolioReview = (expertUserId) =>
   requestJson(`${EXPERT_BASE_URL}/${expertUserId}/portfolio-reviews`, { method: "DELETE" });
 
-// ── Compensation ──────────────────────────────────────────────────────────────
+// Expert compensation
 
 export const getExpertCompensationSummary = () =>
   requestJson(`${EXPERT_BASE_URL}/compensation/summary`);
 
-// ── Forum (public reads use plain fetch; writes use authFetch via requestJson) ──
-
+// Forum reads are public, while changes require authentication
 export const getForumPosts = (userId) => {
   const query = userId ? `?user_id=${encodeURIComponent(userId)}` : "";
   // Public read — no auth needed
@@ -123,7 +120,7 @@ export const deleteForumReply = (postId, replyId, userId) =>
     body: JSON.stringify({ user_id: userId || "" }),
   });
 
-// ── Flagging / removal notices ──────────────────────────────────────────────────
+// Flag posts or replies for moderation
 
 export const flagForumPost = (postId, reason) =>
   requestJson(`${FORUM_BASE_URL}/posts/${postId}/flag`, {
@@ -146,8 +143,7 @@ export const acknowledgeForumRemoval = (removalId) =>
     body: JSON.stringify({ removal_id: removalId }),
   });
 
-// ── Admin moderation ────────────────────────────────────────────────────────────
-
+// Admin forum moderation
 export const adminGetFlaggedPosts = () =>
   requestJson(`${FORUM_BASE_URL}/admin/flagged`);
 

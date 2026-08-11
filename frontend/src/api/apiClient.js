@@ -1,7 +1,7 @@
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 
-// Resolves once Firebase has confirmed the auth state (handles page-refresh timing).
+// Wait for Firebase to finish checking the current login state.
 function waitForAuth() {
   return new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -33,8 +33,7 @@ async function getAuthHeader() {
 
 let kickingOut = false;
 
-/** An admin suspended this account mid-session — force a clean logout instead
- * of leaving the page silently failing every subsequent request. */
+// Log out the user if their account was suspended during the session.
 async function kickOutSuspendedUser() {
   if (kickingOut) return;
   kickingOut = true;
@@ -43,10 +42,7 @@ async function kickOutSuspendedUser() {
   window.location.href = "/login?suspended=1";
 }
 
-/**
- * fetch() wrapper that automatically adds the Firebase Bearer token.
- * Use this for any request to a protected backend endpoint.
- */
+// Add the Firebase Bearer token to protected requests.
 export async function authFetch(url, options = {}) {
   const authHeader = await getAuthHeader();
   const response = await fetch(url, {
@@ -65,22 +61,19 @@ export async function authFetch(url, options = {}) {
         kickOutSuspendedUser();
       } else if (body && typeof body.detail === "object" && body.detail !== null
         && typeof body.detail.message === "string") {
-        // Some auth checks (e.g. mfa_required) return detail as
-        // {code, message} instead of a plain string. Callers throughout the
-        // app assume `detail` is always a string and render it directly, so
-        // flatten it here rather than fixing every call site individually.
+        // Convert object-based error details into a simple message.
         return new Response(
           JSON.stringify({ ...body, detail: body.detail.message }),
           { status: response.status, statusText: response.statusText, headers: response.headers },
         );
       }
-    } catch { /* not JSON, or body already consumed -- fall through untouched */ }
+    } catch { /* not JSON, so leave the response unchanged */ }
   }
 
   return response;
 }
 
-/** authFetch() + JSON parsing, throwing on a non-OK response. */
+// Send a request with authFetch and return the parsed JSON.
 export async function requestJson(url, options = {}) {
   const response = await authFetch(url, options);
   const data = await response.json().catch(() => ({}));

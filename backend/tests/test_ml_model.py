@@ -1,15 +1,3 @@
-"""
-Unit tests for app.control.services.ml_model.
-
-Scope: pure feature-engineering and business-logic-translation functions only
-(confidence_tier, expected_profit_margin_pct, the technical-indicator helpers,
-and compute_features). These don't touch the database or the trained model
-file, so they run without a MySQL connection or network access.
-
-predict_probability_up / _load_model are intentionally not covered here since
-they require the real xgboost model artifact and are effectively an
-integration test, not a unit test.
-"""
 import numpy as np
 import pandas as pd
 import pytest
@@ -17,7 +5,7 @@ import pytest
 from app.control.services import ml_model
 
 
-# ── confidence_tier ──────────────────────────────────────────────────────────
+# Confidence Tier
 
 def test_confidence_tier_no_edge_is_low_confidence():
     result = ml_model.confidence_tier(0.5)
@@ -57,7 +45,7 @@ def test_confidence_tier_never_exceeds_model_auc():
         assert 50.0 <= result["confidence_pct"] <= ml_model.MODEL_VALIDATION_AUC * 100 + 1e-9
 
 
-# ── expected_profit_margin_pct ───────────────────────────────────────────────
+# expected_profit_margin_pct
 
 def test_expected_profit_margin_pct_zero_at_coin_flip():
     assert ml_model.expected_profit_margin_pct(0.5, 2.0) == 0.0
@@ -77,7 +65,7 @@ def test_expected_profit_margin_pct_scales_with_typical_move():
     assert large_move == pytest.approx(small_move * 4)
 
 
-# ── technical indicator helpers ──────────────────────────────────────────────
+#technical indicator helpers
 
 @pytest.fixture
 def rising_prices():
@@ -138,7 +126,7 @@ def test_stochastic_within_bounds(rising_prices):
     assert stoch_d.between(0, 100).all()
 
 
-# ── compute_features ─────────────────────────────────────────────────────────
+# compute features 
 
 @pytest.fixture(autouse=True)
 def _stub_network_features(monkeypatch):

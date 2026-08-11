@@ -24,8 +24,8 @@ from app.entity.models.investor import Investor
 router = APIRouter(prefix="/trading", tags=["Trading"])
 
 
+# Ensure user has a valid 6-digit transaction PIN configured and verified before proceeding
 def _require_transaction_pin(user_id: str, pin: Optional[str]):
-    # Check if the user has set a transaction PIN and verify it. If not set, raise an HTTPException with status code 428. If the PIN is incorrect, raise an HTTPException with status code 403.
     if not Investor.hasTransactionPin(user_id):
         raise HTTPException(
             status_code=428,
@@ -37,7 +37,6 @@ def _require_transaction_pin(user_id: str, pin: Optional[str]):
 
 @router.get("/fee-schedule")
 def get_fee_schedule():
-    # Lets the Buy/Sell screens show the commission before the user commits, using the same numbers the server will actually charge.
     return {
         "success": True,
         "minimum": PLATFORM_FEE_MIN,
@@ -71,6 +70,7 @@ class SellRequest(BaseModel):
     pin: Optional[str] = None
 
 
+# Execute instant market buy
 @router.post("/buy")
 def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
     if get_market_status() != "OPEN":
@@ -85,6 +85,7 @@ def buy_stock(data: BuyRequest, current_user: dict = Depends(get_current_user)):
     return result
 
 
+# Execute instant market sell
 @router.post("/sell")
 def sell_stock(data: SellRequest, current_user: dict = Depends(get_current_user)):
     if get_market_status() != "OPEN":
@@ -99,6 +100,7 @@ def sell_stock(data: SellRequest, current_user: dict = Depends(get_current_user)
     return result
 
 
+# Fetch portfolio holdings (owner or admin only)
 @router.get("/portfolio/{user_id}")
 def get_portfolio(user_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
@@ -139,6 +141,7 @@ class OrderRequest(BaseModel):
     pin: Optional[str] = None
 
 
+# Submit a pending order (e.g. limit order)
 @router.post("/order")
 def submit_order(data: OrderRequest, current_user: dict = Depends(get_current_user)):
     if get_market_status() != "OPEN":
@@ -167,6 +170,7 @@ def cancel_order(order_id: str, current_user: dict = Depends(get_current_user)):
     return CancelOrderController().cancel(order_id, current_user["user_id"])
 
 
+# Portal dashboard stats and account summary
 @router.get("/portal/{user_id}/summary")
 def get_portal_summary(user_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["user_id"] != user_id and current_user["role"] != "admin":
@@ -177,6 +181,7 @@ def get_portal_summary(user_id: str, current_user: dict = Depends(get_current_us
     return {"success": True, **result}
 
 
+# Filterable transaction history for portal view
 @router.get("/portal/{user_id}")
 def get_portal_transactions(
     user_id: str,

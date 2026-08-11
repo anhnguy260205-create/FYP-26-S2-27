@@ -377,7 +377,7 @@ class Investor(Base):
                 Notification.user_id == user_id
             ).delete()
 
-            #  Merged roles: the account may also have an expert row, remove its children first so the user_account delete succeeds.
+            # Merged roles: the account may also have an expert row, remove its children first so the...
             from app.entity.models.expert import Expert
             expert = session.query(Expert).filter(
                 Expert.user_id == user_id

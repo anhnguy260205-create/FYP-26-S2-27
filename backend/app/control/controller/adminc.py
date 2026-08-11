@@ -12,7 +12,7 @@ from app.entity.models.wallet import (
     PlatformRevenue, REVENUE_SOURCES, REVENUE_SOURCE_LABELS,
 )
 
-# Verification states that make someone an actual Expert rather than an investor who merely applied.
+# Verification states that make someone an actual Expert rather than an investor who mere...
 _APPROVED_VERIFICATION = {"approved", "active", "verified"}
 
 
@@ -31,7 +31,7 @@ def _classify_user(session, investor, expert):
         tier = ""
 
     if approved_expert:
-        # Verified experts get complimentary premium benefits, so show that rather than whatever they last paid for.
+        # Verified experts get complimentary premium benefits, so show that rather than whatever...
         return "Expert", tier or "Premium"
     if investor or expert:
         return "Investor", tier

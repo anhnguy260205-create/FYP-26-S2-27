@@ -1,4 +1,4 @@
-## Chat boundary (API) layer.
+# Chat API endpoints
 import asyncio
 from typing import Dict, Set
 
@@ -11,11 +11,11 @@ from app.entity.models.chat import ChatController
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-## In-memory storage for online users and their WebSocket connections, with a lock to ensure thread-safe access.
+# Keep track of active WebSocket connections
 _online: Dict[str, Set[WebSocket]] = {}
 _online_lock = asyncio.Lock()
 
-# Helper function to push a payload to all WebSocket connections of a specific user.
+# Send a message to all active connections of a user
 async def _push_to_user(user_id: str, payload: dict) -> None:
     async with _online_lock:
         sockets = list(_online.get(user_id, ()))
@@ -23,9 +23,9 @@ async def _push_to_user(user_id: str, payload: dict) -> None:
         try:
             await ws.send_json(payload)
         except Exception:
-            pass  # dead socket; cleaned up on disconnect
+            pass  # Dead socket; cleaned up on disconnect
 
-
+# Keep the user's WebSocket connection active
 @router.websocket("/ws")
 async def chat_ws(websocket: WebSocket, user_id: str):
     await websocket.accept()
@@ -44,12 +44,12 @@ async def chat_ws(websocket: WebSocket, user_id: str):
                 _online.pop(user_id, None)
 
 
-
+# Request data used when sending a message
 class SendMessageRequest(BaseModel):
     recipient_id: str
     content: str
 
-
+# Send a message to another user
 @router.post("/send")
 async def send_message(data: SendMessageRequest,
                        current_user: dict = Depends(get_current_user)):
@@ -59,18 +59,18 @@ async def send_message(data: SendMessageRequest,
     )
     if result.get("success"):
         payload = {"type": "message", "data": result["data"]}
-        await _push_to_user(data.recipient_id, payload)      # recipient, live
-        await _push_to_user(current_user["user_id"], payload)  # my other tabs
+        await _push_to_user(data.recipient_id, payload)      # send to recipient
+        await _push_to_user(current_user["user_id"], payload)  # update other tabs
     return result
 
-
+# Get the user's conversations
 @router.get("/conversations")
 async def list_conversations(current_user: dict = Depends(get_current_user)):
     convs = await asyncio.to_thread(
         ChatController.list_conversations, current_user["user_id"])
     return {"success": True, "conversations": convs}
 
-
+# Get messages from a conversation
 @router.get("/messages/{conv_id}")
 async def get_messages(conv_id: str,
                        current_user: dict = Depends(get_current_user)):
@@ -80,14 +80,14 @@ async def get_messages(conv_id: str,
         return {"success": False, "message": "Conversation not found"}
     return {"success": True, "messages": msgs}
 
-
+# Get the user's unread message count
 @router.get("/unread-count")
 async def unread_count(current_user: dict = Depends(get_current_user)):
     count = await asyncio.to_thread(
         ChatController.unread_total, current_user["user_id"])
     return {"success": True, "unread": count}
 
-
+# Search for other users to start a conversation
 @router.get("/users/search")
 async def search_users(q: str = "",
                        current_user: dict = Depends(get_current_user)):

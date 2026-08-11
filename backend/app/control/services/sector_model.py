@@ -145,7 +145,7 @@ def _load_pooled():
 
 
 def _pooled_scores(payload: dict, sector_key: str, cohort_feats: dict) -> dict:
-  #  Compute model probabilities for a sector using the pooled model payload and the cohort features. Returns a dict mapping symbols to predicted probabilities of the "BUY" class.
+  # Compute model probabilities for a sector using the pooled model payload and the cohort...
     cols = payload["features"]
     price = payload.get("price_features") or [c for c in cols if not c.startswith("sec_")]
     raw = pd.DataFrame.from_dict(cohort_feats, orient="index")

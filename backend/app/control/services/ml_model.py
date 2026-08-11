@@ -128,7 +128,7 @@ _NEUTRAL_SENTIMENT = {
 
 
 def _get_sentiment_features(symbol: str) -> dict:
-    #  Fetch recent news for the stock symbol and compute sentiment features using VADER. Caches results per symbol per day to avoid repeated API calls.
+    # Fetch recent news for the stock symbol and compute sentiment features using VADER.
     cache_key = (symbol, datetime.utcnow().strftime("%Y-%m-%d"))
     if cache_key in _sentiment_cache:
         return _sentiment_cache[cache_key]
@@ -188,7 +188,7 @@ def _get_sentiment_features(symbol: str) -> dict:
 
 
 def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
-    # Compute a flat dictionary of features for the ML model from the stock's historical OHLCV data and sentiment. Returns None if insufficient history is available.
+    # Compute a flat dictionary of features for the ML model from the stock's historical OHLC...
     if history is None or len(history) < 25:
         return None
 
@@ -245,7 +245,7 @@ def compute_features(history: pd.DataFrame, symbol: str) -> dict | None:
 
 
 def predict_probability_up(history: pd.DataFrame, symbol: str) -> float | None:
-    # Compute features and run the XGBoost model to predict the probability that the stock will go up. Returns None if features cannot be computed.
+    # Compute features and run the XGBoost model to predict the probability that the stock wi...
     features = compute_features(history, symbol)
     if features is None:
         return None

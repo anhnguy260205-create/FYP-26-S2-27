@@ -12,15 +12,7 @@ export function riskDismissedKey(userId) {
   return `riskAssessmentDismissed_${userId}`;
 }
 
-/**
- * Preferences / risk-assessment prompt. Shown on login when the user has not
- * set a risk tolerance and has not ticked "Don't show me again".
- *
- * Props:
- *   open     – visible
- *   userId   – current user id (for the dismissed flag + sessionStorage patch)
- *   onDone   – () => void  (called after save or dismiss so parent hides it)
- */
+
 export default function RiskAssessmentModal({ open, userId, onDone }) {
   const [risk, setRisk] = useState("");
   const [dontShow, setDontShow] = useState(false);

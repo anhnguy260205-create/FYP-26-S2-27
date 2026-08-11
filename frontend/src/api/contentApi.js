@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/content/landing`;
 
-// Shared across every component that reads CMS content — Footer, Homepage,
-// LoggedInHomePage, and SubscriptionPage all used to fire their own
-// independent fetch of the same full table on every mount (up to 4 identical
-// requests per landing-page visit). This caches the first request's promise
-// so everyone else just waits on it instead of re-fetching.
+// Cache the first request so other components can reuse it.
 let cache = null;
 
 function fetchLandingContent() {
@@ -18,15 +14,14 @@ function fetchLandingContent() {
         return data.content;
       })
       .catch((err) => {
-        cache = null; // don't cache a failure — let the next caller retry
+        cache = null; // Retry if the request fails.
         throw err;
       });
   }
   return cache;
 }
 
-/** The full CMS content list (all sections), or null while the first
- * consumer's fetch is still in flight. */
+// Get all landing page content.
 export function useLandingContent() {
   const [content, setContent] = useState(null);
 
@@ -41,9 +36,7 @@ export function useLandingContent() {
   return content;
 }
 
-/** Free/Premium plan copy (name, price, features) — shared by Homepage.jsx
- * (landing page pricing section) and SubscriptionPage.jsx (upgrade page),
- * which both need the exact same free_investor/premium_investor CMS rows. */
+// Get the free and premium plan details.
 export function usePlanContent() {
   const content = useLandingContent();
   const c = content ?? [];
@@ -74,11 +67,7 @@ export function usePlanContent() {
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
 }
 
-/** Converts a YouTube/Vimeo/Google Drive share link into its embeddable
- * player URL. Returns null for anything else (a direct file link, or an
- * unrecognized host) so the caller can fall back to a plain <video> tag.
- * Shared by the admin content preview and the real landing-page video
- * section, so both embed identically. */
+// Convert supported video share links into embed URLs.
 export function toEmbeddableVideoUrl(url) {
   if (!url) return null;
   try {
@@ -94,7 +83,7 @@ export function toEmbeddableVideoUrl(url) {
       return id ? `https://player.vimeo.com/video/${id}` : null;
     }
     if (u.hostname === "drive.google.com") {
-      // Share-link formats: /file/d/FILE_ID/view?usp=... or /open?id=FILE_ID
+      // Handle the common Google Drive share-link formats.
       const parts = u.pathname.split("/").filter(Boolean);
       const dIndex = parts.indexOf("d");
       const fileId = dIndex !== -1 ? parts[dIndex + 1] : u.searchParams.get("id");

@@ -926,7 +926,7 @@ function HomePage() {
   const faqHeader = header("header_faq", "Frequently Asked Questions", "Everything you need to know before you get started.");
   const pricingHeader = header("header_pricing", "Simple, Transparent Pricing", "Compare our Free and Pro plans — create an investor account to get started.");
 
-  // Scroll to an in-page section (e.g. #features, #pricing) when the page is opened with a hash,
+  // Scroll to an in-page section (e.g.
   // such as from the footer's "Features" / "Pricing" links on other pages.
   useEffect(() => {
     const hash = window.location.hash?.replace("#", "");

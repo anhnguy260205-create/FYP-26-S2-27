@@ -165,7 +165,7 @@ def seed_landing_content():
             ContentManagement(content_id="faq_4", section="faq", title="Can I get help from a real person?", description="Yes — you can chat with our AI assistant instantly, or connect with one of our verified market experts through consultations and Q&A.", order_index=4),
             ContentManagement(content_id="faq_5", section="faq", title="Can I cancel or change my plan anytime?", description="Definitely. You can upgrade, downgrade, or cancel your subscription whenever you like, right from your account settings.", order_index=5),
 
-            # "How to Get Started" — registration steps (STEP 1/2/3/4 label comes from position, not stored)
+            # "How to Get Started" — registration steps (STEP 1/2/3/4 label comes from position, not...
             ContentManagement(content_id="get_started_0", section="get_started_steps", title="Choose your role & sign up", description="Pick Investor or Expert, then create your account with a username, email, and password.", order_index=0),
             ContentManagement(content_id="get_started_1", section="get_started_steps", title="Verify your email",           description="Confirm the verification email we send you to activate your account.", order_index=1),
             ContentManagement(content_id="get_started_2", section="get_started_steps", title="Agree to the terms",         description="Review and accept RocketTrade's Terms and Conditions and Privacy Policy.", order_index=2),
@@ -256,7 +256,7 @@ def seed_landing_content():
                 title="My Portfolio", description="Publish and manage the portfolio you share with investors.", order_index=1),
             ContentManagement(content_id="expert_home_feat_2", section="expert_home_features",
                 title="Compensation", description="Track your earnings and payout history as a verified expert.", order_index=2),
-            # Button text for each card above, matched up by position (same pattern as investor_home_features_cta)
+            # Button text for each card above, matched up by position (same pattern as investor_home_...
             ContentManagement(content_id="expert_home_feat_0_cta", section="expert_home_features_cta", title="Open", order_index=0),
             ContentManagement(content_id="expert_home_feat_1_cta", section="expert_home_features_cta", title="Open", order_index=1),
             ContentManagement(content_id="expert_home_feat_2_cta", section="expert_home_features_cta", title="Open", order_index=2),
@@ -344,7 +344,7 @@ def seed_landing_content():
             ContentManagement(content_id="forum_latest_label", section="forum_page", title="Latest Posts", order_index=6),
             ContentManagement(content_id="forum_latest_cta", section="forum_page", title="See all →", order_index=7),
 
-            # Community Forum topics. The content_id maps to the internal category used by existing posts;
+            # Community Forum topics.
             # admins can edit the visible name and description without breaking old post categories.
             ContentManagement(content_id="forum_topic_technical", section="forum_topics", title="Technical Analysis",
                 description="Discuss charts, indicators, price action, and trading setups.", order_index=0),
@@ -419,7 +419,7 @@ def seed_landing_content():
             ContentManagement(content_id="transaction_history_empty_desc", section="transaction_history_page", title="Start trading to see your history here", order_index=1),
             ContentManagement(content_id="transaction_history_empty_cta", section="transaction_history_page", title="Go to Markets", order_index=2),
 
-            # InvestorProfilePage.jsx — tab section headings (no single page-level header; it's a tabbed settings page)
+            # InvestorProfilePage.jsx — tab section headings (no single page-level header; it's a tab...
             ContentManagement(content_id="investor_profile_personal_info_heading", section="investor_profile_page", title="Personal Information", order_index=0),
             ContentManagement(content_id="investor_profile_account_settings_heading", section="investor_profile_page", title="Account Settings", order_index=1),
 

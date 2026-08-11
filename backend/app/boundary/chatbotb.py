@@ -10,19 +10,19 @@ from app.control.services.rate_limit import limiter
 from app.entity.models.chatusage import ChatUsage
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
-
+# Message format used by the chatbot
 class ChatMessage(BaseModel):
     role: str
     content: str
-
+# Request data sent to the chatbot
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     system: Optional[str] = None
-
+# Clean up the chatbot response before sending it back
 def sanitize_reply(reply: str) -> str:
     if not reply:
         return reply
-
+    # Remove plan-related wording from the response
     replacements = {
         "since I'm a Basic plan user, ": "",
         "Since I'm a Basic plan user, ": "",
@@ -43,7 +43,7 @@ def sanitize_reply(reply: str) -> str:
     for old, new in replacements.items():
         cleaned = cleaned.replace(old, new)
 
-    # Remove markdown bold markers so labels appear as plain text: "Quick take:"
+    # Remove markdown bold markers
     cleaned = cleaned.replace("**", "")
 
     # Keep paragraph spacing tidy without crushing bullet lists.
@@ -60,7 +60,7 @@ def sanitize_reply(reply: str) -> str:
             blank_seen = False
 
     return "\n".join(compact).strip()
-
+# Send a message to the AI chatbot
 @router.post("/chat")
 @limiter.limit("15/minute")
 async def chat(
@@ -68,7 +68,8 @@ async def chat(
     data: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    # Basic investors: lifetime limit of 3 chatbot questions. Premium investors and non-investors (experts/admins) are never limited.
+    # Check the user's chatbot usage limit. All user roles got unlimited chances
+    # Except basic investors only got 3 chances
     quota = ChatUsage.check(current_user["user_id"])
     if not quota["allowed"]:
         return JSONResponse(status_code=403, content={
@@ -78,7 +79,7 @@ async def chat(
             "questions_limit": quota["limit"],
             "message": "Free chatbot limit reached. Upgrade to Premium for unlimited AI chat.",
         })
-
+    #Get the Groq API key from the environment
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
         return JSONResponse(status_code=500, content={"detail": "GROQ_API_KEY not configured."})
@@ -98,7 +99,7 @@ async def chat(
             top_p=0.9,
             messages=msgs,
         )
-
+        # Record the question after a successful response
         usage = ChatUsage.record_question(current_user["user_id"])
         return {
             "reply": sanitize_reply(response.choices[0].message.content),
@@ -110,7 +111,7 @@ async def chat(
         message = str(e)
         lowered = message.lower()
         status_code = getattr(e, "status_code", None) or getattr(e, "status", None)
-
+        # Handle rate limit errors separately
         if status_code == 429 or "rate limit" in lowered or "rate_limit" in lowered or "429" in lowered:
             return JSONResponse(
                 status_code=429,
@@ -128,7 +129,7 @@ async def chat(
             },
         )
 
-
+# Get the user's chatbot usage
 @router.get("/usage")
 def chat_usage(current_user: dict = Depends(get_current_user)):
     return {"success": True, **ChatUsage.get_usage(current_user["user_id"])}
