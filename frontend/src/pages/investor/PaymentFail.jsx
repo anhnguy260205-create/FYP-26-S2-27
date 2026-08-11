@@ -60,7 +60,7 @@ function PaymentFail() {
                             {retryCta}
                         </button>
                         <button
-                            onClick={() => navigate("/")}
+                            onClick={() => navigate("/investor")}
                             className="flex-1 px-6 py-3 rounded-xl font-semibold text-sm text-white cursor-pointer"
                             style={{ background: "#0F172A", transition: "background-color 0.2s" }}
                             onMouseEnter={(e) => (e.currentTarget.style.background = "#1E293B")}
