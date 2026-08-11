@@ -279,7 +279,7 @@ const INVESTOR_PAGES_SUBTABS = [
 const INVESTOR_SETUP_SUBTABS = [
   {
     key: "update_particular_page", label: "Complete Profile", icon: Users, kind: "generic", preview: "update_particular_page",
-    headerId: null, itemsSection: "update_particular_page",
+    headerId: null, itemsSection: "update_particular_page", noAdd: true,
     hint: "Controls the profile setup screen new investors see after signing up. Keep “{username}” in the heading because it is replaced with the real username."
   },
   {
@@ -1652,6 +1652,48 @@ function ContentManagementPage() {
     }
   };
 
+  const addItem = async (section) => {
+    setSaving(true);
+    try {
+      const res = await authFetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, title: "New item", description: "" }),
+      });
+      const data = await res.json();
+      if (data.success && data.content) {
+        setContent((prev) => [...prev, data.content]);
+        setEditing(data.content.content_id);
+        setForm({ title: data.content.title, description: data.content.description || "", image_url: "", video_url: "" });
+      } else {
+        alert(data.message || "Failed to add item");
+      }
+    } catch {
+      alert("Failed to add item");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteItem = async (content_id) => {
+    if (!window.confirm("Remove this item? This can't be undone.")) return;
+    setSaving(true);
+    try {
+      const res = await authFetch(`${API}/${content_id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setContent((prev) => prev.filter((c) => c.content_id !== content_id));
+        if (editing === content_id) setEditing(null);
+      } else {
+        alert(data.message || "Failed to remove item");
+      }
+    } catch {
+      alert("Failed to remove item");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Drag-and-drop reordering
   const reorderSection = async (section, orderedIds) => {
     const res = await authFetch(`${API}/section/${section}/reorder`, {
@@ -1702,7 +1744,7 @@ function ContentManagementPage() {
     ? currentMainTab.subtabs.find((t) => t.key === activeSubTab)
     : currentMainTab;
 
-  const renderRow = (item, list) => {
+  const renderRow = (item, list, removable = false) => {
     const isEditing = editing === item.content_id;
     const orderable = ORDERABLE_SECTIONS.has(item.section) && list.length > 1;
     const isDragOver = orderable && dragOverId === item.content_id && dragId !== item.content_id;
@@ -1886,10 +1928,18 @@ function ContentManagementPage() {
                 )}
               </div>
             </div>
-            <button onClick={() => startEdit(item)}
-              className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm shrink-0">
-              <Edit size={13} /> Edit
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => startEdit(item)}
+                className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm">
+                <Edit size={13} /> Edit
+              </button>
+              {removable && (
+                <button onClick={() => deleteItem(item.content_id)}
+                  className="flex items-center gap-1 border border-red-300 text-red-600 px-3 py-1.5 rounded text-sm">
+                  <X size={13} /> Remove
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -2226,7 +2276,7 @@ function ContentManagementPage() {
                         ? <p className="text-slate-400 text-sm">No content found for this section.</p>
                         : bySection(activeTabInfo.itemsSection).map((item, idx) => (
                           <div key={item.content_id}>
-                            {renderRow(item, bySection(activeTabInfo.itemsSection))}
+                            {renderRow(item, bySection(activeTabInfo.itemsSection), !activeTabInfo.perCardBadgeSection && !activeTabInfo.perCardCtaSection)}
                             {activeTabInfo.perCardBadgeSection && bySection(activeTabInfo.perCardBadgeSection)[idx] && (
                               <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge for this card</p>
@@ -2248,6 +2298,12 @@ function ContentManagementPage() {
                           </div>
                         ))
                       }
+                      {!activeTabInfo.perCardBadgeSection && !activeTabInfo.perCardCtaSection && !activeTabInfo.noAdd && (
+                        <button onClick={() => addItem(activeTabInfo.itemsSection)} disabled={saving}
+                          className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                          <Plus size={14} /> Add item
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2326,8 +2382,12 @@ function ContentManagementPage() {
                     <div className="space-y-3">
                       {freeItems.length === 0
                         ? <p className="text-slate-400 text-sm">No free features found.</p>
-                        : freeItems.map((item) => renderRow(item, freeItems))
+                        : freeItems.map((item) => renderRow(item, freeItems, true))
                       }
+                      <button onClick={() => addItem("free_investor")} disabled={saving}
+                        className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                        <Plus size={14} /> Add feature
+                      </button>
                     </div>
                   </div>
 
@@ -2393,8 +2453,12 @@ function ContentManagementPage() {
                     <div className="space-y-3">
                       {premiumItems.length === 0
                         ? <p className="text-slate-400 text-sm">No premium features found.</p>
-                        : premiumItems.map((item) => renderRow(item, premiumItems))
+                        : premiumItems.map((item) => renderRow(item, premiumItems, true))
                       }
+                      <button onClick={() => addItem("premium_investor")} disabled={saving}
+                        className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                        <Plus size={14} /> Add feature
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2418,18 +2482,36 @@ function ContentManagementPage() {
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
                   <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-                  <div className="space-y-3">{footerProduct.map((item) => renderRow(item, footerProduct))}</div>
+                  <div className="space-y-3">
+                    {footerProduct.map((item) => renderRow(item, footerProduct, true))}
+                    <button onClick={() => addItem("footer_product")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add link
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
                   <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-                  <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
+                  <div className="space-y-3">
+                    {footerCompany.map((item) => renderRow(item, footerCompany, true))}
+                    <button onClick={() => addItem("footer_company")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add link
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
                   <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
-                  <div className="space-y-3">{footerContact.map((item) => renderRow(item, footerContact))}</div>
+                  <div className="space-y-3">
+                    {footerContact.map((item) => renderRow(item, footerContact, true))}
+                    <button onClick={() => addItem("footer_contact")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add item
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

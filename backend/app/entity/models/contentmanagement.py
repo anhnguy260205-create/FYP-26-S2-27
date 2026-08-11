@@ -57,6 +57,38 @@ class ContentManagement(Base):
                 by_id[content_id].order_index = index
             return True
 
+    @staticmethod
+    def create(section: str, title: str, description: str = "",
+               image_url: str | None = None, video_url: str | None = None) -> dict:
+        """Add a new card/item to an existing list section (FAQ, footer links,
+        legal numbered sections, etc.). Placed at the end of the section."""
+        with get_session() as session:
+            max_index = session.query(ContentManagement).filter(
+                ContentManagement.section == section
+            ).count()
+            row = ContentManagement(
+                section=section,
+                title=title,
+                description=description,
+                image_url=image_url,
+                video_url=video_url,
+                order_index=max_index,
+            )
+            session.add(row)
+            session.flush()
+            return _serialize(row)
+
+    @staticmethod
+    def delete(content_id: str) -> bool:
+        with get_session() as session:
+            row = session.query(ContentManagement).filter(
+                ContentManagement.content_id == content_id
+            ).first()
+            if not row:
+                return False
+            session.delete(row)
+            return True
+
 
 def _serialize(row: ContentManagement) -> dict:
     return {
