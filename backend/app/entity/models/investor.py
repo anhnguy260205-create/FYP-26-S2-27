@@ -296,6 +296,7 @@ class Investor(Base):
 
     @staticmethod
     def deleteInvestor(user_id):
+        from sqlalchemy import text
         from app.entity.models.subscription import Subscription
         from app.entity.models.watchlist import Watchlist
         from app.entity.models.transaction import Transaction
@@ -333,6 +334,13 @@ class Investor(Base):
             session.query(DashboardUsage).filter(
                 DashboardUsage.investor_id == investor.investor_id
             ).delete()
+            # prediction_usage has a real FK to investor.investor_id but no
+            # SQLAlchemy model (orphaned legacy table) — raw SQL cleanup so
+            # the FK constraint doesn't block deletion below.
+            session.execute(
+                text("DELETE FROM prediction_usage WHERE investor_id = :iid"),
+                {"iid": investor.investor_id},
+            )
             session.query(ChatUsage).filter(
                 ChatUsage.investor_id == investor.investor_id
             ).delete()

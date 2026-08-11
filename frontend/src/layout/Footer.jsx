@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
 import { useLandingContent } from "../api/contentApi.js";
+import { getStoredUser } from "../utils/userRole.js";
+
+// On the public homepage "Features"/"Pricing" scroll to the marketing sections
+// (/#features, /#pricing). Once logged in there's no marketing homepage to
+// scroll to, so send "Features" to the platform-features section on the
+// logged-in dashboard, and "Pricing" to the actual subscription/plans page.
+const LOGGED_IN_PRODUCT_LINKS = { "features": "/investor#features", "pricing": "/investor/subscription" };
 
 const linkClass = "text-sm text-slate-400 hover:text-[#00D3F2] transition-colors duration-150";
 
@@ -21,6 +28,7 @@ const DEFAULT = {
 function Footer() {
   const content = useLandingContent();
   const c = content ?? [];
+  const isLoggedIn = !!getStoredUser();
 
   const brandItem = c.find((x) => x.section === "footer_brand");
   const brand = brandItem ?? DEFAULT.brand;
@@ -57,11 +65,16 @@ function Footer() {
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Product</h4>
             <ul className="space-y-2.5">
-              {product.map((item) => (
-                <li key={item.content_id ?? item.title}>
-                  <FooterLink href={item.description}>{item.title}</FooterLink>
-                </li>
-              ))}
+              {product.map((item) => {
+                const override = isLoggedIn
+                  ? LOGGED_IN_PRODUCT_LINKS[String(item.title).trim().toLowerCase()]
+                  : null;
+                return (
+                  <li key={item.content_id ?? item.title}>
+                    <FooterLink href={override ?? item.description}>{item.title}</FooterLink>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
