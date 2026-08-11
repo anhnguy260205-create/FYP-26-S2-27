@@ -3,12 +3,15 @@ import { ScrollText } from "lucide-react";
 
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { useLandingContent } from "../../api/contentApi.js";
 
 const LAST_UPDATED = "August 10, 2026";
 const ENTITY_NAME = "Rocket Trade Pte. Ltd."; // TODO: replace with your registered entity name once incorporated
 const CONTACT_EMAIL = "kimanh.work26@gmail.com";
 
-const SECTIONS = [
+const DEFAULT_INTRO = `${ENTITY_NAME} ("we", "us", "the Platform") operates a paper trading and investment-education platform. These Terms of Service form an agreement between you and Rocket Trade for use of the website, mobile experience, and related services, and are governed by Singapore law.`;
+
+const DEFAULT_SECTIONS = [
   {
     title: "1. Acceptance of Terms",
     body: [
@@ -135,6 +138,22 @@ const SECTIONS = [
 ];
 
 function TermsOfServicePage() {
+  const content = useLandingContent();
+  const c = content ?? [];
+  const tosItems = c.filter((x) => x.section === "terms_of_service");
+  const sections = tosItems.length
+    ? tosItems.map((item) => ({ title: item.title, body: (item.description || "").split("\n\n") }))
+    : DEFAULT_SECTIONS;
+  const intro = c.find((x) => x.content_id === "tos_intro")?.description || DEFAULT_INTRO;
+  const lastUpdated = c.find((x) => x.content_id === "tos_last_updated")?.title || LAST_UPDATED;
+  const heroItem = c.find((x) => x.content_id === "tos_hero");
+  const heroTitle = heroItem?.title || "Terms of Service";
+  const heroSubtitle = heroItem?.description || "These terms govern your use of Rocket Trade's paper trading and market-education platform. Please read them carefully.";
+  // Gradient-highlight the last word of the heading, matching the page's original two-tone style.
+  const heroWords = heroTitle.trim().split(" ");
+  const heroLead = heroWords.slice(0, -1).join(" ");
+  const heroHighlight = heroWords[heroWords.length - 1] || "";
+
   return (
     <motion.div
       className="min-h-screen bg-white"
@@ -151,16 +170,16 @@ function TermsOfServicePage() {
             LEGAL
           </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-            Terms of{" "}
+            {heroLead ? `${heroLead} ` : ""}
             <span className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              Service
+              {heroHighlight}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-            These terms govern your use of Rocket Trade's paper trading and market-education platform. Please read them carefully.
+            {heroSubtitle}
           </p>
           <p className="mt-3 text-xs font-medium tracking-wide text-slate-400">
-            Last updated: {LAST_UPDATED} · Governed by the laws of Singapore
+            Last updated: {lastUpdated} · Governed by the laws of Singapore
           </p>
         </div>
       </section>
@@ -168,7 +187,7 @@ function TermsOfServicePage() {
       <main className="mx-auto w-full max-w-4xl px-5 py-14 md:px-8 md:py-20">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md md:p-10">
           <p className="mb-8 text-sm leading-7 text-slate-600">
-            {ENTITY_NAME} ("we", "us", "the Platform") operates a paper trading and investment-education platform. These Terms of Service form an agreement between you and Rocket Trade for use of the website, mobile experience, and related services, and are governed by Singapore law.
+            {intro}
           </p>
 
           <div className="mb-8 space-y-3">
@@ -185,7 +204,7 @@ function TermsOfServicePage() {
           </div>
 
           <div className="space-y-10">
-            {SECTIONS.map((section) => (
+            {sections.map((section) => (
               <section key={section.title}>
                 <h2 className="mb-3 text-lg font-semibold text-slate-800 md:text-xl">
                   {section.title}

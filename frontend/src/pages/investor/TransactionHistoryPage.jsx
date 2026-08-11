@@ -282,16 +282,6 @@ function TransactionHistoryPage() {
               {t === "ALL" ? "All" : t === "buy" ? "▲ Buys" : t === "sell" ? "▼ Sells" : "Cash & Fees"}
             </button>
           ))}
-          {hasFilter && (
-            <button onClick={() => { setFilterSymbol("ALL"); setFilterType("ALL"); setSearch(""); }}
-              style={{
-                height: 36, padding: "0 12px", borderRadius: 8, cursor: "pointer",
-                border: `1px solid rgba(220,38,38,0.25)`, background: "transparent",
-                color: C.danger, fontFamily: mono, fontSize: 11,
-              }}>
-              Clear
-            </button>
-          )}
           <span style={{ fontFamily: mono, fontSize: 11, color: C.muted, marginLeft: "auto" }}>
             {filtered.length} record{filtered.length !== 1 ? "s" : ""}
           </span>

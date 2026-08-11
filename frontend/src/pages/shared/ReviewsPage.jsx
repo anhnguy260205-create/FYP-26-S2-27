@@ -586,18 +586,18 @@ export default function ReviewsPage() {
   const normalisedSearch = searchQuery.trim().toLowerCase();
   const visibleReviews = normalisedSearch
     ? otherReviews.filter((review) => {
-        const searchableText = [
-          review.author,
-          review.title,
-          review.comment,
-          roleBadge(review.author_role).label,
-          review.rating ? `${review.rating} star` : "",
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return searchableText.includes(normalisedSearch);
-      })
+      const searchableText = [
+        review.author,
+        review.title,
+        review.comment,
+        roleBadge(review.author_role).label,
+        review.rating ? `${review.rating} star` : "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchableText.includes(normalisedSearch);
+    })
     : otherReviews;
 
   return (
@@ -753,7 +753,7 @@ export default function ReviewsPage() {
               placeholder="Search reviews, titles, or authors..."
               aria-label="Search reviews"
               style={{
-                width: "100%", padding: "11px 42px 11px 42px", borderRadius: 12,
+                width: "900px", padding: "11px 42px 11px 42px", borderRadius: 12,
                 border: `1px solid ${C.border}`, background: C.card, color: C.text,
                 fontSize: 13, outline: "none", boxSizing: "border-box",
                 boxShadow: "0 2px 8px rgba(15,23,42,0.04)",

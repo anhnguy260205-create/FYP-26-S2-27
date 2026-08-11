@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Edit, Check, X, GripVertical, Eye, ChevronDown,
-  Rocket, ShieldCheck, Sparkles, Award,
+  Rocket, ShieldCheck, ScrollText, Sparkles, Award,
   PlayCircle, ListChecks, HelpCircle, CreditCard, Link2,
   LayoutDashboard, Wallet, GraduationCap,
   BrainCircuit, MessagesSquare, Bot, MessageCircleQuestion,
@@ -421,6 +421,24 @@ const MAIN_TABS = [
   { key: "about_us", label: "About Us", icon: Sparkles, subtabs: ABOUT_US_SUBTABS },
   { key: "help_center", label: "Help Center", icon: HelpCircle, subtabs: HELP_CENTER_SUBTABS },
   {
+    key: "terms", label: "Terms of Service", icon: ScrollText, kind: "generic", preview: "legal_hero",
+    headerId: "tos_hero", itemsSection: "terms_of_service", itemsLabel: "Numbered sections",
+    extraIds: [
+      { id: "tos_intro", label: "Introduction paragraph (below the hero)" },
+      { id: "tos_last_updated", label: "\"Last updated\" date shown on the page" },
+    ],
+    hint: "Controls the hero heading/subtitle, the introduction paragraph, the \"Last updated\" date, and every numbered section on the Terms of Service page. In the hero heading, only the last word gets the gradient highlight colour.",
+  },
+  {
+    key: "privacy", label: "Privacy Policy", icon: ShieldCheck, kind: "generic", preview: "legal_hero",
+    headerId: "privacy_hero", itemsSection: "privacy_policy", itemsLabel: "Numbered sections",
+    extraIds: [
+      { id: "privacy_intro", label: "Introduction paragraph (below the hero)" },
+      { id: "privacy_last_updated", label: "\"Last updated\" date shown on the page" },
+    ],
+    hint: "Controls the hero heading/subtitle, the introduction paragraph, the \"Last updated\" date, and every numbered section on the Privacy Policy page. In the hero heading, only the last word gets the gradient highlight colour.",
+  },
+  {
     key: "footer", label: "Footer", icon: Link2, kind: "footer",
     hint: "Controls the footer brand text, supporting tagline, and footer links displayed across the platform."
   },
@@ -449,10 +467,12 @@ const DESCRIPTION_SECTIONS = new Set([
   "investor_banner_basic", "investor_banner_premium",
   "about_values", "about_team", "help_faqs",
   "expert_home_features",
+  "terms_of_service", "privacy_policy",
 ]);
 
 const DESCRIPTION_CONTENT_IDS = new Set([
   "help_faq_header",
+  "tos_intro", "privacy_intro",
 ]);
 
 const LONG_TITLE_CONTENT_IDS = new Set([
@@ -509,6 +529,41 @@ function HeroPreview({ title, description, ctaPrimary, ctaSecondary, imageUrl })
 }
 
 
+
+function LegalHeroPreview({ title, description, items, icon: Icon = ShieldCheck }) {
+  const words = (title || "Page Title").trim().split(" ");
+  const lead = words.slice(0, -1).join(" ");
+  const highlight = words[words.length - 1] || "";
+  return (
+    <div className="bg-white">
+      <div className="relative overflow-hidden text-center py-9 px-6" style={{ background: "linear-gradient(to bottom right, #020617, #172554, #0f172a)" }}>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/5 px-3 py-1 mb-4 text-[9px] font-bold tracking-wide text-cyan-300 uppercase">
+          <Icon size={10} /> Legal
+        </span>
+        <p className="text-xl font-extrabold leading-tight mb-2 text-white">
+          {lead ? `${lead} ` : ""}
+          <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #22d3ee, #60a5fa)" }}>
+            {highlight}
+          </span>
+        </p>
+        <p className="text-slate-400 text-xs">{description || "Your subtitle goes here"}</p>
+      </div>
+      {items && items.length > 0 && (
+        <div className="p-4 space-y-2">
+          {items.slice(0, 3).map((item) => (
+            <div key={item.content_id} className="rounded-lg bg-slate-50 border border-slate-200 p-3">
+              <p className="text-[10px] font-bold text-slate-700">{item.title}</p>
+              {item.description && <p className="text-[9px] text-slate-500 mt-0.5 line-clamp-2">{item.description}</p>}
+            </div>
+          ))}
+          {items.length > 3 && (
+            <p className="text-[9px] text-slate-400 text-center pt-1">+ {items.length - 3} more section{items.length - 3 !== 1 ? "s" : ""}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SimplePagePreview({ heading, description, items }) {
   return (
@@ -1695,9 +1750,10 @@ function ContentManagementPage() {
                     : ["footer_product", "footer_company", "footer_resources", "footer_contact"].includes(item.section) ? "URL"
                       : ["faq", "help_faqs"].includes(item.section) ? "ANSWER"
                         : item.section === "about_team" ? "INITIALS"
-                          : "DESCRIPTION"}
+                          : DESCRIPTION_CONTENT_IDS.has(item.content_id) || ["terms_of_service", "privacy_policy"].includes(item.section) ? "SECTION TEXT"
+                            : "DESCRIPTION"}
                 </label>
-                {["help_faqs", "about_values"].includes(item.section) ? (
+                {["help_faqs", "about_values", "terms_of_service", "privacy_policy"].includes(item.section) || DESCRIPTION_CONTENT_IDS.has(item.content_id) ? (
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -1899,6 +1955,9 @@ function ContentManagementPage() {
       }
       if (tab.preview === "text_only") {
         return <PreviewFrame label={tab.label}><TextPreview title={heading} ctaLabel={tab.ctaId ? liveItem(byId(tab.ctaId))?.title : null} /></PreviewFrame>;
+      }
+      if (tab.preview === "legal_hero") {
+        return <PreviewFrame label={tab.label}><LegalHeroPreview title={heading} description={description} items={items} icon={tab.key === "privacy" ? ShieldCheck : ScrollText} /></PreviewFrame>;
       }
       if (tab.preview === "section_header") {
         return <PreviewFrame label={tab.label}><SectionHeaderPreview title={heading} ctaLabel={tab.ctaId ? liveItem(byId(tab.ctaId))?.title : null} /></PreviewFrame>;
