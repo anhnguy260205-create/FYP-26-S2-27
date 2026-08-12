@@ -1,15 +1,3 @@
-"""
-RatingController
-================
-Drives the Sector Quant Rating feature. Thin wrapper over
-``app.control.services.sector_model`` — keeps the boundary layer free of any
-ML / yfinance details.
-
-Endpoints it backs (see ratingb.py):
-  • GET /rating/{symbol}          -> full quant rating for one ticker
-  • GET /rating/sector/{sector}   -> leaderboard for a sector cohort
-  • GET /rating/sectors           -> list of available sectors
-"""
 
 from app.control.services import sector_model
 

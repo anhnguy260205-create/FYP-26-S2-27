@@ -1,4 +1,4 @@
-# sets up the database connection using SQLAlchemy and loads configuration from environment variables.
+# sets up the database connection using SQLAlchemy and loads configuration from environme...
 import os
 from pathlib import Path
 

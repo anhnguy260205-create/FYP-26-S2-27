@@ -57,7 +57,7 @@ export const resetPassword = async (emailAddress, otpCode, newPassword) => {
 
 // ── Auth required ──────────────────────────────────────────────────────────────
 
-/** Exchange a verified Firebase session for the full internal user profile. */
+
 export const firebaseLogin = async () => {
   const response = await authFetch(`${BASE_URL}/firebase-login`, {
     method: "POST",
@@ -65,10 +65,7 @@ export const firebaseLogin = async () => {
   return response.json();
 };
 
-/** Re-check role/is_expert/verification/subscription against the backend and
- * patch sessionStorage's cached currentUser — catches admin-side changes
- * (e.g. a cancelled expert verification) without requiring a re-login.
- * Returns the merged user, or null if the check couldn't run. */
+
 export const refreshSessionUser = async () => {
   const stored = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   if (!stored) return null;
@@ -84,7 +81,7 @@ export const refreshSessionUser = async () => {
   }
 };
 
-/** Verify the emailed login OTP (2nd factor; admins never need this). */
+
 export const verifyLoginOtp = async (otpCode) => {
   const response = await authFetch(`${BASE_URL}/mfa/verify`, {
     method: "POST",
@@ -94,7 +91,7 @@ export const verifyLoginOtp = async (otpCode) => {
   return response.json();
 };
 
-/** Ask the backend to email a fresh login OTP. */
+
 export const resendLoginOtp = async () => {
   const response = await authFetch(`${BASE_URL}/mfa/resend`, { method: "POST" });
   return response.json();
@@ -110,11 +107,7 @@ export const logoutAccount = async () => {
   return result;
 };
 
-/** Fire-and-forget logout for tab close/navigation-away — keepalive lets the
- * request finish after the page starts unloading. This fires on every
- * pagehide (refresh, HMR reload, actual tab close) so it must NOT sign out
- * of Firebase — that would kill the session on every reload, not just real
- * logouts. Only the explicit logoutAccount() ends the Firebase session. */
+
 export const logoutOnUnload = () => {
   authFetch(`${BASE_URL}/logout`, { method: "POST", keepalive: true });
 };
@@ -144,7 +137,7 @@ export const updateUserInformation = async (
   return response.json();
 };
 
-/** Step 1 of secured deletion — email a 6-digit OTP to the account holder. */
+
 export const requestDeleteOtp = async () => {
   const response = await authFetch(`${BASE_URL}/delete-investor/request-otp`, {
     method: "POST",
@@ -152,7 +145,7 @@ export const requestDeleteOtp = async () => {
   return response.json();
 };
 
-/** Step 2 — delete, confirmed with the transaction PIN and the email OTP. */
+
 export const deleteInvestor = async (userId, pin = null, otp = null) => {
   let response;
   try {
@@ -212,12 +205,12 @@ export const updateRiskTolerance = async (userId, riskTolerance) => {
 
 // ── Transaction PIN ─────────────────────────────────────────────────────────
 
-/** Whether the current user has set a 6-digit transaction PIN. */
+
 export const getPinStatus = async () => {
   return requestJson(`${BASE_URL}/pin/status`);
 };
 
-/** Set (or reset) the 6-digit transaction PIN — requires it entered twice. */
+
 export const setTransactionPin = async (pin, confirmPin) => {
   const response = await authFetch(`${BASE_URL}/pin/set`, {
     method: "POST",

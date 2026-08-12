@@ -24,7 +24,7 @@ class Watchlist(Base):
         ZoneInfo("Asia/Singapore")))
     # Define a limit for the number of stocks that can be added to a basic watchlist.
     BASIC_WATCHLIST_LIMIT = 3
-    # Handle stock watchlist operations for both investors and experts, including adding, removing, and retrieving stocks from a user's watchlist.
+    # Handle stock watchlist operations for both investors and experts, including adding, rem...
     @staticmethod
     def add_stock(user_id, stock_symbol):
         with get_session() as session:
@@ -65,7 +65,7 @@ class Watchlist(Base):
             try:
                 session.flush()
             except IntegrityError:
-                # If the stock is already in the watchlist, rollback the session and return an error message.
+                # If the stock is already in the watchlist, rollback the session and return an error mess...
                 session.rollback()
                 return {"success": False, "message": "Stock is already in your watchlist"}
             return {"success": True, "message": "Stock added to watchlist"}

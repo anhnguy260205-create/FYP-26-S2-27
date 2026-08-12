@@ -10,12 +10,7 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
     .format(Number(value ?? 0));
 
-/**
- * Red-packet dialog for the expert chat.
- *
- * The split shown here (70 / 30) is display-only — the server recomputes it,
- * so a stale constant can misinform but can never mispay.
- */
+
 export default function GiftDialog({ expert, onClose, onSent }) {
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");

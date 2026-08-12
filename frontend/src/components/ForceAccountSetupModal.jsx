@@ -3,19 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { setTransactionPin, updateUserInformation } from "../api/userApi";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, COUNTRIES, joinAddress, splitAddress } from "../utils/countryCodes";
 
-/**
- * Mandatory, non-dismissable account-completion gate for legacy investors.
- * Two concerns, shown only when missing:
- *   1. Personal information — full name, phone and country are now required.
- *   2. A 6-digit transaction PIN (buy / sell / cash-out confirmation).
- *
- * Props:
- *   open      – whether the gate is visible
- *   needsInfo – personal info incomplete → collect it first
- *   needsPin  – no transaction PIN set → collect it after info
- *   user      – cached session user (for username / email / existing address)
- *   onDone    – () => void, called once everything required is saved
- */
+
 export default function ForceAccountSetupModal({ open, needsInfo, needsPin, user, onDone }) {
   const initialPhase = needsInfo ? "info" : "pin";
   const [phase, setPhase] = useState(initialPhase); // "info" | "pin" | "confirm"

@@ -1121,7 +1121,7 @@ function AStockDashBoardPage() {
     return () => { cancelled = true; };
   }, [selectedStock]);
 
-  // Pool membership is dynamic: any symbol present in the live snapshot(all 503 S&P 500 stocks) uses websocket data; anything else falls back to a one-off REST fetch.
+  // Pool membership is dynamic: any symbol present in the live snapshot(all 503 S&P 500 sto...
   const isPoolStock = Boolean(stocks?.[selectedStock]);
 
   // For non-pool stocks, fetch snapshot + candles via REST

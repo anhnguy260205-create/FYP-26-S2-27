@@ -30,7 +30,7 @@ def _cached_auth_profile(email: str) -> dict | None:
 
 
 def invalidate_profile_cache(email: str) -> None:
-    # Invalidate the cached auth profile for a given email, if it exists. This is useful when a user's role or status changes and you want to ensure that subsequent requests fetch the updated profile from the database.
+    # Invalidate the cached auth profile for a given email, if it exists.
     _profile_cache.pop(email, None)
 
 
@@ -51,7 +51,7 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
                 profile = _cached_auth_profile(email)
                 if profile:
                     profile = dict(profile)
-                    # Firebase login timestamp — identifies this login session for the email-OTP second factor (see login_mfa.py).
+                    # Firebase login timestamp — identifies this login session for the email-OTP second facto...
                     profile["auth_time"] = decoded.get("auth_time")
                     return profile
 
@@ -61,7 +61,7 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
         print(f"[AUTH] dev fallback email={dev_email!r}")
         if profile:
             profile = dict(profile)
-            # Dev-header sessions have no Firebase auth_time; use 0 so they still go through the email OTP once instead of bypassing MFA.
+            # Dev-header sessions have no Firebase auth_time; use 0 so they still go through the emai...
             profile["auth_time"] = 0
             return profile
 
@@ -69,10 +69,10 @@ def _resolve_profile_from_token(token: str | None, headers: Mapping[str, str]) -
 
 
 def mfa_satisfied(profile: dict) -> bool:
-    # Check if the user has satisfied the multi-factor authentication (MFA) requirement. This is determined by checking if the user's email has been verified and if the auth_time from the Firebase token is recent enough to indicate that the user has completed the MFA process. If the auth_time is None, it indicates that there is no session identity, and we treat it as not satisfying MFA.
+    # Check if the user has satisfied the multi-factor authentication (MFA) requirement.
     auth_time = profile.get("auth_time")
     if auth_time is None:
-        # No session identity at all (shouldn't happen) — require OTP under a fixed key rather than silently skipping the second factor.
+        # No session identity at all (shouldn't happen) — require OTP under a fixed key rather th...
         auth_time = 0
     from app.entity.models.login_mfa import LoginMfaSession
     return LoginMfaSession.is_verified(profile["email"], auth_time)
@@ -82,7 +82,7 @@ def get_current_user_pre_mfa(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict:
-    # Get the current authenticated user's profile before checking for multi-factor authentication (MFA). This function extracts the token from the request headers, verifies it, and retrieves the user's profile from the database. If the token is invalid or expired, or if the user is suspended, it raises an HTTPException with the appropriate status code and message.
+    # Get the current authenticated user's profile before checking for multi-factor authentic...
     token = credentials.credentials if credentials else None
     profile = _resolve_profile_from_token(token, request.headers)
     if not profile:
@@ -117,7 +117,7 @@ def get_current_user_optional(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> dict | None:
-    # Get the current authenticated user's profile if available, but do not raise an exception if the user is not authenticated. This function is useful for endpoints that can be accessed by both authenticated and unauthenticated users. If the user is authenticated, it returns their profile; otherwise, it returns None.
+    # Get the current authenticated user's profile if available, but do not raise an exceptio...
     token = credentials.credentials if credentials else None
     profile = _resolve_profile_from_token(token, request.headers)
     if profile and profile.get("suspended"):

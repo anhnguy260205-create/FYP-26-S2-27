@@ -288,7 +288,7 @@ def ensure_all_schemas(engine):
         except Exception as e:
             print(f"[SCHEMA] Skipped watchlist uniqueness patch: {e}")
 
-        # One alert per (user, stock) — dedupe existing rows created before  this limit existed, then enforce uniqueness at the DB level.
+        # One alert per (user, stock) — dedupe existing rows created before  this limit existed,...
         try:
             result = conn.execute(text(
                 "DELETE s1 FROM stock_alert s1 "

@@ -8,7 +8,7 @@ from uuid import uuid4
 
 TZ = ZoneInfo("Asia/Singapore")
 
-# Split of every gift. Must sum to 1.0 — asserted at import so a bad edit fails loudly at startup instead of quietly losing money.
+# Split of every gift.
 GIFT_EXPERT_SHARE = 0.70
 GIFT_PLATFORM_SHARE = 0.30
 assert abs((GIFT_EXPERT_SHARE + GIFT_PLATFORM_SHARE) - 1.0) < 1e-9, \

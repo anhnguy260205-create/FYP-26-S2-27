@@ -57,30 +57,30 @@ const NotificationManagementPage = lazy(() => import("./pages/administrator/Noti
 const SendNotificationPage = lazy(() => import("./pages/administrator/SendNotificationPage.jsx"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage.jsx"));
 const CashPortalPage = lazy(() => import("./pages/investor/CashPortalPage.jsx"));
-// The S component is a wrapper that ensures the page scrolls to the top when the route changes. It also provides a Suspense fallback for lazy-loaded components.
+// The S component is a wrapper that ensures the page scrolls to the top when the route ch...
 function S({ children }) {
     const { pathname, hash, key } = useLocation();
-    //Scroll to top when route changes, unless the URL points at an in-page anchor (e.g. /#pricing)
+    // Scroll to top when route changes, unless the URL points at an in-page anchor (e.g.
     useEffect(() => {
         if (hash) return;
         window.scrollTo(0, 0);
     }, [pathname, hash]);
-    // Suspense fallback is a simple div with a minimum height to prevent layout shifts while the lazy-loaded component is being fetched.
+    // Suspense fallback is a simple div with a minimum height to prevent layout shifts while...
     return (
         <Suspense fallback={<div style={{ minHeight: "100vh", background: "#020617" }} />}>
             {cloneElement(children, { key })}
         </Suspense>
     );
 }
-// The wrap function wraps a component with the S component, ensuring that it benefits from the scroll-to-top and Suspense fallback behavior.
+// The wrap function wraps a component with the S component, ensuring that it benefits fro...
 function wrap(Component) {
     return <S><Component /></S>;
 }
-// The wrapWithStocks function wraps a component with the StocksProvider context, allowing it to access stock-related data and functions.
+// The wrapWithStocks function wraps a component with the StocksProvider context, allowing...
 function wrapWithStocks(Component) {
     return <StocksProvider><S><Component /></S></StocksProvider>;
 }
-// the page for specific roles, and the component is wrapped in a ProtectedRoute that checks if the user has the required roles to access the page.
+// the page for specific roles, and the component is wrapped in a ProtectedRoute that chec...
 function protect(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><S><Component /></S></ProtectedRoute>;
 }
@@ -89,11 +89,11 @@ function protect(roles, Component) {
 function protectExpert(Component) {
     return <ProtectedRoute allowedRoles={["investor", "expert"]} requireExpert><S><Component /></S></ProtectedRoute>;
 }
-// the page for specific roles, and the component is wrapped in a ProtectedRoute that checks if the user has the required roles to access the page. Additionally, it wraps the component in a StocksProvider context.
+// the page for specific roles, and the component is wrapped in a ProtectedRoute that chec...
 function protectWithStocks(roles, Component) {
     return <ProtectedRoute allowedRoles={roles}><StocksProvider><S><Component /></S></StocksProvider></ProtectedRoute>;
 }
-// a list of all the routes in the application, with their corresponding components and protection rules.
+// a list of all the routes in the application, with their corresponding components and pr...
 export const router = createBrowserRouter([
     { path: "/", element: wrapWithStocks(HomePage) },
     { path: "/about-us", element: wrap(AboutUsPage) },

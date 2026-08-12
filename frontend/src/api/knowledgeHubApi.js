@@ -2,7 +2,7 @@ import { authFetch } from "./apiClient";
 
 const BASE = `${import.meta.env.VITE_API_URL}/knowledge`;
 
-// ── Public reads ───────────────────────────────────────────────────────────────
+// Public reads 
 
 export const getArticles = async ({ category, tag, limit = 50 } = {}) => {
   const params = new URLSearchParams({ limit });

@@ -1,18 +1,3 @@
-"""Dev utility: give an account some stock holdings so trading-dependent
-features can be tested while the market is closed.
-
-Usage (from the backend folder, venv active):
-    python seed_holdings.py jordanlimjunhong@gmail.com          # 7 holdings
-    python seed_holdings.py jordanlimjunhong@gmail.com all30    # 30 distinct
-                                                                # stocks (meets
-                                                                # the expert
-                                                                # eligibility
-                                                                # stock count)
-
-Uses the same Investor.buyStock() path as real trades, so holdings,
-transactions, paper_money and used_amount all stay consistent. Tops up
-paper money first so the buys can't fail on funds.
-"""
 import sys
 
 from app.entity.database.session import get_session

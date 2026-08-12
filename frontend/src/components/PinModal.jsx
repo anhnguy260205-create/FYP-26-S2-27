@@ -1,19 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/**
- * Reusable 6-digit PIN prompt shown before a buy, sell or cash-out.
- *
- * Props:
- *   open        – whether the modal is visible
- *   title       – heading (e.g. "Confirm Purchase")
- *   subtitle    – short line under the heading
- *   confirmLabel– primary button text (default "Confirm")
- *   loading     – disables inputs / shows a spinner label
- *   error       – error string to display (e.g. "Incorrect PIN")
- *   onSubmit    – (pin: string) => void
- *   onClose     – () => void
- */
+
 export default function PinModal({
   open,
   title = "Enter Transaction PIN",

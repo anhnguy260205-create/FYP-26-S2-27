@@ -1,22 +1,3 @@
-"""
-verify_sector_models.py
-=======================
-Run this LOCALLY (where scikit-learn / xgboost / yfinance are installed and you
-have internet) to confirm the sector models load and infer correctly. This was
-NOT runnable in the build sandbox, so verify here before trusting the API.
-
-Usage (from backend/):
-    python -m scripts.verify_sector_models            # inspect all 11 models
-    python -m scripts.verify_sector_models AAPL JPM   # also run live ratings
-
-What it checks:
-  1. Each pkl loads.
-  2. Prints estimator type, stored threshold, metrics, and the ordered
-     feature_names_in_ the model expects.
-  3. (Optional) Runs the full rating pipeline for any tickers you pass and
-     prints the resulting score / label / factor grades.
-"""
-
 import os
 import sys
 import pickle
@@ -63,7 +44,7 @@ def inspect_all():
 
 
 def report_missing_features(symbols):
-    """Print expected features that compute_features() does NOT produce (would be NaN)."""
+    #Print expected features that compute_features() does not produce (would be NaN).
     import yfinance as yf
     from app.control.services import sector_model as sm
     print("\n" + "=" * 70)

@@ -1,14 +1,3 @@
-"""
-Cash in / cash out — SANDBOX ONLY.
-
-No money actually moves. The user supplies a bank name, an account number and
-an amount; we adjust assets immediately and write a WalletTransaction so
-it appears in the Transaction Portal. There is no payment rail, no clearing
-delay and no admin approval step.
-
-Account numbers are masked before storage (last 4 digits only). Even in a
-sandbox there's no reason to keep full numbers at rest.
-"""
 import re
 from sqlalchemy import text
 
@@ -37,7 +26,6 @@ def _mask_account(account_number: str) -> str:
 
 
 def _validate(amount, bank_name, account_number, *, minimum, maximum, label):
-    """Returns an error dict, or None when the input is acceptable."""
     try:
         amount = round(float(amount), 2)
     except (TypeError, ValueError):

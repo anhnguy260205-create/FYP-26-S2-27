@@ -31,8 +31,8 @@ FORUM_CATEGORIES = [
     "Risk Management",
 ]
 
-# Category used for per-stock expert comments (StockComments panel). Deliberately kept OUT of
-# FORUM_CATEGORIES so _validate_category() can never accept it on the general create/update post
+# Category used for per-stock expert comments (StockComments panel).
+# FORUM_CATEGORIES so _validate_category() can never accept it on the general create/upda...
 # routes -- it's only ever set directly by create_stock_comment().
 STOCK_COMMENT_CATEGORY = "Stock Discussion"
 
@@ -58,7 +58,7 @@ class ForumPost(Base):
     created_at   = Column(DateTime, default=_now)
     updated_at   = Column(DateTime, default=_now)
 
-    # lazy="select" — replies are only queried when a post is actually opened, not on every list_posts() call (huge performance win for the forum feed).
+    # lazy="select" — replies are only queried when a post is actually opened, not on every l...
     replies = relationship("ForumReply", cascade="all, delete-orphan", back_populates="post", lazy="select")
 
 

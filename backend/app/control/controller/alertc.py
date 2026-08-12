@@ -33,7 +33,7 @@ class CreateAlertController:
             try:
                 session.flush()
             except IntegrityError:
-                # If the user already has an alert for this stock, rollback the session and return an error message.
+                # If the user already has an alert for this stock, rollback the session and return an err...
                 session.rollback()
                 return {"success": False, "message": already_exists_msg}
             return {"success": True, "alert_id": alert.alert_id}
@@ -63,7 +63,7 @@ class CheckAndTriggerAlertsController:
 
     @staticmethod
     def get_active_alert_symbols() -> set:
-        ## Get a set of all stock symbols that have active, untriggered alerts. This is used to determine which stocks need to be checked for price changes.
+        # # Get a set of all stock symbols that have active, untriggered alerts.
         with get_session() as session:
             rows = session.query(StockAlert.stock_symbol).filter_by(
                 is_active=True, is_triggered=False
@@ -98,7 +98,7 @@ class CheckAndTriggerAlertsController:
                 if not condition:
                     continue
 
-                # Claim the alert to prevent other processes from sending duplicate emails. If the claim fails, it means another process has already claimed it, so skip sending the email.
+                # Claim the alert to prevent other processes from sending duplicate emails.
                 claimed = session.query(StockAlert).filter_by(
                     alert_id=alert.alert_id, is_triggered=False
                 ).update({"is_triggered": True}, synchronize_session=False)
@@ -114,7 +114,7 @@ class CheckAndTriggerAlertsController:
                     custom_message=alert.custom_message,
                 )
                 if sent:
-                   # Remove the alert from the database after sending the email, and create a notification for the user indicating that their alert has been triggered.
+                   # Remove the alert from the database after sending the email, and create a notification f...
                     session.query(StockAlert).filter_by(
                         alert_id=alert.alert_id
                     ).delete(synchronize_session=False)

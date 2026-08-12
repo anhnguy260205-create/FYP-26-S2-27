@@ -21,7 +21,7 @@ _APPROVED = {"approved", "active", "verified"}
 
 
 def _is_premium(session, user_id) -> bool:
-    # Determine if a user is premium, either as a premium investor or a verified expert. This is used to enforce the rule that only premium users can send gifts.
+    # Determine if a user is premium, either as a premium investor or a verified expert.
     investor = session.query(Investor).filter(
         Investor.user_id == user_id).first()
     if investor and investor.investor_subscription_status == "premium":
@@ -56,7 +56,7 @@ class SendGiftController:
         expert_share, platform_share = split_gift(amount)
 
         with get_session() as session:
-            # daily limit check — the platform caps how much a user can send in gifts per day, to prevent abuse and encourage moderation.
+            # daily limit check — the platform caps how much a user can send in gifts per day, to pre...
             today_start = datetime.now(TZ).replace(
                 hour=0, minute=0, second=0, microsecond=0)
             sent_today = session.query(

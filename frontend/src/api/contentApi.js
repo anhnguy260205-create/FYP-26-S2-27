@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 const BASE_URL = `${import.meta.env.VITE_API_URL}/content/landing`;
 const POLL_INTERVAL_MS = 30000;
 
-
+// Cache the first request so other components can reuse it.
 let cache = null;
 let inFlight = null;
 const subscribers = new Set();
@@ -26,11 +26,13 @@ function fetchLandingContent() {
   return inFlight;
 }
 
+// Update cached content and notify all subscribed components
 function broadcast(content) {
   cache = content;
   subscribers.forEach((setContent) => setContent(content));
 }
 
+// Start polling for updated landing page content
 function startPolling() {
   if (pollTimer) return;
   pollTimer = setInterval(() => {
@@ -38,6 +40,7 @@ function startPolling() {
   }, POLL_INTERVAL_MS);
 }
 
+// Stop polling when there are no active subscribers
 function stopPollingIfIdle() {
   if (pollTimer && subscribers.size === 0) {
     clearInterval(pollTimer);
@@ -68,7 +71,7 @@ export function useLandingContent() {
   return content;
 }
 
-
+// Get the free and premium plan details.
 export function usePlanContent() {
   const content = useLandingContent();
   const c = content ?? [];
@@ -99,7 +102,7 @@ export function usePlanContent() {
   return { freeFeatures, premiumFeatures, freePlan, premiumPlan };
 }
 
-
+// Convert supported video share links into embed URLs.
 export function toEmbeddableVideoUrl(url) {
   if (!url) return null;
   try {
@@ -115,7 +118,7 @@ export function toEmbeddableVideoUrl(url) {
       return id ? `https://player.vimeo.com/video/${id}` : null;
     }
     if (u.hostname === "drive.google.com") {
-      // Share-link formats: /file/d/FILE_ID/view?usp=... or /open?id=FILE_ID
+      // Handle the common Google Drive share-link formats.
       const parts = u.pathname.split("/").filter(Boolean);
       const dIndex = parts.indexOf("d");
       const fileId = dIndex !== -1 ? parts[dIndex + 1] : u.searchParams.get("id");

@@ -78,7 +78,6 @@ def verify_password_firebase(email: str, password: str) -> bool:
 
 
 def seed_firebase_user(email: str, password: str, display_name: str = None) -> bool:
-    """Create a Firebase user if they don't already exist."""
     _init()
     try:
         auth.get_user_by_email(email)
@@ -100,7 +99,6 @@ def seed_firebase_user(email: str, password: str, display_name: str = None) -> b
 
 
 def seed_all_firebase_accounts():
-    """Seed default accounts. Passwords come from env vars; dev fallbacks are intentionally weak."""
     seed_firebase_user("fyphd3009@gmail.com", os.getenv("SEED_ADMIN_PASSWORD", "admin123"),    "Admin")
     seed_firebase_user("jordan@gmail.com", os.getenv("SEED_JORDAN_PASSWORD",   "password123"), "Jordan")
     seed_firebase_user("fyphr123@gmail.com", os.getenv("SEED_HR_PASSWORD",    "password"),     "Finance Admin")

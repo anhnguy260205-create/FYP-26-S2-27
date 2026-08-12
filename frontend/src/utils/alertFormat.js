@@ -1,4 +1,4 @@
-// Shared by MyAlertsPage.jsx and AStockDashBoardPage.jsx's AlertBoard, render the same StockAlert condition fields as a human-readable label.
+// Shared by MyAlertsPage.jsx and AStockDashBoardPage.jsx's AlertBoard, render the same St...
 export function conditionLabel(alert) {
     const parts = [];
     if (alert.price_above != null) parts.push(`Above $${Number(alert.price_above).toFixed(2)}`);
