@@ -12,12 +12,7 @@ export const getArticles = async ({ category, tag, limit = 50 } = {}) => {
   return res.json();
 };
 
-export const getArticle = async (articleId) => {
-  const res = await fetch(`${BASE}/articles/${articleId}`);
-  return res.json();
-};
-
-// Auth required 
+// ── Auth required ──────────────────────────────────────────────────────────────
 
 export const getMyArticles = async (userId) => {
   const res = await authFetch(`${BASE}/my-articles/${userId}`);
@@ -47,14 +42,6 @@ export const deleteArticle = async (articleId) => {
   return res.json();
 };
 
-export const submitArticleForReview = async (articleId) => {
-  const res = await authFetch(`${BASE}/articles/${articleId}`, {
-    method: "PUT",
-    body: JSON.stringify({ status: "pending" }),
-  });
-  return res.json();
-};
-
 const ADMIN_BASE = `${import.meta.env.VITE_API_URL}/admin`;
 
 export const approveArticle = async (articleId) => {
@@ -67,15 +54,7 @@ export const rejectArticle = async (articleId) => {
   return res.json();
 };
 
-// Admin can create/edit articles directly, no expert review needed
-
-export const adminCreateArticle = async (data) => {
-  const res = await authFetch(`${ADMIN_BASE}/articles`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-  return res.json();
-};
+// ── Admin authoring (create/edit articles directly, no expert review needed) ───
 
 export const adminUpdateArticle = async (articleId, data) => {
   const res = await authFetch(`${ADMIN_BASE}/articles/${articleId}`, {

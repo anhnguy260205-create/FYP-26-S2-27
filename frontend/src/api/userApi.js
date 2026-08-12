@@ -1,5 +1,5 @@
 import { signOut } from "firebase/auth";
-import { authFetch } from "./apiClient";
+import { authFetch, requestJson } from "./apiClient";
 import { auth } from "../firebase";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/user`;
@@ -12,13 +12,6 @@ export const createAccount = async (formData) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData),
   });
-  return response.json();
-};
-
-export const checkEmailExists = async (email) => {
-  const response = await fetch(
-    `${BASE_URL}/check-email?email=${encodeURIComponent(email)}`
-  );
   return response.json();
 };
 
@@ -120,13 +113,7 @@ export const logoutOnUnload = () => {
 };
 
 export const getInvestorInformation = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/investor-information/${userId}`);
-  return response.json();
-};
-
-export const getExpertInformation = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/expert-information/${userId}`);
-  return response.json();
+  return requestJson(`${BASE_URL}/investor-information/${userId}`);
 };
 
 export const updateUserInformation = async (
@@ -160,18 +147,23 @@ export const requestDeleteOtp = async () => {
 
 
 export const deleteInvestor = async (userId, pin = null, otp = null) => {
-  const response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
-    method: "DELETE",
-    body: JSON.stringify({ pin, otp }),
-  });
-  return response.json();
-};
-
-export const deleteExpert = async (userId) => {
-  const response = await authFetch(`${BASE_URL}/delete-expert/${userId}`, {
-    method: "DELETE",
-  });
-  return response.json();
+  let response;
+  try {
+    response = await authFetch(`${BASE_URL}/delete-investor/${userId}`, {
+      method: "DELETE",
+      body: JSON.stringify({ pin, otp }),
+    });
+  } catch (networkError) {
+    return { success: false, message: `Network error: ${networkError.message}` };
+  }
+  try {
+    return await response.json();
+  } catch {
+    return {
+      success: false,
+      message: `Server returned an unreadable response (HTTP ${response.status}).`,
+    };
+  }
 };
 
 export const getWatchlist = async (userId) => {
@@ -215,8 +207,7 @@ export const updateRiskTolerance = async (userId, riskTolerance) => {
 
 
 export const getPinStatus = async () => {
-  const response = await authFetch(`${BASE_URL}/pin/status`);
-  return response.json();
+  return requestJson(`${BASE_URL}/pin/status`);
 };
 
 
@@ -224,15 +215,6 @@ export const setTransactionPin = async (pin, confirmPin) => {
   const response = await authFetch(`${BASE_URL}/pin/set`, {
     method: "POST",
     body: JSON.stringify({ pin, confirm_pin: confirmPin }),
-  });
-  return response.json();
-};
-
-
-export const verifyTransactionPin = async (pin) => {
-  const response = await authFetch(`${BASE_URL}/pin/verify`, {
-    method: "POST",
-    body: JSON.stringify({ pin }),
   });
   return response.json();
 };

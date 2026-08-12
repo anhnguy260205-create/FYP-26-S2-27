@@ -51,7 +51,7 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
       const info = infoRes?.investor_information || {};
       const user = { ...currentUser, ...info };
       const { country } = splitAddress(user.address || "");
-      const needsInfo = !(user.full_name && user.phone_number && country);
+      const needsInfo = infoRes ? !(user.full_name && user.phone_number && country) : false;
       const needsPin = pinRes ? pinRes.has_pin !== true : false;
       setGate({ needsInfo, needsPin, user });
     });
@@ -60,15 +60,21 @@ function ProtectedRoute({ allowedRoles, requireExpert = false, children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.user_id, currentUser?.role, onSetupPage]);
 
-  // Re-validate against the backend on protected navigation so role/subscription
-  // changes made by admins are reflected without requiring a full logout/login.
+  // Re-validate against the backend so role/subscription/expert-verification
+  // changes made by admins are reflected without requiring a logout/login or
+  // even a page refresh — re-checks on mount/navigation, then every 30s while
+  // the page stays open.
   useEffect(() => {
     if (!currentUser) return;
     let cancelled = false;
-    refreshSessionUser().then((fresh) => {
-      if (!cancelled && fresh) setCurrentUser(fresh);
-    });
-    return () => { cancelled = true; };
+    const refresh = () => {
+      refreshSessionUser().then((fresh) => {
+        if (!cancelled && fresh) setCurrentUser(fresh);
+      });
+    };
+    refresh();
+    const interval = setInterval(refresh, 30000);
+    return () => { cancelled = true; clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.user_id]);
 

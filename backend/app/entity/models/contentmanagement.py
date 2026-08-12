@@ -57,6 +57,38 @@ class ContentManagement(Base):
                 by_id[content_id].order_index = index
             return True
 
+    @staticmethod
+    def create(section: str, title: str, description: str = "",
+               image_url: str | None = None, video_url: str | None = None) -> dict:
+        """Add a new card/item to an existing list section (FAQ, footer links,
+        legal numbered sections, etc.). Placed at the end of the section."""
+        with get_session() as session:
+            max_index = session.query(ContentManagement).filter(
+                ContentManagement.section == section
+            ).count()
+            row = ContentManagement(
+                section=section,
+                title=title,
+                description=description,
+                image_url=image_url,
+                video_url=video_url,
+                order_index=max_index,
+            )
+            session.add(row)
+            session.flush()
+            return _serialize(row)
+
+    @staticmethod
+    def delete(content_id: str) -> bool:
+        with get_session() as session:
+            row = session.query(ContentManagement).filter(
+                ContentManagement.content_id == content_id
+            ).first()
+            if not row:
+                return False
+            session.delete(row)
+            return True
+
 
 def _serialize(row: ContentManagement) -> dict:
     return {
@@ -111,10 +143,7 @@ def seed_landing_content():
             # links. Only keep pages that actually exist.
             ContentManagement(content_id="footer_company_0",     section="footer_company", title="About Us",            description="/about-us", order_index=0),
             ContentManagement(content_id="footer_company_4",     section="footer_company", title="Reviews",             description="/reviews", order_index=1),
-            # Footer — resources links (was hardcoded and unreachable from admin before)
-            ContentManagement(content_id="footer_resources_0",   section="footer_resources", title="GitHub Repository", description="#", order_index=0),
-            ContentManagement(content_id="footer_resources_1",   section="footer_resources", title="Documentation",     description="#", order_index=1),
-            ContentManagement(content_id="footer_resources_2",   section="footer_resources", title="API Status",        description="#", order_index=2),
+ 
             # Footer — contact
             ContentManagement(content_id="footer_contact_email", section="footer_contact", title="kimanh.work26@gmail.com", description="", order_index=0),
             ContentManagement(content_id="footer_contact_0",     section="footer_contact", title="Help Center",          description="/support", order_index=1),
@@ -241,10 +270,6 @@ def seed_landing_content():
                 order_index=0),
             ContentManagement(content_id="investor_banner_premium_cta", section="investor_banner_premium", title="Manage Subscription", order_index=1),
 
-            # Expert home page (ExpertLoggedInPage.jsx) — also used to be hardcoded
-            ContentManagement(content_id="expert_hero_subtitle", section="expert_hero",
-                title="Manage your portfolio, publish content, and connect with investors.", order_index=0),
-
             # Expert Features quick-link cards shown on the shared logged-in
             # homepage (LoggedInHomePage.jsx), experts only. Icons and link
             # targets stay hardcoded client-side, same as other card sections.
@@ -260,42 +285,6 @@ def seed_landing_content():
             ContentManagement(content_id="expert_home_feat_0_cta", section="expert_home_features_cta", title="Open", order_index=0),
             ContentManagement(content_id="expert_home_feat_1_cta", section="expert_home_features_cta", title="Open", order_index=1),
             ContentManagement(content_id="expert_home_feat_2_cta", section="expert_home_features_cta", title="Open", order_index=2),
-            ContentManagement(content_id="header_expert_tools", section="page_headers", title="Your Tools", description="Everything you need to publish, answer, and grow your reach", order_index=11),
-            ContentManagement(content_id="expert_tool_0", section="expert_tools", title="Real-time Dashboard", description="View live stock prices, AI-powered predictions, and market insights to support investment decision-making.", order_index=0),
-            ContentManagement(content_id="expert_tool_1", section="expert_tools", title="Knowledge Hub",       description="Write and publish educational articles for investors, from beginner basics to advanced strategy.", order_index=1),
-            ContentManagement(content_id="expert_tool_2", section="expert_tools", title="Community Forum",     description="Join discussions with investors and fellow experts on markets, strategy, and platform news.", order_index=2),
-            ContentManagement(content_id="expert_tool_3", section="expert_tools", title="Model Portfolio",     description="Publish and rebalance the model portfolio investors follow — holdings, allocation, and rationale.", order_index=3),
-            ContentManagement(content_id="expert_tool_4", section="expert_tools", title="Messages",            description="Your place to talk directly with investors and answer the questions they send you.", order_index=4),
-            # All 5 cards above share this one button label
-            ContentManagement(content_id="expert_tools_cta", section="expert_tools_cta", title="Open", order_index=0),
-
-            # Model Portfolio card
-            ContentManagement(content_id="header_model_portfolio", section="page_headers", title="Model Portfolio",
-                description="The portfolio investors follow", order_index=16),
-            ContentManagement(content_id="model_portfolio_empty_msg", section="expert_home_misc", title="You haven't set up a model portfolio yet.", order_index=0),
-            ContentManagement(content_id="model_portfolio_cta_create", section="expert_home_misc", title="Create Portfolio", order_index=1),
-            ContentManagement(content_id="model_portfolio_cta_manage", section="expert_home_misc", title="Manage Portfolio", order_index=2),
-
-            # Your Profile card
-            ContentManagement(content_id="header_expert_profile", section="page_headers", title="Your Profile", order_index=17),
-            ContentManagement(content_id="expert_profile_edit_cta", section="expert_home_misc", title="Edit Profile", order_index=3),
-            ContentManagement(content_id="expert_profile_not_rated", section="expert_home_misc", title="Not yet rated \u2014 keep building your reputation with investors.", order_index=4),
-
-            # Verification Documents banner
-            ContentManagement(content_id="header_documents", section="page_headers", title="Verification Documents", order_index=18),
-            ContentManagement(content_id="documents_desc_verified",   section="expert_home_misc", title="Manage the credential documents tied to your verified expert account.", order_index=5),
-            ContentManagement(content_id="documents_desc_unverified", section="expert_home_misc", title="Submit your credential documents to get verified and unlock the rest of the platform.", order_index=6),
-            ContentManagement(content_id="documents_cta_verified",    section="expert_home_misc", title="Manage Documents", order_index=7),
-            ContentManagement(content_id="documents_cta_unverified",  section="expert_home_misc", title="Submit Documents", order_index=8),
-
-            # Compensation card, inside the Your Profile section
-            ContentManagement(content_id="compensation_pending_label", section="expert_home_misc", title="Pending payout", order_index=9),
-            # "{followers}" gets replaced client-side with the real follower
-            # threshold number — see ProfileSummarySection in ExpertLoggedInPage.jsx
-            ContentManagement(content_id="compensation_need_followers", section="expert_home_misc", title="Need {followers} followers to earn", order_index=10),
-            ContentManagement(content_id="compensation_locked_label", section="expert_home_misc", title="Locked", order_index=11),
-            ContentManagement(content_id="compensation_locked_msg", section="expert_home_misc", title="Get verified to unlock compensation", order_index=12),
-
             # Expert Compensation page (ExpertCompensationPage.jsx)
             ContentManagement(content_id="expert_compensation_header", section="expert_compensation_page", title="Compensation", description="Track your earnings, payout history, and follower eligibility.", order_index=0),
             ContentManagement(content_id="expert_compensation_notice", section="expert_compensation_page", title="Display-only notice", description="Compensation figures on this page are calculated for display purposes only — no funds are transferred.", order_index=1),
@@ -609,6 +598,143 @@ def seed_landing_content():
                 new_description = faq_updates.get(row.content_id)
                 if new_description is not None and row.description != new_description:
                     row.description = new_description
+
+        # Legal pages — Terms of Service & Privacy Policy. section="page_headers" for the
+        # hero title/subtitle pair (matches every other page's hero pattern), section=
+        # "legal_meta" for the intro-paragraph/date items (looked up by content_id, not
+        # section), section="terms_of_service"/"privacy_policy" for the numbered sections.
+        legal_entries = [
+            ContentManagement(content_id="tos_hero", section="page_headers",
+                title="Terms of Service",
+                description="These terms govern your use of Rocket Trade's paper trading and market-education platform. Please read them carefully.",
+                order_index=0),
+            ContentManagement(content_id="privacy_hero", section="page_headers",
+                title="Privacy Policy",
+                description="This policy explains what personal data Rocket Trade collects, how we use it, and the rights you have under Singapore's Personal Data Protection Act.",
+                order_index=0),
+
+            ContentManagement(content_id="tos_intro", section="legal_meta",
+                title="Introduction paragraph", order_index=0, description=
+                "Rocket Trade Pte. Ltd. (\"we\", \"us\", \"the Platform\") operates a paper trading and investment-education platform. These Terms of Service form an agreement between you and Rocket Trade for use of the website, mobile experience, and related services, and are governed by Singapore law."),
+            ContentManagement(content_id="tos_last_updated", section="legal_meta", title="August 10, 2026", order_index=0),
+            ContentManagement(content_id="privacy_intro", section="legal_meta",
+                title="Introduction paragraph", order_index=0, description=
+                "Rocket Trade Pte. Ltd. (\"we\", \"us\", \"the Platform\") respects your privacy. This Privacy Policy describes how we collect, use, protect, and disclose personal data when you use our paper trading and market-education platform, in accordance with the Personal Data Protection Act 2012 of Singapore."),
+            ContentManagement(content_id="privacy_last_updated", section="legal_meta", title="August 10, 2026", order_index=0),
+
+            ContentManagement(content_id="tos_1", section="terms_of_service", title="1. Acceptance of Terms", order_index=0, description=
+                "These Terms of Service (\"Terms\") form a legal agreement between you and Rocket Trade Pte. Ltd. (\"Rocket Trade\", \"we\", \"us\", or \"our\"), governing your access to and use of the Rocket Trade website, mobile experience, and related services (together, the \"Platform\").\n\n"
+                "By creating an account or otherwise using the Platform, you confirm that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree, please do not register for or use the Platform.\n\n"
+                "We may update these Terms from time to time to reflect changes to the Platform or applicable law. Where changes are material, we will take reasonable steps to notify you (such as an in-app notice or email). Continued use of the Platform after changes take effect constitutes acceptance of the revised Terms."),
+            ContentManagement(content_id="tos_2", section="terms_of_service", title="2. What Rocket Trade Is — and Is Not", order_index=1, description=
+                "Rocket Trade is a paper trading and market-education platform. The Platform provides AI-generated stock predictions, market data, quant ratings, educational content, and community and expert-led discussion features to help users practise and learn about investing in a risk-free, simulated environment.\n\n"
+                "Rocket Trade is not a licensed financial adviser, dealer, or capital markets services provider, and does not carry out any regulated activity under the Securities and Futures Act 2001 or the Financial Advisers Act 2001 of Singapore. We are not licensed or regulated by the Monetary Authority of Singapore (MAS), and nothing on the Platform should be treated as a regulated financial advisory or dealing service."),
+            ContentManagement(content_id="tos_3", section="terms_of_service", title="3. AI Predictions & Analytical Content", order_index=2, description=
+                "The Platform generates AI-based stock predictions, quant ratings, and other analytical content using machine-learning models applied to historical and current market data. This content is provided for informational and educational purposes only and does not constitute financial, investment, tax, or legal advice, and does not take into account your personal investment objectives, financial situation, or particular needs.\n\n"
+                "AI-generated predictions are analytical estimates, not facts, and are not guaranteed to be accurate, complete, or timely. They should never be treated as a promise of future performance. Any decisions you make based on Platform content — including decisions you may separately make to invest real money elsewhere — are made entirely at your own risk, and you should seek independent, licensed financial advice before making any real-world investment decision."),
+            ContentManagement(content_id="tos_4", section="terms_of_service", title="4. Market Data & Third-Party Information", order_index=3, description=
+                "Market prices, charts, and related data displayed on the Platform are sourced from third-party market data providers and may be delayed, simulated, incomplete, or subject to interruption. We do not warrant the accuracy, completeness, or timeliness of any market data shown on the Platform, and you should not rely on it as a real-time or authoritative source for making financial decisions outside the Platform.\n\n"
+                "Third-party market data remains the property of the relevant data provider or exchange and is provided to you solely for use within the Platform."),
+            ContentManagement(content_id="tos_5", section="terms_of_service", title="5. Accounts & Security", order_index=4, description=
+                "You must provide accurate registration information (such as your email address, and optionally your name, phone number, and address) and keep your login credentials confidential. You are responsible for all activity that occurs under your account, and must notify us promptly at kimanh.work26@gmail.com if you suspect unauthorised use of your account or a security incident affecting it.\n\n"
+                "You must be at least 18 years old (the age of majority in Singapore under the Age of Majority Act 1971) to create an account and enter into these Terms. We may suspend or terminate accounts that violate these Terms, provide false information, or engage in abusive behaviour toward other users."),
+            ContentManagement(content_id="tos_6", section="terms_of_service", title="6. Paper Trading, Virtual Wallet & Real Payments — What's Real and What's Not", order_index=5, description=
+                "It's important that you understand exactly what is real money and what is simulated on Rocket Trade:\n\n"
+                "Simulated (no real money, no cash value): all buying and selling of stocks, your in-platform cash wallet balance, \"cash in\" and \"cash out\" transfers to and from that wallet (even where you are asked for a bank name and account number for realism), gifts sent to experts, and expert compensation ledger credits. These are entirely virtual figures within a sandbox environment for educational purposes. They cannot be withdrawn, redeemed, converted into real currency, or transferred to a real bank account, and no real bank transfer or money movement of any kind occurs when you use these features.\n\n"
+                "Real (actual payment): only your premium subscription fee, charged through our payment processor, Stripe, is a real charge to your real payment card. See Section 7 below.\n\n"
+                "Where a bank name or account number is requested as part of the simulated cash portal feature, this is for demonstration purposes only; account numbers are masked before storage and are never used to initiate any real transaction."),
+            ContentManagement(content_id="tos_7", section="terms_of_service", title="7. Subscriptions & Payments", order_index=6, description=
+                "Rocket Trade offers a free tier and a paid premium subscription with additional features. Paid subscriptions are billed in the currency and at the price shown at checkout, and are processed through our third-party payment processor, Stripe. We do not store your full card details on our servers.\n\n"
+                "Subscriptions renew automatically until cancelled. You can cancel at any time from your account's Subscription page; access typically continues until the end of the current billing period. Fees already paid are generally non-refundable, except where required by the Consumer Protection (Fair Trading) Act 2003 or other applicable Singapore law, or as otherwise stated at the point of purchase."),
+            ContentManagement(content_id="tos_8", section="terms_of_service", title="8. Acceptable Use", order_index=7, description=
+                "When using the Platform, you agree not to: access or attempt to access the Platform through automated means (bots, scrapers, or similar tools) except where we provide an official API; reverse-engineer, decompile, or attempt to extract the source code of the Platform; circumvent or attempt to circumvent any security, rate-limiting, or access-control measures; misuse the AI chatbot to generate unlawful, harmful, or abusive content; exploit bugs in the simulated wallet, gifting, or compensation systems in bad faith; or use the Platform in any way that violates applicable law or infringes the rights of others.\n\n"
+                "We may investigate and take appropriate action against anyone who, in our reasonable judgment, violates this section, including suspending or terminating accounts and, where necessary, reporting conduct to the relevant authorities."),
+            ContentManagement(content_id="tos_9", section="terms_of_service", title="9. Community Conduct", order_index=8, description=
+                "The forum, expert portfolios, reviews, and chat features are meant for respectful discussion of markets, strategies, and platform feedback. You agree not to post content that is unlawful, defamatory, harassing, or that infringes on another person's intellectual property or other rights, and not to use these features to spam, mislead, or impersonate others.\n\n"
+                "We reserve the right to remove content or restrict accounts that violate this policy, in line with the moderation tools available to our administrators, and to report unlawful content to the relevant authorities where required."),
+            ContentManagement(content_id="tos_10", section="terms_of_service", title="10. Experts & Expert Program", order_index=9, description=
+                "Users who apply for and are approved as Experts may publish portfolios, commentary, and educational content on the Platform, and may accumulate compensation credits as described within the Platform based on followers and engagement. As described in Section 6, this compensation is currently tracked as an in-platform ledger figure for educational and gamification purposes and is not a real cash payout; if this changes in future, we will update these Terms and notify affected users before the change takes effect.\n\n"
+                "Expert content reflects personal opinion only; it is not independently verified by us and is not a guarantee of investment outcomes for anyone who follows it, even within the simulated environment."),
+            ContentManagement(content_id="tos_11", section="terms_of_service", title="11. Intellectual Property", order_index=10, description=
+                "The Platform's design, branding, software, and original content are owned by Rocket Trade Pte. Ltd. or our licensors and are protected by Singapore and international intellectual property laws, including the Copyright Act 2021. Market data and third-party content displayed on the Platform remain the property of their respective owners.\n\n"
+                "You retain ownership of content you post (such as forum posts and reviews), but by posting it you grant us a non-exclusive, royalty-free, worldwide licence to host, display, reproduce, and distribute that content within the Platform for the purpose of operating and promoting the service.\n\n"
+                "If you believe content on the Platform infringes your intellectual property rights, please contact us at kimanh.work26@gmail.com with details of the alleged infringement, and we will review and, where appropriate, remove or disable access to the content."),
+            ContentManagement(content_id="tos_12", section="terms_of_service", title="12. Availability & Changes to the Platform", order_index=11, description=
+                "We aim to keep the Platform available and reliable, but we do not guarantee that it will be available at all times or free from interruption, and we do not provide any uptime or service-level commitment. The Platform may be unavailable from time to time for maintenance, updates, or reasons outside our reasonable control.\n\n"
+                "We may add, change, suspend, or discontinue any feature of the Platform (including specific market data feeds, AI models, or community features) at any time, with or without notice, and will not be liable for any resulting loss where this occurs."),
+            ContentManagement(content_id="tos_13", section="terms_of_service", title="13. Disclaimers & Limitation of Liability", order_index=12, description=
+                "The Platform is provided \"as is\" and \"as available\", without warranties of any kind, whether express or implied. We do not guarantee that predictions, market data, or the service itself will be uninterrupted, accurate, or error-free.\n\n"
+                "To the fullest extent permitted by law — including subject to any limits imposed by the Unfair Contract Terms Act 1977 of Singapore — Rocket Trade Pte. Ltd. and its officers, employees, and agents will not be liable for any indirect, incidental, special, or consequential loss or damage arising from your use of the Platform, including any decisions made using information found on it. Nothing in these Terms excludes or limits liability that cannot lawfully be excluded or limited, such as liability for death or personal injury caused by negligence, or for fraud.\n\n"
+                "You agree to indemnify and hold us harmless from any claims, losses, or expenses (including reasonable legal costs) arising from your breach of these Terms or your misuse of the Platform."),
+            ContentManagement(content_id="tos_14", section="terms_of_service", title="14. Termination", order_index=13, description=
+                "You may stop using the Platform and request account deletion at any time by contacting our support team through the Help Centre or at kimanh.work26@gmail.com. We may suspend or terminate accounts that breach these Terms or applicable law, with or without notice where circumstances reasonably require it.\n\n"
+                "Provisions of these Terms that by their nature should survive termination (including intellectual property, disclaimers, limitation of liability, and governing law) will continue to apply after your account is closed."),
+            ContentManagement(content_id="tos_15", section="terms_of_service", title="15. Governing Law & Dispute Resolution", order_index=14, description=
+                "These Terms are governed by and construed in accordance with the laws of the Republic of Singapore, without regard to conflict of law principles.\n\n"
+                "Any dispute arising out of or in connection with these Terms, including any question regarding its existence, validity, or termination, shall first be addressed through good-faith negotiation between you and us. If it cannot be resolved this way, the dispute shall be referred to and finally resolved by the courts of Singapore, which shall have exclusive jurisdiction, save that we may also seek injunctive or other equitable relief in any court of competent jurisdiction where necessary to protect our rights."),
+            ContentManagement(content_id="tos_16", section="terms_of_service", title="16. General", order_index=15, description=
+                "If any provision of these Terms is found to be invalid or unenforceable under Singapore law, that provision will be limited or severed to the minimum extent necessary, and the remaining provisions will continue in full force and effect.\n\n"
+                "These Terms, together with our Privacy Policy, constitute the entire agreement between you and us regarding the Platform and supersede any prior agreements on this subject. We may assign these Terms in connection with a merger, acquisition, or sale of assets; you may not assign your rights under these Terms without our consent. A person who is not a party to these Terms has no rights under the Contracts (Rights of Third Parties) Act 2001 to enforce any term of these Terms."),
+            ContentManagement(content_id="tos_17", section="terms_of_service", title="17. Contact Us", order_index=16, description=
+                "Questions about these Terms can be sent to our support team through the Help Centre, or by emailing kimanh.work26@gmail.com."),
+
+            ContentManagement(content_id="privacy_1", section="privacy_policy", title="1. About This Policy", order_index=0, description=
+                "Rocket Trade Pte. Ltd. (\"we\", \"us\", \"the Platform\") is committed to protecting your personal data in accordance with the Personal Data Protection Act 2012 of Singapore (\"PDPA\"). This Privacy Policy explains what personal data we collect, why we collect it, how we use, store, and protect it, and the rights you have over it.\n\n"
+                "This Policy applies to all users of the Rocket Trade paper trading and market-education platform. By using the Platform, you consent to the collection, use, and disclosure of your personal data as described in this Policy, to the extent permitted by the PDPA."),
+            ContentManagement(content_id="privacy_2", section="privacy_policy", title="2. Account & Profile Data", order_index=1, description=
+                "When you register, we collect your email address and password, and optionally your full name, username, phone number, and address if you choose to provide them. Your password is never stored in plain text.\n\n"
+                "If you use the simulated cash portal ('cash in' / 'cash out') feature, we collect a bank name and account number for demonstration purposes only — account numbers are masked (only the last 4 digits are retained) before storage, and no real bank transfer ever takes place. See our Terms of Service for details on which features are simulated."),
+            ContentManagement(content_id="privacy_3", section="privacy_policy", title="3. Activity Data", order_index=2, description=
+                "We collect data generated by your use of the Platform, including your simulated trading activity (buy/sell orders, holdings, watchlists, price alerts), forum posts, reviews and ratings you leave, expert applications and portfolios you create, gifts sent within the Platform, and your conversations with the AI chatbot.\n\n"
+                "We also collect standard technical and log data, such as login timestamps and session identifiers, used to keep your account secure and the Platform running smoothly."),
+            ContentManagement(content_id="privacy_4", section="privacy_policy", title="4. Subscriptions & Payment Data", order_index=3, description=
+                "If you subscribe to a premium plan, your payment is processed by our third-party payment processor, Stripe. We receive confirmation of your subscription status, plan, and billing history, but we do not receive or store your full card number, expiry date, or CVV on our servers — these are handled directly by Stripe in accordance with its own privacy policy and applicable card-industry security standards."),
+            ContentManagement(content_id="privacy_5", section="privacy_policy", title="5. Purposes of Use", order_index=4, description=
+                "Under the PDPA, we only collect, use, or disclose your personal data where you have given consent, or where collection without consent is permitted or required by law. By registering an account, you consent to our collection and use of your personal data for the purposes below:\n\n"
+                "To create and manage your account, authenticate you when you log in, and remember your session.\n\n"
+                "To operate core features of the Platform, including simulated trading, watchlists, alerts, the community forum, expert portfolios, reviews, gifts, and the AI chatbot.\n\n"
+                "To process premium subscription payments through Stripe and manage billing.\n\n"
+                "To send account-related notifications by email (such as alerts you set up, forum activity, password resets, or subscription renewal reminders) and to respond to support requests submitted through the Help Centre.\n\n"
+                "To maintain the security, integrity, and reliability of the Platform, including detecting misuse of the service, and to comply with our legal and regulatory obligations.\n\n"
+                "We will not use your personal data for a new purpose not disclosed here without first obtaining your consent, unless permitted or required by law."),
+            ContentManagement(content_id="privacy_6", section="privacy_policy", title="6. Withdrawing Consent", order_index=5, description=
+                "You may withdraw your consent to our collection, use, or disclosure of your personal data at any time by contacting us at kimanh.work26@gmail.com, subject to legal or contractual restrictions. Please note that withdrawing consent for certain purposes (for example, account authentication) may mean we are no longer able to provide you with the Platform or particular features, and we will inform you of the likely consequences before acting on your request."),
+            ContentManagement(content_id="privacy_7", section="privacy_policy", title="7. Community Content", order_index=6, description=
+                "Content you choose to post publicly on the Platform — such as forum posts, comments, reviews, ratings, and expert profiles — is visible to other users of the Platform and, depending on your account and post settings, may be visible to the public. Please avoid including personal data in public posts that you would not want others to see."),
+            ContentManagement(content_id="privacy_8", section="privacy_policy", title="8. How We Protect Your Data", order_index=7, description=
+                "Account authentication is handled through Firebase Authentication (Google), and application data is stored in our backend database. In accordance with the PDPA's Protection Obligation, we apply reasonable technical and organisational measures — including access controls, password hashing, and secure credential handling — to protect your personal data against unauthorised access, collection, use, disclosure, copying, modification, or disposal.\n\n"
+                "No online platform can guarantee absolute security. If you believe your account has been compromised, please change your password immediately and contact our support team.\n\n"
+                "In the event of a data breach that is likely to result in significant harm to affected individuals, or that affects 500 or more individuals, we will notify the Personal Data Protection Commission (PDPC) and affected individuals as required under the PDPA's mandatory data breach notification obligation."),
+            ContentManagement(content_id="privacy_9", section="privacy_policy", title="9. Data Retention", order_index=8, description=
+                "We retain personal data only for as long as it is necessary to fulfil the purposes for which it was collected, or as required by law (for example, accounting and tax record-keeping obligations). Where personal data is no longer necessary for any of these purposes, we will cease to retain it, or anonymise it, in accordance with the PDPA's Retention Limitation Obligation."),
+            ContentManagement(content_id="privacy_10", section="privacy_policy", title="10. Third-Party Services We Use", order_index=9, description=
+                "We rely on a small number of third-party service providers to operate the Platform, and personal data is shared with each of them only to the extent needed for them to perform their function:\n\n"
+                "Firebase Authentication (Google) — handles account sign-up, login, and session security.\n\n"
+                "Stripe — processes premium subscription payments; handles your payment card details directly.\n\n"
+                "Brevo and Gmail (SMTP) — send transactional emails such as OTP codes, password resets, welcome emails, and subscription renewal reminders.\n\n"
+                "Groq — powers the AI investment chatbot; messages you send to the chatbot are transmitted to Groq's API for processing in order to generate a response.\n\n"
+                "Market data providers (including Yahoo Finance and Alpaca Markets data feeds) — supply the stock prices, charts, and historical data shown on the Platform. These providers do not receive your personal data; only anonymous requests for market data are made.\n\n"
+                "Some of these providers may process or store data outside Singapore. Where personal data is transferred overseas, we take steps required under the PDPA's Transfer Limitation Obligation to ensure a standard of protection comparable to that under the PDPA."),
+            ContentManagement(content_id="privacy_11", section="privacy_policy", title="11. Other Disclosure of Personal Data", order_index=10, description=
+                "Beyond the service providers listed in Section 10, we do not sell your personal data, and we do not share it with third parties for their own marketing purposes.\n\n"
+                "We may disclose personal data if required to do so by law or a competent authority, or to protect the rights, safety, and security of Rocket Trade and its users."),
+            ContentManagement(content_id="privacy_12", section="privacy_policy", title="12. Access & Correction Rights", order_index=11, description=
+                "Under the PDPA, you have the right to request access to the personal data we hold about you, and to request correction of any error or omission in that data. You can review and update most of your account details directly from your profile settings, or by submitting a request to our Data Protection Officer at kimanh.work26@gmail.com.\n\n"
+                "We will respond to access and correction requests within a reasonable time. We may charge a reasonable fee for access requests as permitted under the PDPA, and will inform you of any applicable fee in advance.\n\n"
+                "You can manage or cancel a premium subscription from the Subscription page, and manage optional notification preferences from your account's notification settings."),
+            ContentManagement(content_id="privacy_13", section="privacy_policy", title="13. Account & Data Deletion", order_index=12, description=
+                "You can request deletion of your account and associated personal data at any time by contacting our support team at kimanh.work26@gmail.com. Some information may be retained where necessary for legal, security, or record-keeping purposes, as described in Section 9 above."),
+            ContentManagement(content_id="privacy_14", section="privacy_policy", title="14. Cookies & Session Data", order_index=13, description=
+                "We use session storage to keep you signed in during a browsing session. We do not use this data for third-party advertising, and Rocket Trade does not display ads on the Platform."),
+            ContentManagement(content_id="privacy_15", section="privacy_policy", title="15. Children's Privacy", order_index=14, description=
+                "Rocket Trade is not directed at children, and accounts require users to be at least 18 years old, the age of majority in Singapore. We do not knowingly collect personal data from children."),
+            ContentManagement(content_id="privacy_16", section="privacy_policy", title="16. Changes to This Policy", order_index=15, description=
+                "We may update this Privacy Policy from time to time to reflect changes to the Platform or applicable law. We will update the \"Last updated\" date above when changes are made, and will notify you of material changes where required."),
+            ContentManagement(content_id="privacy_17", section="privacy_policy", title="17. Our Data Protection Officer & How to Contact Us", order_index=16, description=
+                "In accordance with the PDPA, we have appointed a Data Protection Officer (DPO) responsible for ensuring our compliance with the Act. You may contact our DPO with any questions, feedback, or complaints about how your personal data is handled, or to make an access, correction, or withdrawal-of-consent request, by emailing kimanh.work26@gmail.com.\n\n"
+                "If you are not satisfied with our response, you may lodge a complaint with the Personal Data Protection Commission of Singapore (PDPC) at pdpc.gov.sg."),
+        ]
+        entries.extend(legal_entries)
 
         to_add = [e for e in entries if e.content_id not in existing_ids]
         if to_add:

@@ -92,7 +92,7 @@ function CommentCard({ post, me, canPost, onChanged }) {
             <RoleBadge role={post.author_role} />
             <span className="text-[11px] text-slate-500">· {timeAgo(post.created_at)}</span>
           </div>
-          <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap break-words">{post.content}</p>
+          <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap wrap-break-word">{post.content}</p>
 
           <div className="flex items-center gap-4 mt-2 text-slate-500">
             <button onClick={like}
@@ -118,7 +118,7 @@ function CommentCard({ post, me, canPost, onChanged }) {
                       <RoleBadge role={r.author_role} />
                       <span className="text-[10px] text-slate-500">· {timeAgo(r.created_at)}</span>
                     </div>
-                    <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap break-words">{r.content}</p>
+                    <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap wrap-break-word">{r.content}</p>
                   </div>
                 </div>
               ))}

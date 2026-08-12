@@ -1,36 +1,71 @@
 import { useEffect, useState } from "react";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/content/landing`;
+const POLL_INTERVAL_MS = 30000;
 
 // Cache the first request so other components can reuse it.
 let cache = null;
+let inFlight = null;
+const subscribers = new Set();
+let pollTimer = null;
 
 function fetchLandingContent() {
-  if (!cache) {
-    cache = fetch(BASE_URL)
+  if (!inFlight) {
+    inFlight = fetch(BASE_URL)
       .then((r) => r.json())
       .then((data) => {
+        inFlight = null;
         if (!data.success) throw new Error("content fetch failed");
         return data.content;
       })
       .catch((err) => {
-        cache = null; // Retry if the request fails.
+        inFlight = null;
         throw err;
       });
   }
-  return cache;
+  return inFlight;
 }
 
-// Get all landing page content.
+// Update cached content and notify all subscribed components
+function broadcast(content) {
+  cache = content;
+  subscribers.forEach((setContent) => setContent(content));
+}
+
+// Start polling for updated landing page content
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => {
+    fetchLandingContent().then(broadcast).catch(() => { /* keep last good content on a transient failure */ });
+  }, POLL_INTERVAL_MS);
+}
+
+// Stop polling when there are no active subscribers
+function stopPollingIfIdle() {
+  if (pollTimer && subscribers.size === 0) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+
 export function useLandingContent() {
-  const [content, setContent] = useState(null);
+  const [content, setContent] = useState(cache);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLandingContent()
-      .then((c) => { if (!cancelled) setContent(c); })
-      .catch(() => { });
-    return () => { cancelled = true; };
+    subscribers.add(setContent);
+    if (cache === null) {
+      fetchLandingContent()
+        .then((c) => { if (!cancelled) broadcast(c); })
+        .catch(() => { });
+    }
+    startPolling();
+    return () => {
+      cancelled = true;
+      subscribers.delete(setContent);
+      stopPollingIfIdle();
+    };
   }, []);
 
   return content;

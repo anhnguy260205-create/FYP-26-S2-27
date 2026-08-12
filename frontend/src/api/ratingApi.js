@@ -14,8 +14,3 @@ export const fetchSectorRanking = async (sectorKey) => {
   return res.json();
 };
 
-// List of available sectors.
-export const fetchSectors = async () => {
-  const res = await authFetch(`${BASE}/rating/sectors`);
-  return res.json();
-};

@@ -14,3 +14,14 @@ class UpdateContentController:
 class ReorderContentController:
     def reorder_section(self, section: str, ordered_ids: list):
         return ContentManagement.reorder_section(section, ordered_ids)
+
+
+class CreateContentController:
+    def create(self, section: str, title: str, description: str = "",
+               image_url: str | None = None, video_url: str | None = None):
+        return ContentManagement.create(section, title, description, image_url, video_url)
+
+
+class DeleteContentController:
+    def delete(self, content_id: str):
+        return ContentManagement.delete(content_id)

@@ -7,7 +7,6 @@ const UpdateParticularPage = lazy(() => import("./pages/investor/UpdateParticula
 const ProfileSetupPage = lazy(() => import("./pages/investor/ProfileSetupPage.jsx"));
 const RegistrationPage = lazy(() => import("./pages/user/RegistrationPage.jsx"));
 const LoginPage = lazy(() => import("./pages/user/LoginPage.jsx"));
-const ForgotPasswordPage = lazy(() => import("./pages/user/ForgotPasswordPage.jsx"));
 const HomePage = lazy(() => import("./pages/user/Homepage.jsx"));
 const AboutUsPage = lazy(() => import("./pages/user/AboutUsPage.jsx"));
 const SupportPage = lazy(() => import("./pages/user/SupportPage.jsx"));

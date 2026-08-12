@@ -62,18 +62,3 @@ export async function getConversationGifts(otherUserId) {
 export async function getReceivedGifts() {
   return toJson(await authFetch(`${API}/wallet/gifts/received`));
 }
-
-/* ── Admin revenue ──────────────────────────────────────────
- * Revenue reporting lives on the existing admin panel
- * (Subscription Management), not a separate finance role.
- */
-
-export async function getRevenueByMonth(months = 6) {
-  return toJson(await authFetch(`${API}/admin/revenue-by-month?months=${months}`));
-}
-
-export async function getRevenueLedger({ source, limit = 100 } = {}) {
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (source) params.set("source", source);
-  return toJson(await authFetch(`${API}/admin/revenue-ledger?${params}`));
-}

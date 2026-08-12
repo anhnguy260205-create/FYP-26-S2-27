@@ -81,6 +81,12 @@ function DropDownMenu() {
       <button onClick={() => navigate("/support")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
         Help Center
       </button>
+      <button onClick={() => navigate("/terms-of-service")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Terms of Service
+      </button>
+      <button onClick={() => navigate("/privacy-policy")} className="w-full text-left px-5 py-3 text-gray-300 hover:bg-white/5 hover:text-cyan-400">
+        Privacy Policy
+      </button>
       <div className="border-t border-white/10" />
       <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-red-400 hover:bg-red-500/10">
         Logout

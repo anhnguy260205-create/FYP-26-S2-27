@@ -192,7 +192,6 @@ function UserAccountsPage() {
                 <th className="px-5 py-4">Role</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Join Date</th>
-
                 <th className="px-5 py-4">Last Active</th>
                 <th className="px-5 py-4">Actions</th>
               </tr>

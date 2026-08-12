@@ -3,12 +3,15 @@ import { ShieldCheck } from "lucide-react";
 
 import RoleHeader from "../../layout/RoleHeader.jsx";
 import Footer from "../../layout/Footer.jsx";
+import { useLandingContent } from "../../api/contentApi.js";
 
 const LAST_UPDATED = "August 10, 2026";
 const ENTITY_NAME = "Rocket Trade Pte. Ltd."; // TODO: replace with your registered entity name once incorporated
 const CONTACT_EMAIL = "kimanh.work26@gmail.com";
 
-const SECTIONS = [
+const DEFAULT_INTRO = `${ENTITY_NAME} ("we", "us", "the Platform") respects your privacy. This Privacy Policy describes how we collect, use, protect, and disclose personal data when you use our paper trading and market-education platform, in accordance with the Personal Data Protection Act 2012 of Singapore.`;
+
+const DEFAULT_SECTIONS = [
   {
     title: "1. About This Policy",
     body: [
@@ -135,6 +138,22 @@ const SECTIONS = [
 ];
 
 function PrivacyPolicyPage() {
+  const content = useLandingContent();
+  const c = content ?? [];
+  const privacyItems = c.filter((x) => x.section === "privacy_policy");
+  const sections = privacyItems.length
+    ? privacyItems.map((item) => ({ title: item.title, body: (item.description || "").split("\n\n") }))
+    : DEFAULT_SECTIONS;
+  const intro = c.find((x) => x.content_id === "privacy_intro")?.description || DEFAULT_INTRO;
+  const lastUpdated = c.find((x) => x.content_id === "privacy_last_updated")?.title || LAST_UPDATED;
+  const heroItem = c.find((x) => x.content_id === "privacy_hero");
+  const heroTitle = heroItem?.title || "Privacy Policy";
+  const heroSubtitle = heroItem?.description || "This policy explains what personal data Rocket Trade collects, how we use it, and the rights you have under Singapore's Personal Data Protection Act.";
+  // Gradient-highlight the last word of the heading, matching the page's original two-tone style.
+  const heroWords = heroTitle.trim().split(" ");
+  const heroLead = heroWords.slice(0, -1).join(" ");
+  const heroHighlight = heroWords[heroWords.length - 1] || "";
+
   return (
     <motion.div
       className="min-h-screen bg-white"
@@ -151,16 +170,16 @@ function PrivacyPolicyPage() {
             LEGAL
           </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-            Privacy{" "}
+            {heroLead ? `${heroLead} ` : ""}
             <span className="bg-linear-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-              Policy
+              {heroHighlight}
             </span>
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-            This policy explains what personal data Rocket Trade collects, how we use it, and the rights you have under Singapore's Personal Data Protection Act.
+            {heroSubtitle}
           </p>
           <p className="mt-3 text-xs font-medium tracking-wide text-slate-400">
-            Last updated: {LAST_UPDATED} · Compliant with the PDPA (Singapore)
+            Last updated: {lastUpdated} · Compliant with the PDPA (Singapore)
           </p>
         </div>
       </section>
@@ -168,11 +187,11 @@ function PrivacyPolicyPage() {
       <main className="mx-auto w-full max-w-4xl px-5 py-14 md:px-8 md:py-20">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md md:p-10">
           <p className="mb-8 text-sm leading-7 text-slate-600">
-            {ENTITY_NAME} ("we", "us", "the Platform") respects your privacy. This Privacy Policy describes how we collect, use, protect, and disclose personal data when you use our paper trading and market-education platform, in accordance with the Personal Data Protection Act 2012 of Singapore.
+            {intro}
           </p>
 
           <div className="space-y-10">
-            {SECTIONS.map((section) => (
+            {sections.map((section) => (
               <section key={section.title}>
                 <h2 className="mb-3 text-lg font-semibold text-slate-800 md:text-xl">
                   {section.title}

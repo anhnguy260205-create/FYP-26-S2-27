@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Edit, Check, X, GripVertical, Eye, ChevronDown,
-  Rocket, ShieldCheck, Sparkles, Award,
+  Rocket, ShieldCheck, ScrollText, Sparkles, Award,
   PlayCircle, ListChecks, HelpCircle, CreditCard, Link2,
   LayoutDashboard, Wallet, GraduationCap,
   BrainCircuit, MessagesSquare, Bot, MessageCircleQuestion,
@@ -279,7 +279,7 @@ const INVESTOR_PAGES_SUBTABS = [
 const INVESTOR_SETUP_SUBTABS = [
   {
     key: "update_particular_page", label: "Complete Profile", icon: Users, kind: "generic", preview: "update_particular_page",
-    headerId: null, itemsSection: "update_particular_page",
+    headerId: null, itemsSection: "update_particular_page", noAdd: true,
     hint: "Controls the profile setup screen new investors see after signing up. Keep “{username}” in the heading because it is replaced with the real username."
   },
   {
@@ -421,6 +421,24 @@ const MAIN_TABS = [
   { key: "about_us", label: "About Us", icon: Sparkles, subtabs: ABOUT_US_SUBTABS },
   { key: "help_center", label: "Help Center", icon: HelpCircle, subtabs: HELP_CENTER_SUBTABS },
   {
+    key: "terms", label: "Terms of Service", icon: ScrollText, kind: "generic", preview: "legal_hero",
+    headerId: "tos_hero", itemsSection: "terms_of_service", itemsLabel: "Numbered sections",
+    extraIds: [
+      { id: "tos_intro", label: "Introduction paragraph (below the hero)" },
+      { id: "tos_last_updated", label: "\"Last updated\" date shown on the page" },
+    ],
+    hint: "Controls the hero heading/subtitle, the introduction paragraph, the \"Last updated\" date, and every numbered section on the Terms of Service page. In the hero heading, only the last word gets the gradient highlight colour.",
+  },
+  {
+    key: "privacy", label: "Privacy Policy", icon: ShieldCheck, kind: "generic", preview: "legal_hero",
+    headerId: "privacy_hero", itemsSection: "privacy_policy", itemsLabel: "Numbered sections",
+    extraIds: [
+      { id: "privacy_intro", label: "Introduction paragraph (below the hero)" },
+      { id: "privacy_last_updated", label: "\"Last updated\" date shown on the page" },
+    ],
+    hint: "Controls the hero heading/subtitle, the introduction paragraph, the \"Last updated\" date, and every numbered section on the Privacy Policy page. In the hero heading, only the last word gets the gradient highlight colour.",
+  },
+  {
     key: "footer", label: "Footer", icon: Link2, kind: "footer",
     hint: "Controls the footer brand text, supporting tagline, and footer links displayed across the platform."
   },
@@ -431,7 +449,7 @@ const ORDERABLE_SECTIONS = new Set([
   "why_investor", "platform_features", "expert_role_benefits",
   "get_started_steps", "faq",
   "free_investor", "premium_investor",
-  "footer_product", "footer_company", "footer_resources", "footer_contact",
+  "footer_product", "footer_company", "footer_contact",
   "investor_home_features", "investor_home_dashboard", "expert_tools", "forum_topics",
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "become_expert_page", "transaction_history_page", "investor_profile_page",
@@ -443,16 +461,18 @@ const DESCRIPTION_SECTIONS = new Set([
   "hero", "page_headers",
   "why_investor", "platform_features", "expert_role_benefits",
   "get_started_steps", "faq",
-  "footer_brand", "footer_product", "footer_company", "footer_resources", "footer_contact",
+  "footer_brand", "footer_product", "footer_company", "footer_contact",
   "investor_home_features", "investor_home_dashboard", "expert_tools", "forum_page", "forum_topics",
   "expert_compensation_page", "expert_documents_page", "expert_knowledge_page", "expert_portfolio_page", "expert_detail_page",
   "investor_banner_basic", "investor_banner_premium",
   "about_values", "about_team", "help_faqs",
   "expert_home_features",
+  "terms_of_service", "privacy_policy",
 ]);
 
 const DESCRIPTION_CONTENT_IDS = new Set([
   "help_faq_header",
+  "tos_intro", "privacy_intro",
 ]);
 
 const LONG_TITLE_CONTENT_IDS = new Set([
@@ -509,6 +529,41 @@ function HeroPreview({ title, description, ctaPrimary, ctaSecondary, imageUrl })
 }
 
 
+
+function LegalHeroPreview({ title, description, items, icon: Icon = ShieldCheck }) {
+  const words = (title || "Page Title").trim().split(" ");
+  const lead = words.slice(0, -1).join(" ");
+  const highlight = words[words.length - 1] || "";
+  return (
+    <div className="bg-white">
+      <div className="relative overflow-hidden text-center py-9 px-6" style={{ background: "linear-gradient(to bottom right, #020617, #172554, #0f172a)" }}>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/5 px-3 py-1 mb-4 text-[9px] font-bold tracking-wide text-cyan-300 uppercase">
+          <Icon size={10} /> Legal
+        </span>
+        <p className="text-xl font-extrabold leading-tight mb-2 text-white">
+          {lead ? `${lead} ` : ""}
+          <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, #22d3ee, #60a5fa)" }}>
+            {highlight}
+          </span>
+        </p>
+        <p className="text-slate-400 text-xs">{description || "Your subtitle goes here"}</p>
+      </div>
+      {items && items.length > 0 && (
+        <div className="p-4 space-y-2">
+          {items.slice(0, 3).map((item) => (
+            <div key={item.content_id} className="rounded-lg bg-slate-50 border border-slate-200 p-3">
+              <p className="text-[10px] font-bold text-slate-700">{item.title}</p>
+              {item.description && <p className="text-[9px] text-slate-500 mt-0.5 line-clamp-2">{item.description}</p>}
+            </div>
+          ))}
+          {items.length > 3 && (
+            <p className="text-[9px] text-slate-400 text-center pt-1">+ {items.length - 3} more section{items.length - 3 !== 1 ? "s" : ""}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SimplePagePreview({ heading, description, items }) {
   return (
@@ -1517,7 +1572,7 @@ function FooterCol({ label, items }) {
   );
 }
 
-function FooterPreview({ brand, brandTagline, version, product, company, resources, contact }) {
+function FooterPreview({ brand, brandTagline, version, product, company, contact }) {
   return (
     <div className="p-6" style={{ background: "#0B1D4F" }}>
       <div className="flex items-center gap-1.5 mb-1">
@@ -1528,7 +1583,6 @@ function FooterPreview({ brand, brandTagline, version, product, company, resourc
       <div className="grid grid-cols-4 gap-3">
         <FooterCol label="Product" items={product} />
         <FooterCol label="Company" items={company} />
-        <FooterCol label="Resources" items={resources} />
         <FooterCol label="Contact" items={contact} />
       </div>
     </div>
@@ -1598,6 +1652,48 @@ function ContentManagementPage() {
     }
   };
 
+  const addItem = async (section) => {
+    setSaving(true);
+    try {
+      const res = await authFetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section, title: "New item", description: "" }),
+      });
+      const data = await res.json();
+      if (data.success && data.content) {
+        setContent((prev) => [...prev, data.content]);
+        setEditing(data.content.content_id);
+        setForm({ title: data.content.title, description: data.content.description || "", image_url: "", video_url: "" });
+      } else {
+        alert(data.message || "Failed to add item");
+      }
+    } catch {
+      alert("Failed to add item");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteItem = async (content_id) => {
+    if (!window.confirm("Remove this item? This can't be undone.")) return;
+    setSaving(true);
+    try {
+      const res = await authFetch(`${API}/${content_id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setContent((prev) => prev.filter((c) => c.content_id !== content_id));
+        if (editing === content_id) setEditing(null);
+      } else {
+        alert(data.message || "Failed to remove item");
+      }
+    } catch {
+      alert("Failed to remove item");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Drag-and-drop reordering
   const reorderSection = async (section, orderedIds) => {
     const res = await authFetch(`${API}/section/${section}/reorder`, {
@@ -1641,7 +1737,6 @@ function ContentManagementPage() {
   const footerBrand = bySection("footer_brand");
   const footerProduct = bySection("footer_product");
   const footerCompany = bySection("footer_company");
-  const footerResources = bySection("footer_resources");
   const footerContact = bySection("footer_contact");
 
   const currentMainTab = MAIN_TABS.find((t) => t.key === activeMainTab);
@@ -1649,7 +1744,7 @@ function ContentManagementPage() {
     ? currentMainTab.subtabs.find((t) => t.key === activeSubTab)
     : currentMainTab;
 
-  const renderRow = (item, list) => {
+  const renderRow = (item, list, removable = false) => {
     const isEditing = editing === item.content_id;
     const orderable = ORDERABLE_SECTIONS.has(item.section) && list.length > 1;
     const isDragOver = orderable && dragOverId === item.content_id && dragId !== item.content_id;
@@ -1693,12 +1788,13 @@ function ContentManagementPage() {
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">
                   {["hero", "page_headers"].includes(item.section) ? "SUBTITLE"
-                    : ["footer_product", "footer_company", "footer_resources", "footer_contact"].includes(item.section) ? "URL"
+                    : ["footer_product", "footer_company", "footer_contact"].includes(item.section) ? "URL"
                       : ["faq", "help_faqs"].includes(item.section) ? "ANSWER"
                         : item.section === "about_team" ? "INITIALS"
-                          : "DESCRIPTION"}
+                          : DESCRIPTION_CONTENT_IDS.has(item.content_id) || ["terms_of_service", "privacy_policy"].includes(item.section) ? "SECTION TEXT"
+                            : "DESCRIPTION"}
                 </label>
-                {["help_faqs", "about_values"].includes(item.section) ? (
+                {["help_faqs", "about_values", "terms_of_service", "privacy_policy"].includes(item.section) || DESCRIPTION_CONTENT_IDS.has(item.content_id) ? (
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -1832,10 +1928,18 @@ function ContentManagementPage() {
                 )}
               </div>
             </div>
-            <button onClick={() => startEdit(item)}
-              className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm shrink-0">
-              <Edit size={13} /> Edit
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => startEdit(item)}
+                className="flex items-center gap-1 border border-blue-500 text-blue-600 px-3 py-1.5 rounded text-sm">
+                <Edit size={13} /> Edit
+              </button>
+              {removable && (
+                <button onClick={() => deleteItem(item.content_id)}
+                  className="flex items-center gap-1 border border-red-300 text-red-600 px-3 py-1.5 rounded text-sm">
+                  <X size={13} /> Remove
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1883,7 +1987,6 @@ function ContentManagementPage() {
             version={liveItem(byId("footer_version"))?.title}
             product={liveList(footerProduct)}
             company={liveList(footerCompany)}
-            resources={liveList(footerResources)}
             contact={liveList(footerContact)}
           />
         </PreviewFrame>
@@ -1900,6 +2003,9 @@ function ContentManagementPage() {
       }
       if (tab.preview === "text_only") {
         return <PreviewFrame label={tab.label}><TextPreview title={heading} ctaLabel={tab.ctaId ? liveItem(byId(tab.ctaId))?.title : null} /></PreviewFrame>;
+      }
+      if (tab.preview === "legal_hero") {
+        return <PreviewFrame label={tab.label}><LegalHeroPreview title={heading} description={description} items={items} icon={tab.key === "privacy" ? ShieldCheck : ScrollText} /></PreviewFrame>;
       }
       if (tab.preview === "section_header") {
         return <PreviewFrame label={tab.label}><SectionHeaderPreview title={heading} ctaLabel={tab.ctaId ? liveItem(byId(tab.ctaId))?.title : null} /></PreviewFrame>;
@@ -2170,7 +2276,7 @@ function ContentManagementPage() {
                         ? <p className="text-slate-400 text-sm">No content found for this section.</p>
                         : bySection(activeTabInfo.itemsSection).map((item, idx) => (
                           <div key={item.content_id}>
-                            {renderRow(item, bySection(activeTabInfo.itemsSection))}
+                            {renderRow(item, bySection(activeTabInfo.itemsSection), !activeTabInfo.perCardBadgeSection && !activeTabInfo.perCardCtaSection)}
                             {activeTabInfo.perCardBadgeSection && bySection(activeTabInfo.perCardBadgeSection)[idx] && (
                               <div className="ml-4 mt-1.5 pl-3 border-l-2 border-slate-100">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Badge for this card</p>
@@ -2192,6 +2298,12 @@ function ContentManagementPage() {
                           </div>
                         ))
                       }
+                      {!activeTabInfo.perCardBadgeSection && !activeTabInfo.perCardCtaSection && !activeTabInfo.noAdd && (
+                        <button onClick={() => addItem(activeTabInfo.itemsSection)} disabled={saving}
+                          className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                          <Plus size={14} /> Add item
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2270,8 +2382,12 @@ function ContentManagementPage() {
                     <div className="space-y-3">
                       {freeItems.length === 0
                         ? <p className="text-slate-400 text-sm">No free features found.</p>
-                        : freeItems.map((item) => renderRow(item, freeItems))
+                        : freeItems.map((item) => renderRow(item, freeItems, true))
                       }
+                      <button onClick={() => addItem("free_investor")} disabled={saving}
+                        className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                        <Plus size={14} /> Add feature
+                      </button>
                     </div>
                   </div>
 
@@ -2337,8 +2453,12 @@ function ContentManagementPage() {
                     <div className="space-y-3">
                       {premiumItems.length === 0
                         ? <p className="text-slate-400 text-sm">No premium features found.</p>
-                        : premiumItems.map((item) => renderRow(item, premiumItems))
+                        : premiumItems.map((item) => renderRow(item, premiumItems, true))
                       }
+                      <button onClick={() => addItem("premium_investor")} disabled={saving}
+                        className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                        <Plus size={14} /> Add feature
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2362,27 +2482,36 @@ function ContentManagementPage() {
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Product Links</p>
                   <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-                  <div className="space-y-3">{footerProduct.map((item) => renderRow(item, footerProduct))}</div>
+                  <div className="space-y-3">
+                    {footerProduct.map((item) => renderRow(item, footerProduct, true))}
+                    <button onClick={() => addItem("footer_product")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add link
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Company Links</p>
                   <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
-                  <div className="space-y-3">{footerCompany.map((item) => renderRow(item, footerCompany))}</div>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Resources Links</p>
-                  <p className="text-xs text-slate-400 mb-2">Title = link label &nbsp;·&nbsp; Description = URL</p>
                   <div className="space-y-3">
-                    {footerResources.length === 0
-                      ? <p className="text-slate-400 text-sm">No content found for this section.</p>
-                      : footerResources.map((item) => renderRow(item, footerResources))
-                    }
+                    {footerCompany.map((item) => renderRow(item, footerCompany, true))}
+                    <button onClick={() => addItem("footer_company")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add link
+                    </button>
                   </div>
                 </div>
+
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contact</p>
                   <p className="text-xs text-slate-400 mb-2">For links: Title = label, Description = URL. For email: leave Description empty.</p>
-                  <div className="space-y-3">{footerContact.map((item) => renderRow(item, footerContact))}</div>
+                  <div className="space-y-3">
+                    {footerContact.map((item) => renderRow(item, footerContact, true))}
+                    <button onClick={() => addItem("footer_contact")} disabled={saving}
+                      className="flex items-center gap-1 border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 px-3 py-2 rounded-lg text-sm w-full justify-center">
+                      <Plus size={14} /> Add item
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
