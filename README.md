@@ -1,10 +1,19 @@
+- Clone Repository:
+  + git clone "https://github.com/anhnguy260205-create/FYP-26-S2-27"
+- Please install:
+  + Python
+  + Node.js and npm
+  + MySQL Server
+  + MySQL Workbench
 - Download MySQL workbench: https://dev.mysql.com/downloads/workbench/ 
 - SQL Root Password: stock123
 - run backend, run those comments in a terminal:
   + cd backend
+  + pip install -r requirements.txt
   + uvicorn app.main:app --reload
 - run frontend, open new terminal to run:
   + cd frontend
+  + npm install
   + npm run dev
 - app link: http://localhost:5173/
 - Operation Admin account:
