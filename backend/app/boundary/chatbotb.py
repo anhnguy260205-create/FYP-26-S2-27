@@ -10,19 +10,19 @@ from app.control.services.rate_limit import limiter
 from app.entity.models.chatusage import ChatUsage
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
-# Message format used by the chatbot
+# message format used by the chatbot
 class ChatMessage(BaseModel):
     role: str
     content: str
-# Request data sent to the chatbot
+# request data sent to the chatbot
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     system: Optional[str] = None
-# Clean up the chatbot response before sending it back
+# clean up the chatbot response before sending it back
 def sanitize_reply(reply: str) -> str:
     if not reply:
         return reply
-    # Remove plan-related wording from the response
+    # remove plan-related wording from the response
     replacements = {
         "since I'm a Basic plan user, ": "",
         "Since I'm a Basic plan user, ": "",
@@ -43,10 +43,9 @@ def sanitize_reply(reply: str) -> str:
     for old, new in replacements.items():
         cleaned = cleaned.replace(old, new)
 
-    # Remove markdown bold markers
+    # remove markdown bold markers
     cleaned = cleaned.replace("**", "")
 
-    # Keep paragraph spacing tidy without crushing bullet lists.
     lines = [line.rstrip() for line in cleaned.splitlines()]
     compact = []
     blank_seen = False
@@ -60,7 +59,7 @@ def sanitize_reply(reply: str) -> str:
             blank_seen = False
 
     return "\n".join(compact).strip()
-# Send a message to the AI chatbot
+# send a message to the AI chatbot
 @router.post("/chat")
 @limiter.limit("15/minute")
 async def chat(
@@ -68,20 +67,21 @@ async def chat(
     data: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    # Check the user's chatbot usage limit. All user roles got unlimited chances
-    # Except basic investors only got 3 chances
-    quota = ChatUsage.check(current_user["user_id"])
-    if not quota["allowed"]:
+    # check the user's chatbot usage limit and claim a slot atomically
+    # all user roles get unlimited chances except basic investors, who only get 3
+    reservation = ChatUsage.reserve(current_user["user_id"])
+    if not reservation["allowed"]:
         return JSONResponse(status_code=403, content={
             "success": False,
             "limit_reached": True,
-            "questions_used": quota["questions_used"],
-            "questions_limit": quota["limit"],
+            "questions_used": reservation["questions_used"],
+            "questions_limit": reservation["limit"],
             "message": "Free chatbot limit reached. Upgrade to Premium for unlimited AI chat.",
         })
-    #Get the Groq API key from the environment
+    #get Groq API key from the environment
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
+        ChatUsage.release(reservation["usage_id"])
         return JSONResponse(status_code=500, content={"detail": "GROQ_API_KEY not configured."})
 
     try:
@@ -99,19 +99,21 @@ async def chat(
             top_p=0.9,
             messages=msgs,
         )
-        # Record the question after a successful response
-        usage = ChatUsage.record_question(current_user["user_id"])
+        # slot was already reserved before calling Groq, just report it
         return {
             "reply": sanitize_reply(response.choices[0].message.content),
-            "questions_used": usage["questions_used"],
-            "questions_limit": usage["limit"],
+            "questions_used": reservation["questions_used"],
+            "questions_limit": reservation["limit"],
         }
 
     except Exception as e:
+        # Groq call failed, release the slot so it doesn't cost a free question
+        ChatUsage.release(reservation["usage_id"])
+
         message = str(e)
         lowered = message.lower()
         status_code = getattr(e, "status_code", None) or getattr(e, "status", None)
-        # Handle rate limit errors separately
+        # handle rate limit errors separately
         if status_code == 429 or "rate limit" in lowered or "rate_limit" in lowered or "429" in lowered:
             return JSONResponse(
                 status_code=429,
@@ -129,7 +131,26 @@ async def chat(
             },
         )
 
-# Get the user's chatbot usage
+# get the user's chatbot usage
 @router.get("/usage")
 def chat_usage(current_user: dict = Depends(get_current_user)):
     return {"success": True, **ChatUsage.get_usage(current_user["user_id"])}
+
+# claim 1 free-question slot for a reply the frontend builds locally instead of calling Groq
+# without this, local replies never touched ChatUsage so they were free and unlimited
+@router.post("/reserve")
+def reserve_local_reply(current_user: dict = Depends(get_current_user)):
+    reservation = ChatUsage.reserve(current_user["user_id"])
+    if not reservation["allowed"]:
+        return JSONResponse(status_code=403, content={
+            "success": False,
+            "limit_reached": True,
+            "questions_used": reservation["questions_used"],
+            "questions_limit": reservation["limit"],
+            "message": "Free chatbot limit reached. Upgrade to Premium for unlimited AI chat.",
+        })
+    return {
+        "success": True,
+        "questions_used": reservation["questions_used"],
+        "questions_limit": reservation["limit"],
+    }
