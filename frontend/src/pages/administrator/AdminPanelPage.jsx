@@ -45,10 +45,10 @@ function AdminPanelPage() {
   }, [signupDays]);
 
   const statCards = [
-    { title: "Total Investors", value: stats.total_users, icon: <Users size={24} />, color: "text-blue-600", bg: "bg-blue-50" },
+    { title: "Total Users", value: stats.total_users, icon: <Users size={24} />, color: "text-blue-600", bg: "bg-blue-50" },
     { title: "Basic Investors", value: stats.total_basic, icon: <Users size={24} />, color: "text-indigo-600", bg: "bg-indigo-50" },
     { title: "Premium Investors", value: stats.total_premium, icon: <Star size={24} />, color: "text-purple-600", bg: "bg-purple-50" },
-    { title: "Total Users", value: stats.total_experts, icon: <BookOpen size={24} />, color: "text-green-600", bg: "bg-green-50" },
+    { title: "Total Experts", value: stats.total_experts, icon: <BookOpen size={24} />, color: "text-green-600", bg: "bg-green-50" },
   ];
 
   return (
