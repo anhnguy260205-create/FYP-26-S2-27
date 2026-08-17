@@ -3,7 +3,7 @@ import useLiveStocks from "../api/useLiveStocks.js";
 import { SYMBOLS, COMPANY_NAMES, getLatestStockSnapshot } from "../utils/stockSnapshot.js";
 import { authFetch } from "../api/apiClient.js";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const CHAT_STORAGE_VERSION = "chatbot-session-reset-v2";
 const CHAT_VERSION_KEY = "rocketTradeAiChatVersion";
@@ -313,7 +313,7 @@ Tell me your risk level and time horizon, and I’ll help you build a research c
 Educational only, not financial advice.`;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 function buildStockContext(liveStocks, liveCandles) {
     const lines = SYMBOLS.map(sym => {
@@ -473,21 +473,21 @@ function toAssistantMessage(reply) {
     };
 }
 
-// Used by both the full AIChatbot page and the floating ChatWidget so they share
-// one implementation (and, via sessionStorage, the same conversation history).
+// used by both the full AIChatbot page and the floating ChatWidget so they share 1 implementation
 export function useAIChatSession() {
     const stockContext = useLiveStocks() || {};
     const liveStocks = stockContext.stocks || {};
     const liveCandles = stockContext.candles || {};
     const bottomRef = useRef(null);
     const abortRef = useRef(null);
+    const sendingRef = useRef(false);
 
     const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser") || "null");
     const chatStorageKey = getChatStorageKey(currentUser);
     const activeUserKey = currentUser?.user_id || currentUser?.id || currentUser?.username || currentUser?.email || "guest";
 
-    // One-time cleanup for older chatbot versions so stale history from previous patches disappears.
-    // Also start clean if a different account opens the chatbot in the same browser session.
+    // one-time cleanup for older chatbot versions so stale history from previous patches disappears
+    // also start clean if a different account opens the chatbot in the same browser session
     try {
         const savedVersion = sessionStorage.getItem(CHAT_VERSION_KEY);
         const previousActiveUser = sessionStorage.getItem(CHAT_ACTIVE_USER_KEY);
@@ -537,7 +537,8 @@ export function useAIChatSession() {
 
     const sendMessage = useCallback(async (text) => {
         const trimmed = (text ?? input).trim();
-        if (!trimmed || loading) return;
+        if (!trimmed || loading || sendingRef.current) return;
+        sendingRef.current = true;
 
         if (isEndChatRequest(trimmed)) {
             abortRef.current?.abort();
@@ -548,6 +549,7 @@ export function useAIChatSession() {
             setError(null);
             setLoading(false);
             setMessages([makeWelcomeMessage(currentUser)]);
+            sendingRef.current = false;
             return;
         }
 
@@ -567,6 +569,7 @@ export function useAIChatSession() {
             window.setTimeout(() => {
                 setMessages(prev => [...prev, limitMsg]);
                 setLoading(false);
+                sendingRef.current = false;
             }, 200);
             return;
         }
@@ -578,15 +581,40 @@ export function useAIChatSession() {
                 : null;
 
         if (localReply) {
+            // local reply skips Groq but still counts as 1 free question, so claim a slot first
+            try {
+                const res = await authFetch(`${import.meta.env.VITE_API_URL}/chatbot/reserve`, { method: "POST" });
+                const data = await res.json().catch(() => ({}));
+
+                if (data?.limit_reached) {
+                    setChatUsage({ premium: false, questions_used: data.questions_used, limit: data.questions_limit });
+                    const limitMsg = toAssistantMessage({
+                        content: data.message || `You've used your ${data.questions_limit} free chatbot questions. Upgrade to Premium for unlimited AI chat.`,
+                        cta: { route: "/investor/subscription", label: "Upgrade to Premium" },
+                    });
+                    setMessages(prev => [...prev, limitMsg]);
+                    setLoading(false);
+                    sendingRef.current = false;
+                    return;
+                }
+
+                if (data.questions_used != null) {
+                    setChatUsage({ premium: false, questions_used: data.questions_used, limit: data.questions_limit });
+                }
+            } catch {
+                // reserve call failed, still answer locally instead of blocking on a network hiccup
+            }
+
             const assistantMsg = toAssistantMessage(localReply);
             window.setTimeout(() => {
                 setMessages(prev => [...prev, assistantMsg]);
                 setLoading(false);
+                sendingRef.current = false;
             }, 250);
             return;
         }
 
-        // Build history for API (exclude system-level welcome if desired)
+        // build history for API
         const history = nextMessages.map(m => ({ role: m.role, content: cleanChatHistoryText(m.content) }));
         const stockCtx = buildStockContext(liveStocks, liveCandles);
         const systemPrompt = buildSystemPrompt(currentUser, stockCtx);
@@ -642,6 +670,7 @@ export function useAIChatSession() {
             setMessages(prev => [...prev, { role: "assistant", content: friendlyReply }]);
         } finally {
             setLoading(false);
+            sendingRef.current = false;
         }
     }, [input, loading, messages, liveStocks, liveCandles, currentUser, chatLimitReached, chatUsage]);
 
