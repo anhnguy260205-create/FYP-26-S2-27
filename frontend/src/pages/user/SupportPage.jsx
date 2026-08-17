@@ -18,6 +18,8 @@ import Footer from "../../layout/Footer.jsx";
 import helpCenterImg from "../../images/help_center.jpg";
 import { fillTemplate, useContentManagement } from "../../utils/contentManagement.js";
 
+const FAQS_PER_CATEGORY = 3;
+
 const CATEGORIES_FALLBACK = [
   {
     title: "Account & Login",
@@ -195,20 +197,27 @@ function SupportPage() {
   const [heroPlain, heroAccent] = hero.title.includes("|") ? hero.title.split("|") : ["", hero.title];
 
   const categoryItems = cms.section("help_categories");
-  const categories = CATEGORIES_FALLBACK.map((fallback, i) => ({
-    ...fallback,
-    title: categoryItems[i]?.title ?? fallback.title,
+  const categorySource = categoryItems.length ? categoryItems : CATEGORIES_FALLBACK;
+  const categories = categorySource.map((item, i) => ({
+    title: item.title,
+    icon: CATEGORIES_FALLBACK[i]?.icon || CircleHelp,
   }));
 
-  // Each category owns three FAQ rows by position. This keeps the internal
-  // relationship stable while allowing admins to rename category labels
-  // without breaking filtering or search.
+  // Each category owns FAQS_PER_CATEGORY rows by position. This keeps the
+  // internal relationship stable while allowing admins to rename category
+  // labels without breaking filtering or search. Rows added beyond the
+  // original set fall under the last category — drag-reorder them into the
+  // right group-of-three slot to file them under an earlier category.
   const faqItems = cms.section("help_faqs");
-  const faqs = FAQS_FALLBACK.map((fallback, i) => ({
-    category: categories[Math.floor(i / 3)]?.title ?? fallback.category,
-    question: faqItems[i]?.title ?? fallback.question,
-    answer: faqItems[i]?.description ?? fallback.answer,
-  }));
+  const faqSource = faqItems.length ? faqItems : FAQS_FALLBACK;
+  const faqs = faqSource.map((item, i) => {
+    const categoryIndex = Math.min(categories.length - 1, Math.floor(i / FAQS_PER_CATEGORY));
+    return {
+      category: categories[categoryIndex]?.title ?? item.category ?? "",
+      question: item.title ?? item.question,
+      answer: item.description ?? item.answer,
+    };
+  });
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");

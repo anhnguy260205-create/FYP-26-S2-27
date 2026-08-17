@@ -59,6 +59,12 @@ function AboutUsPage() {
   const teamRole = cms.text("about_team_role", "ROCKET TRADE TEAM").title;
   const valueItems = cms.section("about_values");
   const teamItems = cms.section("about_team");
+  const displayedValues = valueItems.length
+    ? valueItems
+    : values.map((v) => ({ content_id: v.id, title: v.title, description: v.description }));
+  const displayedTeam = teamItems.length
+    ? teamItems
+    : TEAM.map((t) => ({ content_id: t.id, title: t.name, description: t.initials }));
   const heroLines = hero.title.split("\n");
   return (
     <motion.div
@@ -111,15 +117,12 @@ function AboutUsPage() {
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {values.map((fallback, i) => {
-                const item = valueItems[i];
+              {displayedValues.map((item, i) => {
                 const Icon = VALUE_ICONS[i] || ShieldCheck;
-                const title = item?.title ?? fallback.title;
-                const description = item?.description ?? fallback.description;
 
                 return (
                   <article
-                    key={fallback.id}
+                    key={item.content_id}
                     className="min-h-55 rounded-2xl border border-slate-200 bg-white p-6 shadow-md transition duration-300 hover:-translate-y-1.5 hover:border-cyan-400/50 hover:shadow-lg"
                   >
                     <div className="mb-5 grid h-15 w-15 place-items-center rounded-full border border-cyan-400/40 bg-cyan-50 text-cyan-600">
@@ -127,11 +130,11 @@ function AboutUsPage() {
                     </div>
 
                     <h3 className="mb-2 text-lg font-semibold text-slate-800">
-                      {title}
+                      {item.title}
                     </h3>
 
                     <p className="text-sm leading-6 text-slate-600">
-                      {description}
+                      {item.description}
                     </p>
                   </article>
                 );
@@ -157,31 +160,26 @@ function AboutUsPage() {
             </div>
 
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-              {TEAM.map((fallback, i) => {
-                const item = teamItems[i];
-                const name = item?.title ?? fallback.name;
-                const initials = item?.description ?? fallback.initials;
-                return (
-                  <article
-                    key={fallback.id}
-                    className="group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-md transition duration-300 hover:-translate-y-2 hover:border-cyan-400/50 hover:shadow-lg"
-                  >
-                    <div className="relative mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-xl font-bold text-cyan-700 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition duration-300 group-hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]">
-                      {initials}
+              {displayedTeam.map((item) => (
+                <article
+                  key={item.content_id}
+                  className="group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-md transition duration-300 hover:-translate-y-2 hover:border-cyan-400/50 hover:shadow-lg"
+                >
+                  <div className="relative mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full border border-cyan-400/50 bg-linear-to-br from-cyan-500/20 to-blue-600/20 text-xl font-bold text-cyan-700 shadow-[0_0_20px_rgba(34,211,238,0.1)] transition duration-300 group-hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+                    {item.description}
 
-                      <span className="absolute inset-1.25 rounded-full border border-cyan-400/10" />
-                    </div>
+                    <span className="absolute inset-1.25 rounded-full border border-cyan-400/10" />
+                  </div>
 
-                    <h3 className="text-base font-semibold leading-6 text-slate-800">
-                      {name}
-                    </h3>
+                  <h3 className="text-base font-semibold leading-6 text-slate-800">
+                    {item.title}
+                  </h3>
 
-                    <p className="mt-2 text-xs font-medium tracking-wider text-cyan-600">
-                      {teamRole}
-                    </p>
-                  </article>
-                );
-              })}
+                  <p className="mt-2 text-xs font-medium tracking-wider text-cyan-600">
+                    {teamRole}
+                  </p>
+                </article>
+              ))}
             </div>
           </section>
 

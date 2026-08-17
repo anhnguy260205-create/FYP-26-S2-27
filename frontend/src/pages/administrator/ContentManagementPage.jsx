@@ -994,7 +994,7 @@ function AboutValuesPreview({ heading, items, imageUrl }) {
           {(heading || "Our Values").toUpperCase()}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {shown.slice(0, 4).map((item, i) => {
+          {shown.map((item, i) => {
             const Icon = ABOUT_VALUE_ICONS[i] || ShieldCheck;
             return (
               <article key={item.content_id} className="min-h-32 rounded-2xl border border-slate-200 bg-white p-3 shadow-md">
@@ -1054,7 +1054,7 @@ function HelpCategoryRow({ items }) {
 
   return (
     <div className="flex flex-wrap justify-center gap-1.5">
-      {shown.slice(0, 6).map((item, i) => {
+      {shown.map((item, i) => {
         const Icon = HELP_CATEGORY_ICONS[i] || HelpCircle;
         return (
           <div
