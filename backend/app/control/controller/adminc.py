@@ -169,23 +169,35 @@ class AdminUserAccountController:
             session.commit()
             return user.email_address
 
+    def _getRoleCounts(self, session):
+        """Tally accounts by role/tier using the same classification as
+        getUserAccounts — a verified expert always has an underlying
+        Investor row too (for trading + complimentary premium), so counting
+        straight off the Investor table double-counts them as both an
+        Expert and a Premium Investor. This keeps the two in sync."""
+        results = (
+            session.query(UserAccount, Investor, Expert)
+            .outerjoin(Investor, UserAccount.user_id == Investor.user_id)
+            .outerjoin(Expert, UserAccount.user_id == Expert.user_id)
+            .all()
+        )
+        total_basic = total_premium = total_experts = 0
+        for _user_account, investor, expert in results:
+            role, tier = _classify_user(session, investor, expert)
+            if role == "Expert":
+                total_experts += 1
+            elif role == "Investor":
+                if tier == "Premium":
+                    total_premium += 1
+                else:
+                    total_basic += 1
+        return total_basic, total_premium, total_experts
+
     def getDashboardStats(self):
         with get_session() as session:
-            total_users = (
-                session.query(UserAccount)
-                .join(Investor, UserAccount.user_id == Investor.user_id, isouter=True)
-                .join(Expert, UserAccount.user_id == Expert.user_id, isouter=True)
-                .filter((Investor.investor_id != None) | (Expert.expert_id != None))
-                .count()
-            )
-            total_premium = session.query(Investor).filter(
-                Investor.investor_subscription_status == "premium"
-            ).count()
-            total_investors = session.query(Investor).count()
-            total_basic = total_investors - total_premium
-            total_experts = session.query(Expert).count()
+            total_basic, total_premium, total_experts = self._getRoleCounts(session)
             return {
-                "total_users": total_users,
+                "total_users": total_basic + total_premium + total_experts,
                 "total_basic": total_basic,
                 "total_premium": total_premium,
                 "total_experts": total_experts,
@@ -285,12 +297,7 @@ class AdminUserAccountController:
 
     def getUserTypeBreakdown(self):
         with get_session() as session:
-            total_premium = session.query(Investor).filter(
-                Investor.investor_subscription_status == "premium"
-            ).count()
-            total_investors = session.query(Investor).count()
-            total_basic = total_investors - total_premium
-            total_experts = session.query(Expert).count()
+            total_basic, total_premium, total_experts = self._getRoleCounts(session)
 
             breakdown = [
                 {"type": "Basic Investor", "count": total_basic},
