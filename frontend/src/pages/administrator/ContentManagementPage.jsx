@@ -786,7 +786,7 @@ function ForumTopicsPreview({ heading, topics = [] }) {
     <div style={{ background: "linear-gradient(to bottom, #73ADFF 0px, #FFFFFF 130px, #FFFFFF 100%)", padding: 18 }}>
       <ForumSectionHeading icon={<BookOpen size={13} />} label={heading || "Browse by Topic"} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 10 }}>
-        {shown.slice(0, 12).map((topic, index) => (
+        {shown.map((topic, index) => (
           <ForumTopicTile key={topic.content_id || index} topic={topic} count={[6, 4, 9, 3, 2, 5, 7, 1, 2, 4, 3, 2][index] ?? 1} latest={index < 4} />
         ))}
       </div>
@@ -1810,7 +1810,7 @@ function ContentManagementPage() {
                 )}
               </div>
             )}
-            {IMAGE_CONTENT_IDS.has(item.content_id) && (
+            {(IMAGE_CONTENT_IDS.has(item.content_id) || item.section === "forum_topics") && (
               <div>
                 <label className="text-xs font-bold text-slate-400 mb-1 block">HEADER PICTURE</label>
                 <input
@@ -1918,7 +1918,7 @@ function ContentManagementPage() {
                 {item.description && (
                   <p className="text-sm text-slate-500 mt-1">{item.description}</p>
                 )}
-                {item.image_url && IMAGE_CONTENT_IDS.has(item.content_id) && (
+                {item.image_url && (IMAGE_CONTENT_IDS.has(item.content_id) || item.section === "forum_topics") && (
                   <img src={item.image_url} alt="Header preview" className="mt-3 h-20 w-36 rounded-lg object-cover border border-slate-200" />
                 )}
                 {VIDEO_CONTENT_IDS.has(item.content_id) && (

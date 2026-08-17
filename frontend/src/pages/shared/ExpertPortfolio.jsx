@@ -474,6 +474,8 @@ export default function ExpertPortfolio() {
 
                         <div className="flex gap-2">
                             <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page <= 1}
                                 style={{
                                     width: 32,
                                     height: 32,
@@ -481,39 +483,33 @@ export default function ExpertPortfolio() {
                                     background: "transparent",
                                     border: `1px solid ${C.border}`,
                                     color: C.text,
-                                    cursor: "pointer",
+                                    cursor: page <= 1 ? "default" : "pointer",
+                                    opacity: page <= 1 ? 0.4 : 1,
                                 }}
                             >
                                 ◀
                             </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                                <button
+                                    key={n}
+                                    onClick={() => setPage(n)}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        background: n === page ? C.accent : "transparent",
+                                        border: n === page ? "none" : `1px solid ${C.border}`,
+                                        color: n === page ? C.accentText : C.text,
+                                        fontWeight: n === page ? 700 : 400,
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    {n}
+                                </button>
+                            ))}
                             <button
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    background: C.accent,
-                                    border: "none",
-                                    color: C.accentText,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                1
-                            </button>
-                            <button
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    background: "transparent",
-                                    border: `1px solid ${C.border}`,
-                                    color: C.text,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                2
-                            </button>
-                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page >= totalPages}
                                 style={{
                                     width: 32,
                                     height: 32,
@@ -521,20 +517,8 @@ export default function ExpertPortfolio() {
                                     background: "transparent",
                                     border: `1px solid ${C.border}`,
                                     color: C.text,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                3
-                            </button>
-                            <button
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    background: "transparent",
-                                    border: `1px solid ${C.border}`,
-                                    color: C.text,
-                                    cursor: "pointer",
+                                    cursor: page >= totalPages ? "default" : "pointer",
+                                    opacity: page >= totalPages ? 0.4 : 1,
                                 }}
                             >
                                 ▶

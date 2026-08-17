@@ -48,29 +48,6 @@ const ROOM_IMAGES = {
     "Real Estate": imgRealEstate,
 };
 
-const CATEGORIES = [
-    "All", "Technical Analysis", "AI Predictions", "Portfolio Strategy",
-    "Market News", "Beginners Corner", "Trading Tips",
-    "Information Technology", "Financials", "Consumer Discretionary",
-    "Communication Services", "Energy", "Real Estate",
-];
-
-const TOPIC_CONTENT_IDS = [
-    { category: "Technical Analysis", contentId: "forum_topic_technical" },
-    { category: "AI Predictions", contentId: "forum_topic_ai" },
-    { category: "Portfolio Strategy", contentId: "forum_topic_strategy" },
-    { category: "Market News", contentId: "forum_topic_news" },
-    { category: "Beginners Corner", contentId: "forum_topic_beginner" },
-    { category: "Trading Tips", contentId: "forum_topic_trading" },
-    { category: "Information Technology", contentId: "forum_topic_it" },
-    { category: "Financials", contentId: "forum_topic_financials" },
-    { category: "Consumer Discretionary", contentId: "forum_topic_consumer" },
-    { category: "Communication Services", contentId: "forum_topic_communication" },
-    { category: "Energy", contentId: "forum_topic_energy" },
-    { category: "Real Estate", contentId: "forum_topic_real_estate" },
-];
-
-
 // ── Design tokens ─────────────────────────────────────────────────────────────
 // accent matches the site brand cyan used in GeneralHeader nav highlights —
 // keep this as the single accent instead of inventing a second blue here.
@@ -401,16 +378,14 @@ export default function ForumPage() {
         latestCta: text("forum_latest_cta", "See all →").title,
     };
     const topicRows = section("forum_topics");
-    const topicById = Object.fromEntries(topicRows.map((topic) => [topic.content_id, topic]));
-    const forumTopics = TOPIC_CONTENT_IDS.map(({ category, contentId }) => {
-        const item = topicById[contentId];
-        return {
-            category,
-            title: item?.title || category,
-            description: item?.description || "",
-            imageUrl: item?.image_url || ROOM_IMAGES[category] || "",
-        };
-    });
+    // Every live Content Management "Forum Topics" row becomes a browsable
+    // room and a postable category — not just the originally-seeded ones.
+    const forumTopics = topicRows.map((item) => ({
+        category: item.title,
+        title: item.title,
+        description: item.description || "",
+        imageUrl: item.image_url || ROOM_IMAGES[item.title] || "",
+    }));
 
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -725,6 +700,7 @@ export default function ForumPage() {
                     onCreate={handleCreate}
                     creating={creating}
                     defaultCategory={activeRoom}
+                    categories={forumTopics.map((t) => t.category)}
                 />
             )}
 
@@ -1509,8 +1485,9 @@ function PostDetail({ post, currentUser, onBack, onLike, onSave, onDelete, onRep
 // ─────────────────────────────────────────────────────────────────────────────
 //  CreatePostModal
 // ─────────────────────────────────────────────────────────────────────────────
-function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
-    const [form, setForm] = useState({ title: "", content: "", category: defaultCategory || "Technical Analysis", tags: "" });
+function CreatePostModal({ onClose, onCreate, creating, defaultCategory, categories }) {
+    const categoryOptions = categories?.length ? categories : ["Technical Analysis"];
+    const [form, setForm] = useState({ title: "", content: "", category: defaultCategory || categoryOptions[0], tags: "" });
     const [error, setError] = useState("");
     const [submitted, setSub] = useState(false);
 
@@ -1536,7 +1513,7 @@ function CreatePostModal({ onClose, onCreate, creating, defaultCategory }) {
                         style={{ padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 14, outline: "none" }} />
                     <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
                         style={{ padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 14, outline: "none" }}>
-                        {CATEGORIES.filter(c => c !== "All").map(c => <option key={c}>{c}</option>)}
+                        {categoryOptions.map(c => <option key={c}>{c}</option>)}
                     </select>
                     <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })}
                         placeholder="Tags: AAPL, RSI, Breakout…"

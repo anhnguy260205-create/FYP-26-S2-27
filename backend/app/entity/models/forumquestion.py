@@ -208,8 +208,27 @@ def _forum_action_allowed(post, actor_is_privileged):
     return post.category != STOCK_COMMENT_CATEGORY or actor_is_privileged
 
 
+def _live_forum_topic_categories():
+    """Forum topic titles from Content Management — lets an admin-created
+    topic (e.g. via the Forum Topics editor) immediately become a valid,
+    postable category without a code change."""
+    from app.entity.models.contentmanagement import ContentManagement
+    with get_session() as session:
+        return {
+            r[0] for r in session.query(ContentManagement.title).filter(
+                ContentManagement.section == "forum_topics"
+            ).all()
+        }
+
+
+def _is_valid_category(category):
+    return bool(category) and (
+        category in FORUM_CATEGORIES or category in _live_forum_topic_categories()
+    )
+
+
 def _validate_category(category):
-    if category and category in FORUM_CATEGORIES:
+    if _is_valid_category(category):
         return category
     return "Technical Analysis"
 
@@ -813,7 +832,7 @@ class ForumRepository:
                 post.title = str(title).strip()
             if content and str(content).strip():
                 post.content = str(content).strip()
-            if category and category in FORUM_CATEGORIES:
+            if category and _is_valid_category(category):
                 post.category = category
             if tags is not None:
                 post.tags = ",".join([str(t).strip() for t in tags if str(t).strip()])
