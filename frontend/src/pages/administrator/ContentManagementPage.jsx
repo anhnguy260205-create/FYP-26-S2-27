@@ -160,7 +160,7 @@ const INVESTOR_SHARED_TOP = [
   },
   {
     key: "ai_insights", label: "AI Insights", icon: Sparkles, kind: "generic", preview: "ai_insights",
-    headerId: "header_ai_insights", itemsSection: "investor_home_taglines",
+    headerId: "header_ai_insights", itemsSection: "investor_home_taglines", noAdd: true,
     hint: "Controls the AI Insights heading and the short advisory messages shown on the dashboard. The displayed message changes according to the investor’s portfolio risk level, with a default loading message while the portfolio data is being prepared."
   },
   {
