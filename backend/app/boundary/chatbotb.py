@@ -93,7 +93,7 @@ async def chat(
         msgs += [{"role": m.role, "content": m.content} for m in data.messages]
 
         response = await client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             max_tokens=430,
             temperature=0.55,
             top_p=0.9,
