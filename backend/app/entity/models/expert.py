@@ -107,7 +107,14 @@ class Expert(Base):
                 Expert.expert_id == expert_id).first()
             if not expert:
                 return False
-        return ExpertVerification.set_status(expert_id, status)
+            user_id = expert.user_id
+        result = ExpertVerification.set_status(expert_id, status)
+        if result and status in ("approved", "active"):
+            # Now a verified expert: expert<->expert chat isn't allowed, so
+            # wipe any old investor<->expert history built up pre-verification.
+            from app.entity.models.chat import ChatController
+            ChatController.purge_conversations_with_experts(user_id)
+        return result
 
     @staticmethod
     def reject_verification(expert_id):

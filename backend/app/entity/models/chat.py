@@ -22,6 +22,7 @@ from uuid import uuid4
 from app.entity.models.useraccount import UserAccount
 from app.entity.models.investor import Investor
 from app.entity.models.expert import Expert
+from app.entity.models.expertverification import ExpertVerification
 
 
 def _now():
@@ -63,9 +64,14 @@ def _profile(session, user_id):
     investor = session.query(Investor).filter(
         Investor.user_id == user_id).first()
     expert = session.query(Expert).filter(Expert.user_id == user_id).first()
+ 
+    is_verified_expert = False
+    if expert:
+        verification = ExpertVerification.get_for_expert(expert.expert_id)
+        is_verified_expert = verification["verification_status"] in ("approved", "active")
     # Merged roles: experts also have an investor row, but for the expert-
-    # consultation channel their expert identity takes precedence.
-    role = "expert" if expert else "investor" if investor else "admin"
+    # consultation channel their verified expert identity takes precedence.
+    role = "expert" if is_verified_expert else "investor" if investor else "admin"
     premium = bool(investor) and investor.investor_subscription_status == "premium"
     return {
         "user_id": user.user_id,
@@ -73,7 +79,7 @@ def _profile(session, user_id):
         "full_name": user.full_name,
         "role": role,
         "premium": premium,
-        "chat_available": bool(expert.chat_available) if expert else True,
+        "chat_available": bool(expert.chat_available) if (expert and is_verified_expert) else True,
     }
 
 
@@ -195,6 +201,25 @@ class ChatController:
                     "unread": unread,
                 })
             return out
+
+    @staticmethod
+    def purge_conversations_with_experts(user_id):
+        """Delete this user's conversations (and messages) with anyone who is
+        a verified expert. Called when the user themselves becomes a verified
+        expert — expert<->expert chat isn't allowed, so any investor<->expert
+        history they built up before verification is no longer valid."""
+        with get_session() as session:
+            convs = session.query(Conversation).filter(
+                or_(Conversation.user_a_id == user_id,
+                    Conversation.user_b_id == user_id)
+            ).all()
+            for c in convs:
+                other_id = c.user_b_id if c.user_a_id == user_id else c.user_a_id
+                other = _profile(session, other_id)
+                if other and other["role"] == "expert":
+                    session.query(ChatMessage).filter(
+                        ChatMessage.conv_id == c.conv_id).delete()
+                    session.delete(c)
 
     @staticmethod
     def get_messages(conv_id, user_id, limit=50):
