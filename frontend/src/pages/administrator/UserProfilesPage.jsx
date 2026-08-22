@@ -16,8 +16,8 @@ const profiles = [
       "Managing the platform's subscriptions, billing, and profit reporting.",
   },
   {
-    profile_type: "Expert",
-    access_level: "Limited Access",
+    profile_type: "Verified Expert",
+    access_level: "Verified Expert Access",
     status: "Active",
     description:
       "Can provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
