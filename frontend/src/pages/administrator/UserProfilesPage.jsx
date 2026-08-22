@@ -20,7 +20,7 @@ const profiles = [
     access_level: "Verified Expert Access",
     status: "Active",
     description:
-      "Can provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
+      "Can use all premium investor privileges, and provide investment guidance, manage advice articles, and support investors. Must be approved by admin before accessing expert features.",
   },
 
   {
